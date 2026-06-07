@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Odoo
+*.pyc
+*.pyo
+
+# Codex / temp render artifacts
+.codex_docx_media_sentanu/
+.codex_docx_render_sentanu/
+.codex_render_manual_sentanu/
+_invoice_samples/
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.idea/
+.vscode/
+
+# Logs
+*.log
+
+# Environment / secrets
+.env
+*.env

@@ -1,0 +1,7 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_sj_delivery_user,sj.delivery user,model_sj_delivery,sj_security.group_sj_user,1,1,1,0
+access_sj_delivery_manager,sj.delivery manager,model_sj_delivery,sj_security.group_sj_manager,1,1,1,1
+access_sj_delivery_line_user,sj.delivery.line user,model_sj_delivery_line,sj_security.group_sj_user,1,1,1,0
+access_sj_delivery_line_manager,sj.delivery.line manager,model_sj_delivery_line,sj_security.group_sj_manager,1,1,1,1
+access_sj_invoice_template_user,sj.invoice.template user,model_sj_invoice_template,sj_security.group_sj_user,1,0,0,0
+access_sj_invoice_template_manager,sj.invoice.template manager,model_sj_invoice_template,sj_security.group_sj_manager,1,1,1,1

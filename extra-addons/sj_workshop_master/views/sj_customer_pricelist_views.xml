@@ -1,0 +1,49 @@
+<odoo>
+    <record id="view_sj_customer_pricelist_tree" model="ir.ui.view">
+        <field name="name">sj.customer.pricelist.tree</field>
+        <field name="model">sj.customer.pricelist</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="partner_id"/>
+                <field name="product_id"/>
+                <field name="color_id"/>
+                <field name="service_id"/>
+                <field name="price_total"/>
+                <field name="price_service"/>
+                <field name="price_material"/>
+                <field name="active"/>
+            </tree>
+        </field>
+    </record>
+    <record id="view_sj_customer_pricelist_form" model="ir.ui.view">
+        <field name="name">sj.customer.pricelist.form</field>
+        <field name="model">sj.customer.pricelist</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="partner_id"/>
+                            <field name="product_id"/>
+                            <field name="color_id"/>
+                            <field name="service_id"/>
+                            <field name="currency_id"/>
+                        </group>
+                        <group>
+                            <field name="price_total"/>
+                            <field name="price_service"/>
+                            <field name="price_material"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                    <field name="note"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_sj_customer_pricelist" model="ir.actions.act_window">
+        <field name="name">Customer Pricelists</field>
+        <field name="res_model">sj.customer.pricelist</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+</odoo>

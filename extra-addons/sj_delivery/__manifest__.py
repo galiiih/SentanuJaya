@@ -1,0 +1,21 @@
+{
+    "name": "Sentanu Jaya Delivery",
+    "version": "17.0.1.0.0",
+    "category": "Warehouse",
+    "summary": "Outgoing delivery notes and partial delivery tracking",
+    "depends": ["account", "mail", "sj_production", "sj_security", "sj_workshop_master"],
+    "data": [
+        "security/ir.model.access.csv",
+        "data/ir_sequence_data.xml",
+        "data/sj_invoice_template_data.xml",
+        "views/sj_delivery_views.xml",
+        "views/sj_invoice_template_views.xml",
+        "views/sj_production_batch_ext_views.xml",
+        "views/menu.xml",
+        "report/sj_delivery_report.xml",
+        "report/sj_invoice_report.xml",
+    ],
+    "installable": True,
+    "application": False,
+    "license": "LGPL-3",
+}

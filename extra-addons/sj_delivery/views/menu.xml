@@ -1,0 +1,4 @@
+<odoo>
+    <menuitem id="menu_sj_delivery_root" name="Delivery" parent="sj_tax.menu_sj_tax_root" sequence="40"/>
+    <menuitem id="menu_sj_delivery" name="Surat Jalan Keluar" parent="menu_sj_delivery_root" action="action_sj_delivery" sequence="10"/>
+</odoo>

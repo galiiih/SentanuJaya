@@ -1,0 +1,125 @@
+<odoo>
+    <record id="view_sj_delivery_tree" model="ir.ui.view">
+        <field name="name">sj.delivery.tree</field>
+        <field name="model">sj.delivery</field>
+        <field name="arch" type="xml">
+            <tree decoration-info="state=='draft'" decoration-warning="state=='ready'" decoration-success="state in ('delivered','invoiced')" decoration-muted="state=='cancel'">
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="date_delivery"/>
+                <field name="delivery_type" widget="badge" decoration-info="delivery_type=='normal'" decoration-warning="delivery_type=='redelivery'"/>
+                <field name="origin"/>
+                <field name="line_count"/>
+                <field name="amount_total" optional="show"/>
+                <field name="invoice_id" optional="hide"/>
+                <field name="state" widget="badge" decoration-info="state=='draft'" decoration-warning="state=='ready'" decoration-success="state in ('delivered','invoiced')"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_sj_delivery_form" model="ir.ui.view">
+        <field name="name">sj.delivery.form</field>
+        <field name="model">sj.delivery</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_ready" type="object" string="Ready" class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_delivered" type="object" string="Delivered" class="btn-primary" invisible="state != 'ready'"/>
+                    <button name="action_create_invoice" type="object" string="Create Invoice" class="btn-primary" invisible="state != 'delivered'" groups="sj_security.group_sj_manager"/>
+                    <button name="action_cancel" type="object" string="Cancel" invisible="state in ('invoiced','cancel')"/>
+                    <button name="action_reset_to_draft" type="object" string="Reset Draft" invisible="state not in ('cancel',)" groups="sj_security.group_sj_manager"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,ready,delivered,invoiced"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_invoice" type="object" class="oe_stat_button" icon="fa-pencil-square-o" invisible="not invoice_id">
+                            <field name="invoice_id" string="Invoice" widget="statinfo"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="partner_id"/>
+                            <field name="date_delivery"/>
+                            <field name="delivery_type"/>
+                            <field name="origin"/>
+                        </group>
+                        <group>
+                            <field name="invoice_template_id"/>
+                            <field name="line_count"/>
+                            <field name="amount_total"/>
+                            <field name="amount_ppn" invisible="amount_ppn == 0"/>
+                            <field name="amount_pph" invisible="amount_pph == 0"/>
+                            <field name="amount_grand_total"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Items">
+                            <field name="line_ids">
+                                <tree editable="bottom">
+                                    <field name="batch_id"/>
+                                    <field name="receiving_id"/>
+                                    <field name="product_id"/>
+                                    <field name="color_id"/>
+                                    <field name="service_id"/>
+                                    <field name="qty"/>
+                                    <field name="uom_id"/>
+                                    <field name="price_unit"/>
+                                    <field name="price_subtotal"/>
+                                    <field name="note"/>
+                                </tree>
+                            </field>
+                            <group class="oe_subtotal_footer oe_right">
+                                <field name="amount_total" class="oe_subtotal_footer_separator"/>
+                            </group>
+                        </page>
+                        <page string="Notes">
+                            <field name="note"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_sj_delivery_search" model="ir.ui.view">
+        <field name="name">sj.delivery.search</field>
+        <field name="model">sj.delivery</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="origin"/>
+                <separator/>
+                <filter name="draft" string="Draft" domain="[('state','=','draft')]"/>
+                <filter name="ready" string="Ready" domain="[('state','=','ready')]"/>
+                <filter name="delivered" string="Delivered" domain="[('state','=','delivered')]"/>
+                <filter name="invoiced" string="Invoiced" domain="[('state','=','invoiced')]"/>
+                <separator/>
+                <filter name="normal" string="Normal" domain="[('delivery_type','=','normal')]"/>
+                <filter name="redelivery" string="Redelivery" domain="[('delivery_type','=','redelivery')]"/>
+                <group expand="0" string="Group By">
+                    <filter name="group_partner" string="Customer" context="{'group_by':'partner_id'}"/>
+                    <filter name="group_state" string="Status" context="{'group_by':'state'}"/>
+                    <filter name="group_type" string="Type" context="{'group_by':'delivery_type'}"/>
+                    <filter name="group_date" string="Date" context="{'group_by':'date_delivery:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_sj_delivery" model="ir.actions.act_window">
+        <field name="name">Surat Jalan Keluar</field>
+        <field name="res_model">sj.delivery</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="view_sj_delivery_search"/>
+    </record>
+</odoo>

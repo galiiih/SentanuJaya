@@ -1,0 +1,144 @@
+<odoo>
+    <record id="view_sj_work_order_tree" model="ir.ui.view">
+        <field name="name">sj.work.order.tree</field>
+        <field name="model">sj.work.order</field>
+        <field name="arch" type="xml">
+            <tree decoration-info="state=='draft'" decoration-warning="state=='in_progress'" decoration-success="state=='done'" decoration-muted="state=='cancel'">
+                <field name="name"/>
+                <field name="batch_id"/>
+                <field name="wo_type"/>
+                <field name="partner_id"/>
+                <field name="product_id"/>
+                <field name="color_id"/>
+                <field name="qty"/>
+                <field name="pic_id"/>
+                <field name="state" widget="badge" decoration-info="state=='draft'" decoration-warning="state=='in_progress'" decoration-success="state=='done'"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_sj_work_order_form" model="ir.ui.view">
+        <field name="name">sj.work.order.form</field>
+        <field name="model">sj.work.order</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_start" type="object" string="Start" class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_done" type="object" string="Done" class="btn-primary" invisible="state != 'in_progress'"/>
+                    <button name="action_cancel" type="object" string="Cancel" invisible="state in ('done','cancel')"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,in_progress,done"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="batch_id"/>
+                            <field name="receiving_id"/>
+                            <field name="partner_id"/>
+                            <field name="wo_type"/>
+                            <field name="pic_id"/>
+                        </group>
+                        <group>
+                            <field name="product_id"/>
+                            <field name="color_id"/>
+                            <field name="qty"/>
+                            <field name="uom_id"/>
+                            <field name="start_date"/>
+                            <field name="finish_date"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Material Consumption">
+                            <field name="material_ids">
+                                <tree editable="bottom">
+                                    <field name="date"/>
+                                    <field name="product_id"/>
+                                    <field name="qty"/>
+                                    <field name="uom_id"/>
+                                    <field name="note"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="Operation Notes">
+                            <field name="operation_notes"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_sj_work_order_search" model="ir.ui.view">
+        <field name="name">sj.work.order.search</field>
+        <field name="model">sj.work.order</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="batch_id"/>
+                <field name="partner_id"/>
+                <field name="pic_id"/>
+                <separator/>
+                <filter name="draft" string="Draft" domain="[('state','=','draft')]"/>
+                <filter name="in_progress" string="In Progress" domain="[('state','=','in_progress')]"/>
+                <filter name="done" string="Done" domain="[('state','=','done')]"/>
+                <separator/>
+                <filter name="type_raw" string="WO Raw" domain="[('wo_type','=','raw')]"/>
+                <filter name="type_paint" string="WO Paint" domain="[('wo_type','=','paint')]"/>
+                <filter name="type_polish" string="WO Polish" domain="[('wo_type','=','polish')]"/>
+                <filter name="type_rework" string="WO Rework" domain="[('wo_type','=','rework')]"/>
+                <group expand="0" string="Group By">
+                    <filter name="group_type" string="WO Type" context="{'group_by':'wo_type'}"/>
+                    <filter name="group_state" string="Status" context="{'group_by':'state'}"/>
+                    <filter name="group_partner" string="Customer" context="{'group_by':'partner_id'}"/>
+                    <filter name="group_pic" string="PIC" context="{'group_by':'pic_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_sj_work_order_kanban" model="ir.ui.view">
+        <field name="name">sj.work.order.kanban</field>
+        <field name="model">sj.work.order</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="state" class="o_kanban_small_column">
+                <field name="name"/>
+                <field name="batch_id"/>
+                <field name="wo_type"/>
+                <field name="partner_id"/>
+                <field name="product_id"/>
+                <field name="pic_id"/>
+                <field name="state"/>
+                <field name="color_id"/>
+                <templates>
+                    <t t-name="kanban-box">
+                        <div class="oe_kanban_card oe_kanban_global_click">
+                            <div class="oe_kanban_content">
+                                <div class="o_kanban_record_title">
+                                    <strong><field name="name"/></strong>
+                                </div>
+                                <div><field name="wo_type"/> - <field name="product_id"/></div>
+                                <div class="text-muted"><field name="partner_id"/></div>
+                                <div class="text-muted">Color: <field name="color_id"/></div>
+                                <div t-if="record.pic_id.value">PIC: <field name="pic_id"/></div>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="action_sj_work_order" model="ir.actions.act_window">
+        <field name="name">Work Orders</field>
+        <field name="res_model">sj.work.order</field>
+        <field name="view_mode">kanban,tree,form</field>
+        <field name="search_view_id" ref="view_sj_work_order_search"/>
+    </record>
+</odoo>

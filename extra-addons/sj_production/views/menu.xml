@@ -1,0 +1,7 @@
+<odoo>
+    <menuitem id="menu_sj_production_root" name="Production" parent="sj_tax.menu_sj_tax_root" sequence="30"/>
+    <menuitem id="menu_sj_production_batch" name="Production Batches" parent="menu_sj_production_root" action="action_sj_production_batch" sequence="10"/>
+    <menuitem id="menu_sj_work_order" name="Work Orders" parent="menu_sj_production_root" action="action_sj_work_order" sequence="20"/>
+    <menuitem id="menu_sj_final_qc" name="Final QC" parent="menu_sj_production_root" action="action_sj_final_qc" sequence="30"/>
+    <menuitem id="menu_sj_internal_rework" name="Internal Rework" parent="menu_sj_production_root" action="action_sj_internal_rework" sequence="40"/>
+</odoo>

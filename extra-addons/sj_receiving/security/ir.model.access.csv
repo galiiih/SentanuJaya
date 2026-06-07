@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_sj_receiving_user,sj.receiving user,model_sj_receiving,sj_security.group_sj_user,1,1,1,0
+access_sj_receiving_manager,sj.receiving manager,model_sj_receiving,sj_security.group_sj_manager,1,1,1,1
+access_sj_receiving_line_user,sj.receiving.line user,model_sj_receiving_line,sj_security.group_sj_user,1,1,1,0
+access_sj_receiving_line_manager,sj.receiving.line manager,model_sj_receiving_line,sj_security.group_sj_manager,1,1,1,1

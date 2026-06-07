@@ -1,0 +1,20 @@
+<odoo noupdate="1">
+    <record id="seq_sj_production_batch" model="ir.sequence">
+        <field name="name">Sentanu Jaya Production Batch</field>
+        <field name="code">sj.production.batch</field>
+        <field name="prefix">PB/%(year)s/</field>
+        <field name="padding">5</field>
+    </record>
+    <record id="seq_sj_work_order" model="ir.sequence">
+        <field name="name">Sentanu Jaya Work Order</field>
+        <field name="code">sj.work.order</field>
+        <field name="prefix">WO/%(year)s/</field>
+        <field name="padding">5</field>
+    </record>
+    <record id="seq_sj_internal_rework" model="ir.sequence">
+        <field name="name">Sentanu Jaya Internal Rework</field>
+        <field name="code">sj.internal.rework</field>
+        <field name="prefix">IRW/%(year)s/</field>
+        <field name="padding">5</field>
+    </record>
+</odoo>

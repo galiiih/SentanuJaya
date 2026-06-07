@@ -1,0 +1,14 @@
+<odoo noupdate="1">
+    <record id="seq_sj_customer_claim" model="ir.sequence">
+        <field name="name">Sentanu Jaya Customer Claim</field>
+        <field name="code">sj.customer.claim</field>
+        <field name="prefix">CLM/%(year)s/</field>
+        <field name="padding">5</field>
+    </record>
+    <record id="seq_sj_claim_rework" model="ir.sequence">
+        <field name="name">Sentanu Jaya Claim Rework</field>
+        <field name="code">sj.claim.rework</field>
+        <field name="prefix">CRW/%(year)s/</field>
+        <field name="padding">5</field>
+    </record>
+</odoo>

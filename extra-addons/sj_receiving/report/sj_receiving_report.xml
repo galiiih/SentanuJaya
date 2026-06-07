@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_sj_receiving_document">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <h2 class="text-center">SURAT JALAN MASUK</h2>
+                        <h3 class="text-center"><t t-esc="doc.name"/></h3>
+
+                        <div class="row mt-4 mb-4">
+                            <div class="col-6">
+                                <table class="table table-sm table-borderless">
+                                    <tr><td><strong>Customer</strong></td><td>: <t t-esc="doc.partner_id.name"/></td></tr>
+                                    <tr><td><strong>No. SJ Customer</strong></td><td>: <t t-esc="doc.customer_sj_number or '-'"/></td></tr>
+                                    <tr><td><strong>Tanggal Terima</strong></td><td>: <t t-esc="doc.date_received" t-options="{'widget': 'date'}"/></td></tr>
+                                    <tr><td><strong>Status</strong></td><td>: <t t-esc="dict(doc._fields['state'].selection).get(doc.state)"/></td></tr>
+                                </table>
+                            </div>
+                        </div>
+
+                        <table class="table table-sm table-bordered">
+                            <thead>
+                                <tr>
+                                    <th class="text-center">No</th>
+                                    <th>Item</th>
+                                    <th>Description</th>
+                                    <th>Warna</th>
+                                    <th class="text-center">Qty</th>
+                                    <th>UoM</th>
+                                    <th class="text-center">QC</th>
+                                    <th>Keterangan</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="doc.line_ids" t-as="line">
+                                    <tr>
+                                        <td class="text-center"><t t-esc="line_index + 1"/></td>
+                                        <td><t t-esc="line.product_id.name"/></td>
+                                        <td><t t-esc="line.item_description or ''"/></td>
+                                        <td><t t-esc="line.color_id.name or '-'"/></td>
+                                        <td class="text-center"><t t-esc="line.qty"/></td>
+                                        <td><t t-esc="line.uom_id.name or 'Unit'"/></td>
+                                        <td class="text-center"><t t-esc="dict(line._fields['qc_state'].selection).get(line.qc_state)"/></td>
+                                        <td><t t-esc="line.qc_note or ''"/></td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+
+                        <div class="row mt-5">
+                            <div class="col-4 text-center">
+                                <p>Diterima oleh,</p>
+                                <br/><br/><br/>
+                                <p>(_________________)</p>
+                            </div>
+                            <div class="col-4 text-center">
+                                <p>Diperiksa oleh,</p>
+                                <br/><br/><br/>
+                                <p>(_________________)</p>
+                            </div>
+                            <div class="col-4 text-center">
+                                <p>Pengirim,</p>
+                                <br/><br/><br/>
+                                <p>(_________________)</p>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+    <record id="action_report_sj_receiving" model="ir.actions.report">
+        <field name="name">Surat Jalan Masuk</field>
+        <field name="model">sj.receiving</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">sj_receiving.report_sj_receiving_document</field>
+        <field name="report_file">sj_receiving.report_sj_receiving_document</field>
+        <field name="binding_model_id" ref="model_sj_receiving"/>
+        <field name="binding_type">report</field>
+    </record>
+</odoo>

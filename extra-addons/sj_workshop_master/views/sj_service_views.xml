@@ -1,0 +1,44 @@
+<odoo>
+    <record id="view_sj_service_tree" model="ir.ui.view">
+        <field name="name">sj.service.tree</field>
+        <field name="model">sj.service</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="service_type"/>
+                <field name="product_id"/>
+                <field name="active"/>
+            </tree>
+        </field>
+    </record>
+    <record id="view_sj_service_form" model="ir.ui.view">
+        <field name="name">sj.service.form</field>
+        <field name="model">sj.service</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="code"/>
+                            <field name="sequence"/>
+                            <field name="service_type"/>
+                        </group>
+                        <group>
+                            <field name="product_id"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                    <field name="note"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_sj_service" model="ir.actions.act_window">
+        <field name="name">Services</field>
+        <field name="res_model">sj.service</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+</odoo>

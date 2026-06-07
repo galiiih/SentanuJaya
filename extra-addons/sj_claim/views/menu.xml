@@ -1,0 +1,5 @@
+<odoo>
+    <menuitem id="menu_sj_claim_root" name="Claims" parent="sj_tax.menu_sj_tax_root" sequence="50"/>
+    <menuitem id="menu_sj_customer_claim" name="Customer Claims" parent="menu_sj_claim_root" action="action_sj_customer_claim" sequence="10"/>
+    <menuitem id="menu_sj_claim_rework" name="Claim Rework" parent="menu_sj_claim_root" action="action_sj_claim_rework" sequence="20"/>
+</odoo>

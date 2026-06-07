@@ -1,0 +1,20 @@
+{
+    "name": "Sentanu Jaya Production",
+    "version": "17.0.1.0.0",
+    "category": "Manufacturing",
+    "summary": "Production batches, work orders, final QC, and internal rework",
+    "depends": ["hr", "mail", "sj_receiving", "sj_security"],
+    "data": [
+        "security/ir.model.access.csv",
+        "data/ir_sequence_data.xml",
+        "views/sj_production_batch_views.xml",
+        "views/sj_work_order_views.xml",
+        "views/sj_final_qc_views.xml",
+        "views/sj_internal_rework_views.xml",
+        "views/sj_receiving_ext_views.xml",
+        "views/menu.xml",
+    ],
+    "installable": True,
+    "application": False,
+    "license": "LGPL-3",
+}

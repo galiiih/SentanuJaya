@@ -1,0 +1,369 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_sj_invoice_document">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-set="inv_template" t-value="doc._get_invoice_template()"/>
+                <t t-set="tax_profile" t-value="doc.partner_id.sj_tax_profile_id"/>
+                <t t-set="has_ppn" t-value="tax_profile and tax_profile.use_ppn"/>
+                <t t-set="has_pph" t-value="tax_profile and tax_profile.use_pph"/>
+                <t t-call="web.external_layout">
+                    <div class="page" style="font-family: 'Arial', sans-serif; color: #000;">
+                        <t t-call="sj_delivery.report_invoice_header"/>
+                        <t t-set="tpl_code" t-value="inv_template.code if inv_template else ''"/>
+                        <t t-if="tpl_code == 'PPN_PPH'" t-call="sj_delivery.report_invoice_body_ppn_pph"/>
+                        <t t-elif="tpl_code == 'PPN_ONLY'" t-call="sj_delivery.report_invoice_body_ppn_only"/>
+                        <t t-elif="tpl_code == 'PPH_ONLY'" t-call="sj_delivery.report_invoice_body_pph_only"/>
+                        <t t-elif="tpl_code == 'NON_TAX'" t-call="sj_delivery.report_invoice_body_non_tax"/>
+                        <t t-else="">
+                            <t t-if="has_ppn and has_pph" t-call="sj_delivery.report_invoice_body_ppn_pph"/>
+                            <t t-elif="has_ppn" t-call="sj_delivery.report_invoice_body_ppn_only"/>
+                            <t t-elif="has_pph" t-call="sj_delivery.report_invoice_body_pph_only"/>
+                            <t t-else="" t-call="sj_delivery.report_invoice_body_non_tax"/>
+                        </t>
+                        <t t-call="sj_delivery.report_invoice_footer"/>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+    <template id="report_invoice_header">
+        <div class="row" style="font-size: 9pt;">
+            <div class="col-7">
+                <img t-att-src="'data:image/png;base64,%s' % doc._sj_logo_b64()"
+                     style="max-height: 55px; max-width: 100%;" alt="PT. Sentanu Jaya"/>
+                <div style="font-size: 8pt; margin-top: 3px;">
+                    <span>Jl. Hasyim Ashari GG Turus RT.02 RW.02 No.99</span><br/>
+                    <span>Nerogtog, Pinang, Kota Tangerang, Banten</span><br/>
+                    <span>Telp/Fax: (021) 55488xx</span>
+                </div>
+            </div>
+            <div class="col-5 text-end">
+                <span>Tangerang, <t t-esc="doc.date_delivery" t-options="{'widget': 'date', 'format': 'd MMMM y'}"/></span><br/>
+                <span>Kepada Yth,</span><br/>
+                <strong><t t-esc="doc.partner_id.name"/></strong><br/>
+                <span t-if="doc.partner_id.city"><t t-esc="doc.partner_id.city.upper()"/></span>
+            </div>
+        </div>
+        <div class="text-center mt-2 mb-2">
+            <h4 style="margin-bottom: 0; font-weight: bold; letter-spacing: 2px;">INVOICE</h4>
+            <div style="border-top: 1px solid #000; width: 30%; margin: 0 auto; padding-top: 2px;">
+                <span>NO. <t t-esc="doc.name"/></span>
+            </div>
+        </div>
+    </template>
+
+    <template id="report_invoice_footer">
+        <div class="row mt-3" style="font-size: 9pt;">
+            <div class="col-6" style="padding-top: 15px;">
+                <span>Pembayaran dengan Giro/Cek</span><br/>
+                <span>A.N : PT. SENTANU JAYA</span><br/>
+                <span>Bank BCA No. Rekening : 6585467911</span>
+            </div>
+            <div class="col-6 text-center">
+                <span>Hormat Kami,</span><br/><br/>
+                <div style="height: 50px; position: relative;">
+                    <span t-if="doc.amount_grand_total &gt;= 5000000" style="border: 1px dashed #ccc; padding: 2px 10px; font-size: 7pt; color: #aaa; position: absolute; left: 35%; top: 10px;">METERAI TEMPEL</span>
+                </div>
+                <strong><u>Tri Sutanti</u></strong><br/>
+                <strong style="font-size: 10pt;">PT. SENTANU JAYA</strong>
+            </div>
+        </div>
+    </template>
+
+    <template id="report_invoice_body_ppn_pph">
+        <table class="table table-sm table-bordered" style="font-size: 8.5pt; border-color: #000; margin-bottom: 5px;">
+            <thead>
+                <tr class="text-center" style="background-color: #f2f2f2;">
+                    <th style="width:4%; vertical-align: middle;">NO.</th>
+                    <th style="vertical-align: middle;">Nama Barang</th>
+                    <th style="width:6%; vertical-align: middle;">Jml</th>
+                    <th style="width:12%; vertical-align: middle;">Biaya Bahan</th>
+                    <th style="width:13%; vertical-align: middle;">Total Bahan</th>
+                    <th style="width:12%; vertical-align: middle;">Biaya Jasa</th>
+                    <th style="width:12%; vertical-align: middle;">Total Jasa</th>
+                    <th style="width:14%; vertical-align: middle;">Total Bahan+Jasa</th>
+                </tr>
+            </thead>
+            <tbody>
+                <t t-foreach="doc.line_ids" t-as="line">
+                    <tr>
+                        <td class="text-center"><t t-esc="line_index + 1"/></td>
+                        <td><t t-esc="line.product_id.name"/><t t-if="line.color_id"> - <t t-esc="line.color_id.name"/></t></td>
+                        <td class="text-center"><t t-esc="int(line.qty)"/></td>
+                        <td class="text-end"><t t-esc="'{:,.0f}'.format(line.price_material_unit)"/></td>
+                        <td class="text-end"><t t-esc="'{:,.0f}'.format(line.total_material)"/></td>
+                        <td class="text-end"><t t-esc="'{:,.0f}'.format(line.price_service_unit)"/></td>
+                        <td class="text-end"><t t-esc="'{:,.0f}'.format(line.total_service)"/></td>
+                        <td class="text-end"><t t-esc="'{:,.0f}'.format(line.price_subtotal)"/></td>
+                    </tr>
+                </t>
+            </tbody>
+            <tfoot>
+                <tr style="background-color: #fafafb;">
+                    <td colspan="4" class="text-end"></td>
+                    <td class="text-end"><strong><t t-esc="'{:,.0f}'.format(sum(doc.line_ids.mapped('total_material')))"/></strong></td>
+                    <td/>
+                    <td class="text-end"><strong><t t-esc="'{:,.0f}'.format(sum(doc.line_ids.mapped('total_service')))"/></strong></td>
+                    <td class="text-end" style="background-color: #f2f2f2;"><strong><t t-esc="'{:,.0f}'.format(doc.amount_untaxed)"/></strong></td>
+                </tr>
+            </tfoot>
+        </table>
+        <div class="row" style="font-size: 8.5pt;">
+            <div class="col-6">
+                <div style="border: 1px solid #000; padding: 6px; min-height: 50px;">
+                    <span>Terbilang:</span><br/>
+                    <strong># <t t-esc="doc._sj_amount_to_words()"/> #</strong>
+                </div>
+            </div>
+            <div class="col-6">
+                <table class="table table-sm table-borderless" style="margin-bottom: 0;">
+                    <tr><td>Jumlah Harga Jual</td><td class="text-end"><t t-esc="'{:,.0f}'.format(doc.amount_untaxed)"/></td></tr>
+                    <tr><td>Potongan Harga</td><td class="text-end">-</td></tr>
+                    <tr><td>Dasar Pengenaan Pajak</td><td class="text-end"><t t-esc="'{:,.0f}'.format(doc.amount_untaxed)"/></td></tr>
+                    <tr><td>PPN 11%</td><td class="text-end"><t t-esc="'{:,.0f}'.format(doc.amount_ppn)"/></td></tr>
+                    <tr><td>Jumlah Tagihan</td><td class="text-end"><t t-esc="'{:,.0f}'.format(doc.amount_untaxed + doc.amount_ppn)"/></td></tr>
+                    <tr><td>Potong Jasa PPh 23, <t t-esc="tax_profile.pph_rate or 2"/>%</td><td class="text-end"><t t-esc="'{:,.0f}'.format(doc.amount_pph)"/></td></tr>
+                    <tr style="border-top: 1px solid #000;"><td><strong>Total Tagihan</strong></td><td class="text-end"><strong><t t-esc="'{:,.0f}'.format(doc.amount_grand_total)"/></strong></td></tr>
+                </table>
+            </div>
+        </div>
+    </template>
+
+    <template id="report_invoice_body_ppn_only">
+        <table class="table table-sm table-bordered" style="font-size: 8.5pt; border-color: #000; margin-bottom: 5px;">
+            <thead>
+                <tr class="text-center" style="background-color: #f2f2f2;">
+                    <th style="width:4%;">NO.</th>
+                    <th>Nama Barang</th>
+                    <th style="width:6%;">Jml</th>
+                    <th style="width:12%;">Biaya Bahan</th>
+                    <th style="width:13%;">Total Bahan</th>
+                    <th style="width:12%;">Biaya Jasa</th>
+                    <th style="width:12%;">Total Jasa</th>
+                    <th style="width:14%;">Total Bahan+Jasa</th>
+                </tr>
+            </thead>
+            <tbody>
+                <t t-foreach="doc.line_ids" t-as="line">
+                    <tr>
+                        <td class="text-center"><t t-esc="line_index + 1"/></td>
+                        <td><t t-esc="line.product_id.name"/><t t-if="line.color_id"> - <t t-esc="line.color_id.name"/></t></td>
+                        <td class="text-center"><t t-esc="int(line.qty)"/></td>
+                        <td class="text-end"><t t-esc="'{:,.0f}'.format(line.price_material_unit)"/></td>
+                        <td class="text-end"><t t-esc="'{:,.0f}'.format(line.total_material)"/></td>
+                        <td class="text-end"><t t-esc="'{:,.0f}'.format(line.price_service_unit)"/></td>
+                        <td class="text-end"><t t-esc="'{:,.0f}'.format(line.total_service)"/></td>
+                        <td class="text-end"><t t-esc="'{:,.0f}'.format(line.price_subtotal)"/></td>
+                    </tr>
+                </t>
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="4" class="text-end"></td>
+                    <td class="text-end"><strong><t t-esc="'{:,.0f}'.format(sum(doc.line_ids.mapped('total_material')))"/></strong></td>
+                    <td/>
+                    <td class="text-end"><strong><t t-esc="'{:,.0f}'.format(sum(doc.line_ids.mapped('total_service')))"/></strong></td>
+                    <td class="text-end" style="background-color: #f2f2f2;"><strong><t t-esc="'{:,.0f}'.format(doc.amount_untaxed)"/></strong></td>
+                </tr>
+            </tfoot>
+        </table>
+        <div class="row" style="font-size: 8.5pt;">
+            <div class="col-6">
+                <div style="border: 1px solid #000; padding: 6px; min-height: 50px;">
+                    <span>Terbilang:</span><br/>
+                    <strong># <t t-esc="doc._sj_amount_to_words()"/> #</strong>
+                </div>
+            </div>
+            <div class="col-6">
+                <table class="table table-sm table-borderless">
+                    <tr><td>Jumlah Harga Jual</td><td class="text-end"><t t-esc="'{:,.0f}'.format(doc.amount_untaxed)"/></td></tr>
+                    <tr><td>Dasar Pengenaan Pajak</td><td class="text-end"><t t-esc="'{:,.0f}'.format(doc.amount_untaxed)"/></td></tr>
+                    <tr><td>PPN 11%</td><td class="text-end"><t t-esc="'{:,.0f}'.format(doc.amount_ppn)"/></td></tr>
+                    <tr style="border-top: 1px solid #000;"><td><strong>Total Tagihan</strong></td><td class="text-end"><strong><t t-esc="'{:,.0f}'.format(doc.amount_grand_total)"/></strong></td></tr>
+                </table>
+            </div>
+        </div>
+    </template>
+
+    <template id="report_invoice_body_pph_only">
+        <table class="table table-sm table-bordered" style="font-size: 8.5pt; border-color: #000; margin-bottom: 5px;">
+            <thead>
+                <tr class="text-center" style="background-color: #f2f2f2;">
+                    <th style="width:4%;">NO.</th>
+                    <th>Nama Barang</th>
+                    <th style="width:6%;">Jml</th>
+                    <th style="width:12%;">Biaya Bahan</th>
+                    <th style="width:13%;">Total Bahan</th>
+                    <th style="width:12%;">Biaya Jasa</th>
+                    <th style="width:12%;">Total Jasa</th>
+                    <th style="width:14%;">Total Bahan+Jasa</th>
+                </tr>
+            </thead>
+            <tbody>
+                <t t-foreach="doc.line_ids" t-as="line">
+                    <tr>
+                        <td class="text-center"><t t-esc="line_index + 1"/></td>
+                        <td><t t-esc="line.product_id.name"/><t t-if="line.color_id"> - <t t-esc="line.color_id.name"/></t></td>
+                        <td class="text-center"><t t-esc="int(line.qty)"/></td>
+                        <td class="text-end"><t t-esc="'{:,.0f}'.format(line.price_material_unit)"/></td>
+                        <td class="text-end"><t t-esc="'{:,.0f}'.format(line.total_material)"/></td>
+                        <td class="text-end"><t t-esc="'{:,.0f}'.format(line.price_service_unit)"/></td>
+                        <td class="text-end"><t t-esc="'{:,.0f}'.format(line.total_service)"/></td>
+                        <td class="text-end"><t t-esc="'{:,.0f}'.format(line.price_subtotal)"/></td>
+                    </tr>
+                </t>
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="4" class="text-end"></td>
+                    <td class="text-end"><strong><t t-esc="'{:,.0f}'.format(sum(doc.line_ids.mapped('total_material')))"/></strong></td>
+                    <td/>
+                    <td class="text-end"><strong><t t-esc="'{:,.0f}'.format(sum(doc.line_ids.mapped('total_service')))"/></strong></td>
+                    <td class="text-end" style="background-color: #f2f2f2;"><strong><t t-esc="'{:,.0f}'.format(doc.amount_untaxed)"/></strong></td>
+                </tr>
+            </tfoot>
+        </table>
+        <div class="row" style="font-size: 8.5pt;">
+            <div class="col-6">
+                <div style="border: 1px solid #000; padding: 6px; min-height: 50px;">
+                    <span>Terbilang:</span><br/>
+                    <strong># <t t-esc="doc._sj_amount_to_words()"/> #</strong>
+                </div>
+            </div>
+            <div class="col-6">
+                <table class="table table-sm table-borderless">
+                    <tr><td>Jumlah Tagihan</td><td class="text-end"><t t-esc="'{:,.0f}'.format(doc.amount_untaxed)"/></td></tr>
+                    <tr><td>Potong Jasa PPh 23 (<t t-esc="tax_profile.pph_rate or 2"/>%)</td><td class="text-end"><t t-esc="'{:,.0f}'.format(doc.amount_pph)"/></td></tr>
+                    <tr style="border-top: 1px solid #000;"><td><strong>Total Tagihan</strong></td><td class="text-end"><strong><t t-esc="'{:,.0f}'.format(doc.amount_grand_total)"/></strong></td></tr>
+                </table>
+            </div>
+        </div>
+    </template>
+
+    <template id="report_invoice_body_non_tax">
+        <table class="table table-sm table-bordered" style="font-size: 8.5pt; border-color: #000; margin-bottom: 5px;">
+            <thead>
+                <tr class="text-center" style="background-color: #f2f2f2;">
+                    <th style="width:5%;">No</th>
+                    <th style="width:6%;">Qty</th>
+                    <th style="width:6%;">Sat</th>
+                    <th>Nama Barang</th>
+                    <th style="width:15%;">Warna</th>
+                    <th style="width:14%;">Harga</th>
+                    <th style="width:8%;">Ket</th>
+                    <th style="width:15%;">Jumlah</th>
+                </tr>
+            </thead>
+            <tbody>
+                <t t-foreach="doc.line_ids" t-as="line">
+                    <tr>
+                        <td class="text-center"><t t-esc="line_index + 1"/></td>
+                        <td class="text-center"><t t-esc="int(line.qty)"/></td>
+                        <td class="text-center"><t t-esc="line.uom_id.name or 'Pcs'"/></td>
+                        <td><t t-esc="line.product_id.name"/></td>
+                        <td><t t-esc="line.color_id.name or '-'"/></td>
+                        <td class="text-end"><t t-esc="'{:,.0f}'.format(line.price_unit)"/></td>
+                        <td class="text-center"><t t-esc="line.note or ''"/></td>
+                        <td class="text-end"><t t-esc="'{:,.0f}'.format(line.price_subtotal)"/></td>
+                    </tr>
+                </t>
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="7" class="text-end"><strong>SUB TOTAL</strong></td>
+                    <td class="text-end"><strong><t t-esc="'{:,.0f}'.format(doc.amount_untaxed)"/></strong></td>
+                </tr>
+            </tfoot>
+        </table>
+        <div class="mt-2" style="font-size: 8pt; color: #555;">
+            <strong>CATATAN:</strong><br/>
+            <span>Barang yang telah diterima dalam keadaan baik dan cukup.</span><br/>
+            <span>Jika dikemudian hari ada barang NG bukan lagi tanggung jawab kami.</span>
+        </div>
+    </template>
+
+    <record id="action_report_sj_invoice" model="ir.actions.report">
+        <field name="name">Invoice Sentanu Jaya</field>
+        <field name="model">sj.delivery</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">sj_delivery.report_sj_invoice_document</field>
+        <field name="report_file">sj_delivery.report_sj_invoice_document</field>
+        <field name="binding_model_id" ref="model_sj_delivery"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <template id="report_sj_kwitansi_document">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <div class="page" style="font-size: 9.5pt; font-family: 'Arial', sans-serif; color: #000;">
+                    <div class="row">
+                        <div class="col-7">
+                            <img t-att-src="'data:image/png;base64,%s' % doc._sj_logo_b64()"
+                                 style="max-height: 55px; max-width: 100%;" alt="PT. Sentanu Jaya"/>
+                            <div style="font-size: 8pt; margin-top: 3px;">
+                                <span>Jl. Hasyim Ashari GG Turus RT.02 RW.02 No.99</span><br/>
+                                <span>Nerogtog, Pinang, Kota Tangerang, Banten</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-center mt-2 mb-3">
+                        <h4 style="margin-bottom: 0; font-weight: bold; letter-spacing: 2px;">KWITANSI</h4>
+                        <span>NO. <t t-esc="doc.name"/></span>
+                    </div>
+                    <table class="table table-sm table-bordered" style="margin-bottom: 1.5rem; border-color: #000;">
+                        <tr>
+                            <td style="width: 25%; padding: 6px;"><strong>Sudah terima dari</strong></td>
+                            <td style="padding: 6px;">: <t t-esc="doc.partner_id.name"/></td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 6px;"><strong>Terbilang</strong></td>
+                            <td style="padding: 6px; background-color: #f9f9f9;">: # <strong><t t-esc="doc._sj_amount_to_words()"/></strong> #</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 6px;"><strong>Untuk pembayaran</strong></td>
+                            <td style="padding: 6px;">: <t t-foreach="doc.line_ids" t-as="line"><t t-esc="line.product_id.name"/><t t-if="not line_last">, </t></t><t t-if="doc.origin"><br/>PO: <t t-esc="doc.origin"/></t></td>
+                        </tr>
+                    </table>
+                    <div class="row mb-3">
+                        <div class="col-4">
+                            <table class="table table-sm table-bordered" style="border-color: #000;">
+                                <tr style="background-color: #f2f2f2;">
+                                    <td style="width: 25%; font-weight: bold;">Rp.</td>
+                                    <td class="text-end" style="font-size: 11pt;"><strong><t t-esc="'{:,.0f}'.format(doc.amount_grand_total)"/></strong></td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-4"/>
+                        <div class="col-4 text-center" style="padding-top: 5px;">
+                            <span>Tangerang, <t t-esc="doc.date_delivery" t-options="{'widget': 'date', 'format': 'd MMMM y'}"/></span>
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-6" style="font-size: 8.5pt; color: #333;">
+                            <span>Pembayaran dengan Giro/Cek</span><br/>
+                            <span>A.N: PT. SENTANU JAYA</span><br/>
+                            <span>Bank BCA No. Rekening: 6585467911</span>
+                        </div>
+                        <div class="col-6 text-center">
+                            <br/>
+                            <strong>PT. SENTANU JAYA</strong><br/><br/><br/>
+                            <u>Tri Sutanti</u>
+                        </div>
+                    </div>
+                </div>
+            </t>
+        </t>
+    </template>
+
+    <record id="action_report_sj_kwitansi" model="ir.actions.report">
+        <field name="name">Kwitansi</field>
+        <field name="model">sj.delivery</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">sj_delivery.report_sj_kwitansi_document</field>
+        <field name="report_file">sj_delivery.report_sj_kwitansi_document</field>
+        <field name="binding_model_id" ref="model_sj_delivery"/>
+        <field name="binding_type">report</field>
+    </record>
+</odoo>

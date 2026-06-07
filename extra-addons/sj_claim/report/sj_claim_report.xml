@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_sj_customer_claim_document">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <h2 class="text-center">CUSTOMER CLAIM</h2>
+                        <h3 class="text-center"><t t-esc="doc.name"/></h3>
+
+                        <div class="row mt-4 mb-4">
+                            <div class="col-6">
+                                <table class="table table-sm table-borderless">
+                                    <tr><td><strong>Customer</strong></td><td>: <t t-esc="doc.partner_id.name"/></td></tr>
+                                    <tr><td><strong>SJ Keluar Asal</strong></td><td>: <t t-esc="doc.delivery_id.name"/></td></tr>
+                                    <tr><td><strong>Tanggal Claim</strong></td><td>: <t t-esc="doc.date_claim" t-options="{'widget': 'date'}"/></td></tr>
+                                    <tr><td><strong>Alasan</strong></td><td>: <t t-esc="doc.reason_id.name or '-'"/></td></tr>
+                                    <tr><td><strong>Status</strong></td><td>: <t t-esc="dict(doc._fields['state'].selection).get(doc.state)"/></td></tr>
+                                </table>
+                            </div>
+                        </div>
+
+                        <table class="table table-sm table-bordered">
+                            <thead>
+                                <tr>
+                                    <th class="text-center">No</th>
+                                    <th>Item</th>
+                                    <th>Warna</th>
+                                    <th>Batch</th>
+                                    <th class="text-center">Qty</th>
+                                    <th>UoM</th>
+                                    <th>Defect</th>
+                                    <th>Keterangan</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="doc.line_ids" t-as="line">
+                                    <tr>
+                                        <td class="text-center"><t t-esc="line_index + 1"/></td>
+                                        <td><t t-esc="line.product_id.name"/></td>
+                                        <td><t t-esc="line.color_id.name or '-'"/></td>
+                                        <td><t t-esc="line.batch_id.name"/></td>
+                                        <td class="text-center"><t t-esc="line.qty"/></td>
+                                        <td><t t-esc="line.uom_id.name or 'Unit'"/></td>
+                                        <td><t t-esc="line.defect_id.name or '-'"/></td>
+                                        <td><t t-esc="line.note or ''"/></td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+
+                        <div class="row mt-4" t-if="doc.description">
+                            <div class="col-12">
+                                <strong>Deskripsi:</strong>
+                                <p><t t-esc="doc.description"/></p>
+                            </div>
+                        </div>
+
+                        <div class="row mt-4" t-if="doc.review_note">
+                            <div class="col-12">
+                                <strong>Review Note:</strong>
+                                <p><t t-esc="doc.review_note"/></p>
+                            </div>
+                        </div>
+
+                        <div class="row mt-5">
+                            <div class="col-4 text-center">
+                                <p>Customer,</p>
+                                <br/><br/><br/>
+                                <p>(_________________)</p>
+                            </div>
+                            <div class="col-4 text-center">
+                                <p>QC Inspector,</p>
+                                <br/><br/><br/>
+                                <p>(_________________)</p>
+                            </div>
+                            <div class="col-4 text-center">
+                                <p>Manager,</p>
+                                <br/><br/><br/>
+                                <p>(_________________)</p>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+
+    <record id="action_report_sj_customer_claim" model="ir.actions.report">
+        <field name="name">Customer Claim</field>
+        <field name="model">sj.customer.claim</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">sj_claim.report_sj_customer_claim_document</field>
+        <field name="report_file">sj_claim.report_sj_customer_claim_document</field>
+        <field name="binding_model_id" ref="model_sj_customer_claim"/>
+        <field name="binding_type">report</field>
+    </record>
+</odoo>

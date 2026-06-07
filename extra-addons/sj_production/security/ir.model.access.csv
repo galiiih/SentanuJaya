@@ -1,0 +1,11 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_sj_production_batch_user,sj.production.batch user,model_sj_production_batch,sj_security.group_sj_user,1,1,1,0
+access_sj_production_batch_manager,sj.production.batch manager,model_sj_production_batch,sj_security.group_sj_manager,1,1,1,1
+access_sj_work_order_user,sj.work.order user,model_sj_work_order,sj_security.group_sj_user,1,1,1,0
+access_sj_work_order_manager,sj.work.order manager,model_sj_work_order,sj_security.group_sj_manager,1,1,1,1
+access_sj_material_consumption_user,sj.material.consumption user,model_sj_material_consumption,sj_security.group_sj_user,1,1,1,0
+access_sj_material_consumption_manager,sj.material.consumption manager,model_sj_material_consumption,sj_security.group_sj_manager,1,1,1,1
+access_sj_final_qc_user,sj.final.qc user,model_sj_final_qc,sj_security.group_sj_qc,1,1,1,0
+access_sj_final_qc_manager,sj.final.qc manager,model_sj_final_qc,sj_security.group_sj_manager,1,1,1,1
+access_sj_internal_rework_user,sj.internal.rework user,model_sj_internal_rework,sj_security.group_sj_user,1,1,1,0
+access_sj_internal_rework_manager,sj.internal.rework manager,model_sj_internal_rework,sj_security.group_sj_manager,1,1,1,1

@@ -1,0 +1,3 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_sj_tax_profile_user,sj.tax.profile user,model_sj_tax_profile,sj_security.group_sj_user,1,1,1,0
+access_sj_tax_profile_manager,sj.tax.profile manager,model_sj_tax_profile,sj_security.group_sj_manager,1,1,1,1

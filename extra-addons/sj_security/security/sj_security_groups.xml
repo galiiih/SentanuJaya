@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Module Category -->
+    <record id="module_category_sentanu_jaya" model="ir.module.category">
+        <field name="name">Sentanu Jaya</field>
+        <field name="sequence">50</field>
+    </record>
+
+    <!-- User: basic access, can view and create transactions -->
+    <record id="group_sj_user" model="res.groups">
+        <field name="name">User</field>
+        <field name="category_id" ref="module_category_sentanu_jaya"/>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+    </record>
+
+    <!-- QC Inspector: can perform QC operations -->
+    <record id="group_sj_qc" model="res.groups">
+        <field name="name">QC Inspector</field>
+        <field name="category_id" ref="module_category_sentanu_jaya"/>
+        <field name="implied_ids" eval="[(4, ref('group_sj_user'))]"/>
+    </record>
+
+    <!-- Manager: full operational access -->
+    <record id="group_sj_manager" model="res.groups">
+        <field name="name">Manager</field>
+        <field name="category_id" ref="module_category_sentanu_jaya"/>
+        <field name="implied_ids" eval="[(4, ref('group_sj_qc'))]"/>
+    </record>
+
+    <!-- Admin: full access including configuration and delete -->
+    <record id="group_sj_admin" model="res.groups">
+        <field name="name">Administrator</field>
+        <field name="category_id" ref="module_category_sentanu_jaya"/>
+        <field name="implied_ids" eval="[(4, ref('group_sj_manager'))]"/>
+        <field name="users" eval="[(4, ref('base.user_admin')), (4, ref('base.user_root'))]"/>
+    </record>
+</odoo>

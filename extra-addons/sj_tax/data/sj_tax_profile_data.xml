@@ -1,0 +1,28 @@
+<odoo noupdate="1">
+    <record id="sj_tax_profile_non" model="sj.tax.profile">
+        <field name="sequence">10</field>
+        <field name="name">Non Tax</field>
+        <field name="code">NON</field>
+    </record>
+    <record id="sj_tax_profile_ppn" model="sj.tax.profile">
+        <field name="sequence">20</field>
+        <field name="name">PPN 11%</field>
+        <field name="code">PPN</field>
+        <field name="use_ppn">1</field>
+    </record>
+    <record id="sj_tax_profile_pph" model="sj.tax.profile">
+        <field name="sequence">30</field>
+        <field name="name">PPh 23</field>
+        <field name="code">PPH</field>
+        <field name="use_pph">1</field>
+        <field name="pph_rate">2.0</field>
+    </record>
+    <record id="sj_tax_profile_both" model="sj.tax.profile">
+        <field name="sequence">40</field>
+        <field name="name">PPN + PPh</field>
+        <field name="code">BOTH</field>
+        <field name="use_ppn">1</field>
+        <field name="use_pph">1</field>
+        <field name="pph_rate">2.0</field>
+    </record>
+</odoo>

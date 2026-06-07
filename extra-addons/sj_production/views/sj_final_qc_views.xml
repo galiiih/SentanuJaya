@@ -1,0 +1,66 @@
+<odoo>
+    <record id="view_sj_final_qc_tree" model="ir.ui.view">
+        <field name="name">sj.final.qc.tree</field>
+        <field name="model">sj.final.qc</field>
+        <field name="arch" type="xml">
+            <tree decoration-success="result=='pass'" decoration-danger="result=='fail'">
+                <field name="date"/>
+                <field name="batch_id"/>
+                <field name="checked_by_id"/>
+                <field name="result" widget="badge" decoration-success="result=='pass'" decoration-danger="result=='fail'"/>
+                <field name="defect_id"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_sj_final_qc_form" model="ir.ui.view">
+        <field name="name">sj.final.qc.form</field>
+        <field name="model">sj.final.qc</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_apply_result" type="object" string="Apply Result" class="btn-primary" groups="sj_security.group_sj_qc"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="batch_id"/>
+                            <field name="date"/>
+                            <field name="checked_by_id"/>
+                        </group>
+                        <group>
+                            <field name="result"/>
+                            <field name="defect_id" invisible="result != 'fail'"/>
+                        </group>
+                    </group>
+                    <field name="note" placeholder="QC notes..."/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_sj_final_qc_search" model="ir.ui.view">
+        <field name="name">sj.final.qc.search</field>
+        <field name="model">sj.final.qc</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="batch_id"/>
+                <field name="checked_by_id"/>
+                <separator/>
+                <filter name="pass" string="Pass" domain="[('result','=','pass')]"/>
+                <filter name="fail" string="Fail" domain="[('result','=','fail')]"/>
+                <group expand="0" string="Group By">
+                    <filter name="group_result" string="Result" context="{'group_by':'result'}"/>
+                    <filter name="group_date" string="Date" context="{'group_by':'date:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_sj_final_qc" model="ir.actions.act_window">
+        <field name="name">Final QC</field>
+        <field name="res_model">sj.final.qc</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="view_sj_final_qc_search"/>
+    </record>
+</odoo>

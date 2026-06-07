@@ -1,0 +1,14 @@
+<odoo noupdate="1">
+    <record id="seq_sj_delivery" model="ir.sequence">
+        <field name="name">Sentanu Jaya Surat Jalan Keluar</field>
+        <field name="code">sj.delivery</field>
+        <field name="prefix">SJK/%(year)s/</field>
+        <field name="padding">5</field>
+    </record>
+    <record id="seq_sj_redelivery" model="ir.sequence">
+        <field name="name">Sentanu Jaya Surat Jalan Pengiriman Ulang</field>
+        <field name="code">sj.redelivery</field>
+        <field name="prefix">SJU/%(year)s/</field>
+        <field name="padding">5</field>
+    </record>
+</odoo>

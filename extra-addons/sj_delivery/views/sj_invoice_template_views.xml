@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_sj_invoice_template_tree" model="ir.ui.view">
+        <field name="name">sj.invoice.template.tree</field>
+        <field name="model">sj.invoice.template</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="qweb_template"/>
+                <field name="active"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_sj_invoice_template_form" model="ir.ui.view">
+        <field name="name">sj.invoice.template.form</field>
+        <field name="model">sj.invoice.template</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="code"/>
+                            <field name="sequence"/>
+                            <field name="active"/>
+                        </group>
+                        <group>
+                            <field name="qweb_template"/>
+                            <field name="sample_image" widget="image" class="oe_avatar"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="description"/>
+                        <field name="note"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_sj_invoice_template" model="ir.actions.act_window">
+        <field name="name">Invoice Templates</field>
+        <field name="res_model">sj.invoice.template</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <!-- Add to Configuration menu -->
+    <menuitem id="menu_sj_invoice_template" name="Invoice Templates"
+              parent="sj_tax.menu_sj_tax_config"
+              action="action_sj_invoice_template"
+              sequence="20"/>
+
+    <!-- Add invoice_template_id to res.partner form -->
+    <record id="view_res_partner_form_inherit_invoice_template" model="ir.ui.view">
+        <field name="name">res.partner.form.inherit.invoice.template</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='lang']" position="after">
+                <field name="sj_invoice_template_id"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

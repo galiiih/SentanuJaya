@@ -1,0 +1,12 @@
+<odoo>
+    <record id="view_partner_form_inherit_sj_tax_profile" model="ir.ui.view">
+        <field name="name">res.partner.form.sj.tax.profile</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="custom_contact_fields.view_partner_form_inherit_tax"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='Tax Information']/group" position="inside">
+                <field name="sj_tax_profile_id"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

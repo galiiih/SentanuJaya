@@ -1,0 +1,5 @@
+<odoo>
+    <menuitem id="menu_sj_tax_root" name="Sentanu Jaya" sequence="70"/>
+    <menuitem id="menu_sj_tax_config" name="Configuration" parent="menu_sj_tax_root" sequence="90"/>
+    <menuitem id="menu_sj_tax_profile" name="Tax Profiles" parent="menu_sj_tax_config" action="action_sj_tax_profile" sequence="10"/>
+</odoo>

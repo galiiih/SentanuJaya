@@ -1,0 +1,7 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_sj_customer_claim_user,sj.customer.claim user,model_sj_customer_claim,sj_security.group_sj_user,1,1,1,0
+access_sj_customer_claim_manager,sj.customer.claim manager,model_sj_customer_claim,sj_security.group_sj_manager,1,1,1,1
+access_sj_customer_claim_line_user,sj.customer.claim.line user,model_sj_customer_claim_line,sj_security.group_sj_user,1,1,1,0
+access_sj_customer_claim_line_manager,sj.customer.claim.line manager,model_sj_customer_claim_line,sj_security.group_sj_manager,1,1,1,1
+access_sj_claim_rework_user,sj.claim.rework user,model_sj_claim_rework,sj_security.group_sj_user,1,1,1,0
+access_sj_claim_rework_manager,sj.claim.rework manager,model_sj_claim_rework,sj_security.group_sj_manager,1,1,1,1

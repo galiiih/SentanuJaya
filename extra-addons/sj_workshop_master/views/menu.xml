@@ -1,0 +1,8 @@
+<odoo>
+    <menuitem id="menu_sj_master" name="Master Data" parent="sj_tax.menu_sj_tax_root" sequence="10"/>
+    <menuitem id="menu_sj_color" name="Colors" parent="menu_sj_master" action="action_sj_color" sequence="10"/>
+    <menuitem id="menu_sj_service" name="Services" parent="menu_sj_master" action="action_sj_service" sequence="20"/>
+    <menuitem id="menu_sj_defect" name="Defects" parent="menu_sj_master" action="action_sj_defect" sequence="30"/>
+    <menuitem id="menu_sj_claim_reason" name="Claim Reasons" parent="menu_sj_master" action="action_sj_claim_reason" sequence="40"/>
+    <menuitem id="menu_sj_customer_pricelist" name="Customer Pricelists" parent="menu_sj_master" action="action_sj_customer_pricelist" sequence="50"/>
+</odoo>

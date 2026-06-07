@@ -1,0 +1,78 @@
+<odoo>
+    <record id="view_sj_claim_rework_tree" model="ir.ui.view">
+        <field name="name">sj.claim.rework.tree</field>
+        <field name="model">sj.claim.rework</field>
+        <field name="arch" type="xml">
+            <tree decoration-info="state=='draft'" decoration-warning="state=='in_progress'" decoration-success="state=='done'" decoration-muted="state=='cancel'">
+                <field name="name"/>
+                <field name="claim_id"/>
+                <field name="partner_id"/>
+                <field name="delivery_id"/>
+                <field name="redelivery_id"/>
+                <field name="state" widget="badge" decoration-info="state=='draft'" decoration-warning="state=='in_progress'" decoration-success="state=='done'"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_sj_claim_rework_form" model="ir.ui.view">
+        <field name="name">sj.claim.rework.form</field>
+        <field name="model">sj.claim.rework</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_start" type="object" string="Start" class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_done" type="object" string="Done" class="btn-primary" invisible="state != 'in_progress'"/>
+                    <button name="action_create_redelivery" type="object" string="Create Redelivery" invisible="state not in ('in_progress','done') or redelivery_id"/>
+                    <button name="action_cancel" type="object" string="Cancel" invisible="state in ('done','cancel')"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,in_progress,done"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_redelivery" type="object" class="oe_stat_button" icon="fa-truck" invisible="not redelivery_id">
+                            <span class="o_stat_text">Redelivery</span>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="claim_id"/>
+                            <field name="partner_id"/>
+                            <field name="delivery_id"/>
+                        </group>
+                        <group>
+                            <field name="redelivery_id"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Work Orders">
+                            <field name="work_order_ids">
+                                <tree>
+                                    <field name="name"/>
+                                    <field name="batch_id"/>
+                                    <field name="wo_type"/>
+                                    <field name="state" widget="badge"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="Notes">
+                            <field name="note"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_sj_claim_rework" model="ir.actions.act_window">
+        <field name="name">Claim Rework</field>
+        <field name="res_model">sj.claim.rework</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+</odoo>

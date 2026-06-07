@@ -1,0 +1,40 @@
+<odoo>
+
+    <record id="view_partner_form_inherit_tax"
+            model="ir.ui.view">
+
+        <field name="name">res.partner.form.tax</field>
+        <field name="model">res.partner</field>
+
+        <field name="inherit_id"
+               ref="base.view_partner_form"/>
+
+        <field name="arch"
+               type="xml">
+
+            <xpath expr="//notebook"
+                   position="inside">
+
+                <page name="Tax Information" string="Tax Information">
+
+                    <group>
+
+                        <field name="npwp"/>
+
+                        <field name="default_ppn"/>
+
+                        <field name="default_pph"/>
+
+                        <field name="pph_rate"/>
+
+                    </group>
+
+                </page>
+
+            </xpath>
+
+        </field>
+
+    </record>
+
+</odoo>

@@ -1,0 +1,131 @@
+<odoo>
+    <record id="view_sj_production_batch_tree" model="ir.ui.view">
+        <field name="name">sj.production.batch.tree</field>
+        <field name="model">sj.production.batch</field>
+        <field name="arch" type="xml">
+            <tree decoration-info="state=='draft'" decoration-success="state=='qc_pass'" decoration-danger="state=='qc_fail'" decoration-muted="state=='cancel'">
+                <field name="name"/>
+                <field name="receiving_id"/>
+                <field name="partner_id"/>
+                <field name="product_id"/>
+                <field name="color_id"/>
+                <field name="qty"/>
+                <field name="uom_id"/>
+                <field name="state" widget="badge" decoration-info="state=='draft'" decoration-success="state in ('qc_pass','done')" decoration-danger="state=='qc_fail'" decoration-warning="state in ('raw','paint','polish')"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_sj_production_batch_form" model="ir.ui.view">
+        <field name="name">sj.production.batch.form</field>
+        <field name="model">sj.production.batch</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_create_default_work_orders" type="object" string="Create WO Raw/Paint/Polish" class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_mark_done" type="object" string="Mark Done" class="btn-primary" invisible="state != 'qc_pass'" groups="sj_security.group_sj_manager"/>
+                    <button name="action_cancel" type="object" string="Cancel" invisible="state in ('done','cancel')"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,raw,paint,polish,qc_pass,done"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_work_orders" type="object" class="oe_stat_button" icon="fa-wrench">
+                            <field name="wo_count" string="Work Orders" widget="statinfo"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="receiving_line_id"/>
+                            <field name="receiving_id"/>
+                            <field name="partner_id"/>
+                        </group>
+                        <group>
+                            <field name="product_id"/>
+                            <field name="color_id"/>
+                            <field name="qty"/>
+                            <field name="uom_id"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Work Orders">
+                            <field name="work_order_ids">
+                                <tree>
+                                    <field name="name"/>
+                                    <field name="wo_type"/>
+                                    <field name="pic_id"/>
+                                    <field name="state" widget="badge" decoration-info="state=='draft'" decoration-warning="state=='in_progress'" decoration-success="state=='done'"/>
+                                    <field name="start_date"/>
+                                    <field name="finish_date"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="Final QC">
+                            <field name="final_qc_ids">
+                                <tree editable="bottom">
+                                    <field name="date"/>
+                                    <field name="checked_by_id"/>
+                                    <field name="result" widget="badge" decoration-success="result=='pass'" decoration-danger="result=='fail'"/>
+                                    <field name="defect_id"/>
+                                    <field name="note"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="Internal Rework">
+                            <field name="internal_rework_ids">
+                                <tree>
+                                    <field name="name"/>
+                                    <field name="target_wo_type"/>
+                                    <field name="reason_id"/>
+                                    <field name="state" widget="badge"/>
+                                    <field name="work_order_id"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="Notes">
+                            <field name="note"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_sj_production_batch_search" model="ir.ui.view">
+        <field name="name">sj.production.batch.search</field>
+        <field name="model">sj.production.batch</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="product_id"/>
+                <field name="receiving_id"/>
+                <separator/>
+                <filter name="draft" string="Draft" domain="[('state','=','draft')]"/>
+                <filter name="in_progress" string="In Progress" domain="[('state','in',('raw','paint','polish'))]"/>
+                <filter name="qc_pass" string="QC Passed" domain="[('state','=','qc_pass')]"/>
+                <filter name="qc_fail" string="QC Failed" domain="[('state','=','qc_fail')]"/>
+                <filter name="done" string="Done" domain="[('state','=','done')]"/>
+                <group expand="0" string="Group By">
+                    <filter name="group_partner" string="Customer" context="{'group_by':'partner_id'}"/>
+                    <filter name="group_state" string="Status" context="{'group_by':'state'}"/>
+                    <filter name="group_product" string="Product" context="{'group_by':'product_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_sj_production_batch" model="ir.actions.act_window">
+        <field name="name">Production Batches</field>
+        <field name="res_model">sj.production.batch</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="view_sj_production_batch_search"/>
+    </record>
+</odoo>

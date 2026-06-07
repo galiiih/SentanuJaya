@@ -1,0 +1,11 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_sj_color_user,sj.color user,model_sj_color,sj_security.group_sj_user,1,1,1,0
+access_sj_color_manager,sj.color manager,model_sj_color,sj_security.group_sj_manager,1,1,1,1
+access_sj_service_user,sj.service user,model_sj_service,sj_security.group_sj_user,1,1,1,0
+access_sj_service_manager,sj.service manager,model_sj_service,sj_security.group_sj_manager,1,1,1,1
+access_sj_defect_user,sj.defect user,model_sj_defect,sj_security.group_sj_user,1,1,1,0
+access_sj_defect_manager,sj.defect manager,model_sj_defect,sj_security.group_sj_manager,1,1,1,1
+access_sj_claim_reason_user,sj.claim.reason user,model_sj_claim_reason,sj_security.group_sj_user,1,1,1,0
+access_sj_claim_reason_manager,sj.claim.reason manager,model_sj_claim_reason,sj_security.group_sj_manager,1,1,1,1
+access_sj_customer_pricelist_user,sj.customer.pricelist user,model_sj_customer_pricelist,sj_security.group_sj_user,1,1,1,0
+access_sj_customer_pricelist_manager,sj.customer.pricelist manager,model_sj_customer_pricelist,sj_security.group_sj_manager,1,1,1,1

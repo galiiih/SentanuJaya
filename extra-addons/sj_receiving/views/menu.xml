@@ -1,0 +1,4 @@
+<odoo>
+    <menuitem id="menu_sj_receiving_root" name="Receiving" parent="sj_tax.menu_sj_tax_root" sequence="20"/>
+    <menuitem id="menu_sj_receiving" name="Surat Jalan Masuk" parent="menu_sj_receiving_root" action="action_sj_receiving" sequence="10"/>
+</odoo>

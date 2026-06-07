@@ -1,0 +1,10 @@
+<odoo noupdate="1">
+    <record id="seq_sj_receiving" model="ir.sequence">
+        <field name="name">Sentanu Jaya Surat Jalan Masuk</field>
+        <field name="code">sj.receiving</field>
+        <field name="prefix">SJM/%(year)s/</field>
+        <field name="padding">5</field>
+        <field name="number_next">1</field>
+        <field name="number_increment">1</field>
+    </record>
+</odoo>

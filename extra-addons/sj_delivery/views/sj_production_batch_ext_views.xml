@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_sj_production_batch_form_inherit_delivery" model="ir.ui.view">
+        <field name="name">sj.production.batch.form.inherit.delivery</field>
+        <field name="model">sj.production.batch</field>
+        <field name="inherit_id" ref="sj_production.view_sj_production_batch_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_view_deliveries" type="object" class="oe_stat_button" icon="fa-truck">
+                    <field name="delivery_count" string="Deliveries" widget="statinfo"/>
+                </button>
+            </xpath>
+        </field>
+    </record>
+</odoo>
