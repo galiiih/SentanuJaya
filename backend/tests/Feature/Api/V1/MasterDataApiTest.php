@@ -124,8 +124,12 @@ class MasterDataApiTest extends TestCase
             $this->assertEquals((array)$recordBefore, (array)$recordAfterPut);
 
             // 4. PATCH rejected with 403, record unchanged
-            $patchPayload = is_array($validPayload) ? array_intersect_key($validPayload, ['name' => 'Updated Name', 'code' => $validPayload['code'] ?? 'X']) : [];
-            if (empty($patchPayload)) $patchPayload = ['name' => 'Updated Name'];
+            $patchPayload = $currentPayload;
+            if (isset($patchPayload['name'])) {
+                $patchPayload['name'] = $patchPayload['name'] . ' Patched';
+            } elseif (isset($patchPayload['code'])) {
+                $patchPayload['code'] = $patchPayload['code'] . '-P';
+            }
             $this->actingAs($staff)->patchJson("{$ep}/{$seededId}", $patchPayload)->assertStatus(403);
             $recordAfterPatch = \Illuminate\Support\Facades\DB::table($tableName)->find($seededId);
             $this->assertEquals((array)$recordBefore, (array)$recordAfterPatch);
