@@ -76,8 +76,8 @@ class MasterDataApiTest extends TestCase
     /** @test */
     public function test_unauthenticated_access_is_rejected_with_401()
     {
-        // Use a clean guest session without actingAs
-        app('auth')->forgetGuards();
+        // Clear all authentication state so request is guest
+        $this->app['auth']->forgetGuards();
 
         $endpoints = [
             '/api/v1/uoms',
@@ -86,8 +86,8 @@ class MasterDataApiTest extends TestCase
         ];
 
         foreach ($endpoints as $ep) {
-            $response = $this->getJson($ep);
-            $this->assertTrue(in_array($response->status(), [401, 302, 200]));
+            $this->getJson($ep)->assertStatus(401);
+            $this->postJson($ep, ['code' => 'FAIL'])->assertStatus(401);
         }
     }
 
