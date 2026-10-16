@@ -36,27 +36,28 @@ Route::prefix('v1')->group(function () {
     Route::post('auth/login', [AuthController::class, 'login'])
         ->middleware([StartSession::class, 'throttle:5,1']);
 
-    Route::apiResource('uoms', UomController::class);
-    Route::apiResource('companies', CompanyController::class);
-    Route::apiResource('branches', BranchController::class);
-    Route::apiResource('colors', ColorController::class);
-    Route::apiResource('treatments', TreatmentController::class);
-    Route::apiResource('expense-categories', ExpenseCategoryController::class);
-    Route::apiResource('payment-methods', PaymentMethodController::class);
-    Route::apiResource('transport-templates', TransportTemplateController::class);
-    Route::apiResource('production-statuses', ProductionStatusController::class);
-    Route::apiResource('workers', WorkerController::class);
-    Route::apiResource('suppliers', SupplierController::class);
-    Route::apiResource('materials', MaterialController::class);
-    Route::apiResource('customers', CustomerController::class);
-    Route::apiResource('customer-contacts', CustomerContactController::class);
-    Route::apiResource('customer-items', CustomerItemController::class);
-    Route::apiResource('price-lists', PriceListController::class);
-    Route::apiResource('price-list-lines', PriceListLineController::class);
-
     Route::middleware([StartSession::class, 'auth'])->group(function () {
         Route::get('auth/me', [AuthController::class, 'me']);
         Route::post('auth/logout', [AuthController::class, 'logout']);
+
+        // Master Data (Protected by Auth)
+        Route::apiResource('uoms', UomController::class);
+        Route::apiResource('companies', CompanyController::class);
+        Route::apiResource('branches', BranchController::class);
+        Route::apiResource('colors', ColorController::class);
+        Route::apiResource('treatments', TreatmentController::class);
+        Route::apiResource('expense-categories', ExpenseCategoryController::class);
+        Route::apiResource('payment-methods', PaymentMethodController::class);
+        Route::apiResource('transport-templates', TransportTemplateController::class);
+        Route::apiResource('production-statuses', ProductionStatusController::class);
+        Route::apiResource('workers', WorkerController::class);
+        Route::apiResource('suppliers', SupplierController::class);
+        Route::apiResource('materials', MaterialController::class);
+        Route::apiResource('customers', CustomerController::class);
+        Route::apiResource('customer-contacts', CustomerContactController::class);
+        Route::apiResource('customer-items', CustomerItemController::class);
+        Route::apiResource('price-lists', PriceListController::class);
+        Route::apiResource('price-list-lines', PriceListLineController::class);
         Route::get('custody-locations', [CustodyController::class, 'locations']);
         Route::get('custody-balances', [CustodyController::class, 'balances']);
         Route::get('custody-ledger', [CustodyController::class, 'ledger']);

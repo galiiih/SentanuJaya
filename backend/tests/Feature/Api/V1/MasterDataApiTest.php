@@ -15,6 +15,28 @@ class MasterDataApiTest extends TestCase
 {
     use RefreshDatabase;
 
+    private \App\Models\User $user;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->user = \App\Models\User::create([
+            'username' => 'admin',
+            'email' => 'admin@sentanu.local',
+            'password' => bcrypt('password'),
+            'full_name' => 'Admin User',
+            'role' => 'ADMIN',
+        ]);
+        $this->actingAs($this->user);
+    }
+
+    /** @test */
+    public function test_unauthenticated_access_is_rejected()
+    {
+        auth()->logout();
+        $this->getJson('/api/v1/uoms')->assertStatus(401);
+    }
+
     /** @test */
     public function test_uom_crud_and_validation()
     {
