@@ -31,45 +31,102 @@ class MasterDataApiTest extends TestCase
     }
 
     /** @test */
-    public function test_staff_role_comprehensive_mutation_blocking_and_integrity()
+    public function test_staff_role_comprehensive_mutation_blocking_and_integrity_all_17()
     {
         $staff = \App\Models\User::create([
-            'username' => 'staff_audit',
-            'email' => 'staff_audit@sentanu.local',
+            'username' => 'staff_audit_17',
+            'email' => 'staff_audit_17@sentanu.local',
             'password' => bcrypt('password'),
-            'full_name' => 'Staff Audit User',
+            'full_name' => 'Staff Audit 17 User',
             'role' => 'STAFF',
         ]);
 
-        $endpoints = [
-            ['/api/v1/uoms', 'uoms', ['code' => 'M-UOM', 'name' => 'Meter', 'category' => 'QUANTITY'], \App\Models\Uom::class],
-            ['/api/v1/colors', 'colors', ['code' => 'M-COL', 'name' => 'Magenta', 'hex_code' => '#FF00FF'], \App\Models\Color::class],
+        // First create a company and branch so foreign keys for related entities exist
+        $company = \App\Models\Company::create([
+            'code' => 'TEST-CORP',
+            'name' => 'Test Corp',
+            'legal_name' => 'Test Corp Legal',
+            'npwp' => '01.234.567.8-901.000',
+            'is_pkp' => true,
+            'timezone' => 'Asia/Jakarta',
+            'currency' => 'IDR',
+        ]);
+        $branch = \App\Models\Branch::create([
+            'company_id' => $company->id,
+            'code' => 'TEST-BR',
+            'name' => 'Test Branch',
+            'address' => 'Test Address',
+            'is_active' => true,
+        ]);
+        $customer = \App\Models\Customer::create([
+            'company_id' => $company->id,
+            'code' => 'CUST-1',
+            'name' => 'Customer One',
+            'type' => 'REGULAR',
+        ]);
+        $priceList = \App\Models\PriceList::create([
+            'company_id' => $company->id,
+            'code' => 'PL-1',
+            'name' => 'Price List 1',
+            'currency' => 'IDR',
+            'effective_date' => now(),
+        ]);
+
+        $definitions = [
+            ['/api/v1/companies', 'companies', ['code' => 'C-1', 'name' => 'Comp', 'legal_name' => 'Comp L', 'npwp' => '01.234.567.8-901.000', 'is_pkp' => true, 'timezone' => 'Asia/Jakarta', 'currency' => 'IDR'], \App\Models\Company::class],
+            ['/api/v1/branches', 'branches', ['company_id' => $company->id, 'code' => 'B-1', 'name' => 'Br', 'address' => 'Addr', 'is_active' => true], \App\Models\Branch::class],
+            ['/api/v1/uoms', 'uoms', ['code' => 'U-1', 'name' => 'Uom', 'category' => 'QUANTITY'], \App\Models\Uom::class],
+            ['/api/v1/colors', 'colors', ['code' => 'COL-1', 'name' => 'Red', 'hex_code' => '#FF0000'], \App\Models\Color::class],
+            ['/api/v1/treatments', 'treatments', ['code' => 'TR-1', 'name' => 'Treat', 'category' => 'PAINT'], \App\Models\Treatment::class],
+            ['/api/v1/expense-categories', 'expense_categories', ['code' => 'EXP-1', 'name' => 'Exp'], \App\Models\ExpenseCategory::class],
+            ['/api/v1/payment-methods', 'payment_methods', ['code' => 'PM-1', 'name' => 'Pay', 'type' => 'CASH'], \App\Models\PaymentMethod::class],
+            ['/api/v1/transport-templates', 'transport_templates', ['code' => 'TT-1', 'name' => 'Trans', 'vehicle_type' => 'TRUCK', 'tarif' => 150000, 'effective_date' => now()], \App\Models\TransportTemplate::class],
+            ['/api/v1/production-statuses', 'production_statuses', ['code' => 'PS-1', 'name' => 'Prod', 'stage' => 'PREP'], \App\Models\ProductionStatus::class],
+            ['/api/v1/workers', 'workers', ['company_id' => $company->id, 'code' => 'W-1', 'name' => 'Work', 'role' => 'OPERATOR'], \App\Models\Worker::class],
+            ['/api/v1/suppliers', 'suppliers', ['company_id' => $company->id, 'code' => 'S-1', 'name' => 'Supp'], \App\Models\Supplier::class],
+            ['/api/v1/materials', 'materials', ['company_id' => $company->id, 'code' => 'MAT-1', 'name' => 'Mat', 'category' => 'RAW', 'unit' => 'PCS'], \App\Models\Material::class],
+            ['/api/v1/customers', 'customers', ['company_id' => $company->id, 'code' => 'CUST-2', 'name' => 'Cust 2', 'type' => 'REGULAR'], \App\Models\Customer::class],
+            ['/api/v1/customer-contacts', 'customer_contacts', ['customer_id' => $customer->id, 'name' => 'Contact 1'], \App\Models\CustomerContact::class],
+            ['/api/v1/customer-items', 'customer_items', ['customer_id' => $customer->id, 'code' => 'CI-1', 'name' => 'Item 1'], \App\Models\CustomerItem::class],
+            ['/api/v1/price-lists', 'price_lists', ['company_id' => $company->id, 'code' => 'PL-2', 'name' => 'PL 2', 'currency' => 'IDR', 'effective_date' => now()], \App\Models\PriceList::class],
+            ['/api/v1/price-list-lines', 'price_list_lines', ['price_list_id' => 1, 'customer_item_id' => 1, 'unit_price' => 1000], \App\Models\PriceListLine::class, function() use ($customer, $priceList) {
+                $ci = \App\Models\CustomerItem::create(['customer_id' => $customer->id, 'code' => 'CI-' . uniqid(), 'name' => 'Item']);
+                return ['price_list_id' => $priceList->id, 'customer_item_id' => $ci->id, 'unit_price' => 1000];
+            }],
         ];
 
-        foreach ($endpoints as [$ep, $tableName, $validPayload, $modelClass]) {
+        foreach ($definitions as $def) {
+            $ep = $def[0];
+            $tableName = $def[1];
+            $validPayload = $def[2];
+            $modelClass = $def[3];
+            $payloadFactory = $def[4] ?? null;
+
+            $currentPayload = $payloadFactory ? $payloadFactory() : $validPayload;
+
             // 1. GET index success (200)
             $this->actingAs($staff)->getJson($ep)->assertStatus(200);
 
             // 2. POST rejected with 403, DB count unchanged
             $countBefore = \Illuminate\Support\Facades\DB::table($tableName)->count();
-            $this->actingAs($staff)->postJson($ep, $validPayload)->assertStatus(403);
+            $this->actingAs($staff)->postJson($ep, $currentPayload)->assertStatus(403);
             $this->assertEquals($countBefore, \Illuminate\Support\Facades\DB::table($tableName)->count());
 
-            // Seed a valid record using model to satisfy primary key UUID/auto-increment
-            $seeded = $modelClass::create($validPayload);
+            // Seed a valid record using model
+            $seeded = $modelClass::create($currentPayload);
             $seededId = $seeded->id;
 
             $recordBefore = \Illuminate\Support\Facades\DB::table($tableName)->find($seededId);
 
             // 3. PUT rejected with 403, record unchanged
-            $this->actingAs($staff)->putJson("{$ep}/{$seededId}", array_merge($validPayload, ['name' => 'Changed Name']))->assertStatus(403);
+            $this->actingAs($staff)->putJson("{$ep}/{$seededId}", $currentPayload)->assertStatus(403);
             $recordAfterPut = \Illuminate\Support\Facades\DB::table($tableName)->find($seededId);
-            $this->assertEquals($recordBefore->name, $recordAfterPut->name);
+            $this->assertEquals((array)$recordBefore, (array)$recordAfterPut);
 
             // 4. PATCH rejected with 403, record unchanged
-            $this->actingAs($staff)->patchJson("{$ep}/{$seededId}", ['name' => 'Patched Name'])->assertStatus(403);
+            $this->actingAs($staff)->patchJson("{$ep}/{$seededId}", [])->assertStatus(403);
             $recordAfterPatch = \Illuminate\Support\Facades\DB::table($tableName)->find($seededId);
-            $this->assertEquals($recordBefore->name, $recordAfterPatch->name);
+            $this->assertEquals((array)$recordBefore, (array)$recordAfterPatch);
 
             // 5. DELETE rejected with 403, record still exists
             $this->actingAs($staff)->deleteJson("{$ep}/{$seededId}")->assertStatus(403);
@@ -81,8 +138,16 @@ class MasterDataApiTest extends TestCase
     }
 
     /** @test */
-    public function test_owner_role_allowed_mutations()
+    public function test_admin_and_owner_role_allowed_mutations()
     {
+        $admin = \App\Models\User::create([
+            'username' => 'admin_audit',
+            'email' => 'admin_audit@sentanu.local',
+            'password' => bcrypt('password'),
+            'full_name' => 'Admin Audit User',
+            'role' => 'ADMIN',
+        ]);
+
         $owner = \App\Models\User::create([
             'username' => 'owner_audit',
             'email' => 'owner_audit@sentanu.local',
@@ -91,10 +156,18 @@ class MasterDataApiTest extends TestCase
             'role' => 'OWNER',
         ]);
 
-        $this->actingAs($owner)->postJson('/api/v1/uoms', [
-            'code' => 'OWNER-UOM',
-            'name' => 'Owner UOM',
+        // Admin allowed POST
+        $this->actingAs($admin)->postJson('/api/v1/uoms', [
+            'code' => 'ADM-UOM',
+            'name' => 'Admin UOM',
             'category' => 'QUANTITY',
+        ])->assertStatus(201);
+
+        // Owner allowed POST
+        $this->actingAs($owner)->postJson('/api/v1/colors', [
+            'code' => 'OWN-COL',
+            'name' => 'Owner Color',
+            'hex_code' => '#00FF00',
         ])->assertStatus(201);
     }
 
