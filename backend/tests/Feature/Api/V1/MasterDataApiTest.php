@@ -116,10 +116,21 @@ class MasterDataApiTest extends TestCase
             $seeded = $modelClass::create($currentPayload);
             $seededId = $seeded->id;
 
-            // 1.1 GET show success (200)
+            // 1.1 GET show success (200) and verify id/fields
             $showRes = $this->actingAs($staff)->getJson("{$ep}/{$seededId}");
             $showRes->assertStatus(200);
-            $this->assertNotNull($showRes->json('data') ?? $showRes->json());
+            $returnedId = $showRes->json('data.id') ?? $showRes->json('id');
+            $this->assertEquals($seededId, $returnedId);
+            if (isset($currentPayload['name'])) {
+                $returnedName = $showRes->json('data.name') ?? $showRes->json('name');
+                $this->assertEquals($currentPayload['name'], $returnedName);
+            } elseif (isset($currentPayload['code'])) {
+                $returnedCode = $showRes->json('data.code') ?? $showRes->json('code');
+                $this->assertEquals($currentPayload['code'], $returnedCode);
+            } elseif (isset($currentPayload['unit_price'])) {
+                $returnedPrice = $showRes->json('data.unit_price') ?? $showRes->json('unit_price');
+                $this->assertEquals($currentPayload['unit_price'], $returnedPrice);
+            }
 
             $recordBefore = \Illuminate\Support\Facades\DB::table($tableName)->find($seededId);
 
