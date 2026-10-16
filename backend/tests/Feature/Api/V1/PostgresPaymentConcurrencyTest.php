@@ -38,10 +38,16 @@ class PostgresPaymentConcurrencyTest extends TestCase
         \DB::purge('pgsql');
         \DB::reconnect('pgsql');
 
-        // Database safety check: verify exact test database name
+        // Strict database safety validation: verify driver and exact test database name
+        $driver = \DB::connection('pgsql')->getDriverName();
         $dbName = \DB::connection('pgsql')->getDatabaseName();
+
+        if ($driver !== 'pgsql') {
+            $this->fail("Database safety check failed: Expected driver 'pgsql', got '{$driver}'.");
+        }
+
         if ($dbName !== 'sentanu_test') {
-            $this->fail("Database safety check failed: Expected 'sentanu_test', but connected to '{$dbName}'. Migration aborted to protect non-test databases.");
+            $this->fail("Database safety check failed: Expected database 'sentanu_test', but connected to '{$dbName}'. Migration aborted to protect non-test databases.");
         }
 
         // Run migrations on pgsql connection
@@ -116,18 +122,19 @@ class PostgresPaymentConcurrencyTest extends TestCase
         ];
 
         $payloadFile = storage_path('app/payment_payload.json');
-        file_put_contents($payloadFile, json_encode($paymentData));
-
-        // Setup synchronization barrier & ready signal files
         $readyFile1 = storage_path('app/concurrency_ready_1.signal');
         $readyFile2 = storage_path('app/concurrency_ready_2.signal');
         $signalFile = storage_path('app/concurrency_start.signal');
+        $scriptPath = storage_path('app/concurrency_worker.php');
+
+        // Ensure clean state before start
+        @unlink($payloadFile);
         @unlink($readyFile1);
         @unlink($readyFile2);
         @unlink($signalFile);
+        @unlink($scriptPath);
 
         // Worker script using base_path() for robust path resolution and barrier synchronization
-        $scriptPath = storage_path('app/concurrency_worker.php');
         $autoloadPath = base_path('vendor/autoload.php');
         $bootstrapPath = base_path('bootstrap/app.php');
 
@@ -162,96 +169,100 @@ class PostgresPaymentConcurrencyTest extends TestCase
             "    echo \"ERROR:\" . \$e->getMessage() . \" | \" . get_class(\$e) . \" | \" . \$e->getFile() . \":\" . \$e->getLine();\n" .
             "}\n";
 
-        file_put_contents($scriptPath, $bootstrapCode);
+        try {
+            file_put_contents($payloadFile, json_encode($paymentData));
+            file_put_contents($scriptPath, $bootstrapCode);
 
-        $phpBinary = PHP_BINARY;
+            $phpBinary = PHP_BINARY;
 
-        $descriptors = [
-            0 => ['pipe', 'r'],
-            1 => ['pipe', 'w'],
-            2 => ['pipe', 'w'],
-        ];
+            $descriptors = [
+                0 => ['pipe', 'r'],
+                1 => ['pipe', 'w'],
+                2 => ['pipe', 'w'],
+            ];
 
-        $cmd1 = escapeshellarg($phpBinary) . " " . escapeshellarg($scriptPath) . " " . escapeshellarg($payloadFile) . " " . escapeshellarg($admin->id) . " " . escapeshellarg($readyFile1) . " " . escapeshellarg($signalFile);
-        $cmd2 = escapeshellarg($phpBinary) . " " . escapeshellarg($scriptPath) . " " . escapeshellarg($payloadFile) . " " . escapeshellarg($admin->id) . " " . escapeshellarg($readyFile2) . " " . escapeshellarg($signalFile);
+            $cmd1 = escapeshellarg($phpBinary) . " " . escapeshellarg($scriptPath) . " " . escapeshellarg($payloadFile) . " " . escapeshellarg($admin->id) . " " . escapeshellarg($readyFile1) . " " . escapeshellarg($signalFile);
+            $cmd2 = escapeshellarg($phpBinary) . " " . escapeshellarg($scriptPath) . " " . escapeshellarg($payloadFile) . " " . escapeshellarg($admin->id) . " " . escapeshellarg($readyFile2) . " " . escapeshellarg($signalFile);
 
-        $process1 = proc_open($cmd1, $descriptors, $pipes1);
-        $process2 = proc_open($cmd2, $descriptors, $pipes2);
+            $process1 = proc_open($cmd1, $descriptors, $pipes1);
+            $process2 = proc_open($cmd2, $descriptors, $pipes2);
 
-        // Wait until both workers signal READY (max 5 seconds timeout)
-        $timeout = 50;
-        $ready = false;
-        while ($timeout > 0) {
-            if (file_exists($readyFile1) && file_exists($readyFile2)) {
-                $ready = true;
-                break;
+            // Wait until both workers signal READY (max 5 seconds timeout)
+            $timeout = 50;
+            $ready = false;
+            while ($timeout > 0) {
+                if (file_exists($readyFile1) && file_exists($readyFile2)) {
+                    $ready = true;
+                    break;
+                }
+                usleep(100000); // 100ms
+                $timeout--;
             }
-            usleep(100000); // 100ms
-            $timeout--;
+
+            if (!$ready) {
+                @proc_terminate($process1);
+                @proc_terminate($process2);
+                $this->fail('Workers failed to signal READY within timeout.');
+            }
+
+            // Trigger barrier simultaneously
+            file_put_contents($signalFile, 'GO');
+
+            $output1 = stream_get_contents($pipes1[1]);
+            $err1 = stream_get_contents($pipes1[2]);
+            $output2 = stream_get_contents($pipes2[1]);
+            $err2 = stream_get_contents($pipes2[2]);
+
+            fclose($pipes1[1]);
+            fclose($pipes1[2]);
+            fclose($pipes2[1]);
+            fclose($pipes2[2]);
+
+            $status1 = proc_close($process1);
+            $status2 = proc_close($process2);
+
+            // Assert worker execution success, exit code 0, and clean stderr
+            $this->assertEquals(0, $status1, "Worker 1 failed with exit code $status1, stderr: $err1, output: $output1");
+            $this->assertEquals(0, $status2, "Worker 2 failed with exit code $status2, stderr: $err2, output: $output2");
+
+            $this->assertEmpty($err1, "Worker 1 produced stderr output: $err1");
+            $this->assertEmpty($err2, "Worker 2 produced stderr output: $err2");
+
+            $this->assertStringContainsString('SUCCESS:', $output1, "Worker 1 did not succeed. Output: $output1 | Stderr: $err1");
+            $this->assertStringContainsString('SUCCESS:', $output2, "Worker 2 did not succeed. Output: $output2 | Stderr: $err2");
+
+            // Extract payment ids from outputs
+            preg_match('/SUCCESS:(.+)/', $output1, $match1);
+            preg_match('/SUCCESS:(.+)/', $output2, $match2);
+            $paymentId1 = trim($match1[1] ?? '');
+            $paymentId2 = trim($match2[1] ?? '');
+            $this->assertNotEmpty($paymentId1);
+            $this->assertNotEmpty($paymentId2);
+            $this->assertEquals($paymentId1, $paymentId2, 'Both concurrent requests must return the same payment ID due to idempotency.');
+
+            // Database assertions: exactly one payment record for this idempotency key
+            $payments = Payment::on('pgsql')->where('idempotency_key', $idempotencyKey)->get();
+            $this->assertCount(1, $payments, 'Exactly one payment record should be saved for the concurrent idempotency key.');
+            $payment = $payments->first();
+            $this->assertEquals($paymentId1, $payment->id);
+
+            // Exactly one allocation associated with this payment
+            $allocations = PaymentAllocation::on('pgsql')->where('payment_id', $payment->id)->get();
+            $this->assertCount(1, $allocations, 'Exactly one payment allocation should exist for this payment.');
+            $this->assertEquals(10000.00, (float) $allocations->first()->allocated_amount);
+
+            // Invoice amount_paid and amount_due updated exactly once
+            $invoiceUpdated = $invoice->fresh();
+            $this->assertEquals(10000.00, (float) $invoiceUpdated->amount_paid);
+            $this->assertEquals(round($invoiceUpdated->total_amount - 10000.00, 2), (float) $invoiceUpdated->amount_due);
+
+        } finally {
+            @unlink($scriptPath);
+            @unlink($signalFile);
+            @unlink($payloadFile);
+            @unlink($readyFile1);
+            @unlink($readyFile2);
         }
-
-        if (!$ready) {
-            @proc_terminate($process1);
-            @proc_terminate($process2);
-            $this->fail('Workers failed to signal READY within timeout.');
-        }
-
-        // Trigger barrier simultaneously
-        file_put_contents($signalFile, 'GO');
-
-        $output1 = stream_get_contents($pipes1[1]);
-        $err1 = stream_get_contents($pipes1[2]);
-        $output2 = stream_get_contents($pipes2[1]);
-        $err2 = stream_get_contents($pipes2[2]);
-
-        fclose($pipes1[1]);
-        fclose($pipes1[2]);
-        fclose($pipes2[1]);
-        fclose($pipes2[2]);
-
-        $status1 = proc_close($process1);
-        $status2 = proc_close($process2);
-
-        @unlink($scriptPath);
-        @unlink($signalFile);
-        @unlink($payloadFile);
-        @unlink($readyFile1);
-        @unlink($readyFile2);
-
-        // Assert worker execution success, exit code 0, and clean stderr
-        $this->assertEquals(0, $status1, "Worker 1 failed with exit code $status1, stderr: $err1, output: $output1");
-        $this->assertEquals(0, $status2, "Worker 2 failed with exit code $status2, stderr: $err2, output: $output2");
-
-        $this->assertEmpty($err1, "Worker 1 produced stderr output: $err1");
-        $this->assertEmpty($err2, "Worker 2 produced stderr output: $err2");
-
-        $this->assertStringContainsString('SUCCESS:', $output1, "Worker 1 did not succeed. Output: $output1 | Stderr: $err1");
-        $this->assertStringContainsString('SUCCESS:', $output2, "Worker 2 did not succeed. Output: $output2 | Stderr: $err2");
-
-        // Extract payment ids from outputs
-        preg_match('/SUCCESS:(.+)/', $output1, $match1);
-        preg_match('/SUCCESS:(.+)/', $output2, $match2);
-        $paymentId1 = trim($match1[1] ?? '');
-        $paymentId2 = trim($match2[1] ?? '');
-        $this->assertNotEmpty($paymentId1);
-        $this->assertNotEmpty($paymentId2);
-        $this->assertEquals($paymentId1, $paymentId2, 'Both concurrent requests must return the same payment ID due to idempotency.');
-
-        // Database assertions: exactly one payment record for this idempotency key
-        $payments = Payment::on('pgsql')->where('idempotency_key', $idempotencyKey)->get();
-        $this->assertCount(1, $payments, 'Exactly one payment record should be saved for the concurrent idempotency key.');
-        $payment = $payments->first();
-        $this->assertEquals($paymentId1, $payment->id);
-
-        // Exactly one allocation associated with this payment
-        $allocations = PaymentAllocation::on('pgsql')->where('payment_id', $payment->id)->get();
-        $this->assertCount(1, $allocations, 'Exactly one payment allocation should exist for this payment.');
-        $this->assertEquals(10000.00, (float) $allocations->first()->allocated_amount);
-
-        // Invoice amount_paid and amount_due updated exactly once
-        $invoiceUpdated = $invoice->fresh();
-        $this->assertEquals(10000.00, (float) $invoiceUpdated->amount_paid);
-        $this->assertEquals(round($invoiceUpdated->total_amount - 10000.00, 2), (float) $invoiceUpdated->amount_due);
     }
 
     public function test_non_idempotency_unique_violation_is_not_swallowed(): void
