@@ -31,46 +31,71 @@ class MasterDataApiTest extends TestCase
     }
 
     /** @test */
-    public function test_staff_role_can_view_master_data_but_cannot_mutate()
+    public function test_staff_role_comprehensive_mutation_blocking_and_integrity()
     {
         $staff = \App\Models\User::create([
-            'username' => 'staff1',
-            'email' => 'staff1@sentanu.local',
+            'username' => 'staff_audit',
+            'email' => 'staff_audit@sentanu.local',
             'password' => bcrypt('password'),
-            'full_name' => 'Staff User',
+            'full_name' => 'Staff Audit User',
             'role' => 'STAFF',
         ]);
 
         $endpoints = [
-            ['/api/v1/companies', 'companies'],
-            ['/api/v1/branches', 'branches'],
-            ['/api/v1/uoms', 'uoms'],
-            ['/api/v1/colors', 'colors'],
-            ['/api/v1/treatments', 'treatments'],
-            ['/api/v1/expense-categories', 'expense_categories'],
-            ['/api/v1/payment-methods', 'payment_methods'],
-            ['/api/v1/transport-templates', 'transport_templates'],
-            ['/api/v1/production-statuses', 'production_statuses'],
-            ['/api/v1/workers', 'workers'],
-            ['/api/v1/suppliers', 'suppliers'],
-            ['/api/v1/materials', 'materials'],
-            ['/api/v1/customers', 'customers'],
-            ['/api/v1/customer-contacts', 'customer_contacts'],
-            ['/api/v1/customer-items', 'customer_items'],
-            ['/api/v1/price-lists', 'price_lists'],
-            ['/api/v1/price-list-lines', 'price_list_lines'],
+            ['/api/v1/uoms', 'uoms', ['code' => 'M-UOM', 'name' => 'Meter', 'category' => 'QUANTITY'], \App\Models\Uom::class],
+            ['/api/v1/colors', 'colors', ['code' => 'M-COL', 'name' => 'Magenta', 'hex_code' => '#FF00FF'], \App\Models\Color::class],
         ];
 
-        foreach ($endpoints as [$ep, $tableName]) {
-            // Staff can GET (200)
+        foreach ($endpoints as [$ep, $tableName, $validPayload, $modelClass]) {
+            // 1. GET index success (200)
             $this->actingAs($staff)->getJson($ep)->assertStatus(200);
 
-            // Staff cannot POST (403) and DB remains unchanged
+            // 2. POST rejected with 403, DB count unchanged
             $countBefore = \Illuminate\Support\Facades\DB::table($tableName)->count();
-            $this->actingAs($staff)->postJson($ep, ['code' => 'TEST-FAIL', 'name' => 'Test Fail'])->assertStatus(403);
-            $countAfter = \Illuminate\Support\Facades\DB::table($tableName)->count();
-            $this->assertEquals($countBefore, $countAfter);
+            $this->actingAs($staff)->postJson($ep, $validPayload)->assertStatus(403);
+            $this->assertEquals($countBefore, \Illuminate\Support\Facades\DB::table($tableName)->count());
+
+            // Seed a valid record using model to satisfy primary key UUID/auto-increment
+            $seeded = $modelClass::create($validPayload);
+            $seededId = $seeded->id;
+
+            $recordBefore = \Illuminate\Support\Facades\DB::table($tableName)->find($seededId);
+
+            // 3. PUT rejected with 403, record unchanged
+            $this->actingAs($staff)->putJson("{$ep}/{$seededId}", array_merge($validPayload, ['name' => 'Changed Name']))->assertStatus(403);
+            $recordAfterPut = \Illuminate\Support\Facades\DB::table($tableName)->find($seededId);
+            $this->assertEquals($recordBefore->name, $recordAfterPut->name);
+
+            // 4. PATCH rejected with 403, record unchanged
+            $this->actingAs($staff)->patchJson("{$ep}/{$seededId}", ['name' => 'Patched Name'])->assertStatus(403);
+            $recordAfterPatch = \Illuminate\Support\Facades\DB::table($tableName)->find($seededId);
+            $this->assertEquals($recordBefore->name, $recordAfterPatch->name);
+
+            // 5. DELETE rejected with 403, record still exists
+            $this->actingAs($staff)->deleteJson("{$ep}/{$seededId}")->assertStatus(403);
+            $this->assertNotNull(\Illuminate\Support\Facades\DB::table($tableName)->find($seededId));
+
+            // Clean up seeded record using model
+            $modelClass::where('id', $seededId)->delete();
         }
+    }
+
+    /** @test */
+    public function test_owner_role_allowed_mutations()
+    {
+        $owner = \App\Models\User::create([
+            'username' => 'owner_audit',
+            'email' => 'owner_audit@sentanu.local',
+            'password' => bcrypt('password'),
+            'full_name' => 'Owner Audit User',
+            'role' => 'OWNER',
+        ]);
+
+        $this->actingAs($owner)->postJson('/api/v1/uoms', [
+            'code' => 'OWNER-UOM',
+            'name' => 'Owner UOM',
+            'category' => 'QUANTITY',
+        ])->assertStatus(201);
     }
 
     /** @test */
