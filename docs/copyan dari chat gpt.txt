@@ -1,0 +1,382 @@
+Lanjutkan implementasi Phase 4, tetapi ada beberapa koreksi WAJIB sebelum Step 1 diterapkan.
+
+BUSINESS RULE SUDAH LOCKED:
+
+1. Invoice cardinality:
+   N Surat Jalan → 1 Invoice.
+
+   Satu invoice boleh menggabungkan beberapa Surat Jalan dari customer yang sama, sesuai existing invoice_delivery_links architecture.
+
+2. Customer PO:
+   Customer PO harus menjadi entity proper dengan FK.
+   Jangan gunakan customer_po_number TEXT sebagai final relationship jika Customer PO entity tersedia.
+
+3. Partial Acceptance:
+   ALLOWED.
+   Satu Surat Jalan dapat memiliki MULTIPLE acceptance records sampai quantity terselesaikan.
+
+4. Rejected Goods:
+   Quantity rejected dikembalikan ke Sentanu.
+   Reject bukan revenue dan bukan invoiceable.
+
+5. Evidence:
+   Minimal evidence reference/path.
+   Jangan membuat full attachment management system.
+
+6. Permission:
+   Gunakan role ADMIN / STAFF / OWNER dengan backend enforcement.
+
+Permission Phase 4:
+
+| Action | STAFF | ADMIN | OWNER |
+|---|---:|---:|---:|
+| View Surat Jalan | YES | YES | YES |
+| Create Surat Jalan Draft | YES | YES | YES |
+| Edit Surat Jalan Draft | YES | YES | YES |
+| Submit/Ready Surat Jalan | NO | YES | YES |
+| Deliver Surat Jalan | NO | YES | YES |
+| Cancel Surat Jalan | NO | YES | YES |
+| View Customer Acceptance | YES | YES | YES |
+| Create Acceptance Draft | YES | YES | YES |
+| Edit Acceptance Draft | YES | YES | YES |
+| Submit Acceptance | NO | YES | YES |
+| Post Acceptance | NO | YES | YES |
+| View Revenue Eligibility | YES | YES | YES |
+| Create/Edit Invoice | NO | YES | YES |
+| Final Invoice Action | NO | YES | YES |
+
+IMPORTANT:
+Backend harus enforce permission.
+Frontend visibility bukan security.
+
+==================================================
+CRITICAL CORRECTION — DELIVERY ORDER STATUS
+==================================================
+
+JANGAN menggunakan:
+
+DELIVERED sebagai database default.
+
+JANGAN membuat:
+
+status = DELIVERED
+
+ketika Surat Jalan baru dibuat.
+
+Required lifecycle:
+
+DRAFT
+  ↓
+READY
+  ↓
+DELIVERED
+  ↓
+ACCEPTANCE_PENDING
+  ↓
+PARTIALLY_ACCEPTED
+  ↓
+ACCEPTED
+  ↓
+INVOICED
+
+Cancellation:
+
+DRAFT → CANCELLED
+READY → CANCELLED
+
+Jika existing schema menggunakan enum/status yang lebih sederhana, jangan langsung mengganti atau menghapus nilai existing tanpa migration compatibility strategy.
+
+Audit existing implementation terlebih dahulu.
+
+Pastikan default status untuk create Surat Jalan adalah:
+
+DRAFT
+
+Bukan DELIVERED.
+
+==================================================
+CUSTOMER PO — STEP 1
+==================================================
+
+Sekarang fokus terlebih dahulu pada:
+
+STEP 1 — Customer PO entity + schema fix migration.
+
+Sebelum coding:
+
+1. Audit existing Customer PO-related schema.
+2. Cari apakah sudah ada:
+   - customer_orders
+   - customer_pos
+   - order tables
+   - PO-related models
+   - migrations
+   - controllers
+   - services
+   - frontend references
+3. Jangan membuat duplicate Customer PO table jika entity sebenarnya sudah ada.
+4. Tentukan entity/table final berdasarkan existing architecture.
+5. Pastikan relationship:
+
+Customer
+  ↓
+Customer PO
+  ↓
+Surat Jalan
+  ↓
+Delivery Order Lines
+
+6. Customer PO harus memiliki FK ke Customer.
+7. Surat Jalan harus memiliki FK ke Customer PO jika memang required oleh business flow.
+8. Validasi bahwa Customer PO dan Customer pada Surat Jalan adalah customer yang sama.
+
+Jangan menggunakan free-text PO number sebagai substitute relationship.
+
+==================================================
+SCHEMA SAFETY
+==================================================
+
+Sebelum migration:
+
+- inspect existing migrations
+- inspect actual PostgreSQL schema
+- inspect UUID type
+- inspect companies.id
+- inspect branches.id
+- inspect customers.id
+- inspect existing organization/company conventions
+
+Jangan mengasumsikan UUID hanya berdasarkan laporan.
+
+Ikuti convention existing project.
+
+Jangan membuat organization_id baru hanya karena laporan menyebutkannya jika codebase tidak menggunakan konsep tersebut.
+
+==================================================
+DELIVERY ORDER SCHEMA
+==================================================
+
+Pastikan desain final tidak menggunakan:
+
+status default = DELIVERED
+
+Gunakan:
+
+status default = DRAFT
+
+dan siapkan lifecycle Phase 4.
+
+Jika status column saat ini enum/check constraint/string:
+
+pilih mekanisme yang paling konsisten dengan existing Laravel/PostgreSQL architecture.
+
+Jangan merusak existing Phase 3 data.
+
+==================================================
+CASCADE / IMMUTABILITY
+==================================================
+
+Jangan mengandalkan cascade delete untuk business documents yang sudah:
+
+DELIVERED
+POSTED
+ACCEPTED
+INVOICED
+
+Cascade hanya boleh digunakan pada draft/detail lifecycle yang memang aman.
+
+Business documents harus mengikuti immutability rule.
+
+Jika perlu correction/reversal:
+
+gunakan correction/reversal mechanism.
+
+Jangan menghapus historical transaction secara cascade hanya untuk cleanup.
+
+Audit trail harus tetap dapat dipertanggungjawabkan.
+
+==================================================
+INVOICE
+==================================================
+
+LOCKED:
+
+N SJ → 1 Invoice.
+
+Invoice boleh menggabungkan beberapa SJ.
+
+Pastikan:
+
+- semua SJ dalam invoice berasal dari customer yang sama
+- SJ valid untuk invoice
+- hanya quantity accepted OK yang invoiceable
+- rejected quantity tidak invoiceable
+- unaccepted quantity tidak invoiceable
+- delivered-only quantity tidak invoiceable
+- previously invoiced quantity tidak boleh ditagihkan ulang
+- concurrency protection mencegah double invoicing
+
+Jangan mengubah architecture invoice_delivery_links tanpa alasan kuat.
+
+==================================================
+CUSTODY
+==================================================
+
+Surat Jalan DELIVERED harus menjadi trigger untuk custody outbound jika line tersebut merepresentasikan customer-owned goods.
+
+Pada DELIVERED:
+
+1. lock custody balance
+2. validate available balance
+3. reject jika quantity > balance
+4. create OUT_TO_CUSTOMER
+5. reduce balance
+6. update SJ status
+7. audit
+8. commit atomic
+
+Jika gagal:
+
+ROLLBACK seluruh transaction.
+
+Tidak boleh negative custody balance.
+
+==================================================
+ACCEPTANCE
+==================================================
+
+Acceptance harus mendukung multiple records.
+
+Contoh:
+
+Delivered = 10
+
+Acceptance 1:
+OK = 6
+Reject = 2
+
+Acceptance 2:
+OK = 2
+Reject = 0
+
+Final:
+
+OK = 8
+Reject = 2
+
+Validation:
+
+SUM(OK) + SUM(REJECT) <= delivered
+
+Revenue eligible:
+
+SUM(OK) - previously_invoiced
+
+Reject tidak pernah revenue.
+
+==================================================
+REJECTED GOODS
+==================================================
+
+Rejected goods:
+
+Customer
+  ↓
+Reject
+  ↓
+Return to Sentanu
+
+Jangan memasukkan rejected customer-owned goods secara sembarangan ke Sentanu material inventory.
+
+Jika schema existing belum dapat merepresentasikan return state dengan aman:
+
+STOP sebelum mengarang design.
+
+Dokumentasikan minimal schema change yang diperlukan.
+
+==================================================
+IMPLEMENTATION ORDER
+==================================================
+
+Untuk sekarang:
+
+DO NOT jump directly to all Phase 4 coding.
+
+Kerjakan:
+
+STEP 1 — Customer PO entity + schema fix migration
+
+dengan urutan:
+
+1. Audit.
+2. Design.
+3. Migration.
+4. Model.
+5. Relationship.
+6. Tests.
+7. Migration verification.
+8. Regression verification.
+
+Setelah Step 1 selesai, berikan report.
+
+Jangan langsung lanjut ke Step 2 tanpa report.
+
+==================================================
+STEP 1 REPORT
+==================================================
+
+Report wajib berisi:
+
+# STEP 1 — CUSTOMER PO IMPLEMENTATION REPORT
+
+## 1. Existing Customer PO Audit
+## 2. Existing Tables/Migrations
+## 3. Final Customer PO Entity
+## 4. Relationships
+## 5. Migration Changes
+## 6. Model Changes
+## 7. Delivery Order FK Changes
+## 8. Data Compatibility / Existing Data
+## 9. Tests
+## 10. Migration Result
+## 11. Regression Result
+## 12. Files Changed
+## 13. Remaining Risks
+## 14. Verdict
+
+Verdict:
+
+PASS
+atau
+NEEDS REVIEW
+
+JANGAN claim PASS jika:
+
+- Customer PO masih free-text
+- delivery_orders masih default DELIVERED
+- FK tidak konsisten
+- migration belum diuji
+- existing Phase 3 regression gagal
+- existing data berpotensi rusak
+
+==================================================
+IMPORTANT
+==================================================
+
+Jangan menggunakan Odoo.
+
+Project ini adalah custom Laravel + PostgreSQL ERP.
+
+Jangan membuat architecture Odoo-style jika tidak diperlukan.
+
+Gunakan architecture existing project.
+
+Jangan over-engineer.
+
+Jangan implement full accounting.
+
+Jangan implement full attachment management.
+
+Jangan mengubah Phase 1–3 behavior.
+
+Mulai dengan audit Step 1 sekarang.
