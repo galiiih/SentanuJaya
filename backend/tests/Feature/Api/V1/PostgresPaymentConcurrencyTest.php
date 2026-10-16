@@ -38,6 +38,12 @@ class PostgresPaymentConcurrencyTest extends TestCase
         \DB::purge('pgsql');
         \DB::reconnect('pgsql');
 
+        // Database safety check: verify exact test database name
+        $dbName = \DB::connection('pgsql')->getDatabaseName();
+        if ($dbName !== 'sentanu_test') {
+            $this->fail("Database safety check failed: Expected 'sentanu_test', but connected to '{$dbName}'. Migration aborted to protect non-test databases.");
+        }
+
         // Run migrations on pgsql connection
         $this->artisan('migrate:fresh', ['--database' => 'pgsql', '--no-interaction' => true]);
 
@@ -112,11 +118,13 @@ class PostgresPaymentConcurrencyTest extends TestCase
         $payloadFile = storage_path('app/payment_payload.json');
         file_put_contents($payloadFile, json_encode($paymentData));
 
-        // Setup synchronization barrier signal file
+        // Setup synchronization barrier & ready signal files
+        $readyFile1 = storage_path('app/concurrency_ready_1.signal');
+        $readyFile2 = storage_path('app/concurrency_ready_2.signal');
         $signalFile = storage_path('app/concurrency_start.signal');
-        if (file_exists($signalFile)) {
-            @unlink($signalFile);
-        }
+        @unlink($readyFile1);
+        @unlink($readyFile2);
+        @unlink($signalFile);
 
         // Worker script using base_path() for robust path resolution and barrier synchronization
         $scriptPath = storage_path('app/concurrency_worker.php');
@@ -132,10 +140,18 @@ class PostgresPaymentConcurrencyTest extends TestCase
             "\\DB::purge('pgsql');\n\n" .
             "\$payloadFile = \$argv[1];\n" .
             "\$userId = \$argv[2];\n" .
-            "\$signalFile = \$argv[3];\n" .
+            "\$readyFile = \$argv[3];\n" .
+            "\$signalFile = \$argv[4];\n" .
             "\$data = json_decode(file_get_contents(\$payloadFile), true);\n\n" .
-            "// Wait for barrier signal\n" .
+            "// Signal ready\n" .
+            "file_put_contents(\$readyFile, 'READY');\n\n" .
+            "// Wait for barrier signal with timeout (5 seconds max)\n" .
+            "\$start = time();\n" .
             "while (!file_exists(\$signalFile)) {\n" .
+            "    if (time() - \$start > 5) {\n" .
+            "        echo \"ERROR: Timeout waiting for barrier signal\";\n" .
+            "        exit(1);\n" .
+            "    }\n" .
             "    usleep(500);\n" .
             "}\n\n" .
             "try {\n" .
@@ -156,10 +172,29 @@ class PostgresPaymentConcurrencyTest extends TestCase
             2 => ['pipe', 'w'],
         ];
 
-        $cmd = escapeshellarg($phpBinary) . " " . escapeshellarg($scriptPath) . " " . escapeshellarg($payloadFile) . " " . escapeshellarg($admin->id) . " " . escapeshellarg($signalFile);
+        $cmd1 = escapeshellarg($phpBinary) . " " . escapeshellarg($scriptPath) . " " . escapeshellarg($payloadFile) . " " . escapeshellarg($admin->id) . " " . escapeshellarg($readyFile1) . " " . escapeshellarg($signalFile);
+        $cmd2 = escapeshellarg($phpBinary) . " " . escapeshellarg($scriptPath) . " " . escapeshellarg($payloadFile) . " " . escapeshellarg($admin->id) . " " . escapeshellarg($readyFile2) . " " . escapeshellarg($signalFile);
 
-        $process1 = proc_open($cmd, $descriptors, $pipes1);
-        $process2 = proc_open($cmd, $descriptors, $pipes2);
+        $process1 = proc_open($cmd1, $descriptors, $pipes1);
+        $process2 = proc_open($cmd2, $descriptors, $pipes2);
+
+        // Wait until both workers signal READY (max 5 seconds timeout)
+        $timeout = 50;
+        $ready = false;
+        while ($timeout > 0) {
+            if (file_exists($readyFile1) && file_exists($readyFile2)) {
+                $ready = true;
+                break;
+            }
+            usleep(100000); // 100ms
+            $timeout--;
+        }
+
+        if (!$ready) {
+            @proc_terminate($process1);
+            @proc_terminate($process2);
+            $this->fail('Workers failed to signal READY within timeout.');
+        }
 
         // Trigger barrier simultaneously
         file_put_contents($signalFile, 'GO');
@@ -180,10 +215,15 @@ class PostgresPaymentConcurrencyTest extends TestCase
         @unlink($scriptPath);
         @unlink($signalFile);
         @unlink($payloadFile);
+        @unlink($readyFile1);
+        @unlink($readyFile2);
 
-        // Assert worker execution success, exit code 0, and no errors
+        // Assert worker execution success, exit code 0, and clean stderr
         $this->assertEquals(0, $status1, "Worker 1 failed with exit code $status1, stderr: $err1, output: $output1");
         $this->assertEquals(0, $status2, "Worker 2 failed with exit code $status2, stderr: $err2, output: $output2");
+
+        $this->assertEmpty($err1, "Worker 1 produced stderr output: $err1");
+        $this->assertEmpty($err2, "Worker 2 produced stderr output: $err2");
 
         $this->assertStringContainsString('SUCCESS:', $output1, "Worker 1 did not succeed. Output: $output1 | Stderr: $err1");
         $this->assertStringContainsString('SUCCESS:', $output2, "Worker 2 did not succeed. Output: $output2 | Stderr: $err2");
