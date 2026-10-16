@@ -116,6 +116,11 @@ class MasterDataApiTest extends TestCase
             $seeded = $modelClass::create($currentPayload);
             $seededId = $seeded->id;
 
+            // 1.1 GET show success (200)
+            $showRes = $this->actingAs($staff)->getJson("{$ep}/{$seededId}");
+            $showRes->assertStatus(200);
+            $this->assertNotNull($showRes->json('data') ?? $showRes->json());
+
             $recordBefore = \Illuminate\Support\Facades\DB::table($tableName)->find($seededId);
 
             // 3. PUT rejected with 403, record unchanged
@@ -129,6 +134,8 @@ class MasterDataApiTest extends TestCase
                 $patchPayload['name'] = $patchPayload['name'] . ' Patched';
             } elseif (isset($patchPayload['code'])) {
                 $patchPayload['code'] = $patchPayload['code'] . '-P';
+            } elseif (isset($patchPayload['unit_price'])) {
+                $patchPayload['unit_price'] = $patchPayload['unit_price'] + 500;
             }
             $this->actingAs($staff)->patchJson("{$ep}/{$seededId}", $patchPayload)->assertStatus(403);
             $recordAfterPatch = \Illuminate\Support\Facades\DB::table($tableName)->find($seededId);
