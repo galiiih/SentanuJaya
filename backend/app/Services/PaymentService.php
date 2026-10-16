@@ -188,13 +188,20 @@ class PaymentService
                 return $payment->fresh(['customer', 'allocations.invoice']);
             });
         } catch (\Illuminate\Database\QueryException $e) {
-            if ($idempotencyKey && (str_contains($e->getMessage(), 'idempotency_key') || str_contains($e->getMessage(), 'payments_idempotency_key_unique') || $e->getCode() === '23505')) {
-                $existing = Payment::query()->where('idempotency_key', $idempotencyKey)->first();
-                if ($existing) {
-                    if ($existing->request_hash === $requestHash) {
-                        return $existing->fresh(['customer', 'allocations.invoice']);
+            if ($idempotencyKey && ($e->getCode() === '23505' || str_contains($e->getMessage(), '23505') || str_contains($e->getMessage(), 'UNIQUE constraint failed'))) {
+                $msg = $e->getMessage();
+                $isIdempotency = str_contains($msg, 'idempotency_key') 
+                    || str_contains($msg, 'payments_idempotency_key_unique') 
+                    || str_contains($msg, 'payments.idempotency_key');
+                
+                if ($isIdempotency) {
+                    $existing = Payment::query()->where('idempotency_key', $idempotencyKey)->first();
+                    if ($existing) {
+                        if ($existing->request_hash === $requestHash) {
+                            return $existing->fresh(['customer', 'allocations.invoice']);
+                        }
+                        throw ValidationException::withMessages(['idempotency_key' => ['The idempotency key is already used with a different request payload.']]);
                     }
-                    throw ValidationException::withMessages(['idempotency_key' => ['The idempotency key is already used with a different request payload.']]);
                 }
             }
             throw $e;
