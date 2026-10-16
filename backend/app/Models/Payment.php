@@ -12,7 +12,7 @@ class Payment extends Model
     protected $fillable = [
         'company_id', 'customer_id', 'payment_number',
         'payment_date', 'method', 'amount', 'reference_no',
-        'status', 'notes', 'created_by',
+        'status', 'notes', 'created_by', 'idempotency_key', 'request_hash',
     ];
 
     protected $casts = [

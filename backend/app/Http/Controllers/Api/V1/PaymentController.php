@@ -40,10 +40,19 @@ class PaymentController extends BaseApiController
             'amount' => 'required|numeric|min:0.01',
             'reference_no' => 'nullable|string|max:255',
             'notes' => 'nullable|string',
+            'idempotency_key' => 'nullable|string|max:255',
             'allocations' => 'required|array|min:1',
             'allocations.*.invoice_id' => 'required|uuid|exists:invoices,id',
             'allocations.*.amount' => 'required|numeric|min:0.01',
         ]);
+
+        if (empty($data['idempotency_key'])) {
+            if ($request->hasHeader('Idempotency-Key')) {
+                $data['idempotency_key'] = $request->header('Idempotency-Key');
+            } elseif ($request->hasHeader('idempotency-key')) {
+                $data['idempotency_key'] = $request->header('idempotency-key');
+            }
+        }
 
         return $this->sendResponse(
             $this->paymentService->create($data, $request->user()->id),

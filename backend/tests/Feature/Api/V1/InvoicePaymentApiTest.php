@@ -230,26 +230,50 @@ class InvoicePaymentApiTest extends TestCase
     ])->assertStatus(422);
     }
 
-    public function test_repeated_payment_reference_does_not_duplicate_transaction(): void
-{
-    $s = $this->delivery();
-    $admin = $this->user('ADMIN');
-    $this->postAcceptance($s['do'], $s['line'], 30, 10);
-    $invoice = app(InvoiceService::class)->buildDraftInvoice([$s['do']->id], $s['customer']->id, '2026-10-06', 1, $admin->id);
-    app(InvoiceService::class)->postInvoice($invoice, $admin->id);
+    public function test_payment_idempotency_behavior(): void
+    {
+        $s = $this->delivery();
+        $admin = $this->user('ADMIN');
+        $this->postAcceptance($s['do'], $s['line'], 30, 10);
+        $invoice = app(InvoiceService::class)->buildDraftInvoice([$s['do']->id], $s['customer']->id, '2026-10-06', 1, $admin->id);
+        app(InvoiceService::class)->postInvoice($invoice, $admin->id);
 
-    $payload = [
-    'customer_id' => $s['customer']->id,
-    'payment_date' => '2026-10-07',
-    'method' => 'BANK_TRANSFER',
-    'amount' => 1000,
-    'reference_no' => 'DUP-1',
-    'allocations' => [['invoice_id' => $invoice->id, 'amount' => 1000]],
-    ];
+        $payload = [
+            'customer_id' => $s['customer']->id,
+            'payment_date' => '2026-10-07',
+            'method' => 'BANK_TRANSFER',
+            'amount' => 1000,
+            'reference_no' => 'IDEMP-1',
+            'idempotency_key' => 'key-unique-abc-123',
+            'allocations' => [['invoice_id' => $invoice->id, 'amount' => 1000]],
+        ];
 
-    $this->actingAs($admin)->postJson('/api/v1/payments', $payload)->assertCreated();
-    $this->actingAs($admin)->postJson('/api/v1/payments', $payload)->assertStatus(422);
-    $this->assertSame(1, Payment::count());
+        // 1. First request creates payment
+        $res1 = $this->actingAs($admin)->postJson('/api/v1/payments', $payload);
+        $res1->assertCreated();
+        $id1 = $res1->json('data.id');
+        $this->assertSame(1, Payment::count());
+
+        // 2. Retry with same key and same payload returns existing payment (201 or 200, returning existing record without duplicating)
+        $res2 = $this->actingAs($admin)->postJson('/api/v1/payments', $payload);
+        $res2->assertStatus(201);
+        $this->assertSame($id1, $res2->json('data.id'));
+        $this->assertSame(1, Payment::count());
+
+        // 3. Same key with different payload must be rejected (422)
+        $payloadDifferent = $payload;
+        $payloadDifferent['amount' ] = 2000;
+        $payloadDifferent['allocations'] = [['invoice_id' => $invoice->id, 'amount' => 2000]];
+        $res3 = $this->actingAs($admin)->postJson('/api/v1/payments', $payloadDifferent);
+        $res3->assertStatus(422);
+
+        // 4. Different key allows new payment
+        $payloadNewKey = $payload;
+        $payloadNewKey['idempotency_key'] = 'key-unique-xyz-789';
+        $payloadNewKey['reference_no'] = 'IDEMP-2';
+        $res4 = $this->actingAs($admin)->postJson('/api/v1/payments', $payloadNewKey);
+        $res4->assertCreated();
+        $this->assertSame(2, Payment::count());
     }
 
     public function test_payment_on_paid_invoice_rejected_422(): void

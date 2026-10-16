@@ -61,6 +61,26 @@ class PaymentService
     public function create(array $data, string $actorId): Payment
     {
         return DB::transaction(function () use ($data, $actorId) {
+            $idempotencyKey = $data['idempotency_key'] ?? null;
+            $requestPayloadSignature = [
+                'customer_id' => $data['customer_id'] ?? null,
+                'payment_date' => $data['payment_date'] ?? null,
+                'method' => $data['method'] ?? null,
+                'amount' => $data['amount'] ?? null,
+                'allocations' => $data['allocations'] ?? [],
+            ];
+            $requestHash = hash('sha256', json_encode($requestPayloadSignature));
+
+            if ($idempotencyKey) {
+                $existing = Payment::query()->where('idempotency_key', $idempotencyKey)->lockForUpdate()->first();
+                if ($existing) {
+                    if ($existing->request_hash === $requestHash) {
+                        return $existing->fresh(['customer', 'allocations.invoice']);
+                    }
+                    throw ValidationException::withMessages(['idempotency_key' => ['The idempotency key is already used with a different request payload.']]);
+                }
+            }
+
             $customer = \App\Models\Customer::query()->findOrFail($data['customer_id']);
 
             $amount = round((float) $data['amount'], 2);
@@ -104,6 +124,8 @@ class PaymentService
                 'notes' => $data['notes'] ?? null,
                 'status' => Payment::STATUS_POSTED,
                 'created_by' => $actorId,
+                'idempotency_key' => $idempotencyKey ?? null,
+                'request_hash' => $idempotencyKey ? $requestHash : null,
             ]);
 
             foreach ($data['allocations'] as $alloc) {
