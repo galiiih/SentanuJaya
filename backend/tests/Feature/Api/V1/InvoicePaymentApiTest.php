@@ -238,13 +238,15 @@ class InvoicePaymentApiTest extends TestCase
         $invoice = app(InvoiceService::class)->buildDraftInvoice([$s['do']->id], $s['customer']->id, '2026-10-06', 1, $admin->id);
         app(InvoiceService::class)->postInvoice($invoice, $admin->id);
 
+        $key = 'key-idemp-comprehensive-001';
         $payload = [
             'customer_id' => $s['customer']->id,
             'payment_date' => '2026-10-07',
             'method' => 'BANK_TRANSFER',
             'amount' => 1000,
-            'reference_no' => 'IDEMP-1',
-            'idempotency_key' => 'key-unique-abc-123',
+            'reference_no' => 'REF-ORIGINAL',
+            'notes' => 'Original notes',
+            'idempotency_key' => $key,
             'allocations' => [['invoice_id' => $invoice->id, 'amount' => 1000]],
         ];
 
@@ -254,25 +256,40 @@ class InvoicePaymentApiTest extends TestCase
         $id1 = $res1->json('data.id');
         $this->assertSame(1, Payment::count());
 
-        // 2. Retry with same key and same payload returns existing payment (201 or 200, returning existing record without duplicating)
+        // 2. Retry with same key and identical payload returns existing payment
         $res2 = $this->actingAs($admin)->postJson('/api/v1/payments', $payload);
         $res2->assertStatus(201);
         $this->assertSame($id1, $res2->json('data.id'));
         $this->assertSame(1, Payment::count());
 
-        // 3. Same key with different payload must be rejected (422)
-        $payloadDifferent = $payload;
-        $payloadDifferent['amount' ] = 2000;
-        $payloadDifferent['allocations'] = [['invoice_id' => $invoice->id, 'amount' => 2000]];
-        $res3 = $this->actingAs($admin)->postJson('/api/v1/payments', $payloadDifferent);
-        $res3->assertStatus(422);
+        // 3. Key same with changed amount -> 422
+        $p3 = $payload;
+        $p3['amount'] = 1500;
+        $p3['allocations'] = [['invoice_id' => $invoice->id, 'amount' => 1500]];
+        $this->actingAs($admin)->postJson('/api/v1/payments', $p3)->assertStatus(422);
 
-        // 4. Different key allows new payment
-        $payloadNewKey = $payload;
-        $payloadNewKey['idempotency_key'] = 'key-unique-xyz-789';
-        $payloadNewKey['reference_no'] = 'IDEMP-2';
-        $res4 = $this->actingAs($admin)->postJson('/api/v1/payments', $payloadNewKey);
-        $res4->assertCreated();
+        // 4. Key same with changed reference_no -> 422
+        $p4 = $payload;
+        $p4['reference_no'] = 'REF-CHANGED';
+        $this->actingAs($admin)->postJson('/api/v1/payments', $p4)->assertStatus(422);
+
+        // 5. Key same with changed notes -> 422
+        $p5 = $payload;
+        $p5['notes'] = 'Changed notes';
+        $this->actingAs($admin)->postJson('/api/v1/payments', $p5)->assertStatus(422);
+
+        // 6. Key same with changed payment_date -> 422
+        $p6 = $payload;
+        $p6['payment_date'] = '2026-10-08';
+        $this->actingAs($admin)->postJson('/api/v1/payments', $p6)->assertStatus(422);
+
+        // 7. Different key allows new payment
+        $p7 = $payload;
+        $p7['idempotency_key'] = 'key-idemp-comprehensive-002';
+        $p7['reference_no'] = 'REF-SECOND';
+        $res7 = $this->actingAs($admin)->postJson('/api/v1/payments', $p7);
+        $res7->assertCreated();
+        $this->assertNotSame($id1, $res7->json('data.id'));
         $this->assertSame(2, Payment::count());
     }
 

@@ -62,12 +62,20 @@ class PaymentService
     {
         return DB::transaction(function () use ($data, $actorId) {
             $idempotencyKey = $data['idempotency_key'] ?? null;
+            $normalizedAllocations = $data['allocations'] ?? [];
+            usort($normalizedAllocations, fn($a, $b) => strcmp($a['invoice_id'], $b['invoice_id']));
+
             $requestPayloadSignature = [
                 'customer_id' => $data['customer_id'] ?? null,
                 'payment_date' => $data['payment_date'] ?? null,
                 'method' => $data['method'] ?? null,
-                'amount' => $data['amount'] ?? null,
-                'allocations' => $data['allocations'] ?? [],
+                'amount' => isset($data['amount']) ? round((float)$data['amount'], 2) : null,
+                'reference_no' => $data['reference_no'] ?? null,
+                'notes' => $data['notes'] ?? null,
+                'allocations' => array_map(fn($a) => [
+                    'invoice_id' => $a['invoice_id'],
+                    'amount' => round((float)$a['amount'], 2),
+                ], $normalizedAllocations),
             ];
             $requestHash = hash('sha256', json_encode($requestPayloadSignature));
 
@@ -113,20 +121,33 @@ class PaymentService
                 }
             }
 
-            $payment = Payment::create([
-                'company_id' => $customer->company_id,
-                'customer_id' => $data['customer_id'],
-                'payment_number' => $this->nextPaymentNumber(),
-                'payment_date' => $data['payment_date'],
-                'method' => $data['method'],
-                'amount' => $amount,
-                'reference_no' => $data['reference_no'] ?? null,
-                'notes' => $data['notes'] ?? null,
-                'status' => Payment::STATUS_POSTED,
-                'created_by' => $actorId,
-                'idempotency_key' => $idempotencyKey ?? null,
-                'request_hash' => $idempotencyKey ? $requestHash : null,
-            ]);
+            try {
+                $payment = Payment::create([
+                    'company_id' => $customer->company_id,
+                    'customer_id' => $data['customer_id'],
+                    'payment_number' => $this->nextPaymentNumber(),
+                    'payment_date' => $data['payment_date'],
+                    'method' => $data['method'],
+                    'amount' => $amount,
+                    'reference_no' => $data['reference_no'] ?? null,
+                    'notes' => $data['notes'] ?? null,
+                    'status' => Payment::STATUS_POSTED,
+                    'created_by' => $actorId,
+                    'idempotency_key' => $idempotencyKey ?? null,
+                    'request_hash' => $idempotencyKey ? $requestHash : null,
+                ]);
+            } catch (\Illuminate\Database\QueryException $e) {
+                if ($idempotencyKey && (str_contains($e->getMessage(), 'idempotency_key') || $e->getCode() === '23505')) {
+                    $existing = Payment::query()->where('idempotency_key', $idempotencyKey)->first();
+                    if ($existing) {
+                        if ($existing->request_hash === $requestHash) {
+                            return $existing->fresh(['customer', 'allocations.invoice']);
+                        }
+                        throw ValidationException::withMessages(['idempotency_key' => ['The idempotency key is already used with a different request payload.']]);
+                    }
+                }
+                throw $e;
+            }
 
             foreach ($data['allocations'] as $alloc) {
                 $invoice = Invoice::query()->lockForUpdate()->findOrFail($alloc['invoice_id']);
