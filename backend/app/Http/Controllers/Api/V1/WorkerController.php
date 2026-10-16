@@ -33,6 +33,7 @@ class WorkerController extends BaseApiController
      */
     public function store(Request $request): JsonResponse
     {
+        abort_unless($request->user()?->hasPermission('master.manage'), 403, 'Forbidden');
         $validator = Validator::make($request->all(), [
             'branch_id' => 'nullable|uuid|exists:branches,id',
             'code' => 'required|string|max:50|unique:workers,code',
@@ -72,6 +73,7 @@ class WorkerController extends BaseApiController
      */
     public function update(Request $request, string $id): JsonResponse
     {
+        abort_unless($request->user()?->hasPermission('master.manage'), 403, 'Forbidden');
         $item = Worker::find($id);
 
         if (!$item) {
@@ -103,6 +105,7 @@ class WorkerController extends BaseApiController
      */
     public function destroy(string $id): JsonResponse
     {
+        abort_unless(request()->user()?->hasPermission('master.manage'), 403, 'Forbidden');
         $item = Worker::find($id);
 
         if (!$item) {

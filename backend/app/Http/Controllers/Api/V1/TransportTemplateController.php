@@ -33,6 +33,7 @@ class TransportTemplateController extends BaseApiController
      */
     public function store(Request $request): JsonResponse
     {
+        abort_unless($request->user()?->hasPermission('master.manage'), 403, 'Forbidden');
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'distance_range' => 'nullable|string|max:100',
@@ -70,6 +71,7 @@ class TransportTemplateController extends BaseApiController
      */
     public function update(Request $request, string $id): JsonResponse
     {
+        abort_unless($request->user()?->hasPermission('master.manage'), 403, 'Forbidden');
         $item = TransportTemplate::find($id);
 
         if (!$item) {
@@ -99,6 +101,7 @@ class TransportTemplateController extends BaseApiController
      */
     public function destroy(string $id): JsonResponse
     {
+        abort_unless(request()->user()?->hasPermission('master.manage'), 403, 'Forbidden');
         $item = TransportTemplate::find($id);
 
         if (!$item) {

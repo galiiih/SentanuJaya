@@ -33,6 +33,7 @@ class CompanyController extends BaseApiController
      */
     public function store(Request $request): JsonResponse
     {
+        abort_unless($request->user()?->hasPermission('master.manage'), 403, 'Forbidden');
         $validator = Validator::make($request->all(), [
             'code' => 'required|string|max:50|unique:companies,code',
             'name' => 'required|string|max:255',
@@ -75,6 +76,7 @@ class CompanyController extends BaseApiController
      */
     public function update(Request $request, string $id): JsonResponse
     {
+        abort_unless($request->user()?->hasPermission('master.manage'), 403, 'Forbidden');
         $item = Company::find($id);
 
         if (!$item) {
@@ -109,6 +111,7 @@ class CompanyController extends BaseApiController
      */
     public function destroy(string $id): JsonResponse
     {
+        abort_unless(request()->user()?->hasPermission('master.manage'), 403, 'Forbidden');
         $item = Company::find($id);
 
         if (!$item) {

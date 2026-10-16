@@ -33,6 +33,7 @@ class CustomerContactController extends BaseApiController
      */
     public function store(Request $request): JsonResponse
     {
+        abort_unless($request->user()?->hasPermission('master.manage'), 403, 'Forbidden');
         $validator = Validator::make($request->all(), [
             'customer_id' => 'required|uuid|exists:customers,id',
             'name' => 'required|string|max:255',
@@ -70,6 +71,7 @@ class CustomerContactController extends BaseApiController
      */
     public function update(Request $request, string $id): JsonResponse
     {
+        abort_unless($request->user()?->hasPermission('master.manage'), 403, 'Forbidden');
         $item = CustomerContact::find($id);
 
         if (!$item) {
@@ -99,6 +101,7 @@ class CustomerContactController extends BaseApiController
      */
     public function destroy(string $id): JsonResponse
     {
+        abort_unless(request()->user()?->hasPermission('master.manage'), 403, 'Forbidden');
         $item = CustomerContact::find($id);
 
         if (!$item) {

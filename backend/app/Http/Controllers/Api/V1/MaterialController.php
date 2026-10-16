@@ -33,6 +33,7 @@ class MaterialController extends BaseApiController
      */
     public function store(Request $request): JsonResponse
     {
+        abort_unless($request->user()?->hasPermission('master.manage'), 403, 'Forbidden');
         $validator = Validator::make($request->all(), [
             'company_id' => 'required|uuid|exists:companies,id',
             'code' => 'required|string|max:50|unique:materials,code',
@@ -74,6 +75,7 @@ class MaterialController extends BaseApiController
      */
     public function update(Request $request, string $id): JsonResponse
     {
+        abort_unless($request->user()?->hasPermission('master.manage'), 403, 'Forbidden');
         $item = Material::find($id);
 
         if (!$item) {
@@ -107,6 +109,7 @@ class MaterialController extends BaseApiController
      */
     public function destroy(string $id): JsonResponse
     {
+        abort_unless(request()->user()?->hasPermission('master.manage'), 403, 'Forbidden');
         $item = Material::find($id);
 
         if (!$item) {

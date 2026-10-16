@@ -33,6 +33,7 @@ class ProductionStatusController extends BaseApiController
      */
     public function store(Request $request): JsonResponse
     {
+        abort_unless($request->user()?->hasPermission('master.manage'), 403, 'Forbidden');
         $validator = Validator::make($request->all(), [
             'code' => 'required|string|max:50|unique:production_statuses,code',
             'name' => 'required|string|max:255',
@@ -67,6 +68,7 @@ class ProductionStatusController extends BaseApiController
      */
     public function update(Request $request, string $id): JsonResponse
     {
+        abort_unless($request->user()?->hasPermission('master.manage'), 403, 'Forbidden');
         $item = ProductionStatus::find($id);
 
         if (!$item) {
@@ -93,6 +95,7 @@ class ProductionStatusController extends BaseApiController
      */
     public function destroy(string $id): JsonResponse
     {
+        abort_unless(request()->user()?->hasPermission('master.manage'), 403, 'Forbidden');
         $item = ProductionStatus::find($id);
 
         if (!$item) {

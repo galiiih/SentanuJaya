@@ -33,6 +33,7 @@ class PriceListController extends BaseApiController
      */
     public function store(Request $request): JsonResponse
     {
+        abort_unless($request->user()?->hasPermission('master.manage'), 403, 'Forbidden');
         $validator = Validator::make($request->all(), [
             'company_id' => 'required|uuid|exists:companies,id',
             'customer_id' => 'nullable|uuid|exists:customers,id',
@@ -70,6 +71,7 @@ class PriceListController extends BaseApiController
      */
     public function update(Request $request, string $id): JsonResponse
     {
+        abort_unless($request->user()?->hasPermission('master.manage'), 403, 'Forbidden');
         $item = PriceList::find($id);
 
         if (!$item) {
@@ -99,6 +101,7 @@ class PriceListController extends BaseApiController
      */
     public function destroy(string $id): JsonResponse
     {
+        abort_unless(request()->user()?->hasPermission('master.manage'), 403, 'Forbidden');
         $item = PriceList::find($id);
 
         if (!$item) {
