@@ -49,12 +49,14 @@ class User extends Authenticatable
             'delivery.view', 'delivery.create',
             'acceptance.view',
             'po.view', 'po.create', 'po.edit',
+            'master.view',
         ],
         'ADMIN' => [
             'delivery.view', 'delivery.create', 'delivery.submit', 'delivery.deliver', 'delivery.cancel_draft',
             'acceptance.view', 'acceptance.create', 'acceptance.submit', 'acceptance.post',
             'invoice.view', 'invoice.create',
             'po.view', 'po.create', 'po.edit', 'po.activate', 'po.cancel', 'po.close',
+            'master.view', 'master.manage',
         ],
         'OWNER' => [
             'delivery.view', 'delivery.create', 'delivery.submit', 'delivery.deliver',
@@ -63,6 +65,7 @@ class User extends Authenticatable
             'invoice.view', 'invoice.create', 'invoice.approve',
             'report.view',
             'po.view', 'po.create', 'po.edit', 'po.activate', 'po.cancel', 'po.close',
+            'master.view', 'master.manage',
         ],
     ];
 

@@ -31,10 +31,25 @@ class MasterDataApiTest extends TestCase
     }
 
     /** @test */
-    public function test_unauthenticated_access_is_rejected()
+    public function test_staff_role_can_view_master_data_but_cannot_mutate()
     {
-        auth()->logout();
-        $this->getJson('/api/v1/uoms')->assertStatus(401);
+        $staff = \App\Models\User::create([
+            'username' => 'staff1',
+            'email' => 'staff1@sentanu.local',
+            'password' => bcrypt('password'),
+            'full_name' => 'Staff User',
+            'role' => 'STAFF',
+        ]);
+
+        // Staff can view UOMs list (GET)
+        $this->actingAs($staff)->getJson('/api/v1/uoms')->assertStatus(200);
+
+        // Staff cannot create UOMs (POST -> 403)
+        $this->actingAs($staff)->postJson('/api/v1/uoms', [
+            'code' => 'BOX',
+            'name' => 'Box',
+            'category' => 'QUANTITY',
+        ])->assertStatus(403);
     }
 
     /** @test */
