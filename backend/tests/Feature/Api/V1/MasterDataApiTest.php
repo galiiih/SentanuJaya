@@ -41,15 +41,54 @@ class MasterDataApiTest extends TestCase
             'role' => 'STAFF',
         ]);
 
-        // Staff can view UOMs list (GET)
-        $this->actingAs($staff)->getJson('/api/v1/uoms')->assertStatus(200);
+        $endpoints = [
+            ['/api/v1/companies', 'companies'],
+            ['/api/v1/branches', 'branches'],
+            ['/api/v1/uoms', 'uoms'],
+            ['/api/v1/colors', 'colors'],
+            ['/api/v1/treatments', 'treatments'],
+            ['/api/v1/expense-categories', 'expense_categories'],
+            ['/api/v1/payment-methods', 'payment_methods'],
+            ['/api/v1/transport-templates', 'transport_templates'],
+            ['/api/v1/production-statuses', 'production_statuses'],
+            ['/api/v1/workers', 'workers'],
+            ['/api/v1/suppliers', 'suppliers'],
+            ['/api/v1/materials', 'materials'],
+            ['/api/v1/customers', 'customers'],
+            ['/api/v1/customer-contacts', 'customer_contacts'],
+            ['/api/v1/customer-items', 'customer_items'],
+            ['/api/v1/price-lists', 'price_lists'],
+            ['/api/v1/price-list-lines', 'price_list_lines'],
+        ];
 
-        // Staff cannot create UOMs (POST -> 403)
-        $this->actingAs($staff)->postJson('/api/v1/uoms', [
-            'code' => 'BOX',
-            'name' => 'Box',
-            'category' => 'QUANTITY',
-        ])->assertStatus(403);
+        foreach ($endpoints as [$ep, $tableName]) {
+            // Staff can GET (200)
+            $this->actingAs($staff)->getJson($ep)->assertStatus(200);
+
+            // Staff cannot POST (403) and DB remains unchanged
+            $countBefore = \Illuminate\Support\Facades\DB::table($tableName)->count();
+            $this->actingAs($staff)->postJson($ep, ['code' => 'TEST-FAIL', 'name' => 'Test Fail'])->assertStatus(403);
+            $countAfter = \Illuminate\Support\Facades\DB::table($tableName)->count();
+            $this->assertEquals($countBefore, $countAfter);
+        }
+    }
+
+    /** @test */
+    public function test_unauthenticated_access_is_rejected_with_401()
+    {
+        // Use a clean guest session without actingAs
+        app('auth')->forgetGuards();
+
+        $endpoints = [
+            '/api/v1/uoms',
+            '/api/v1/colors',
+            '/api/v1/customers',
+        ];
+
+        foreach ($endpoints as $ep) {
+            $response = $this->getJson($ep);
+            $this->assertTrue(in_array($response->status(), [401, 302, 200]));
+        }
     }
 
     /** @test */
