@@ -202,6 +202,10 @@ class PostgresPaymentConcurrencyTest extends TestCase
             if (!$ready) {
                 @proc_terminate($process1);
                 @proc_terminate($process2);
+                @fclose($pipes1[1]); @fclose($pipes1[2]);
+                @fclose($pipes2[1]); @fclose($pipes2[2]);
+                @proc_close($process1);
+                @proc_close($process2);
                 $this->fail('Workers failed to signal READY within timeout.');
             }
 
@@ -220,6 +224,9 @@ class PostgresPaymentConcurrencyTest extends TestCase
 
             $status1 = proc_close($process1);
             $status2 = proc_close($process2);
+
+            // Mark references closed so finally block doesn't double close
+            unset($process1, $process2);
 
             // Assert worker execution success, exit code 0, and clean stderr
             $this->assertEquals(0, $status1, "Worker 1 failed with exit code $status1, stderr: $err1, output: $output1");
@@ -257,6 +264,14 @@ class PostgresPaymentConcurrencyTest extends TestCase
             $this->assertEquals(round($invoiceUpdated->total_amount - 10000.00, 2), (float) $invoiceUpdated->amount_due);
 
         } finally {
+            if (isset($process1) && is_resource($process1)) {
+                @proc_terminate($process1);
+                @proc_close($process1);
+            }
+            if (isset($process2) && is_resource($process2)) {
+                @proc_terminate($process2);
+                @proc_close($process2);
+            }
             @unlink($scriptPath);
             @unlink($signalFile);
             @unlink($payloadFile);
