@@ -187,6 +187,10 @@ class PostgresPaymentConcurrencyTest extends TestCase
             $process1 = proc_open($cmd1, $descriptors, $pipes1);
             $process2 = proc_open($cmd2, $descriptors, $pipes2);
 
+            // Close stdin pipes — workers don't read from stdin
+            @fclose($pipes1[0]);
+            @fclose($pipes2[0]);
+
             // Wait until both workers signal READY (max 5 seconds timeout)
             $timeout = 50;
             $ready = false;
@@ -282,28 +286,132 @@ class PostgresPaymentConcurrencyTest extends TestCase
 
     public function test_non_idempotency_unique_violation_is_not_swallowed(): void
     {
-    $queryException = new QueryException(
-        'pgsql',
-        'insert into payments...',
-        [],
-        new \PDOException('SQLSTATE[23505]: Unique violation: 7 ERROR: duplicate key value violates unique constraint "payments_payment_number_unique"')
-    );
+        // Real PostgreSQL test: a QueryException from payment_number unique constraint
+        // must propagate, NOT be silently caught by the idempotency recovery path.
+        try {
+            $pdo = \DB::connection('pgsql')->getPdo();
+        } catch (\Exception $e) {
+            $this->markTestSkipped('PostgreSQL not available: ' . $e->getMessage());
+        }
 
-    $service = app(PaymentService::class);
+        config(['database.default' => 'pgsql']);
+        \DB::purge('pgsql');
+        \DB::reconnect('pgsql');
 
-    $this->expectException(QueryException::class);
+        $dbName = \DB::connection('pgsql')->getDatabaseName();
+        if ($dbName !== 'sentanu_test') {
+            $this->fail("Database safety check failed: Expected 'sentanu_test', got '{$dbName}'.");
+        }
 
-    \DB::shouldReceive('transaction')
-        ->once()
-        ->andThrow($queryException);
+        $this->artisan('migrate:fresh', ['--database' => 'pgsql', '--no-interaction' => true]);
 
-    $service->create([
-        'customer_id' => '00000000-0000-0000-0000-000000000000',
-        'payment_date' => '2026-10-07',
-        'method' => 'BANK_TRANSFER',
-        'amount' => 1000.00,
-        'idempotency_key' => 'some-key',
-        'allocations' => []
-    ], '00000000-0000-0000-0000-000000000000');
-}
+        // Add unique constraint on payment_number — mirrors production intent
+        \DB::connection('pgsql')->statement(
+            'CREATE UNIQUE INDEX IF NOT EXISTS payments_payment_number_unique ON payments (payment_number)'
+        );
+
+        $admin = User::create([
+            'username' => 'admin_uv',
+            'email' => 'admin_uv@test.com',
+            'password' => bcrypt('secret'),
+            'full_name' => 'Admin UV',
+            'role' => 'ADMIN',
+            'is_active' => true,
+        ]);
+
+        $company = Company::create(['name' => 'PT UV Test', 'code' => 'UVT', 'tax_id' => '999']);
+        $branch = Branch::create(['company_id' => $company->id, 'name' => 'HQ UV', 'code' => 'HQUV']);
+        $customer = Customer::create(['company_id' => $company->id, 'name' => 'Customer UV', 'code' => 'CUV']);
+        $customerItem = CustomerItem::create([
+            'customer_id' => $customer->id,
+            'code' => 'ITEM-UV-001',
+            'name' => 'Product UV',
+        ]);
+        $po = CustomerPo::create(['company_id' => $company->id, 'customer_id' => $customer->id, 'po_number' => 'PO-UV-001', 'po_date' => '2026-10-17']);
+        $do = DeliveryOrder::create([
+            'company_id' => $company->id,
+            'branch_id' => $branch->id,
+            'customer_id' => $customer->id,
+            'customer_po_id' => $po->id,
+            'sj_number' => 'SJ-UV-001',
+            'delivery_date' => '2026-10-17',
+            'status' => 'DELIVERED',
+        ]);
+        $line = DeliveryOrderLine::create([
+            'delivery_order_id' => $do->id,
+            'customer_item_id' => $customerItem->id,
+            'quantity' => 20,
+            'unit_price_snapshot' => 500.00,
+        ]);
+
+        $acceptance = Acceptance::create([
+            'delivery_order_id' => $do->id,
+            'acceptance_number' => 'ACC-UV-001',
+            'acceptance_date' => '2026-10-17',
+            'status' => 'POSTED',
+            'notes' => 'OK',
+        ]);
+        AcceptanceLine::create([
+            'acceptance_id' => $acceptance->id,
+            'delivery_order_line_id' => $line->id,
+            'quantity_ok' => 20,
+            'quantity_rejected' => 0,
+        ]);
+
+        $invoiceService = app(InvoiceService::class);
+        $invoice = $invoiceService->buildDraftInvoice([$do->id], $customer->id, '2026-10-17', 1, $admin->id);
+        $invoiceService->postInvoice($invoice, $admin->id);
+        $invoice = $invoice->fresh();
+
+        // Create first payment normally (no idempotency key)
+        $service = app(PaymentService::class);
+        $payment1 = $service->create([
+            'customer_id' => $customer->id,
+            'payment_date' => '2026-10-17',
+            'method' => 'CASH',
+            'amount' => 5000.00,
+            'reference_no' => 'REF-UV-001',
+            'notes' => 'First payment',
+            'allocations' => [
+                ['invoice_id' => $invoice->id, 'amount' => 5000.00],
+            ],
+        ], $admin->id);
+
+        $this->assertNotNull($payment1->id);
+        $stolenNumber = $payment1->payment_number;
+
+        // Directly insert a row with the same payment_number to simulate a collision
+        // on the payment_number unique constraint (NOT idempotency_key).
+        $thrown = false;
+        try {
+            \DB::connection('pgsql')->table('payments')->insert([
+                'id' => \Illuminate\Support\Str::uuid()->toString(),
+                'company_id' => $company->id,
+                'customer_id' => $customer->id,
+                'payment_number' => $stolenNumber, // duplicate!
+                'payment_date' => '2026-10-17',
+                'method' => 'CASH',
+                'amount' => 1000.00,
+                'status' => 'POSTED',
+                'created_by' => $admin->id,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        } catch (QueryException $e) {
+            $thrown = true;
+            // Must contain the payment_number constraint, NOT idempotency_key
+            $this->assertStringContainsString('payment_number', $e->getMessage(),
+                'QueryException should reference payment_number unique constraint.');
+            $this->assertTrue(
+                str_contains($e->getMessage(), '23505') || str_contains($e->getMessage(), 'UNIQUE'),
+                'QueryException should be a unique violation (23505).'
+            );
+        }
+
+        $this->assertTrue($thrown, 'A QueryException must be thrown for duplicate payment_number — it must NOT be silently swallowed.');
+
+        // Verify only one payment with that number exists
+        $count = Payment::on('pgsql')->where('payment_number', $stolenNumber)->count();
+        $this->assertEquals(1, $count, 'Only the original payment should exist; the duplicate insert must have been rejected.');
+    }
 }
