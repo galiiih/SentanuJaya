@@ -95,6 +95,10 @@ export type DeliveryOrderLineRecord = {
   color_code?: string;
   quantity: number;
   unit_price: number;
+  unit_price_snapshot?: number;
+  qty_accepted?: number;
+  qty_rejected?: number;
+  qty_invoiced?: number;
   notes?: string;
   customer_item?: CustomerItem;
   customer_po_line?: CustomerPoLine;
@@ -114,6 +118,7 @@ export type DeliveryOrderRecord = {
   vehicle_plate?: string;
   notes?: string;
   status: 'DRAFT' | 'SUBMITTED' | 'DELIVERED' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED';
+  invoice_status?: 'UNINVOICED' | 'INVOICED';
   created_at: string;
   customer?: Customer;
   customer_po?: CustomerPo;
@@ -319,9 +324,45 @@ export type PaymentPayload = {
   allocations: PaymentAllocationPayload[];
 };
 
+export type InvoiceCreatePayload = {
+  customer_id: string;
+  delivery_order_ids: string[];
+  invoice_date: string;
+  tax_condition: 1 | 2 | 3;
+};
+
+export type InvoiceLineRecord = {
+  id: string;
+  invoice_id: string;
+  delivery_order_line_id: string;
+  description: string;
+  quantity: number;
+  unit_price_snapshot: number;
+  subtotal: number;
+  delivery_order_line?: DeliveryOrderLineRecord & { customer_item?: CustomerItem };
+};
+
+export type InvoiceDeliveryLinkRecord = {
+  id: string;
+  invoice_id: string;
+  delivery_order_id: string;
+  amount_billed: number;
+  delivery_order?: DeliveryOrderRecord;
+};
+
+export type InvoiceDetailRecord = InvoiceRecord & {
+  lines?: InvoiceLineRecord[];
+  delivery_links?: InvoiceDeliveryLinkRecord[];
+  allocations?: PaymentAllocationRecord[];
+};
+
 export const invoiceApi = {
   list: (params?: Record<string, string | number>) => list<InvoiceRecord>('/invoices', params),
-  get: (id: string) => api.get<ApiResponse<InvoiceRecord>>(`/invoices/${id}`).then((r) => r.data.data),
+  get: (id: string) => api.get<ApiResponse<InvoiceDetailRecord>>(`/invoices/${id}`).then((r) => r.data.data),
+  create: (payload: InvoiceCreatePayload) => data<InvoiceRecord>('/invoices', payload),
+  post: (id: string) => data<InvoiceRecord>(`/invoices/${id}/post`),
+  cancel: (id: string) => data<InvoiceRecord>(`/invoices/${id}/cancel`),
+  eligibleDeliveryOrders: (customerId: string) => list<DeliveryOrderRecord>('/invoices/eligible-delivery-orders', { customer_id: customerId }),
 };
 
 export const dashboardApi = {

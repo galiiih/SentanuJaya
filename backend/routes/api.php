@@ -85,6 +85,7 @@ Route::prefix('v1')->group(function () {
                 Route::apiResource('acceptances', AcceptanceController::class)->except(['update', 'destroy']);
 
                 // Phase 5: Invoice
+                Route::get('invoices/eligible-delivery-orders', [InvoiceController::class, 'eligibleDeliveryOrders']);
                 Route::post('invoices/{invoice}/post', [InvoiceController::class, 'post']);
                 Route::post('invoices/{invoice}/cancel', [InvoiceController::class, 'cancel']);
                 Route::apiResource('invoices', InvoiceController::class)->except(['update', 'destroy']);

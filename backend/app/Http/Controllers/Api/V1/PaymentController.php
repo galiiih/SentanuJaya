@@ -76,7 +76,7 @@ class PaymentController extends BaseApiController
         abort_unless($request->user()?->hasPermission('invoice.view'), 403, __('payment.errors.forbidden'));
 
         $invoices = Invoice::where('customer_id', $customer->id)
-            ->where('status', '!=', Invoice::STATUS_CANCELLED)
+            ->whereNotIn('status', [Invoice::STATUS_CANCELLED, Invoice::STATUS_DRAFT])
             ->get();
 
         $invoiceIds = $invoices->pluck('id')->all();

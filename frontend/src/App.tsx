@@ -26,8 +26,8 @@ import { MasterDataPage } from './components/MasterDataPage';
 import { CustomerPoPage } from './components/CustomerPoPage';
 import { DeliveryPage } from './components/DeliveryPage';
 import { PaymentPage } from './components/PaymentPage';
+import { InvoicingPage } from './components/InvoicingPage';
 import {
-  mockDeliveryOrders,
   mockMaterials,
   mockStats,
   type Material,
@@ -53,7 +53,6 @@ import {
   Breadcrumb,
   Button,
   Card,
-  ConfirmationDialog,
   DataTable,
   type DataTableColumn,
   FormField,
@@ -62,7 +61,6 @@ import {
   PageHeader,
   Select,
   StatusBadge,
-  Toast,
 } from './components/ui';
 import './App.css';
 
@@ -379,21 +377,6 @@ function MaterialsPage() {
   return <><PageHeader title={t.pages.materialsTitle} description={t.pages.materialsDesc} action={<Button><Plus size={16} /> Purchase material</Button>} /><Card><DataTable columns={materialColumns} rows={mockMaterials} searchText={(item) => `${item.sku} ${item.name} ${item.category}`} emptyTitle="Belum ada material" emptyDescription="Data material akan muncul setelah master material tersedia." /></Card></>;
 }
 
-function InvoicingPage({ selectedSjs, setSelectedSjs, taxCondition, setTaxCondition }: { selectedSjs: string[]; setSelectedSjs: (value: string[]) => void; taxCondition: 1 | 2 | 3; setTaxCondition: (value: 1 | 2 | 3) => void }) {
-  const { t } = useLanguage();
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [invoiceConfirmationShown, setInvoiceConfirmationShown] = useState(false);
-  const selected = mockDeliveryOrders.filter((item) => selectedSjs.includes(item.sj_number));
-  const subtotal = selected.reduce((total, item) => total + item.qty * item.unit_price, 0);
-  const ppnRate = taxCondition === 3 ? 0.11 : 0;
-  const pphRate = taxCondition === 2 ? 0.025 : taxCondition === 3 ? 0.02 : 0;
-  const ppn = subtotal * ppnRate;
-  const pph = subtotal * pphRate;
-  const total = subtotal + ppn - pph;
-  const toggleSj = (number: string) => setSelectedSjs(selectedSjs.includes(number) ? selectedSjs.filter((item) => item !== number) : [...selectedSjs, number]);
-  return <><PageHeader title={t.pages.invoicingTitle} description={t.pages.invoicingDesc} /><div className="invoice-layout"><div className="invoice-layout__form"><Card title="1. Pilih surat jalan"><div className="selection-list">{mockDeliveryOrders.map((item) => <label className={`selection-row${selectedSjs.includes(item.sj_number) ? ' selection-row--selected' : ''}`} key={item.id}><input type="checkbox" checked={selectedSjs.includes(item.sj_number)} onChange={() => toggleSj(item.sj_number)} /><div><strong>{item.sj_number}</strong><span>{item.item_name} · Qty OK: {item.qty_accepted} pcs</span></div><strong>{currency.format(item.qty_accepted * item.unit_price)}</strong></label>)}</div></Card><Card title="2. Skema pajak customer"><FormField label="Pilih kondisi pajak" hint="Skema ini tetap menggunakan perhitungan invoice existing."><Select id="tax-condition" value={taxCondition} onChange={(event) => setTaxCondition(Number(event.target.value) as 1 | 2 | 3)}><option value={1}>Kondisi 1 — Tanpa PPN & PPh</option><option value={2}>Kondisi 2 — PPh 2,5%</option><option value={3}>Kondisi 3 — PPN 11% + PPh 2%</option></Select></FormField></Card></div><Card className="invoice-summary" title="Ringkasan draft invoice"><dl><div><dt>Surat Jalan dipilih</dt><dd>{selected.length} SJ</dd></div><div><dt>DPP / subtotal</dt><dd>{currency.format(subtotal)}</dd></div><div><dt>PPN ({ppnRate * 100}%)</dt><dd>{currency.format(ppn)}</dd></div><div><dt>PPh ({pphRate * 100}%)</dt><dd>{currency.format(pph)}</dd></div><div className="invoice-summary__total"><dt>Total net tagihan</dt><dd>{currency.format(total)}</dd></div></dl><Button variant="success" className="invoice-summary__action" onClick={() => setConfirmOpen(true)} disabled={!selected.length}><Receipt size={16} /> Terbitkan invoice resmi</Button></Card></div><ConfirmationDialog open={confirmOpen} title="Terbitkan invoice resmi?" description={`Invoice untuk ${selected.length} surat jalan senilai ${currency.format(total)} akan diterbitkan.`} confirmLabel="Lanjutkan" tone="primary" onClose={() => setConfirmOpen(false)} onConfirm={() => { setConfirmOpen(false); setInvoiceConfirmationShown(true); }} /><Toast open={invoiceConfirmationShown} tone="info" message="Konfirmasi invoice diterima. Penerbitan invoice belum terhubung ke backend." onClose={() => setInvoiceConfirmationShown(false)} /></>;
-}
-
 function LoginPage() {
   const { isAuthenticated, login } = useAuth();
   const navigate = useNavigate();
@@ -414,8 +397,6 @@ function LoginPage() {
 function ErrorPage({ code, title, description }: { code: '403' | '404'; title: string; description: string }) { const navigate = useNavigate(); return <main className="error-page"><Card className="error-card"><span>{code}</span><h1>{title}</h1><p>{description}</p><Button onClick={() => navigate('/dashboard')}>Kembali ke Dashboard</Button></Card></main>; }
 
 export function App() {
-  const [selectedSjs, setSelectedSjs] = useState<string[]>(['SJ-2026-001', 'SJ-2026-002']);
-  const [taxCondition, setTaxCondition] = useState<1 | 2 | 3>(3);
   return (
     <LanguageProvider>
       <Routes>
@@ -426,7 +407,7 @@ export function App() {
           <Route path="/customer-po" element={<RequirePermission permission={permissions.poView}><CustomerPoPage /></RequirePermission>} />
           <Route path="/delivery" element={<RequirePermission permission={permissions.deliveryView}><DeliveryPage /></RequirePermission>} />
           <Route path="/materials" element={<RequirePermission permission={permissions.materialView}><MaterialsPage /></RequirePermission>} />
-          <Route path="/invoicing" element={<RequirePermission permission={permissions.invoiceView}><InvoicingPage selectedSjs={selectedSjs} setSelectedSjs={setSelectedSjs} taxCondition={taxCondition} setTaxCondition={setTaxCondition} /></RequirePermission>} />
+          <Route path="/invoicing" element={<RequirePermission permission={permissions.invoiceView}><InvoicingPage /></RequirePermission>} />
           <Route path="/reports" element={<RequirePermission permission={permissions.invoiceView}><ReportsPage /></RequirePermission>} />
           <Route path="/master" element={<RequirePermission permission={permissions.dashboardView}><MasterDataPage /></RequirePermission>} />
           <Route path="/payments" element={<RequirePermission permission={permissions.paymentView}><PaymentPage /></RequirePermission>} />

@@ -14,6 +14,35 @@ class InvoiceController extends BaseApiController
     {
     }
 
+    public function eligibleDeliveryOrders(Request $request): JsonResponse
+    {
+        abort_unless($request->user()?->hasPermission('invoice.create'), 403, __('invoice.errors.forbidden'));
+
+        $request->validate(['customer_id' => 'required|uuid|exists:customers,id']);
+
+        $customerId = $request->string('customer_id');
+
+        // Fetch DELIVERED DOs for this customer, compute remaining invoiceable qty per line
+        $dos = \App\Models\DeliveryOrder::query()
+            ->where('customer_id', $customerId)
+            ->where('status', 'DELIVERED')
+            ->with(['lines.acceptanceLines.acceptance', 'lines.customerItem', 'customer'])
+            ->get()
+            ->filter(function ($do) {
+                // Keep DO if any line has remaining invoiceable qty
+                return $do->lines->contains(function ($line) {
+                    $qtyOk = (float) $line->acceptanceLines
+                        ->filter(fn ($al) => $al->acceptance?->status === \App\Models\Acceptance::STATUS_POSTED)
+                        ->sum('quantity_ok');
+                    $qtyInvoiced = (float) $line->qty_invoiced;
+                    return ($qtyOk - $qtyInvoiced) > 0;
+                });
+            })
+            ->values();
+
+        return $this->sendResponse($dos, 'Eligible delivery orders retrieved.');
+    }
+
     public function index(Request $request): JsonResponse
     {
         abort_unless($request->user()?->hasPermission('invoice.view'), 403, __('invoice.errors.forbidden'));

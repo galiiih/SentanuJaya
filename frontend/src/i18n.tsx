@@ -158,6 +158,45 @@ type Translations = {
     postAcceptance: string;
     overAcceptanceError: string;
   };
+  invoice: {
+    title: string;
+    desc: string;
+    createDraft: string;
+    invoiceNumber: string;
+    invoiceDate: string;
+    dueDate: string;
+    selectCustomer: string;
+    selectDeliveryOrders: string;
+    taxCondition: string;
+    taxConditionHint: string;
+    taxCond1: string;
+    taxCond2: string;
+    taxCond3: string;
+    dpp: string;
+    ppn: string;
+    pph: string;
+    totalNet: string;
+    sjSelected: string;
+    confirmCreateTitle: string;
+    confirmCreateDesc: string;
+    confirmPostTitle: string;
+    confirmPostDesc: string;
+    confirmCancelTitle: string;
+    confirmCancelDesc: string;
+    createSuccess: string;
+    postSuccess: string;
+    cancelSuccess: string;
+    emptyTitle: string;
+    emptyDesc: string;
+    noEligibleSj: string;
+    subtotal: string;
+    amountPaid: string;
+    amountDue: string;
+    postedBy: string;
+    postedAt: string;
+    lines: string;
+    linkedSj: string;
+  };
   payment: {
     title: string;
     desc: string;
@@ -344,6 +383,45 @@ const idTranslations: Translations = {
     postAcceptance: 'Posting Penerimaan',
     overAcceptanceError: 'Jumlah kuantitas diterima dan ditolak melebihi kuantitas pengiriman.',
   },
+  invoice: {
+    title: 'Invoicing & Pajak',
+    desc: 'Buat invoice dari Surat Jalan yang sudah di-accept, kelola lifecycle draft/post/cancel.',
+    createDraft: 'Buat Draft Invoice',
+    invoiceNumber: 'No. Invoice',
+    invoiceDate: 'Tanggal Invoice',
+    dueDate: 'Jatuh Tempo',
+    selectCustomer: 'Pilih customer',
+    selectDeliveryOrders: 'Pilih Surat Jalan eligible',
+    taxCondition: 'Kondisi Pajak',
+    taxConditionHint: 'Perhitungan pajak dilakukan oleh backend.',
+    taxCond1: 'Kondisi 1 — Tanpa PPN & PPh',
+    taxCond2: 'Kondisi 2 — PPh 2,5%',
+    taxCond3: 'Kondisi 3 — PPN 11% + PPh 2%',
+    dpp: 'DPP / Subtotal',
+    ppn: 'PPN',
+    pph: 'PPh',
+    totalNet: 'Total Net Tagihan',
+    sjSelected: 'SJ dipilih',
+    confirmCreateTitle: 'Buat draft invoice?',
+    confirmCreateDesc: 'Invoice draft akan dibuat dari Surat Jalan yang dipilih.',
+    confirmPostTitle: 'Posting invoice?',
+    confirmPostDesc: 'Invoice yang sudah diposting tidak dapat diedit atau dihapus.',
+    confirmCancelTitle: 'Batalkan invoice?',
+    confirmCancelDesc: 'Invoice yang dibatalkan akan melepas kuantitas SJ yang sudah ditagih.',
+    createSuccess: 'Invoice draft berhasil dibuat.',
+    postSuccess: 'Invoice berhasil diposting.',
+    cancelSuccess: 'Invoice berhasil dibatalkan.',
+    emptyTitle: 'Belum ada invoice',
+    emptyDesc: 'Invoice yang dibuat akan muncul di sini.',
+    noEligibleSj: 'Belum ada Surat Jalan eligible untuk customer ini.',
+    subtotal: 'Subtotal',
+    amountPaid: 'Sudah Dibayar',
+    amountDue: 'Sisa Tagihan',
+    postedBy: 'Diposting oleh',
+    postedAt: 'Diposting pada',
+    lines: 'Detail Baris',
+    linkedSj: 'Surat Jalan Terkait',
+  },
   payment: {
     title: 'Pembayaran',
     desc: 'Kelola pembayaran invoice dan outstanding customer.',
@@ -529,6 +607,45 @@ const enTranslations: Translations = {
     submitAcceptance: 'Submit Acceptance',
     postAcceptance: 'Post Acceptance',
     overAcceptanceError: 'Total accepted and rejected quantity exceeds delivery quantity.',
+  },
+  invoice: {
+    title: 'Invoicing & Tax',
+    desc: 'Create invoices from accepted delivery orders, manage draft/post/cancel lifecycle.',
+    createDraft: 'Create Draft Invoice',
+    invoiceNumber: 'Invoice No.',
+    invoiceDate: 'Invoice Date',
+    dueDate: 'Due Date',
+    selectCustomer: 'Select customer',
+    selectDeliveryOrders: 'Select eligible delivery orders',
+    taxCondition: 'Tax Condition',
+    taxConditionHint: 'Tax calculation is handled by the backend.',
+    taxCond1: 'Condition 1 — No VAT & WHT',
+    taxCond2: 'Condition 2 — WHT 2.5%',
+    taxCond3: 'Condition 3 — VAT 11% + WHT 2%',
+    dpp: 'DPP / Subtotal',
+    ppn: 'VAT',
+    pph: 'WHT',
+    totalNet: 'Total Net Invoice',
+    sjSelected: 'DO selected',
+    confirmCreateTitle: 'Create draft invoice?',
+    confirmCreateDesc: 'A draft invoice will be created from the selected delivery orders.',
+    confirmPostTitle: 'Post invoice?',
+    confirmPostDesc: 'Posted invoices cannot be edited or deleted.',
+    confirmCancelTitle: 'Cancel invoice?',
+    confirmCancelDesc: 'Cancelling releases invoiced quantities back to delivery orders.',
+    createSuccess: 'Draft invoice created successfully.',
+    postSuccess: 'Invoice posted successfully.',
+    cancelSuccess: 'Invoice cancelled successfully.',
+    emptyTitle: 'No invoices yet',
+    emptyDesc: 'Created invoices will appear here.',
+    noEligibleSj: 'No eligible delivery orders found for this customer.',
+    subtotal: 'Subtotal',
+    amountPaid: 'Amount Paid',
+    amountDue: 'Amount Due',
+    postedBy: 'Posted by',
+    postedAt: 'Posted at',
+    lines: 'Line Items',
+    linkedSj: 'Linked Delivery Orders',
   },
   payment: {
     title: 'Payments',

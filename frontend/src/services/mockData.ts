@@ -33,20 +33,6 @@ export interface Material {
   avg_cost: number;
 }
 
-export interface DeliveryOrder {
-  id: string;
-  sj_number: string;
-  customer_name: string;
-  item_name: string;
-  color: string;
-  qty: number;
-  unit_price: number;
-  qty_accepted: number;
-  delivery_date: string;
-  status: 'DELIVERED' | 'ACCEPTED';
-  invoice_status: 'UNINVOICED' | 'INVOICED';
-}
-
 export interface SummaryStats {
   custody_count: number;
   low_stock_count: number;
@@ -124,35 +110,6 @@ export const mockMaterials: Material[] = [
     unit: 'Liter',
     minimum_stock: 12,
     avg_cost: 45000
-  }
-];
-
-export const mockDeliveryOrders: DeliveryOrder[] = [
-  {
-    id: 'sj-1',
-    sj_number: 'SJ-2026-001',
-    customer_name: 'PT Varia Baru',
-    item_name: 'Bumper Depan Brio 2023',
-    color: 'R-81 Rallye Red',
-    qty: 20,
-    unit_price: 450000,
-    qty_accepted: 20,
-    delivery_date: '2026-09-22',
-    status: 'ACCEPTED',
-    invoice_status: 'UNINVOICED'
-  },
-  {
-    id: 'sj-2',
-    sj_number: 'SJ-2026-002',
-    customer_name: 'PT Varia Baru',
-    item_name: 'Spoiler Rear Wing Civic',
-    color: 'NH-731P Crystal Black',
-    qty: 15,
-    unit_price: 893066.6667,
-    qty_accepted: 15,
-    delivery_date: '2026-09-23',
-    status: 'ACCEPTED',
-    invoice_status: 'UNINVOICED'
   }
 ];
 
