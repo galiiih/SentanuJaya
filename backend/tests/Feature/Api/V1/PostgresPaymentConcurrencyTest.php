@@ -319,6 +319,11 @@ class PostgresPaymentConcurrencyTest extends TestCase
         \DB::purge('pgsql');
         \DB::reconnect('pgsql');
 
+        $driver = \DB::connection('pgsql')->getDriverName();
+        if ($driver !== 'pgsql') {
+            $this->fail("Expected pgsql driver, got '{$driver}'.");
+        }
+
         $dbName = \DB::connection('pgsql')->getDatabaseName();
         if ($dbName !== 'sentanu_test') {
             $this->fail("Database safety check failed: Expected 'sentanu_test', got '{$dbName}'.");
