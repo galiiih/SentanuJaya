@@ -208,7 +208,7 @@ class PaymentService
         }
     }
 
-    private function nextPaymentNumber(): string
+    protected function nextPaymentNumber(): string
     {
         $prefix = 'PAY-' . now()->format('Ym') . '-';
         $last = Payment::where('payment_number', 'like', $prefix . '%')

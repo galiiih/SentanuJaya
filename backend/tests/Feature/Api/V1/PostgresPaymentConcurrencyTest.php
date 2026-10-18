@@ -268,6 +268,16 @@ class PostgresPaymentConcurrencyTest extends TestCase
             $this->assertEquals(round($invoiceUpdated->total_amount - 10000.00, 2), (float) $invoiceUpdated->amount_due);
 
         } finally {
+            // Close any still-open pipes (stdout/stderr) before terminating processes
+            foreach (['pipes1', 'pipes2'] as $pvar) {
+                if (isset($$pvar) && is_array($$pvar)) {
+                    foreach ($$pvar as $pipe) {
+                        if (is_resource($pipe)) {
+                            @fclose($pipe);
+                        }
+                    }
+                }
+            }
             if (isset($process1) && is_resource($process1)) {
                 @proc_terminate($process1);
                 @proc_close($process1);
@@ -286,8 +296,19 @@ class PostgresPaymentConcurrencyTest extends TestCase
 
     public function test_non_idempotency_unique_violation_is_not_swallowed(): void
     {
-        // Real PostgreSQL test: a QueryException from payment_number unique constraint
-        // must propagate, NOT be silently caught by the idempotency recovery path.
+        // Real PostgreSQL test: PaymentService::create() must re-throw a QueryException
+        // caused by payment_number unique constraint, NOT swallow it via the idempotency
+        // recovery path (lines 190-207 of PaymentService).
+        //
+        // Strategy:
+        // 1. Set up full invoice chain on PostgreSQL.
+        // 2. Add unique index on payment_number.
+        // 3. Pre-insert a ghost row whose payment_number equals what nextPaymentNumber()
+        //    will generate next, creating a guaranteed collision.
+        // 4. Call PaymentService::create() with a fresh idempotency_key so the catch
+        //    block (line 190) executes. The collision is on payment_number, not
+        //    idempotency_key, so it must propagate as QueryException(23505).
+
         try {
             $pdo = \DB::connection('pgsql')->getPdo();
         } catch (\Exception $e) {
@@ -363,55 +384,68 @@ class PostgresPaymentConcurrencyTest extends TestCase
         $invoiceService->postInvoice($invoice, $admin->id);
         $invoice = $invoice->fresh();
 
-        // Create first payment normally (no idempotency key)
-        $service = app(PaymentService::class);
-        $payment1 = $service->create([
+        // Predict the next payment_number that nextPaymentNumber() will generate
+        $prefix = 'PAY-' . now()->format('Ym') . '-';
+        $nextNumber = $prefix . '0001';
+
+        // Pre-insert a ghost row occupying that payment_number to force a collision
+        \DB::connection('pgsql')->table('payments')->insert([
+            'id' => \Illuminate\Support\Str::uuid()->toString(),
+            'company_id' => $company->id,
             'customer_id' => $customer->id,
+            'payment_number' => $nextNumber,
             'payment_date' => '2026-10-17',
             'method' => 'CASH',
-            'amount' => 5000.00,
-            'reference_no' => 'REF-UV-001',
-            'notes' => 'First payment',
-            'allocations' => [
-                ['invoice_id' => $invoice->id, 'amount' => 5000.00],
-            ],
-        ], $admin->id);
+            'amount' => 1.00,
+            'status' => 'POSTED',
+            'created_by' => $admin->id,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
 
-        $this->assertNotNull($payment1->id);
-        $stolenNumber = $payment1->payment_number;
-
-        // Directly insert a row with the same payment_number to simulate a collision
-        // on the payment_number unique constraint (NOT idempotency_key).
+        // Override nextPaymentNumber() to return the colliding number deterministically.
+        // The real method would skip over it (SELECT ... ORDER BY DESC), so we force the
+        // collision via an anonymous subclass — this is the minimal test-only seam.
+        // (nextPaymentNumber changed to protected to enable this override.)
+        $service = new class extends PaymentService {
+            public static string $forcedNumber = '';
+            protected function nextPaymentNumber(): string
+            {
+                return static::$forcedNumber;
+            }
+        };
+        $service::$forcedNumber = $nextNumber;
         $thrown = false;
         try {
-            \DB::connection('pgsql')->table('payments')->insert([
-                'id' => \Illuminate\Support\Str::uuid()->toString(),
-                'company_id' => $company->id,
+            $service->create([
                 'customer_id' => $customer->id,
-                'payment_number' => $stolenNumber, // duplicate!
                 'payment_date' => '2026-10-17',
                 'method' => 'CASH',
-                'amount' => 1000.00,
-                'status' => 'POSTED',
-                'created_by' => $admin->id,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+                'amount' => 5000.00,
+                'reference_no' => 'REF-UV-COLLISION',
+                'notes' => 'Should collide on payment_number',
+                'idempotency_key' => 'fresh-key-no-collision-' . uniqid(),
+                'allocations' => [
+                    ['invoice_id' => $invoice->id, 'amount' => 5000.00],
+                ],
+            ], $admin->id);
         } catch (QueryException $e) {
             $thrown = true;
-            // Must contain the payment_number constraint, NOT idempotency_key
+            // Must reference the payment_number constraint, NOT idempotency_key
             $this->assertStringContainsString('payment_number', $e->getMessage(),
-                'QueryException should reference payment_number unique constraint.');
+                'QueryException should reference payment_number unique constraint, not idempotency_key.');
             $this->assertTrue(
                 str_contains($e->getMessage(), '23505') || str_contains($e->getMessage(), 'UNIQUE'),
-                'QueryException should be a unique violation (23505).'
+                'QueryException should be a unique violation (SQLSTATE 23505).'
             );
         }
 
-        $this->assertTrue($thrown, 'A QueryException must be thrown for duplicate payment_number — it must NOT be silently swallowed.');
+        $this->assertTrue($thrown,
+            'PaymentService::create() must throw QueryException for payment_number collision — '
+            . 'the idempotency recovery path must NOT swallow non-idempotency unique violations.');
 
-        // Verify only one payment with that number exists
-        $count = Payment::on('pgsql')->where('payment_number', $stolenNumber)->count();
-        $this->assertEquals(1, $count, 'Only the original payment should exist; the duplicate insert must have been rejected.');
+        // Verify only the ghost row exists with that payment_number
+        $count = Payment::on('pgsql')->where('payment_number', $nextNumber)->count();
+        $this->assertEquals(1, $count, 'Only the pre-inserted ghost row should exist; the service insert must have been rejected.');
     }
 }
