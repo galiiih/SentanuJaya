@@ -30,6 +30,11 @@ use App\Http\Controllers\Api\V1\{
     PaymentController,
     DashboardController,
     ReportController,
+    WarehouseController,
+    MaterialReceiptController,
+    MaterialUsageController,
+    StockController,
+    WorkOrderController,
 };
 
 Route::prefix('v1')->group(function () {
@@ -102,5 +107,23 @@ Route::prefix('v1')->group(function () {
                 Route::get('reports/receivables', [ReportController::class, 'receivables']);
                 Route::get('reports/operational', [ReportController::class, 'operational']);
                 Route::get('reports/custody', [ReportController::class, 'custody']);
+
+                // Inventory & Material Module
+                Route::apiResource('warehouses', WarehouseController::class);
+                Route::post('material-receipts/{materialReceipt}/post', [MaterialReceiptController::class, 'post']);
+                Route::post('material-receipts/{materialReceipt}/cancel', [MaterialReceiptController::class, 'cancel']);
+                Route::apiResource('material-receipts', MaterialReceiptController::class);
+                Route::post('material-usages/{materialUsage}/post', [MaterialUsageController::class, 'post']);
+                Route::post('material-usages/{materialUsage}/cancel', [MaterialUsageController::class, 'cancel']);
+                Route::apiResource('material-usages', MaterialUsageController::class);
+                Route::get('stocks', [StockController::class, 'index']);
+                Route::get('stock-movements', [StockController::class, 'movements']);
+                Route::get('stocks/low-stock', [StockController::class, 'lowStock']);
+
+                // Work Order & Production Module
+                Route::post('work-orders/{workOrder}/post', [WorkOrderController::class, 'post']);
+                Route::apiResource('work-orders', WorkOrderController::class);
+                Route::post('work-order-lines/{line}/stage-movements', [WorkOrderController::class, 'storeStageMovement']);
+                Route::post('work-order-lines/{line}/qc-inspections', [WorkOrderController::class, 'storeQcInspection']);
             });
         });

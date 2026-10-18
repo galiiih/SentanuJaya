@@ -161,7 +161,19 @@ class InvoiceService
             }
 
             foreach ($locked->deliveryLinks as $link) {
-                DeliveryOrder::where('id', $link->delivery_order_id)->update(['invoice_status' => 'UNINVOICED']);
+                $doId = $link->delivery_order_id;
+                // Refresh DO from DB after lines qty_invoiced are decremented
+                $do = DeliveryOrder::with('lines')->find($doId);
+                if ($do) {
+                    $hasOtherInvoices = InvoiceDeliveryLink::where('delivery_order_id', $doId)
+                        ->where('invoice_id', '!=', $locked->id)
+                        ->whereHas('invoice', fn($q) => $q->where('status', '!=', Invoice::STATUS_CANCELLED))
+                        ->exists();
+                    $hasInvoiceableRemaining = $do->lines->contains(fn($l) => (float)$l->qty_invoiced > 0);
+
+                    $status = ($hasOtherInvoices || $hasInvoiceableRemaining) ? 'INVOICED' : 'UNINVOICED';
+                    $do->update(['invoice_status' => $status]);
+                }
             }
 
             $locked->update(['status' => Invoice::STATUS_CANCELLED]);

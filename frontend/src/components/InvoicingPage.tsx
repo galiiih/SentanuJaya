@@ -272,7 +272,15 @@ export function InvoicingPage() {
                       </div>
                       <strong>
                         {d.lines?.length
-                          ? fmt(d.lines.reduce((s, l) => s + l.quantity * (l.unit_price_snapshot ?? l.unit_price), 0))
+                          ? fmt(d.lines.reduce((sum, line: any) => {
+                              const qtyOk = (line.acceptance_lines || line.acceptanceLines || []).reduce((acc: number, al: any) => {
+                                return acc + ((al.acceptance?.status === 'POSTED') ? Number(al.quantity_ok || 0) : 0);
+                              }, 0);
+                              const qtyInvoiced = Number(line.qty_invoiced || 0);
+                              const invoiceable = Math.max(0, qtyOk - qtyInvoiced);
+                              const unitPrice = Number(line.unit_price_snapshot || line.unit_price || 0);
+                              return sum + (invoiceable * unitPrice);
+                            }, 0))
                           : '-'}
                       </strong>
                     </label>

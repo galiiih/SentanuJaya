@@ -187,6 +187,26 @@ class InvoicePaymentApiTest extends TestCase
     $this->assertSame(Invoice::STATUS_POSTED, $freshDraft->fresh()->status);
     }
 
+    public function test_cancelling_draft_invoice_does_not_reset_do_status_if_other_invoice_exists(): void
+    {
+        $s1 = $this->delivery();
+        $s2 = $this->delivery();
+        $admin = $this->user('ADMIN');
+
+        $this->postAcceptance($s1['do'], $s1['line'], 40, 0);
+        $this->postAcceptance($s2['do'], $s2['line'], 40, 0);
+
+        $invoiceA = app(InvoiceService::class)->buildDraftInvoice([$s1['do']->id], $s1['customer']->id, '2026-10-06', 1, $admin->id);
+        app(InvoiceService::class)->postInvoice($invoiceA, $admin->id);
+        $this->assertSame('INVOICED', $s1['do']->fresh()->invoice_status);
+
+        $invoiceB = app(InvoiceService::class)->buildDraftInvoice([$s2['do']->id], $s2['customer']->id, '2026-10-07', 1, $admin->id);
+        app(InvoiceService::class)->cancelDraftInvoice($invoiceB, $admin->id);
+
+        $this->assertSame('INVOICED', $s1['do']->fresh()->invoice_status);
+        $this->assertSame('UNINVOICED', $s2['do']->fresh()->invoice_status);
+    }
+
     public function test_partial_full_and_overpayment_update_outstanding_correctly(): void
 {
     $s = $this->delivery();

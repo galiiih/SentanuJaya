@@ -12,7 +12,7 @@ class DeliveryOrder extends Model
     protected $fillable = [
         'company_id', 'branch_id', 'sj_number', 'do_number', 'customer_id', 'customer_po_id',
         'customer_po_number', 'delivery_date', 'shipping_address',
-        'driver_name', 'vehicle_plate', 'status', 'notes',
+        'driver_name', 'vehicle_plate', 'status', 'invoice_status', 'notes',
         'created_by',
     ];
 
