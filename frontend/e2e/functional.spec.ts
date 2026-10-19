@@ -10,24 +10,22 @@ test.describe('Sentanu Jaya ERP Functional E2E Tests', () => {
   test('navigation items can be clicked and navigate correctly', async ({ page }) => {
     await page.goto('/');
 
-    const deliveryLink = page.locator('a[href="/delivery"]').first();
-    if (await deliveryLink.count() > 0) {
-      await deliveryLink.click();
-      await expect(page).toHaveURL(/\/delivery/);
-    }
+    const masterNav = page.locator('a[href="/master"]').first();
+    await expect(masterNav).toBeVisible({ timeout: 5000 });
+    await masterNav.click();
+    await expect(page).toHaveURL(/\/master/);
   });
 
   test('form inputs accept continuous typing without losing focus', async ({ page }) => {
     await page.goto('/master');
 
     const input = page.locator('input[type="text"], input:not([type])').first();
-    if (await input.count() > 0) {
-      await input.click();
-      const testString = 'TEST-CODE-123';
-      for (const char of testString) {
-        await page.keyboard.type(char);
-      }
-      await expect(input).toHaveValue(testString);
+    await expect(input).toBeVisible({ timeout: 5000 });
+    await input.click();
+    const testString = 'TEST-CODE-123';
+    for (const char of testString) {
+      await page.keyboard.type(char);
     }
+    await expect(input).toHaveValue(testString);
   });
 });

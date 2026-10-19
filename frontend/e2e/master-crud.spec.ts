@@ -6,7 +6,7 @@ test.describe('Sentanu Jaya ERP Definitive Customer CRUD & Auth E2E', () => {
   const updatedName = `${uniqueName} Updated`;
 
   test('1. Authentication, Full Customer CRUD, Persistence and Cleanup', async ({ page }) => {
-    // 1. Login
+    // 1. Login with valid credentials
     await page.goto('/');
     
     const emailInput = page.locator('input[type="email"], input#email').first();
@@ -21,21 +21,20 @@ test.describe('Sentanu Jaya ERP Definitive Customer CRUD & Auth E2E', () => {
     await expect(loginBtn).toBeVisible();
     await loginBtn.click();
 
-    // Verify successful login & dashboard redirect
+    // Verify successful login & dashboard redirect with robust auth indicator
     await page.waitForURL('**/', { timeout: 15000 });
-    const welcomeHeader = page.locator('text=/Dashboard|Selamat Datang|Sentanu Jaya/i').first();
-    await expect(welcomeHeader).toBeVisible({ timeout: 10000 });
+    const userMenuButton = page.locator('button[aria-label="Menu pengguna"]').first();
+    await expect(userMenuButton).toBeVisible({ timeout: 10000 });
 
     // 2. Navigate to Master Data / Customer Management view
     const masterNav = page.locator('a[href="/master"], button:has-text("Master"), text=/Master Data/i').first();
-    await expect(masterNav).toBeVisible();
+    await expect(masterNav).toBeVisible({ timeout: 5000 });
     await masterNav.click();
 
-    // Ensure customer section/tab is active
+    // Ensure customer section/tab is active (Strict, no conditional check)
     const customerTab = page.locator('text=/Customer|Pelanggan/i').first();
-    if (await customerTab.count() > 0) {
-      await customerTab.click();
-    }
+    await expect(customerTab).toBeVisible({ timeout: 5000 });
+    await customerTab.click();
 
     // 3. Create unique customer record
     const addBtn = page.locator('button:has-text("Tambah"), button:has-text("New"), button:has-text("Create")').first();
