@@ -86,25 +86,25 @@ test.describe('Sentanu Jaya ERP Definitive Customer CRUD & Auth E2E', () => {
       const deletedRow = page.locator(`text=${updatedName}`);
       await expect(deletedRow).toHaveCount(0);
       cleanedUp = true;
+    } catch (err) {
+      throw err;
     } finally {
-      // Safety cleanup if test failed midway
+      // Robust safety cleanup reporting failure explicitly if test failed midway and data remains
       if (!cleanedUp) {
         try {
           const deleteBtn = page.locator(`tr:has-text("${updatedName}"), tr:has-text("${uniqueCode}")`).locator('button:has-text("Hapus"), button:has-text("Delete")').first();
           if (await deleteBtn.isVisible()) {
             page.on('dialog', dialog => dialog.accept());
             await deleteBtn.click();
+            await page.waitForTimeout(1000);
+          } else {
+            throw new Error(`Cleanup failed: test record ${uniqueCode} / ${updatedName} could not be found for deletion in UI.`);
           }
-        } catch (e) {
-          // ignore cleanup error
+        } catch (cleanupErr: any) {
+          console.error('CRITICAL: Test failed and cleanup also failed or left test data behind:', cleanupErr.message);
+          throw new Error(`Cleanup failed: ${cleanupErr.message}`);
         }
       }
     }
-  });
-
-  test('2. Negative assertion / False-positive check for missing elements', async ({ page }) => {
-    await page.goto('/');
-    const missingElement = page.locator('id=non-existent-element-xyz');
-    await expect(missingElement).toHaveCount(0);
   });
 });
