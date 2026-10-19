@@ -66,26 +66,24 @@ test.describe('Sentanu Jaya ERP Definitive Customer CRUD & Auth E2E', () => {
     const persistedRow = page.locator(`text=${uniqueCode}`).first();
     await expect(persistedRow).toBeVisible({ timeout: 10000 });
 
-    // 6. Edit record
+    // 6. Edit record (strict assertion, no conditional skipping)
     const editBtn = page.locator(`tr:has-text("${uniqueCode}") button:has-text("Edit"), tr:has-text("${uniqueCode}") [aria-label*="Edit"]`).first();
-    if (await editBtn.count() > 0) {
-      await editBtn.click();
-      await nameField.fill(updatedName);
-      await saveBtn.click();
-      await page.waitForTimeout(2000);
-      const updatedRow = page.locator(`text=${updatedName}`).first();
-      await expect(updatedRow).toBeVisible({ timeout: 10000 });
-    }
+    await expect(editBtn).toBeVisible({ timeout: 5000 });
+    await editBtn.click();
+    await nameField.fill(updatedName);
+    await saveBtn.click();
+    await page.waitForTimeout(2000);
+    const updatedRow = page.locator(`text=${updatedName}`).first();
+    await expect(updatedRow).toBeVisible({ timeout: 10000 });
 
-    // 7. Delete record and verify removal
-    const deleteBtn = page.locator(`tr:has-text("${uniqueCode}") button:has-text("Hapus"), tr:has-text("${uniqueCode}") button:has-text("Delete"), tr:has-text("${uniqueCode}") [aria-label*="Delete"]`).first();
-    if (await deleteBtn.count() > 0) {
-      page.on('dialog', dialog => dialog.accept());
-      await deleteBtn.click();
-      await page.waitForTimeout(2000);
-      const deletedRow = page.locator(`text=${uniqueCode}`);
-      await expect(deletedRow).toHaveCount(0);
-    }
+    // 7. Delete record and verify removal (strict assertion, no conditional skipping)
+    const deleteBtn = page.locator(`tr:has-text("${updatedName}") button:has-text("Hapus"), tr:has-text("${updatedName}") button:has-text("Delete"), tr:has-text("${updatedName}") [aria-label*="Delete"]`).first();
+    await expect(deleteBtn).toBeVisible({ timeout: 5000 });
+    page.on('dialog', dialog => dialog.accept());
+    await deleteBtn.click();
+    await page.waitForTimeout(2000);
+    const deletedRow = page.locator(`text=${updatedName}`);
+    await expect(deletedRow).toHaveCount(0);
   });
 
   test('2. Negative assertion / False-positive check for missing elements', async ({ page }) => {
