@@ -16,12 +16,21 @@ export default defineConfig({
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
-  webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:5173',
-    reuseExistingServer: false,
-    timeout: 60 * 1000,
-  },
+  webServer: [
+    {
+      command: 'php artisan serve --port=8000',
+      url: 'http://127.0.0.1:8000/',
+      cwd: '../backend',
+      reuseExistingServer: true,
+      timeout: 60 * 1000,
+    },
+    {
+      command: 'npm run dev',
+      url: 'http://localhost:5173',
+      reuseExistingServer: true,
+      timeout: 60 * 1000,
+    }
+  ],
   projects: [
     {
       name: 'chromium',
