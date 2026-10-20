@@ -1,0 +1,110 @@
+import { test, expect } from '@playwright/test';
+
+test.describe('Sentanu Jaya ERP Definitive Customer CRUD & Auth E2E', () => {
+  const uniqueName = `Customer Test ${Date.now()}`;
+  const uniqueCode = `CUST-${Date.now()}`;
+  const updatedName = `${uniqueName} Updated`;
+
+  test('1. Authentication, Full Customer CRUD, Persistence and Cleanup', async ({ page }) => {
+    let cleanedUp = false;
+    try {
+      // 1. Login with valid credentials
+      await page.goto('/');
+      
+      const emailInput = page.locator('input[type="email"], input#email').first();
+      const passwordInput = page.locator('input[type="password"], input#password').first();
+      await expect(emailInput).toBeVisible({ timeout: 10000 });
+      await expect(passwordInput).toBeVisible({ timeout: 10000 });
+
+      await emailInput.fill('admin@sentanu.local');
+      await passwordInput.fill('secret123');
+      
+      const loginBtn = page.locator('button[type="submit"], button:has-text("Login")').first();
+      await expect(loginBtn).toBeVisible();
+      await loginBtn.click();
+
+      // Verify successful login & dashboard redirect with robust auth indicator
+      await page.waitForURL('**/', { timeout: 15000 });
+      const userMenuButton = page.locator('button[aria-label="Menu pengguna"]').first();
+      await expect(userMenuButton).toBeVisible({ timeout: 10000 });
+
+      // 2. Navigate to Master Data / Customer Management view
+      const masterNav = page.locator('a[href="/master"], button:has-text("Master"), text=/Master Data/i').first();
+      await expect(masterNav).toBeVisible({ timeout: 5000 });
+      await masterNav.click();
+
+      // Ensure customer section/tab is active (Strict, no conditional check)
+      const customerTab = page.locator('text=/Customer|Pelanggan/i').first();
+      await expect(customerTab).toBeVisible({ timeout: 5000 });
+      await customerTab.click();
+
+      // 3. Create unique customer record
+      const addBtn = page.locator('button:has-text("Tambah"), button:has-text("New"), button:has-text("Create")').first();
+      await expect(addBtn).toBeVisible();
+      await addBtn.click();
+
+      const nameField = page.locator('input[name="name"], input#name').first();
+      const codeField = page.locator('input[name="code"], input#code').first();
+      
+      await expect(nameField).toBeVisible();
+      await expect(codeField).toBeVisible();
+
+      await nameField.fill(uniqueName);
+      await codeField.fill(uniqueCode);
+
+      const saveBtn = page.locator('button[type="submit"], button:has-text("Simpan"), button:has-text("Save")').first();
+      await expect(saveBtn).toBeVisible();
+      await saveBtn.click();
+
+      // 4. Verify record appears in list
+      await page.waitForTimeout(2000);
+      const createdRow = page.locator(`text=${uniqueCode}`).first();
+      await expect(createdRow).toBeVisible({ timeout: 10000 });
+
+      // 5. Reload and verify persistence
+      await page.reload();
+      await page.waitForLoadState('networkidle');
+      const persistedRow = page.locator(`text=${uniqueCode}`).first();
+      await expect(persistedRow).toBeVisible({ timeout: 10000 });
+
+      // 6. Edit record (strict assertion, no conditional skipping)
+      const editBtn = page.locator(`tr:has-text("${uniqueCode}") button:has-text("Edit"), tr:has-text("${uniqueCode}") [aria-label*="Edit"]`).first();
+      await expect(editBtn).toBeVisible({ timeout: 5000 });
+      await editBtn.click();
+      await nameField.fill(updatedName);
+      await saveBtn.click();
+      await page.waitForTimeout(2000);
+      const updatedRow = page.locator(`text=${updatedName}`).first();
+      await expect(updatedRow).toBeVisible({ timeout: 10000 });
+
+      // 7. Delete record and verify removal (strict assertion, no conditional skipping)
+      const deleteBtn = page.locator(`tr:has-text("${updatedName}") button:has-text("Hapus"), tr:has-text("${updatedName}") button:has-text("Delete"), tr:has-text("${updatedName}") [aria-label*="Delete"]`).first();
+      await expect(deleteBtn).toBeVisible({ timeout: 5000 });
+      page.on('dialog', dialog => dialog.accept());
+      await deleteBtn.click();
+      await page.waitForTimeout(2000);
+      const deletedRow = page.locator(`text=${updatedName}`);
+      await expect(deletedRow).toHaveCount(0);
+      cleanedUp = true;
+    } catch (err) {
+      throw err;
+    } finally {
+      // Robust safety cleanup reporting failure explicitly if test failed midway and data remains
+      if (!cleanedUp) {
+        try {
+          const deleteBtn = page.locator(`tr:has-text("${updatedName}"), tr:has-text("${uniqueCode}")`).locator('button:has-text("Hapus"), button:has-text("Delete")').first();
+          if (await deleteBtn.isVisible()) {
+            page.on('dialog', dialog => dialog.accept());
+            await deleteBtn.click();
+            await page.waitForTimeout(1000);
+          } else {
+            throw new Error(`Cleanup failed: test record ${uniqueCode} / ${updatedName} could not be found for deletion in UI.`);
+          }
+        } catch (cleanupErr: any) {
+          console.error('CRITICAL: Test failed and cleanup also failed or left test data behind:', cleanupErr.message);
+          throw new Error(`Cleanup failed: ${cleanupErr.message}`);
+        }
+      }
+    }
+  });
+});

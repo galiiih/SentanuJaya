@@ -12,6 +12,10 @@
 12|8. `ACCOUNTING_TAX_RECOMMENDATION.md` — rekomendasi akuntansi/pajak dan rujukan hukum.
 13|9. `07_SECURITY_AND_TESTING_WORKFLOW.md` — standar keamanan, pemisahan tugas (SoD), dan testing/debugging suite.
 
+## AI-agent orchestration
+
+- `AI_AGENT_ORCHESTRATION.md` — ChatGPT sebagai Main Orchestrator; pembagian tanggung jawab agent, siklus delegasi, kontrak bukti, dan verifikasi hasil. E2E testing adalah salah satu task QA, bukan orchestration utama.
+
 ## Dokumen pendukung
 
 - `PRD.md` — requirement V1 dan acceptance criteria. Gunakan bersama `MVP_ROADMAP.md`; PRD lama belum menggantikan pembagian MVP baru.
