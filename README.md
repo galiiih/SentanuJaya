@@ -2,6 +2,8 @@
 
 Sentanu ERP adalah custom web app untuk bisnis jasa automotive finishing, painting, polishing, coating, body kit, dan aksesoris.
 
+> **AI-agent workflow:** ChatGPT berperan sebagai Main Orchestrator untuk merencanakan, mendelegasikan, dan memverifikasi pekerjaan dari agent spesialis. E2E testing adalah salah satu task QA, bukan tujuan utama orchestration. Lihat [AI Agent Orchestration](docs/AI_AGENT_ORCHESTRATION.md).
+
 ---
 
 ## 📌 Lokasi File Proyek & Arsitektur
