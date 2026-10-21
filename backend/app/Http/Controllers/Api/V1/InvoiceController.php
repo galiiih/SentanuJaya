@@ -64,7 +64,7 @@ class InvoiceController extends BaseApiController
         abort_unless($request->user()?->hasPermission('invoice.create'), 403, __('invoice.errors.forbidden'));
 
         $data = $request->validate([
-            'delivery_order_ids' => 'required|array|min:1',
+            'delivery_order_ids' => 'required|array|min:1|max:1',
             'delivery_order_ids.*' => 'uuid|exists:delivery_orders,id',
             'customer_id' => 'required|uuid|exists:customers,id',
             'invoice_date' => 'required|date',

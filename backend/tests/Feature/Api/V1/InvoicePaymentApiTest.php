@@ -726,6 +726,23 @@ class InvoicePaymentApiTest extends TestCase
         $this->assertEquals(0.0, (float) $res3['total_paid']);
         $this->assertEquals($total3, (float) $res3['total_outstanding']);
     }
+
+    public function test_multiple_delivery_orders_per_invoice_is_rejected(): void
+    {
+        $s1 = $this->delivery();
+        $s2 = $this->delivery();
+        $admin = $this->user('ADMIN');
+
+        $this->postAcceptance($s1['do'], $s1['line'], 10, 0);
+        $this->postAcceptance($s2['do'], $s2['line'], 10, 0);
+
+        $this->actingAs($admin)->postJson('/api/v1/invoices', [
+            'delivery_order_ids' => [$s1['do']->id, $s2['do']->id],
+            'customer_id' => $s1['customer']->id,
+            'invoice_date' => '2026-10-06',
+            'tax_condition' => 1,
+        ])->assertStatus(422);
+    }
     
     }
     

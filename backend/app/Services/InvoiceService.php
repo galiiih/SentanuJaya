@@ -25,6 +25,9 @@ class InvoiceService
         int $taxCondition,
         string $actorId
     ): Invoice {
+        if (count($deliveryOrderIds) !== 1) {
+            throw ValidationException::withMessages(['delivery_order_ids' => ['Aturan bisnis: Satu Surat Jalan hanya dapat menghasilkan satu invoice.']]);
+        }
         return DB::transaction(function () use ($deliveryOrderIds, $customerId, $invoiceDate, $taxCondition, $actorId) {
             $dOrders = DeliveryOrder::query()
                 ->whereIn('id', $deliveryOrderIds)
