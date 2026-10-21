@@ -39,9 +39,8 @@ test.describe('Sentanu Jaya ERP Functional E2E Tests', () => {
     await page.waitForLoadState('networkidle');
 
     await page.evaluate(() => {
-      const buttons = Array.from(document.querySelectorAll('button'));
-      const addBtn = buttons.find(b => b.textContent?.includes('Tambah') || b.querySelector('svg'));
-      if (addBtn) addBtn.click();
+      const btn = Array.from(document.querySelectorAll('button')).find(b => b.textContent?.includes('Tambah') || b.querySelector('svg'));
+      if (btn) (btn as HTMLButtonElement).click();
     });
 
     const input = page.locator('input').first();
