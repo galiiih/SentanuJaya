@@ -34,19 +34,26 @@ test.describe('Sentanu Jaya ERP Functional E2E Tests', () => {
   });
 
   test('form inputs accept continuous typing without losing focus', async ({ page }) => {
-    await page.goto('/');
-    const emailInput = page.locator('input[type="email"], input#email').first();
-    await expect(emailInput).toBeVisible({ timeout: 10000 });
-    await emailInput.click();
+    await login(page);
+    await page.goto('/master');
+    await page.waitForLoadState('networkidle');
 
-    const testString = 'admin@sentanu.local';
-    // clear first
-    await emailInput.fill('');
+    await page.evaluate(() => {
+      const buttons = Array.from(document.querySelectorAll('button'));
+      const addBtn = buttons.find(b => b.textContent?.includes('Tambah') || b.querySelector('svg'));
+      if (addBtn) addBtn.click();
+    });
+
+    const input = page.locator('input').first();
+    await expect(input).toBeVisible({ timeout: 5000 });
+    await input.click();
+    
+    const testString = 'CODE-99';
     for (const char of testString) {
       await page.keyboard.type(char);
-      const isFocused = await emailInput.evaluate(el => document.activeElement === el);
+      const isFocused = await input.evaluate(el => document.activeElement === el);
       expect(isFocused).toBe(true);
     }
-    await expect(emailInput).toHaveValue(testString);
+    await expect(input).toHaveValue(testString);
   });
 });

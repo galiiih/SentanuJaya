@@ -736,13 +736,39 @@ class InvoicePaymentApiTest extends TestCase
         $this->postAcceptance($s1['do'], $s1['line'], 10, 0);
         $this->postAcceptance($s2['do'], $s2['line'], 10, 0);
 
-        $this->actingAs($admin)->postJson('/api/v1/invoices', [
+        $initialInvoiceCount = \App\Models\Invoice::count();
+
+        $response = $this->actingAs($admin)->postJson('/api/v1/invoices', [
             'delivery_order_ids' => [$s1['do']->id, $s2['do']->id],
             'customer_id' => $s1['customer']->id,
             'invoice_date' => '2026-10-06',
             'tax_condition' => 1,
-        ])->assertStatus(422);
+        ]);
+
+        $response->assertStatus(422);
+        $this->assertEquals($initialInvoiceCount, \App\Models\Invoice::count());
+        $this->assertDatabaseMissing('invoice_delivery_links', ['delivery_order_id' => $s1['do']->id]);
+        $this->assertDatabaseMissing('invoice_delivery_links', ['delivery_order_id' => $s2['do']->id]);
     }
-    
+
+    public function test_service_layer_multiple_delivery_orders_rejected(): void
+    {
+        $s1 = $this->delivery();
+        $s2 = $this->delivery();
+        $admin = $this->user('ADMIN');
+
+        $this->postAcceptance($s1['do'], $s1['line'], 10, 0);
+        $this->postAcceptance($s2['do'], $s2['line'], 10, 0);
+
+        $this->expectException(\Illuminate\Validation\ValidationException::class);
+
+        $service = app(\App\Services\InvoiceService::class);
+        $service->buildDraftInvoice(
+            [$s1['do']->id, $s2['do']->id],
+            $s1['customer']->id,
+            '2026-10-06',
+            1,
+            $admin->id
+        );
     }
-    
+}
