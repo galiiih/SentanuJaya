@@ -243,4 +243,176 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await expect(page.locator('tr').filter({ hasText: code })).toHaveCount(0, { timeout: 10000 });
   });
 
+
+  test('Company master supports real typing, create, edit, reload persistence and delete', async ({ page }) => {
+    const suffix = Date.now().toString();
+    const code = `E2E-COMP-${suffix}`;
+    const name = `Browser Company ${suffix}`;
+    const editedName = `Edited Company ${suffix}`;
+
+    await login(page);
+    await page.goto('/master');
+    await expect(page.getByText('Master Data & Referensi')).toBeVisible();
+    await page.getByRole('button', { name: 'Perusahaan' }).click();
+    await expect(page.getByText('Daftar Perusahaan')).toBeVisible();
+    await page.getByRole('button', { name: 'Tambah Perusahaan' }).click();
+
+    const dialog = page.getByRole('dialog');
+    const codeInput = dialog.getByPlaceholder('SJ');
+    const nameInput = dialog.getByPlaceholder('PT Sentanu Jaya');
+    await codeInput.click();
+    for (const char of code) {
+      await page.keyboard.type(char);
+      await expect(codeInput).toBeFocused();
+    }
+    await expect(codeInput).toHaveValue(code);
+    await nameInput.click();
+    for (const char of name) {
+      await page.keyboard.type(char);
+      await expect(nameInput).toBeFocused();
+    }
+    await expect(nameInput).toHaveValue(name);
+    await dialog.getByRole('button', { name: /Simpan Data/i }).click();
+    await expect(dialog).toBeHidden({ timeout: 10000 });
+
+    let row = page.locator('tr').filter({ hasText: code });
+    await expect(row).toContainText(name, { timeout: 10000 });
+    await page.reload();
+    await page.getByRole('button', { name: 'Perusahaan' }).click();
+    row = page.locator('tr').filter({ hasText: code });
+    await expect(row).toContainText(name, { timeout: 10000 });
+
+    await row.locator('button[title="Edit"]').click();
+    const editDialog = page.getByRole('dialog');
+    await editDialog.getByPlaceholder('PT Sentanu Jaya').fill(editedName);
+    await editDialog.getByRole('button', { name: /Simpan Data/i }).click();
+    row = page.locator('tr').filter({ hasText: code });
+    await expect(row).toContainText(editedName, { timeout: 10000 });
+
+    await row.locator('button[title="Hapus"]').click();
+    await expect(page.getByText('Hapus Data Master?')).toBeVisible();
+    await page.getByRole('button', { name: /Hapus|Konfirmasi|Ya/i }).last().click();
+    await expect(page.locator('tr').filter({ hasText: code })).toHaveCount(0, { timeout: 10000 });
+  });
+
+  test('Customer Contact, Customer Item and Price List support related-record dropdowns and CRUD', async ({ page }) => {
+    const suffix = Date.now().toString();
+    const customerCode = `E2E-REL-CUST-${suffix}`;
+    const customerName = `Related Test Customer ${suffix}`;
+    const contactName = `Related Contact ${suffix}`;
+    const itemCode = `E2E-ITEM-${suffix}`;
+    const itemName = `Related Item ${suffix}`;
+    const priceListCode = `E2E-PL-${suffix}`;
+    const priceListName = `Related Price List ${suffix}`;
+
+    await login(page);
+    await page.goto('/master');
+    await expect(page.getByText('Master Data & Referensi')).toBeVisible();
+
+    // Create an isolated parent customer through the UI so this test does not depend on seed data.
+    await page.getByRole('button', { name: 'Customer', exact: true }).click();
+    await page.getByRole('button', { name: 'Tambah Customer' }).click();
+    let dialog = page.getByRole('dialog');
+    await dialog.getByPlaceholder('CUST-001').fill(customerCode);
+    await dialog.getByPlaceholder('PT Sentanu Maju').fill(customerName);
+    await dialog.getByRole('button', { name: /Simpan Data/i }).click();
+    await expect(dialog).toBeHidden({ timeout: 10000 });
+    let customerRow = page.locator('tr').filter({ hasText: customerCode });
+    await expect(customerRow).toContainText(customerName, { timeout: 10000 });
+
+    // Customer Contact: select the parent customer, create, reload, edit, and delete.
+    await page.getByRole('button', { name: 'Customer Contact' }).click();
+    await page.getByRole('button', { name: 'Tambah Customer Contact' }).click();
+    dialog = page.getByRole('dialog');
+    const contactCustomer = dialog.locator('select').first();
+    await expect(contactCustomer).toBeVisible();
+    await contactCustomer.selectOption({ label: new RegExp(customerCode) });
+    await dialog.getByPlaceholder('Bapak Budi').fill(contactName);
+    await dialog.getByPlaceholder('Purchasing Manager').fill('Purchasing');
+    await dialog.getByRole('button', { name: /Simpan Data/i }).click();
+    await expect(dialog).toBeHidden({ timeout: 10000 });
+    let contactRow = page.locator('tr').filter({ hasText: contactName });
+    await expect(contactRow).toBeVisible({ timeout: 10000 });
+    await page.reload();
+    await page.getByRole('button', { name: 'Customer Contact' }).click();
+    contactRow = page.locator('tr').filter({ hasText: contactName });
+    await expect(contactRow).toBeVisible({ timeout: 10000 });
+    await contactRow.locator('button[title="Edit"]').click();
+    dialog = page.getByRole('dialog');
+    await dialog.getByPlaceholder('Bapak Budi').fill(`Edited ${contactName}`);
+    await dialog.getByRole('button', { name: /Simpan Data/i }).click();
+    contactRow = page.locator('tr').filter({ hasText: `Edited ${contactName}` });
+    await expect(contactRow).toBeVisible({ timeout: 10000 });
+    await contactRow.locator('button[title="Hapus"]').click();
+    await expect(page.getByText('Hapus Data Master?')).toBeVisible();
+    await page.getByRole('button', { name: /Hapus|Konfirmasi|Ya/i }).last().click();
+    await expect(page.locator('tr').filter({ hasText: contactName })).toHaveCount(0, { timeout: 10000 });
+
+    // Customer Item: verify relation dropdown and CRUD against the same parent.
+    await page.getByRole('button', { name: 'Customer Item' }).click();
+    await page.getByRole('button', { name: 'Tambah Customer Item' }).click();
+    dialog = page.getByRole('dialog');
+    await dialog.locator('select').first().selectOption({ label: new RegExp(customerCode) });
+    const itemCodeInput = dialog.getByPlaceholder('ITEM-BODYKIT-01');
+    await itemCodeInput.click();
+    for (const char of itemCode) {
+      await page.keyboard.type(char);
+      await expect(itemCodeInput).toBeFocused();
+    }
+    await dialog.getByPlaceholder('Front Bumper Pajero Sport').fill(itemName);
+    await dialog.getByRole('button', { name: /Simpan Data/i }).click();
+    await expect(dialog).toBeHidden({ timeout: 10000 });
+    let itemRow = page.locator('tr').filter({ hasText: itemCode });
+    await expect(itemRow).toContainText(itemName, { timeout: 10000 });
+    await page.reload();
+    await page.getByRole('button', { name: 'Customer Item' }).click();
+    itemRow = page.locator('tr').filter({ hasText: itemCode });
+    await expect(itemRow).toContainText(itemName, { timeout: 10000 });
+    await itemRow.locator('button[title="Edit"]').click();
+    dialog = page.getByRole('dialog');
+    await dialog.getByPlaceholder('Front Bumper Pajero Sport').fill(`Edited ${itemName}`);
+    await dialog.getByRole('button', { name: /Simpan Data/i }).click();
+    itemRow = page.locator('tr').filter({ hasText: `Edited ${itemName}` });
+    await expect(itemRow).toBeVisible({ timeout: 10000 });
+    await itemRow.locator('button[title="Hapus"]').click();
+    await expect(page.getByText('Hapus Data Master?')).toBeVisible();
+    await page.getByRole('button', { name: /Hapus|Konfirmasi|Ya/i }).last().click();
+    await expect(page.locator('tr').filter({ hasText: itemCode })).toHaveCount(0, { timeout: 10000 });
+
+    // Price List: select the parent customer and exercise persisted CRUD.
+    await page.getByRole('button', { name: 'Price List', exact: true }).click();
+    await page.getByRole('button', { name: 'Tambah Price List' }).click();
+    dialog = page.getByRole('dialog');
+    await dialog.getByPlaceholder('PL-2024-01').fill(priceListCode);
+    await dialog.getByPlaceholder('Kontrak Harga 2024').fill(priceListName);
+    await dialog.locator('select').first().selectOption({ label: new RegExp(customerCode) });
+    await dialog.getByRole('button', { name: /Simpan Data/i }).click();
+    await expect(dialog).toBeHidden({ timeout: 10000 });
+    let priceRow = page.locator('tr').filter({ hasText: priceListCode });
+    await expect(priceRow).toContainText(priceListName, { timeout: 10000 });
+    await page.reload();
+    await page.getByRole('button', { name: 'Price List', exact: true }).click();
+    priceRow = page.locator('tr').filter({ hasText: priceListCode });
+    await expect(priceRow).toContainText(priceListName, { timeout: 10000 });
+    await priceRow.locator('button[title="Edit"]').click();
+    dialog = page.getByRole('dialog');
+    await dialog.getByPlaceholder('Kontrak Harga 2024').fill(`Edited ${priceListName}`);
+    await dialog.getByRole('button', { name: /Simpan Data/i }).click();
+    priceRow = page.locator('tr').filter({ hasText: `Edited ${priceListName}` });
+    await expect(priceRow).toBeVisible({ timeout: 10000 });
+    await priceRow.locator('button[title="Hapus"]').click();
+    await expect(page.getByText('Hapus Data Master?')).toBeVisible();
+    await page.getByRole('button', { name: /Hapus|Konfirmasi|Ya/i }).last().click();
+    await expect(page.locator('tr').filter({ hasText: priceListCode })).toHaveCount(0, { timeout: 10000 });
+
+    // Remove the parent last after all dependent records have been deleted.
+    await page.getByRole('button', { name: 'Customer', exact: true }).click();
+    customerRow = page.locator('tr').filter({ hasText: customerCode });
+    await expect(customerRow).toBeVisible({ timeout: 10000 });
+    await customerRow.locator('button[title="Hapus"]').click();
+    await expect(page.getByText('Hapus Data Master?')).toBeVisible();
+    await page.getByRole('button', { name: /Hapus|Konfirmasi|Ya/i }).last().click();
+    await expect(page.locator('tr').filter({ hasText: customerCode })).toHaveCount(0, { timeout: 10000 });
+  });
+
 });
