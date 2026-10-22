@@ -135,4 +135,61 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await expect(page.locator('tr').filter({ hasText: code })).toHaveCount(0, { timeout: 10000 });
   });
 
+
+  test('Supplier master supports continuous typing, create, edit, persistence and delete', async ({ page }) => {
+    const suffix = Date.now().toString();
+    const code = `E2E-SUP-${suffix}`;
+    const name = `Browser Supplier ${suffix}`;
+    const editedName = `Edited Supplier ${suffix}`;
+
+    await login(page);
+    await page.goto('/master');
+    await expect(page.getByText('Master Data & Referensi')).toBeVisible();
+    await page.getByRole('button', { name: /^Supplier$/i }).click();
+    await expect(page.getByText('Daftar Supplier')).toBeVisible();
+    await page.getByRole('button', { name: /Tambah Supplier/i }).click();
+
+    const dialog = page.getByRole('dialog');
+    const codeInput = dialog.getByPlaceholder('SUP-001');
+    const nameInput = dialog.getByPlaceholder('PT Warna Abadi Kimia');
+
+    await expect(codeInput).toBeVisible();
+    await codeInput.click();
+    for (const char of code) {
+      await page.keyboard.type(char);
+      await expect(codeInput).toBeFocused();
+    }
+    await expect(codeInput).toHaveValue(code);
+
+    await nameInput.click();
+    for (const char of name) {
+      await page.keyboard.type(char);
+      await expect(nameInput).toBeFocused();
+    }
+    await expect(nameInput).toHaveValue(name);
+
+    await dialog.getByRole('button', { name: /Simpan Data/i }).click();
+    await expect(dialog).toBeHidden({ timeout: 10000 });
+    let row = page.locator('tr').filter({ hasText: code });
+    await expect(row).toContainText(name, { timeout: 10000 });
+
+    await page.reload();
+    await page.getByRole('button', { name: /^Supplier$/i }).click();
+    row = page.locator('tr').filter({ hasText: code });
+    await expect(row).toContainText(name, { timeout: 10000 });
+
+    await row.getByRole('button', { name: 'Edit' }).click();
+    const editDialog = page.getByRole('dialog');
+    const editNameInput = editDialog.getByPlaceholder('PT Warna Abadi Kimia');
+    await editNameInput.fill(editedName);
+    await editDialog.getByRole('button', { name: /Simpan Data/i }).click();
+    row = page.locator('tr').filter({ hasText: code });
+    await expect(row).toContainText(editedName, { timeout: 10000 });
+
+    await row.getByRole('button', { name: 'Hapus' }).click();
+    await expect(page.getByText('Hapus Data Master?')).toBeVisible();
+    await page.getByRole('button', { name: /Hapus|Konfirmasi|Ya/i }).last().click();
+    await expect(page.locator('tr').filter({ hasText: code })).toHaveCount(0, { timeout: 10000 });
+  });
+
 });
