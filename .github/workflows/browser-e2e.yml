@@ -74,7 +74,7 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Run browser E2E
         working-directory: frontend
-        run: npm run test:e2e -- --reporter=list
+        run: npm run test:e2e -- --reporter=list,html
       - name: Upload Playwright report and failures
         if: always()
         uses: actions/upload-artifact@v4
