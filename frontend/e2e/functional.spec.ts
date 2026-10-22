@@ -33,7 +33,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
 
     const dialog = page.getByRole('dialog');
     const codeInput = dialog.getByPlaceholder('CUST-001');
-    const nameInput = dialog.getByPlaceholder('PT Sentanu Maju');
+    const nameInput = dialog.getByPlaceholder('PT Sentanu Maju').first();
     const taxSelect = dialog.locator('select').first();
 
     await expect(codeInput).toBeVisible();
