@@ -178,13 +178,21 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     row = page.locator('tr').filter({ hasText: code });
     await expect(row).toContainText(name, { timeout: 10000 });
 
-    await row.getByRole('button', { name: 'Edit' }).click();
-    const editDialog = page.getByRole('dialog');
-    const editNameInput = editDialog.getByPlaceholder('PT Warna Abadi Kimia');
-    await editNameInput.fill(editedName);
-    await editDialog.getByRole('button', { name: /Simpan Data/i }).click();
-    row = page.locator('tr').filter({ hasText: code });
-    await expect(row).toContainText(editedName, { timeout: 10000 });
+    // Some master tables render icon-only action controls. Locate the row actions
+    // by their accessible labels first, then fall back to title/aria-label metadata.
+    const editButton = row.locator('button[aria-label="Edit"], button[title="Edit"]').first();
+    if (await editButton.count()) {
+      await editButton.click();
+      const editDialog = page.getByRole('dialog');
+      const editNameInput = editDialog.getByPlaceholder('PT Warna Abadi Kimia');
+      await editNameInput.fill(editedName);
+      await editDialog.getByRole('button', { name: /Simpan Data/i }).click();
+      row = page.locator('tr').filter({ hasText: code });
+      await expect(row).toContainText(editedName, { timeout: 10000 });
+    } else {
+      // If the supplier table has no edit action, fail with a precise UI diagnostic.
+      throw new Error('Supplier row is persisted, but no Edit button with accessible name or title was rendered.');
+    }
 
     await row.getByRole('button', { name: 'Hapus' }).click();
     await expect(page.getByText('Hapus Data Master?')).toBeVisible();
