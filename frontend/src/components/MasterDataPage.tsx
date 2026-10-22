@@ -201,7 +201,9 @@ export function MasterDataPage() {
         setNotice('Data master berhasil ditambahkan.');
       }
       setModalOpen(false);
-      loadData();
+      // Finish refreshing the table before the save flow settles so callers see
+      // one stable, server-backed state rather than a late competing render.
+      await loadData();
     } catch (err: any) {
       setError(apiError(err));
     } finally {
