@@ -18,7 +18,9 @@ test.describe('Sentanu Jaya ERP Smoke Tests', () => {
 
   test('authenticated user can navigate to master data', async ({ page }) => {
     await login(page);
-    await page.getByRole('link', { name: /Master Data/i }).first().click();
+    const masterDataLink = page.locator('a.nav-item[href="/master"]').first();
+    await expect(masterDataLink).toBeVisible();
+    await masterDataLink.click({ timeout: 15000 });
     await expect(page).toHaveURL(/\/master$/);
     await expect(page.getByText('Master Data & Referensi')).toBeVisible();
   });
