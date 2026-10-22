@@ -38,7 +38,7 @@ class InvoicePaymentApiTest extends TestCase
     {
         $company = Company::create(['name' => 'PT Sentanu ' . fake()->unique()->numerify('###'), 'code' => 'SJ-' . fake()->unique()->numerify('###'), 'tax_id' => '123']);
         $branch = Branch::create(['company_id' => $company->id, 'name' => 'HQ', 'code' => 'HQ-' . fake()->unique()->numerify('###')]);
-        $customer = Customer::create(['company_id' => $company->id, 'name' => 'Customer A', 'code' => 'CA-' . fake()->unique()->numerify('###')]);
+        $customer = Customer::create(['company_id' => $company->id, 'name' => 'Customer A', 'code' => 'CA-' . fake()->unique()->numerify('###'), 'tax_condition' => 1]);
         $item = CustomerItem::create(['customer_id' => $customer->id, 'name' => 'Velg R17', 'code' => 'VR17-' . fake()->unique()->numerify('###')]);
         $po = CustomerPo::create([
             'company_id' => $company->id,
@@ -727,28 +727,64 @@ class InvoicePaymentApiTest extends TestCase
         $this->assertEquals($total3, (float) $res3['total_outstanding']);
     }
 
-    public function test_multiple_delivery_orders_per_invoice_is_rejected(): void
+    public function test_invoice_tax_conditions_integration_and_authoritative_enforcement(): void
     {
-        $s1 = $this->delivery();
-        $s2 = $this->delivery();
         $admin = $this->user('ADMIN');
 
-        $this->postAcceptance($s1['do'], $s1['line'], 10, 0);
-        $this->postAcceptance($s2['do'], $s2['line'], 10, 0);
+        // Condition 1: Non-PKP / Bebas (PPN 0%, PPh 0%)
+        $s1 = $this->delivery(40, 1000);
+        $s1['customer']->update(['tax_condition' => 1]);
+        $this->postAcceptance($s1['do'], $s1['line'], 40, 0);
 
-        $initialInvoiceCount = \App\Models\Invoice::count();
-
-        $response = $this->actingAs($admin)->postJson('/api/v1/invoices', [
-            'delivery_order_ids' => [$s1['do']->id, $s2['do']->id],
+        $res1 = $this->actingAs($admin)->postJson('/api/v1/invoices', [
+            'delivery_order_ids' => [$s1['do']->id],
             'customer_id' => $s1['customer']->id,
             'invoice_date' => '2026-10-06',
-            'tax_condition' => 1,
-        ]);
+            'tax_condition' => 3, // Passed different tax_condition to test authoritative customer source enforcement
+        ])->assertCreated();
 
-        $response->assertStatus(422);
-        $this->assertEquals($initialInvoiceCount, \App\Models\Invoice::count());
-        $this->assertDatabaseMissing('invoice_delivery_links', ['delivery_order_id' => $s1['do']->id]);
-        $this->assertDatabaseMissing('invoice_delivery_links', ['delivery_order_id' => $s2['do']->id]);
+        $inv1 = Invoice::find($res1->json('data.id'));
+        $this->assertEquals(1, $inv1->customer->tax_condition);
+        $this->assertEquals(40000.0, (float) $inv1->dpp);
+        $this->assertEquals(0.0, (float) $inv1->ppn_amount);
+        $this->assertEquals(0.0, (float) $inv1->pph_amount);
+        $this->assertEquals(40000.0, (float) $inv1->total_amount);
+
+        // Condition 2: PPh 2.5% Tanpa PPN (PPN 0%, PPh 2.5%)
+        $s2 = $this->delivery(40, 1000);
+        $s2['customer']->update(['tax_condition' => 2]);
+        $this->postAcceptance($s2['do'], $s2['line'], 40, 0);
+
+        $res2 = $this->actingAs($admin)->postJson('/api/v1/invoices', [
+            'delivery_order_ids' => [$s2['do']->id],
+            'customer_id' => $s2['customer']->id,
+            'invoice_date' => '2026-10-06',
+        ])->assertCreated();
+
+        $inv2 = Invoice::find($res2->json('data.id'));
+        $this->assertEquals(2, $inv2->customer->tax_condition);
+        $this->assertEquals(40000.0, (float) $inv2->dpp);
+        $this->assertEquals(0.0, (float) $inv2->ppn_amount);
+        $this->assertEquals(1000.0, (float) $inv2->pph_amount); // 2.5% of 40000
+        $this->assertEquals(39000.0, (float) $inv2->total_amount); // 40000 - 1000
+
+        // Condition 3: PPN 11% + PPh 2% (PKP)
+        $s3 = $this->delivery(40, 1000);
+        $s3['customer']->update(['tax_condition' => 3]);
+        $this->postAcceptance($s3['do'], $s3['line'], 40, 0);
+
+        $res3 = $this->actingAs($admin)->postJson('/api/v1/invoices', [
+            'delivery_order_ids' => [$s3['do']->id],
+            'customer_id' => $s3['customer']->id,
+            'invoice_date' => '2026-10-06',
+        ])->assertCreated();
+
+        $inv3 = Invoice::find($res3->json('data.id'));
+        $this->assertEquals(3, $inv3->customer->tax_condition);
+        $this->assertEquals(40000.0, (float) $inv3->dpp);
+        $this->assertEquals(4400.0, (float) $inv3->ppn_amount); // 11% of 40000
+        $this->assertEquals(800.0, (float) $inv3->pph_amount);   // 2% of 40000
+        $this->assertEquals(43600.0, (float) $inv3->total_amount); // 40000 + 4400 - 800
     }
 
     public function test_service_layer_multiple_delivery_orders_rejected(): void

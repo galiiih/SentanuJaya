@@ -68,14 +68,20 @@ class InvoiceController extends BaseApiController
             'delivery_order_ids.*' => 'uuid|exists:delivery_orders,id',
             'customer_id' => 'required|uuid|exists:customers,id',
             'invoice_date' => 'required|date',
-            'tax_condition' => 'required|integer|in:1,2,3',
+            'tax_condition' => 'sometimes|integer|in:1,2,3',
         ]);
+
+        $customer = \App\Models\Customer::findOrFail($data['customer_id']);
+        if ($customer->tax_condition === null) {
+            throw ValidationException::withMessages(['customer_id' => ['Customer belum memiliki tax_condition yang valid.']]);
+        }
+        $authoritativeTaxCondition = (int) $customer->tax_condition;
 
         $invoice = $this->invoiceService->buildDraftInvoice(
             $data['delivery_order_ids'],
             $data['customer_id'],
             $data['invoice_date'],
-            $data['tax_condition'],
+            $authoritativeTaxCondition,
             $request->user()->id
         );
 
