@@ -200,4 +200,47 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await expect(page.locator('tr').filter({ hasText: code })).toHaveCount(0, { timeout: 10000 });
   });
 
+  test('Material / Cat master supports create, edit, persistence and delete', async ({ page }) => {
+    const suffix = Date.now().toString();
+    const code = `E2E-MAT-${suffix}`;
+    const name = `Browser Material ${suffix}`;
+    const editedName = `Edited Material ${suffix}`;
+    await login(page);
+    await page.goto('/master');
+    await expect(page.getByText('Master Data & Referensi')).toBeVisible();
+    await page.getByRole('button', { name: /Material \/ Cat/i }).click();
+    await page.getByRole('button', { name: /Tambah Material \/ Cat/i }).click();
+    const dialog = page.getByRole('dialog');
+    const codeInput = dialog.getByPlaceholder('CAT-PU-BLK');
+    const nameInput = dialog.getByPlaceholder('Cat Polyurethane Hitam Glossy');
+    await codeInput.click();
+    for (const char of code) { await page.keyboard.type(char); await expect(codeInput).toBeFocused(); }
+    await expect(codeInput).toHaveValue(code);
+    await nameInput.click();
+    for (const char of name) { await page.keyboard.type(char); await expect(nameInput).toBeFocused(); }
+    await expect(nameInput).toHaveValue(name);
+    await dialog.getByPlaceholder('GENERAL / RAW_MATERIAL / PAINT').fill('PAINT');
+    await dialog.getByPlaceholder('LITER / CAN / PCS').fill('LITER');
+    const stock = dialog.getByPlaceholder('5');
+    if (await stock.count()) await stock.fill('5');
+    await dialog.getByRole('button', { name: /Simpan Data/i }).click();
+    await expect(dialog).toBeHidden({ timeout: 10000 });
+    let row = page.locator('tr').filter({ hasText: code });
+    await expect(row).toContainText(name, { timeout: 10000 });
+    await page.reload();
+    await page.getByRole('button', { name: /Material \/ Cat/i }).click();
+    row = page.locator('tr').filter({ hasText: code });
+    await expect(row).toContainText(name, { timeout: 10000 });
+    await row.locator('button[title="Edit"]').click();
+    const editDialog = page.getByRole('dialog');
+    await editDialog.getByPlaceholder('Cat Polyurethane Hitam Glossy').fill(editedName);
+    await editDialog.getByRole('button', { name: /Simpan Data/i }).click();
+    row = page.locator('tr').filter({ hasText: code });
+    await expect(row).toContainText(editedName, { timeout: 10000 });
+    await row.locator('button[title="Hapus"]').click();
+    await expect(page.getByText('Hapus Data Master?')).toBeVisible();
+    await page.getByRole('button', { name: /Hapus|Konfirmasi|Ya/i }).last().click();
+    await expect(page.locator('tr').filter({ hasText: code })).toHaveCount(0, { timeout: 10000 });
+  });
+
 });
