@@ -34,14 +34,20 @@ class MaterialController extends BaseApiController
     public function store(Request $request): JsonResponse
     {
         abort_unless($request->user()?->hasPermission('master.manage'), 403, 'Forbidden');
+        
+        $defaultCompany = \App\Models\Company::query()->first();
+        if ($defaultCompany) {
+            $request->merge(['company_id' => $defaultCompany->id]);
+        }
+
         $validator = Validator::make($request->all(), [
             'company_id' => 'required|uuid|exists:companies,id',
             'code' => 'required|string|max:50|unique:materials,code',
             'name' => 'required|string|max:255',
-            'category' => 'required|string|max:50',
+            'category' => 'nullable|string|max:50',
             'unit' => 'required|string|max:50',
-            'minimum_stock' => 'required|numeric|min:0',
-            'reorder_level' => 'numeric|min:0',
+            'minimum_stock' => 'nullable|numeric|min:0',
+            'reorder_level' => 'nullable|numeric|min:0',
             'is_batch_tracked' => 'boolean',
             'purchase_uom_id' => 'nullable|uuid|exists:uoms,id',
             'stock_uom_id' => 'nullable|uuid|exists:uoms,id',

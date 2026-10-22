@@ -34,6 +34,13 @@ class PriceListController extends BaseApiController
     public function store(Request $request): JsonResponse
     {
         abort_unless($request->user()?->hasPermission('master.manage'), 403, 'Forbidden');
+        
+        // Hardcode single-tenant company_id for Sentanu Jaya
+        $defaultCompany = \App\Models\Company::query()->first();
+        if ($defaultCompany) {
+            $request->merge(['company_id' => $defaultCompany->id]);
+        }
+
         $validator = Validator::make($request->all(), [
             'company_id' => 'required|uuid|exists:companies,id',
             'customer_id' => 'nullable|uuid|exists:customers,id',

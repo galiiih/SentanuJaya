@@ -8,7 +8,6 @@ import {
   Card,
   ConfirmationDialog,
   DataTable,
-  type DataTableColumn,
   FormField,
   Input,
   Select,
@@ -19,6 +18,14 @@ import {
 } from './ui';
 
 const masterApi = {
+  companies: {
+    icon: Building2,
+    label: 'Perusahaan',
+    list: () => axios.get('/api/v1/companies', { params: { per_page: 200 } }).then(r => r.data.data.data || r.data.data),
+    create: (payload: any) => axios.post('/api/v1/companies', payload).then(r => r.data.data),
+    update: (id: string, payload: any) => axios.patch(`/api/v1/companies/${id}`, payload).then(r => r.data.data),
+    remove: (id: string) => axios.delete(`/api/v1/companies/${id}`).then(r => r.data.data),
+  },
   customers: {
     icon: Building2,
     label: 'Customer',
@@ -95,6 +102,7 @@ export function MasterDataPage() {
   const [notice, setNotice] = useState('');
 
   // Dropdown options for relations
+  const [companies, setCompanies] = useState<any[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [customerItems, setCustomerItems] = useState<CustomerItem[]>([]);
   const [priceLists, setPriceLists] = useState<any[]>([]);
@@ -113,11 +121,13 @@ export function MasterDataPage() {
 
   const loadReferences = async () => {
     try {
-      const [custRes, itemRes, plRes] = await Promise.all([
+      const [compRes, custRes, itemRes, plRes] = await Promise.all([
+        axios.get('/api/v1/companies', { params: { per_page: 100 } }).catch(() => ({ data: { data: [] } })),
         axios.get('/api/v1/customers', { params: { per_page: 200 } }).catch(() => ({ data: { data: [] } })),
         axios.get('/api/v1/customer-items', { params: { per_page: 200 } }).catch(() => ({ data: { data: [] } })),
         axios.get('/api/v1/price-lists', { params: { per_page: 200 } }).catch(() => ({ data: { data: [] } })),
       ]);
+      setCompanies(compRes.data.data.data || compRes.data.data || compRes.data || []);
       setCustomers(custRes.data.data.data || custRes.data.data || []);
       setCustomerItems(itemRes.data.data.data || itemRes.data.data || []);
       setPriceLists(plRes.data.data.data || plRes.data.data || []);
@@ -149,8 +159,11 @@ export function MasterDataPage() {
 
   const openCreate = () => {
     setEditingItem(null);
-    if (tab === 'customers') {
-      setFormData({ code: '', name: '', legal_name: '', npwp: '', is_pkp: true, address: '', phone: '', email: '' });
+    const defaultCompanyId = companies[0]?.id || '';
+    if (tab === 'companies') {
+      setFormData({ code: '', name: '', address: '', phone: '', email: '' });
+    } else if (tab === 'customers') {
+      setFormData({ company_id: defaultCompanyId, code: '', name: '', legal_name: '', npwp: '', tax_status: 'NON_PKP', address: '', phone: '', email: '' });
     } else if (tab === 'customer_contacts') {
       setFormData({ customer_id: customers[0]?.id || '', name: '', title: '', phone: '', email: '' });
     } else if (tab === 'customer_items') {
@@ -160,9 +173,9 @@ export function MasterDataPage() {
     } else if (tab === 'price_list_lines') {
       setFormData({ price_list_id: priceLists[0]?.id || '', customer_item_id: customerItems[0]?.id || '', unit_price: 0 });
     } else if (tab === 'uoms') {
-      setFormData({ code: '', name: '' });
+      setFormData({ code: '', name: '', category: 'GENERAL', decimal_places: 0 });
     } else if (tab === 'materials') {
-      setFormData({ code: '', name: '', unit: 'PCS', min_stock: 0 });
+      setFormData({ code: '', name: '', category: 'GENERAL', unit: 'LITER', minimum_stock: 0, min_stock: 0 });
     } else if (tab === 'suppliers') {
       setFormData({ code: '', name: '', address: '', phone: '', email: '' });
     }
@@ -215,21 +228,162 @@ export function MasterDataPage() {
     });
   };
 
-  const columns: DataTableColumn<any>[] = [
-    { id: 'code', header: 'Kode / Ref', cell: (row) => row.code || row.name || row.title || '-' },
-    { id: 'name', header: 'Nama / Deskripsi', cell: (row) => row.name || row.legal_name || row.customer?.name || row.price_list?.name || '-' },
-    { id: 'info', header: 'Kontak / Atribut', cell: (row) => row.phone || row.unit || row.email || row.vehicle_model || row.part_type || (row.unit_price ? `Rp ${Number(row.unit_price).toLocaleString('id-ID')}` : '-') },
-    {
-      id: 'actions',
-      header: 'Aksi',
-      cell: (row) => (
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <Button variant="ghost" onClick={() => openEdit(row)} title="Edit"><Edit size={16} /></Button>
-          <Button variant="ghost" onClick={() => handleDelete(row)} title="Hapus" style={{ color: 'var(--color-danger)' }}><Trash2 size={16} /></Button>
-        </div>
-      )
+  const getColumnsForTab = () => {
+    switch (tab) {
+      case 'companies':
+        return [
+          { id: 'code', header: 'Kode', cell: (row: any) => row.code || '-' },
+          { id: 'name', header: 'Nama Perusahaan', cell: (row: any) => row.name || '-' },
+          { id: 'phone', header: 'Telepon', cell: (row: any) => row.phone || '-' },
+          { id: 'email', header: 'Email', cell: (row: any) => row.email || '-' },
+          {
+            id: 'actions',
+            header: 'Aksi',
+            cell: (row: any) => (
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <Button variant="ghost" onClick={() => openEdit(row)} title="Edit"><Edit size={16} /></Button>
+                <Button variant="ghost" onClick={() => handleDelete(row)} title="Hapus" style={{ color: 'var(--color-danger)' }}><Trash2 size={16} /></Button>
+              </div>
+            )
+          }
+        ];
+      case 'customers':
+        return [
+          { id: 'code', header: 'Kode Customer', cell: (row: any) => row.code || '-' },
+          { id: 'name', header: 'Nama Customer', cell: (row: any) => row.name || '-' },
+          { id: 'phone', header: 'Telepon', cell: (row: any) => row.phone || '-' },
+          { id: 'email', header: 'Email', cell: (row: any) => row.email || '-' },
+          {
+            id: 'actions',
+            header: 'Aksi',
+            cell: (row: any) => (
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <Button variant="ghost" onClick={() => openEdit(row)} title="Edit"><Edit size={16} /></Button>
+                <Button variant="ghost" onClick={() => handleDelete(row)} title="Hapus" style={{ color: 'var(--color-danger)' }}><Trash2 size={16} /></Button>
+              </div>
+            )
+          }
+        ];
+      case 'customer_contacts':
+        return [
+          { id: 'customer', header: 'Customer', cell: (row: any) => row.customer?.name || '-' },
+          { id: 'name', header: 'Nama Kontak', cell: (row: any) => row.name || '-' },
+          { id: 'title', header: 'Jabatan', cell: (row: any) => row.title || '-' },
+          { id: 'phone', header: 'Telepon', cell: (row: any) => row.phone || '-' },
+          {
+            id: 'actions',
+            header: 'Aksi',
+            cell: (row: any) => (
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <Button variant="ghost" onClick={() => openEdit(row)} title="Edit"><Edit size={16} /></Button>
+                <Button variant="ghost" onClick={() => handleDelete(row)} title="Hapus" style={{ color: 'var(--color-danger)' }}><Trash2 size={16} /></Button>
+              </div>
+            )
+          }
+        ];
+      case 'customer_items':
+        return [
+          { id: 'code', header: 'Kode Item', cell: (row: any) => row.code || '-' },
+          { id: 'name', header: 'Nama Barang / Part', cell: (row: any) => row.name || '-' },
+          { id: 'vehicle', header: 'Model Kendaraan', cell: (row: any) => row.vehicle_model || '-' },
+          { id: 'type', header: 'Tipe Part', cell: (row: any) => row.part_type || '-' },
+          {
+            id: 'actions',
+            header: 'Aksi',
+            cell: (row: any) => (
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <Button variant="ghost" onClick={() => openEdit(row)} title="Edit"><Edit size={16} /></Button>
+                <Button variant="ghost" onClick={() => handleDelete(row)} title="Hapus" style={{ color: 'var(--color-danger)' }}><Trash2 size={16} /></Button>
+              </div>
+            )
+          }
+        ];
+      case 'price_lists':
+        return [
+          { id: 'code', header: 'Kode Price List', cell: (row: any) => row.code || '-' },
+          { id: 'name', header: 'Nama Price List', cell: (row: any) => row.name || '-' },
+          { id: 'customer', header: 'Customer', cell: (row: any) => row.customer?.name || 'Umum' },
+          { id: 'date', header: 'Tanggal Efektif', cell: (row: any) => row.effective_date || '-' },
+          {
+            id: 'actions',
+            header: 'Aksi',
+            cell: (row: any) => (
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <Button variant="ghost" onClick={() => openEdit(row)} title="Edit"><Edit size={16} /></Button>
+                <Button variant="ghost" onClick={() => handleDelete(row)} title="Hapus" style={{ color: 'var(--color-danger)' }}><Trash2 size={16} /></Button>
+              </div>
+            )
+          }
+        ];
+      case 'price_list_lines':
+        return [
+          { id: 'price_list', header: 'Price List', cell: (row: any) => row.price_list?.name || '-' },
+          { id: 'item', header: 'Customer Item', cell: (row: any) => row.customer_item?.name || '-' },
+          { id: 'price', header: 'Harga Satuan (IDR)', cell: (row: any) => row.unit_price ? `Rp ${Number(row.unit_price).toLocaleString('id-ID')}` : '-' },
+          {
+            id: 'actions',
+            header: 'Aksi',
+            cell: (row: any) => (
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <Button variant="ghost" onClick={() => openEdit(row)} title="Edit"><Edit size={16} /></Button>
+                <Button variant="ghost" onClick={() => handleDelete(row)} title="Hapus" style={{ color: 'var(--color-danger)' }}><Trash2 size={16} /></Button>
+              </div>
+            )
+          }
+        ];
+      case 'uoms':
+        return [
+          { id: 'code', header: 'Kode Satuan', cell: (row: any) => row.code || '-' },
+          { id: 'name', header: 'Nama Satuan', cell: (row: any) => row.name || '-' },
+          {
+            id: 'actions',
+            header: 'Aksi',
+            cell: (row: any) => (
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <Button variant="ghost" onClick={() => openEdit(row)} title="Edit"><Edit size={16} /></Button>
+                <Button variant="ghost" onClick={() => handleDelete(row)} title="Hapus" style={{ color: 'var(--color-danger)' }}><Trash2 size={16} /></Button>
+              </div>
+            )
+          }
+        ];
+      case 'materials':
+        return [
+          { id: 'code', header: 'Kode SKU', cell: (row: any) => row.code || '-' },
+          { id: 'name', header: 'Nama Material / Cat', cell: (row: any) => row.name || '-' },
+          { id: 'unit', header: 'Satuan', cell: (row: any) => row.unit || '-' },
+          { id: 'min_stock', header: 'Minimum Stok', cell: (row: any) => row.min_stock ?? '-' },
+          {
+            id: 'actions',
+            header: 'Aksi',
+            cell: (row: any) => (
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <Button variant="ghost" onClick={() => openEdit(row)} title="Edit"><Edit size={16} /></Button>
+                <Button variant="ghost" onClick={() => handleDelete(row)} title="Hapus" style={{ color: 'var(--color-danger)' }}><Trash2 size={16} /></Button>
+              </div>
+            )
+          }
+        ];
+      case 'suppliers':
+        return [
+          { id: 'code', header: 'Kode Supplier', cell: (row: any) => row.code || '-' },
+          { id: 'name', header: 'Nama Supplier', cell: (row: any) => row.name || '-' },
+          { id: 'phone', header: 'Telepon', cell: (row: any) => row.phone || '-' },
+          { id: 'email', header: 'Email', cell: (row: any) => row.email || '-' },
+          {
+            id: 'actions',
+            header: 'Aksi',
+            cell: (row: any) => (
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <Button variant="ghost" onClick={() => openEdit(row)} title="Edit"><Edit size={16} /></Button>
+                <Button variant="ghost" onClick={() => handleDelete(row)} title="Hapus" style={{ color: 'var(--color-danger)' }}><Trash2 size={16} /></Button>
+              </div>
+            )
+          }
+        ];
+      default:
+        return [];
     }
-  ];
+  };
 
   return (
     <div className="space-y-6">
@@ -265,7 +419,7 @@ export function MasterDataPage() {
       </div>
 
       <Card title={`Daftar ${masterApi[tab].label}`}>
-        <DataTable columns={columns} rows={data} emptyTitle="Belum ada data master" emptyDescription={`Belum ada data pada tabel ${masterApi[tab].label}. Klik tombol Tambah untuk membuat baru.`} />
+        <DataTable columns={getColumnsForTab()} rows={data} emptyTitle="Belum ada data master" emptyDescription={`Belum ada data pada tabel ${masterApi[tab].label}. Klik tombol Tambah untuk membuat baru.`} />
       </Card>
 
       {/* Clean Single-Column Vertical Stacked Form Modal (Matching Reference Design) */}
@@ -273,6 +427,27 @@ export function MasterDataPage() {
         <form onSubmit={handleSave}>
           <div style={{ maxHeight: '72vh', overflowY: 'auto', padding: '0.25rem 0.75rem 1rem 0.25rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             
+            {/* Companies */}
+            {tab === 'companies' && (
+              <>
+                <FormField label="Kode Perusahaan" required>
+                  <Input value={formData.code || ''} onChange={e => setFormData({ ...formData, code: e.target.value })} placeholder="SJ" required />
+                </FormField>
+                <FormField label="Nama Perusahaan" required>
+                  <Input value={formData.name || ''} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="PT Sentanu Jaya" required />
+                </FormField>
+                <FormField label="Alamat">
+                  <Textarea value={formData.address || ''} onChange={e => setFormData({ ...formData, address: e.target.value })} placeholder="Jl. Industri Utama No. 1" rows={3} />
+                </FormField>
+                <FormField label="Telepon">
+                  <Input value={formData.phone || ''} onChange={e => setFormData({ ...formData, phone: e.target.value })} placeholder="021-5551234" />
+                </FormField>
+                <FormField label="Email">
+                  <Input type="email" value={formData.email || ''} onChange={e => setFormData({ ...formData, email: e.target.value })} placeholder="contact@sentanujaya.co.id" />
+                </FormField>
+              </>
+            )}
+
             {/* Customer */}
             {tab === 'customers' && (
               <>
@@ -287,6 +462,13 @@ export function MasterDataPage() {
                 </FormField>
                 <FormField label="NPWP">
                   <Input value={formData.npwp || ''} onChange={e => setFormData({ ...formData, npwp: e.target.value })} placeholder="01.234.567.8-901.000" />
+                </FormField>
+                <FormField label="Kondisi / Status Pajak" required>
+                  <Select value={formData.tax_condition ?? 3} onChange={e => setFormData({ ...formData, tax_condition: Number(e.target.value) })} required>
+                    <option value={1}>1. Tanpa PPN, Tanpa PPh (Non-PKP / Bebas)</option>
+                    <option value={2}>2. PPh 2.5% Tanpa PPN</option>
+                    <option value={3}>3. PPN 11% + PPh 2% (Standar PKP)</option>
+                  </Select>
                 </FormField>
                 <FormField label="Nomor Telepon">
                   <Input value={formData.phone || ''} onChange={e => setFormData({ ...formData, phone: e.target.value })} placeholder="021-5551234" />
@@ -357,9 +539,9 @@ export function MasterDataPage() {
                 <FormField label="Nama Price List" required>
                   <Input value={formData.name || ''} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="Kontrak Harga 2024" required />
                 </FormField>
-                <FormField label="Pilih Customer (Opsional)">
-                  <Select value={formData.customer_id || ''} onChange={e => setFormData({ ...formData, customer_id: e.target.value || null })}>
-                    <option value="">-- Umum / Semua Customer --</option>
+                <FormField label="Pilih Customer" required>
+                  <Select value={formData.customer_id || ''} onChange={e => setFormData({ ...formData, customer_id: e.target.value })} required>
+                    <option value="">-- Pilih Customer --</option>
                     {customers.map(c => <option key={c.id} value={c.id}>{c.code} — {c.name}</option>)}
                   </Select>
                 </FormField>
@@ -399,6 +581,12 @@ export function MasterDataPage() {
                 <FormField label="Nama Satuan" required>
                   <Input value={formData.name || ''} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="Pieces / Buah" required />
                 </FormField>
+                <FormField label="Kategori" required>
+                  <Input value={formData.category || 'GENERAL'} onChange={e => setFormData({ ...formData, category: e.target.value })} placeholder="GENERAL / QUANTITY / WEIGHT" required />
+                </FormField>
+                <FormField label="Desimal">
+                  <Input type="number" value={formData.decimal_places ?? 0} onChange={e => setFormData({ ...formData, decimal_places: Number(e.target.value) })} placeholder="0" />
+                </FormField>
               </>
             )}
 
@@ -411,11 +599,14 @@ export function MasterDataPage() {
                 <FormField label="Nama Material / Cat" required>
                   <Input value={formData.name || ''} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="Cat Polyurethane Hitam Glossy" required />
                 </FormField>
-                <FormField label="Satuan (Unit)">
-                  <Input value={formData.unit || 'LITER'} onChange={e => setFormData({ ...formData, unit: e.target.value })} placeholder="LITER / CAN / PCS" />
+                <FormField label="Kategori" required>
+                  <Input value={formData.category || 'GENERAL'} onChange={e => setFormData({ ...formData, category: e.target.value })} placeholder="GENERAL / RAW_MATERIAL / PAINT" required />
+                </FormField>
+                <FormField label="Satuan (Unit)" required>
+                  <Input value={formData.unit || 'LITER'} onChange={e => setFormData({ ...formData, unit: e.target.value })} placeholder="LITER / CAN / PCS" required />
                 </FormField>
                 <FormField label="Minimum Stok">
-                  <Input type="number" value={formData.min_stock || 0} onChange={e => setFormData({ ...formData, min_stock: Number(e.target.value) })} placeholder="5" />
+                  <Input type="number" value={formData.minimum_stock ?? formData.min_stock ?? 0} onChange={e => setFormData({ ...formData, minimum_stock: Number(e.target.value), min_stock: Number(e.target.value) })} placeholder="5" />
                 </FormField>
               </>
             )}

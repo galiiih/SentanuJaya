@@ -42,14 +42,14 @@ return new class extends Migration
         // Customers
         Schema::create('customers', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignUuid('company_id')->constrained('companies');
+            $table->foreignUuid('company_id')->nullable()->constrained('companies');
             $table->string('code', 50);
             $table->string('name');
             $table->string('company_name')->nullable();
             $table->text('billing_address')->nullable();
             $table->text('shipping_address')->nullable();
             $table->string('npwp', 30)->nullable();
-            $table->string('tax_status', 30)->default('NON_PKP'); // NON_PKP, PKP, WAPU
+            $table->integer('tax_condition')->default(3); // 1: Tanpa PPN & PPh, 2: PPh 2.5% Tanpa PPN, 3: PPN + PPh 2%
             $table->foreignUuid('default_tax_rule_id')->nullable()->constrained('tax_rules');
             $table->integer('payment_terms_days')->default(30);
             $table->decimal('credit_limit', 18, 2)->default(0);

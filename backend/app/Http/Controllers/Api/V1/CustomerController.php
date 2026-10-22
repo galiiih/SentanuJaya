@@ -35,14 +35,14 @@ class CustomerController extends BaseApiController
     {
         abort_unless($request->user()?->hasPermission('master.manage'), 403, 'Forbidden');
         $validator = Validator::make($request->all(), [
-            'company_id' => 'required|uuid|exists:companies,id',
+            'company_id' => 'nullable|uuid|exists:companies,id',
             'code' => 'required|string|max:50|unique:customers,code',
             'name' => 'required|string|max:255',
             'company_name' => 'nullable|string|max:255',
             'billing_address' => 'nullable|string',
             'shipping_address' => 'nullable|string',
             'npwp' => 'nullable|string|max:50',
-            'tax_status' => 'required|string|in:NON_PKP,PKP,OTHER',
+            'tax_condition' => 'nullable|integer|in:1,2,3',
             'default_tax_rule_id' => 'nullable|uuid',
             'payment_terms_days' => 'integer|min:0',
             'credit_limit' => 'numeric|min:0',
@@ -93,7 +93,7 @@ class CustomerController extends BaseApiController
             'billing_address' => 'nullable|string',
             'shipping_address' => 'nullable|string',
             'npwp' => 'nullable|string|max:50',
-            'tax_status' => 'sometimes|required|string|in:NON_PKP,PKP,OTHER',
+            'tax_condition' => 'sometimes|nullable|integer|in:1,2,3',
             'default_tax_rule_id' => 'nullable|uuid',
             'payment_terms_days' => 'sometimes|integer|min:0',
             'credit_limit' => 'sometimes|numeric|min:0',

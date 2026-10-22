@@ -372,7 +372,7 @@ class MasterDataApiTest extends TestCase
             'company_id' => $company->id,
             'code' => 'CUST-VARIA',
             'name' => 'PT Varia Baru',
-            'tax_status' => 'PKP',
+            'tax_condition' => 3,
         ])->assertStatus(201);
 
         $contact = $this->postJson('/api/v1/customer-contacts', [

@@ -34,6 +34,12 @@ class SupplierController extends BaseApiController
     public function store(Request $request): JsonResponse
     {
         abort_unless($request->user()?->hasPermission('master.manage'), 403, 'Forbidden');
+        
+        $defaultCompany = \App\Models\Company::query()->first();
+        if ($defaultCompany) {
+            $request->merge(['company_id' => $defaultCompany->id]);
+        }
+
         $validator = Validator::make($request->all(), [
             'company_id' => 'required|uuid|exists:companies,id',
             'code' => 'required|string|max:50|unique:suppliers,code',
@@ -42,7 +48,7 @@ class SupplierController extends BaseApiController
             'npwp' => 'nullable|string|max:50',
             'phone' => 'nullable|string|max:50',
             'email' => 'nullable|email|max:255',
-            'payment_terms_days' => 'integer|min:0',
+            'payment_terms_days' => 'nullable|integer|min:0',
             'is_active' => 'boolean',
         ]);
 

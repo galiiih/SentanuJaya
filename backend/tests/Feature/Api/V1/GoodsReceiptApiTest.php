@@ -117,7 +117,7 @@ class GoodsReceiptApiTest extends TestCase
             'company_id' => $data['company']->id,
             'code' => 'CUST-OTHER',
             'name' => 'Customer Lain',
-            'tax_status' => 'NON_PKP',
+            'tax_condition' => 1,
         ]);
         $otherItem = CustomerItem::create([
             'customer_id' => $otherCustomer->id,
@@ -202,7 +202,7 @@ class GoodsReceiptApiTest extends TestCase
         $company = Company::create(['code' => 'SJ-' . fake()->unique()->numerify('####'), 'name' => 'Sentanu Jaya', 'timezone' => 'Asia/Jakarta', 'currency' => 'IDR']);
         $branch = Branch::create(['company_id' => $company->id, 'code' => 'HQ-' . fake()->unique()->numerify('####'), 'name' => 'Kantor Pusat']);
         $uom = Uom::firstOrCreate(['code' => 'PCS'], ['name' => 'Pcs', 'category' => 'QUANTITY', 'decimal_places' => 0]);
-        $customer = Customer::create(['company_id' => $company->id, 'code' => 'CUST-' . fake()->unique()->numerify('####'), 'name' => 'Customer Satu', 'tax_status' => 'NON_PKP']);
+        $customer = Customer::create(['company_id' => $company->id, 'code' => 'CUST-' . fake()->unique()->numerify('####'), 'name' => 'Customer Satu', 'tax_condition' => 1]);
         $item = CustomerItem::create(['customer_id' => $customer->id, 'code' => 'ITEM-' . fake()->unique()->numerify('####'), 'name' => 'Bumper', 'uom_id' => $uom->id]);
         $location = CustodyLocation::create(['branch_id' => $branch->id, 'code' => 'RAW-' . fake()->unique()->numerify('####'), 'name' => 'Raw Area']);
 

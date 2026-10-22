@@ -295,5 +295,17 @@ export function Modal({ open, title, children, onClose }: { open: boolean; title
   }, [open]);
 
   if (!open) return null;
-  return <div className="modal-backdrop" role="presentation" onMouseDown={onClose}><section className="modal" role="dialog" aria-modal="true" aria-labelledby={titleId} onMouseDown={(event) => event.stopPropagation()}><div className="modal__header"><h2 id={titleId}>{title}</h2><button ref={closeButton} className="icon-button" onClick={onClose} aria-label="Tutup dialog"><X size={18} /></button></div>{children}</section></div>;
+  return (
+    <div className="glass-modal-overlay" role="presentation" onMouseDown={onClose}>
+      <section className="glass-modal" role="dialog" aria-modal="true" aria-labelledby={titleId} onMouseDown={(event) => event.stopPropagation()}>
+        <div className="modal__header">
+          <h2 id={titleId} style={{ color: '#38BDF8', fontWeight: 800, letterSpacing: '-0.025em' }}>{title}</h2>
+          <button ref={closeButton} className="icon-button" onClick={onClose} aria-label="Tutup dialog" style={{ color: '#94A3B8' }}><X size={18} /></button>
+        </div>
+        <div style={{ marginTop: '1rem' }}>
+          {children}
+        </div>
+      </section>
+    </div>
+  );
 }

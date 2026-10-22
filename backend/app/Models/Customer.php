@@ -18,7 +18,7 @@ class Customer extends Model
         'billing_address',
         'shipping_address',
         'npwp',
-        'tax_status',
+        'tax_condition',
         'default_tax_rule_id',
         'payment_terms_days',
         'credit_limit',

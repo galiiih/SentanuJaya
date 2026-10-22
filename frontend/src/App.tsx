@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import axios from 'axios';
 import {
   Bell,
   Boxes,
@@ -10,10 +11,12 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  Moon,
   Package,
   Plus,
   Receipt,
   ShieldCheck,
+  Sun,
   Truck,
   X,
 } from 'lucide-react';
@@ -28,7 +31,6 @@ import { DeliveryPage } from './components/DeliveryPage';
 import { PaymentPage } from './components/PaymentPage';
 import { InvoicingPage } from './components/InvoicingPage';
 import {
-  mockMaterials,
   mockStats,
   type Material,
 } from './services/mockData';
@@ -144,6 +146,26 @@ function Sidebar({ mobile, onClose, closeButtonRef }: { mobile?: boolean; onClos
   );
 }
 
+function ThemeSwitcher() {
+  const [theme, setTheme] = useState(() => localStorage.getItem('sentanu_theme') || 'light');
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('sentanu_theme', theme);
+  }, [theme]);
+  const toggle = () => setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
+  return (
+    <button
+      type="button"
+      className="icon-button"
+      onClick={toggle}
+      title={theme === 'light' ? 'Ganti ke Tema Gelap' : 'Ganti ke Tema Terang'}
+      aria-label="Ganti Tema"
+    >
+      {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
+    </button>
+  );
+}
+
 function LanguageSwitcher() {
   const { language, setLanguage } = useLanguage();
   return (
@@ -201,6 +223,8 @@ function AuthenticatedLayout() {
         <header className="app-header">
           <div className="app-header__context"><button ref={menuButton} className="icon-button menu-button" onClick={() => setDrawerOpen(true)} aria-label="Buka navigasi" aria-expanded={drawerOpen} aria-controls="mobile-navigation"><Menu size={21} /></button><div><span className="app-header__eyebrow">SENTANU JAYA ERP</span><strong>{pageTitle}</strong></div></div>
           <div className="app-header__account">
+            <ThemeSwitcher />
+            <span className="header-divider" />
             <LanguageSwitcher />
             <span className="header-divider" />
             <button className="icon-button" aria-label="Notifikasi"><Bell size={19} /></button>
@@ -370,11 +394,41 @@ function CustodyPage() {
   </>;
 }
 const materialColumns: DataTableColumn<Material>[] = [
-  { id: 'sku', header: 'SKU', cell: (item) => <span className="font-mono">{item.sku}</span>, sortValue: (item) => item.sku }, { id: 'name', header: 'Nama material', cell: (item) => <><strong>{item.name}</strong><span className="table-secondary">{item.category}</span></>, sortValue: (item) => item.name }, { id: 'stock', header: 'Stok aktual', cell: (item) => `${item.quantity_on_hand} ${item.unit}`, sortValue: (item) => item.quantity_on_hand, align: 'right' }, { id: 'minimum', header: 'Minimum', cell: (item) => `${item.minimum_stock} ${item.unit}`, sortValue: (item) => item.minimum_stock, align: 'right' }, { id: 'status', header: 'Status', cell: (item) => <StatusBadge status={item.quantity_on_hand <= item.minimum_stock ? 'CRITICAL' : 'AMAN'} label={item.quantity_on_hand <= item.minimum_stock ? 'Stok kritis' : 'Aman'} />, sortValue: (item) => item.quantity_on_hand - item.minimum_stock },
+  { id: 'sku', header: 'SKU', cell: (item) => <span className="font-mono">{item.sku}</span>, sortValue: (item) => item.sku },
+  { id: 'name', header: 'Nama material', cell: (item) => <><strong>{item.name}</strong><span className="table-secondary">{item.category}</span></>, sortValue: (item) => item.name },
+  { id: 'stock', header: 'Stok aktual', cell: (item) => `${item.quantity_on_hand ?? 0} ${item.unit}`, sortValue: (item) => item.quantity_on_hand ?? 0, align: 'right' },
+  { id: 'minimum', header: 'Minimum', cell: (item) => `${item.minimum_stock ?? 0} ${item.unit}`, sortValue: (item) => item.minimum_stock ?? 0, align: 'right' },
+  { id: 'status', header: 'Status', cell: (item) => {
+    const stock = item.quantity_on_hand ?? 0;
+    const min = item.minimum_stock ?? 0;
+    return <StatusBadge status={stock <= min ? 'CRITICAL' : 'AMAN'} label={stock <= min ? 'Stok kritis' : 'Aman'} />;
+  }, sortValue: (item) => (item.quantity_on_hand ?? 0) - (item.minimum_stock ?? 0) },
 ];
+
 function MaterialsPage() {
   const { t } = useLanguage();
-  return <><PageHeader title={t.pages.materialsTitle} description={t.pages.materialsDesc} action={<Button><Plus size={16} /> Purchase material</Button>} /><Card><DataTable columns={materialColumns} rows={mockMaterials} searchText={(item) => `${item.sku} ${item.name} ${item.category}`} emptyTitle="Belum ada material" emptyDescription="Data material akan muncul setelah master material tersedia." /></Card></>;
+  const [materials, setMaterials] = useState<Material[]>([]);
+
+  useEffect(() => {
+    axios.get('/api/v1/materials', { params: { per_page: 200 } })
+      .then((res: any) => {
+        const raw = res.data.data.data || res.data.data || [];
+        const mapped = raw.map((m: any) => ({
+          id: m.id,
+          sku: m.code || m.sku || '-',
+          name: m.name || '-',
+          category: m.category || 'GENERAL',
+          quantity_on_hand: m.quantity_on_hand ?? 0,
+          unit: m.unit || 'PCS',
+          minimum_stock: m.minimum_stock ?? m.min_stock ?? 0,
+          avg_cost: m.avg_cost ?? 0,
+        }));
+        setMaterials(mapped);
+      })
+      .catch((err: any) => console.error('Failed to load materials', err));
+  }, []);
+
+  return <><PageHeader title={t.pages.materialsTitle} description={t.pages.materialsDesc} action={<Button><Plus size={16} /> Purchase material</Button>} /><Card><DataTable columns={materialColumns} rows={materials} searchText={(item) => `${item.sku} ${item.name} ${item.category}`} emptyTitle="Belum ada material" emptyDescription="Data material akan muncul setelah master material tersedia." /></Card></>;
 }
 
 function LoginPage() {
