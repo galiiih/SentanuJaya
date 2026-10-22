@@ -70,7 +70,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await expect(persistedRow).toContainText(name, { timeout: 10000 });
 
     // Delete via the UI and confirm the destructive action.
-    await persistedRow.getByRole('button', { name: 'Hapus' }).click();
+    await persistedRow.locator('button[title="Hapus"]').click();
     await expect(page.getByText('Hapus Data Master?')).toBeVisible();
     await page.getByRole('button', { name: /Hapus|Konfirmasi|Ya/i }).last().click();
     await expect(page.locator('tr').filter({ hasText: code })).toHaveCount(0, { timeout: 10000 });
@@ -121,7 +121,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     row = page.locator('tr').filter({ hasText: code });
     await expect(row).toContainText(name, { timeout: 10000 });
 
-    await row.getByRole('button', { name: 'Edit' }).click();
+    await row.locator('button[title="Edit"]').click();
     const editDialog = page.getByRole('dialog');
     const editName = editDialog.getByPlaceholder('Pieces / Buah');
     await editName.fill(editedName);
@@ -129,7 +129,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     row = page.locator('tr').filter({ hasText: code });
     await expect(row).toContainText(editedName, { timeout: 10000 });
 
-    await row.getByRole('button', { name: 'Hapus' }).click();
+    await row.locator('button[title="Hapus"]').click();
     await expect(page.getByText('Hapus Data Master?')).toBeVisible();
     await page.getByRole('button', { name: /Hapus|Konfirmasi|Ya/i }).last().click();
     await expect(page.locator('tr').filter({ hasText: code })).toHaveCount(0, { timeout: 10000 });
