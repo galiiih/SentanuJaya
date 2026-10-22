@@ -787,13 +787,25 @@ class InvoicePaymentApiTest extends TestCase
         $this->assertEquals(43600.0, (float) $inv3->total_amount); // 40000 + 4400 - 800
     }
 
-    public function test_invoice_creation_rejects_null_tax_condition_customer(): void
+    public function test_invoice_creation_rejects_invalid_tax_condition_parameter(): void
     {
         $admin = $this->user('ADMIN');
         $s = $this->delivery(40, 1000);
-        // Test handling of customer where tax condition is not set / null by temporarily allowing nullability on column schema in test sqlite db if needed, or mocking/simulating controller check.
-        // Since sqlite table definition has NOT NULL constraint on integer column without nullable(), let's test invalid tax condition request or handle via a customer created without default if nullable.
-        // Alternatively, test passing an invalid tax condition / missing condition.
-        $this->assertTrue(true);
+        $this->postAcceptance($s['do'], $s['line'], 40, 0);
+
+        $initialCount = Invoice::count();
+
+        // Send invalid tax_condition value (e.g. 99) in request payload
+        $response = $this->actingAs($admin)->postJson('/api/v1/invoices', [
+            'delivery_order_ids' => [$s['do']->id],
+            'customer_id' => $s['customer']->id,
+            'invoice_date' => '2026-10-06',
+            'tax_condition' => 99,
+        ]);
+
+        $response->assertStatus(422);
+        $this->assertEquals($initialCount, Invoice::count());
+        $this->assertSame(0.0, (float) $s['line']->fresh()->qty_invoiced);
+        $this->assertSame('UNINVOICED', $s['do']->fresh()->invoice_status);
     }
 }
