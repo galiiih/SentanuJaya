@@ -194,7 +194,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
       throw new Error('Supplier row is persisted, but no Edit button with accessible name or title was rendered.');
     }
 
-    await row.getByRole('button', { name: 'Hapus' }).click();
+    await row.locator('button[title="Hapus"]').click();
     await expect(page.getByText('Hapus Data Master?')).toBeVisible();
     await page.getByRole('button', { name: /Hapus|Konfirmasi|Ya/i }).last().click();
     await expect(page.locator('tr').filter({ hasText: code })).toHaveCount(0, { timeout: 10000 });
