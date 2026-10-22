@@ -314,7 +314,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await page.getByRole('button', { name: 'Tambah Customer' }).click();
     let dialog = page.getByRole('dialog');
     await dialog.getByPlaceholder('CUST-001').fill(customerCode);
-    await dialog.getByPlaceholder('PT Sentanu Maju').fill(customerName);
+    await dialog.getByPlaceholder('PT Sentanu Maju').first().fill(customerName);
     await dialog.getByRole('button', { name: /Simpan Data/i }).click();
     await expect(dialog).toBeHidden({ timeout: 10000 });
     let customerRow = page.locator('tr').filter({ hasText: customerCode });
