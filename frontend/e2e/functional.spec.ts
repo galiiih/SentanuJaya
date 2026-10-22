@@ -1,58 +1,82 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
 test.use({ viewport: { width: 1280, height: 800 } });
 
-async function login(page: any) {
+async function login(page: Page) {
   await page.goto('/');
-  const emailInput = page.locator('input[type="email"], input#email').first();
-  const passwordInput = page.locator('input[type="password"], input#password').first();
-  await expect(emailInput).toBeVisible({ timeout: 10000 });
-  await expect(passwordInput).toBeVisible({ timeout: 10000 });
-
-  await emailInput.fill('admin@sentanu.local');
-  await passwordInput.fill('secret123');
-  
-  const loginBtn = page.locator('button[type="submit"], button:has-text("Login")').first();
-  await expect(loginBtn).toBeVisible();
-  await loginBtn.click();
-
-  const dashboardIndicator = page.locator('button[aria-label="Menu pengguna"]').or(page.locator('text=/Dashboard|Sentanu Jaya|Master Data/i')).first();
-  await expect(dashboardIndicator).toBeVisible({ timeout: 15000 });
+  await page.locator('input[type="email"], input#email').first().fill('admin@sentanu.local');
+  await page.locator('input[type="password"], input#password').first().fill('password123');
+  await page.locator('button[type="submit"], button:has-text("Login")').first().click();
+  await expect(page.locator('button[aria-label="Menu pengguna"]').or(page.getByText(/Dashboard|Sentanu Jaya|Master Data/i).first()).first()).toBeVisible({ timeout: 15000 });
 }
 
-test.describe('Sentanu Jaya ERP Functional E2E Tests', () => {
-  test('app loads and dashboard renders stats or navigation', async ({ page }) => {
-    await login(page);
-    const branding = page.locator('text=/Sentanu Jaya|SENTANU JAYA|Dashboard/i').first();
-    await expect(branding).toBeVisible({ timeout: 10000 });
-  });
-
-  test('navigation items can be clicked and navigate correctly', async ({ page }) => {
+test.describe('Sentanu Jaya ERP browser E2E', () => {
+  test('login and main navigation work', async ({ page }) => {
     await login(page);
     await page.goto('/master');
     await expect(page).toHaveURL(/\/master/);
+    await expect(page.getByText('Master Data & Referensi')).toBeVisible();
   });
 
-  test('form inputs accept continuous typing without losing focus', async ({ page }) => {
-    await login(page);
-    await page.goto('/master');
-    await page.waitForLoadState('networkidle');
+  test('customer form supports continuous typing, tax dropdown, save and persisted read-back', async ({ page }) => {
+    const suffix = Date.now().toString();
+    const code = `E2E-${suffix}`;
+    const name = `Browser Test Customer ${suffix}`;
+    let created = false;
 
-    await page.evaluate(() => {
-      const btn = Array.from(document.querySelectorAll('button')).find(b => b.textContent?.includes('Tambah') || b.querySelector('svg'));
-      if (btn) (btn as HTMLButtonElement).click();
-    });
+    try {
+      await login(page);
+      await page.goto('/master');
+      await page.getByRole('button', { name: /Tambah Customer/i }).click();
 
-    const input = page.locator('input').first();
-    await expect(input).toBeVisible({ timeout: 5000 });
-    await input.click();
-    
-    const testString = 'CODE-99';
-    for (const char of testString) {
-      await page.keyboard.type(char);
-      const isFocused = await input.evaluate(el => document.activeElement === el);
-      expect(isFocused).toBe(true);
+      const codeInput = page.getByPlaceholder('CUST-001');
+      const nameInput = page.getByPlaceholder('PT Sentanu Maju');
+      const taxSelect = page.locator('select').first();
+
+      await expect(codeInput).toBeVisible();
+      await expect(nameInput).toBeVisible();
+      await expect(taxSelect).toBeVisible();
+
+      // Real keyboard interaction: each character must remain in the same focused field.
+      await codeInput.click();
+      for (const char of code) {
+        await page.keyboard.type(char);
+        await expect(codeInput).toBeFocused();
+      }
+      await expect(codeInput).toHaveValue(code);
+
+      await nameInput.click();
+      for (const char of name) {
+        await page.keyboard.type(char);
+        await expect(nameInput).toBeFocused();
+      }
+      await expect(nameInput).toHaveValue(name);
+
+      // Exercise a real dropdown selection and verify controlled state remains selected.
+      await taxSelect.selectOption('2');
+      await expect(taxSelect).toHaveValue('2');
+
+      await page.getByRole('button', { name: /Simpan|Save/i }).click();
+      await expect(page.getByText(code, { exact: true })).toBeVisible({ timeout: 10000 });
+      await expect(page.getByText(name, { exact: true })).toBeVisible({ timeout: 10000 });
+      created = true;
+
+      // Reload proves the record was persisted by the API/database, not just React state.
+      await page.reload();
+      await expect(page.getByText(code, { exact: true })).toBeVisible({ timeout: 10000 });
+      await expect(page.getByText(name, { exact: true })).toBeVisible({ timeout: 10000 });
+
+      // Cleanup test data using the UI so the test remains repeatable.
+      const row = page.locator('tr').filter({ hasText: code });
+      await row.getByRole('button', { name: /Hapus|Delete/i }).click();
+      const confirmButton = page.getByRole('button', { name: /Ya, Hapus|Konfirmasi|Hapus|Delete/i }).last();
+      await expect(confirmButton).toBeVisible({ timeout: 5000 });
+      await confirmButton.click();
+      await expect(page.getByText(code, { exact: true })).toHaveCount(0, { timeout: 10000 });
+      created = false;
+    } finally {
+      // Do not hide test failures; report possible residue for manual cleanup.
+      if (created) console.error(`E2E cleanup may be required for customer ${code}`);
     }
-    await expect(input).toHaveValue(testString);
   });
 });
