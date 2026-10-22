@@ -326,7 +326,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     dialog = page.getByRole('dialog');
     const contactCustomer = dialog.locator('select').first();
     await expect(contactCustomer).toBeVisible();
-    await contactCustomer.selectOption({ label: new RegExp(customerCode) });
+    await contactCustomer.selectOption(await contactCustomer.locator('option').filter({ hasText: customerCode }).first().getAttribute('value') ?? '');
     await dialog.getByPlaceholder('Bapak Budi').fill(contactName);
     await dialog.getByPlaceholder('Purchasing Manager').fill('Purchasing');
     await dialog.getByRole('button', { name: /Simpan Data/i }).click();
@@ -352,7 +352,8 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await page.getByRole('button', { name: 'Customer Item' }).click();
     await page.getByRole('button', { name: 'Tambah Customer Item' }).click();
     dialog = page.getByRole('dialog');
-    await dialog.locator('select').first().selectOption({ label: new RegExp(customerCode) });
+    const itemCustomerSelect = dialog.locator('select').first();
+    await itemCustomerSelect.selectOption(await itemCustomerSelect.locator('option').filter({ hasText: customerCode }).first().getAttribute('value') ?? '');
     const itemCodeInput = dialog.getByPlaceholder('ITEM-BODYKIT-01');
     await itemCodeInput.click();
     for (const char of itemCode) {
@@ -385,7 +386,8 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     dialog = page.getByRole('dialog');
     await dialog.getByPlaceholder('PL-2024-01').fill(priceListCode);
     await dialog.getByPlaceholder('Kontrak Harga 2024').fill(priceListName);
-    await dialog.locator('select').first().selectOption({ label: new RegExp(customerCode) });
+    const priceCustomerSelect = dialog.locator('select').first();
+    await priceCustomerSelect.selectOption(await priceCustomerSelect.locator('option').filter({ hasText: customerCode }).first().getAttribute('value') ?? '');
     await dialog.getByRole('button', { name: /Simpan Data/i }).click();
     await expect(dialog).toBeHidden({ timeout: 10000 });
     let priceRow = page.locator('tr').filter({ hasText: priceListCode });
