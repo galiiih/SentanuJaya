@@ -555,6 +555,38 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await expect(page.getByRole('button', { name: /Buat Surat Jalan|Surat Jalan Baru|New Delivery/i })).toBeVisible();
   });
 
+  test('Delivery creation keeps Customer PO disabled until a customer is selected and can be cancelled', async ({ page }) => {
+    await login(page);
+    await page.getByRole('link', { name: /Surat Jalan|Delivery/i }).click();
+    await expect(page).toHaveURL(/\\/delivery$/);
+    await page.getByRole('button', { name: /Buat Surat Jalan|Surat Jalan Baru|New Delivery/i }).click();
+
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+    const selects = dialog.locator('select');
+    await expect(selects).toHaveCount(4);
+    const customerSelect = selects.nth(2);
+    const customerPoSelect = selects.nth(3);
+
+    // The PO list depends on the selected customer; prevent selecting an unrelated PO.
+    await expect(customerPoSelect).toBeDisabled();
+    const customerOptions = customerSelect.locator('option').filter({ has: { tagName: 'option' } });
+    const optionValues = await customerSelect.locator('option').evaluateAll((options) =>
+      options.map((option) => (option as HTMLOptionElement).value).filter(Boolean)
+    );
+
+    if (optionValues.length > 0) {
+      await customerSelect.selectOption(optionValues[0]);
+      await expect(customerPoSelect).toBeEnabled();
+    } else {
+      // Empty master data should still leave the PO field safely disabled.
+      await expect(customerPoSelect).toBeDisabled();
+    }
+
+    await dialog.getByRole('button', { name: /Batal|Cancel/i }).click();
+    await expect(dialog).toBeHidden();
+  });
+
   test('customer form blocks missing required fields and preserves dialog for correction', async ({ page }) => {
     await login(page);
     await page.goto('/master');
