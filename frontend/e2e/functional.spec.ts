@@ -754,7 +754,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await expect(dialog.getByText('SJ-E2E-FIN-001')).toBeVisible({ timeout: 10000 });
     await dialog.locator('input[type="checkbox"]').check();
     await dialog.getByRole('button', { name: /Buat Draft Invoice|Buat Invoice|Create Invoice/i }).click();
-    const confirmation = page.getByRole('dialog').last();
+    const confirmation = page.getByRole('alertdialog');
     await confirmation.getByRole('button').last().click();
     await expect(dialog).toBeHidden({ timeout: 10000 });
     await expect.poll(() => invoiceCreatePayload).not.toBeNull();
