@@ -320,6 +320,10 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     let customerRow = page.locator('tr').filter({ hasText: customerCode });
     await expect(customerRow).toContainText(customerName, { timeout: 10000 });
 
+    // Relation dropdowns are loaded when the master page mounts. Reload after creating
+    // the parent so the new customer is included in the dropdown's fetched options.
+    await page.reload();
+    await expect(page.getByText('Master Data & Referensi')).toBeVisible();
     // Customer Contact: select the parent customer, create, reload, edit, and delete.
     await page.getByRole('button', { name: 'Customer Contact' }).click();
     await page.getByRole('button', { name: 'Tambah Customer Contact' }).click();
