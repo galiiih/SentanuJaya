@@ -586,6 +586,55 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await expect(dialog).toBeHidden();
   });
 
+  test('invoice creation requires an eligible delivered order and cannot submit an empty selection', async ({ page }) => {
+    await login(page);
+    await page.getByRole('link', { name: /Invoice|Faktur/i }).click();
+    await expect(page).toHaveURL(/\\/invoicing$/);
+    await page.getByRole('button', { name: /Buat Draft Invoice|Buat Invoice|Create Invoice/i }).click();
+
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+    const customerSelect = dialog.locator('select').first();
+    await expect(customerSelect).toBeVisible();
+
+    const customerValues = await customerSelect.locator('option').evaluateAll((options) =>
+      options.map((option) => (option as HTMLOptionElement).value).filter(Boolean)
+    );
+    if (customerValues.length > 0) {
+      await customerSelect.selectOption(customerValues[0]);
+      await expect(dialog.getByText(/tidak ada Surat Jalan|belum ada Surat Jalan|No eligible|tidak dapat ditagih/i)).toBeVisible({ timeout: 10000 });
+    }
+
+    const createButton = dialog.getByRole('button', { name: /Buat Draft Invoice|Buat Invoice|Create Invoice/i });
+    await expect(createButton).toBeDisabled();
+    await dialog.getByRole('button', { name: /Batal|Cancel/i }).click();
+    await expect(dialog).toBeHidden();
+  });
+
+  test('payment form does not allow submission without an outstanding invoice allocation', async ({ page }) => {
+    await login(page);
+    await page.getByRole('link', { name: /Pembayaran|Payments/i }).click();
+    await expect(page).toHaveURL(/\\/payments$/);
+    await page.getByRole('button', { name: /Pembayaran Baru|Buat Pembayaran|New Payment/i }).click();
+
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+    const customerSelect = dialog.locator('select').first();
+    await expect(customerSelect).toBeVisible();
+    const customerValues = await customerSelect.locator('option').evaluateAll((options) =>
+      options.map((option) => (option as HTMLOptionElement).value).filter(Boolean)
+    );
+
+    if (customerValues.length > 0) {
+      await customerSelect.selectOption(customerValues[0]);
+      await expect(dialog.getByText(/tidak ada invoice|belum ada invoice|No invoices/i)).toBeVisible({ timeout: 10000 });
+    }
+
+    await expect(dialog.getByRole('button', { name: /Pembayaran Baru|Buat Pembayaran|New Payment/i })).toBeDisabled();
+    await dialog.getByRole('button', { name: /Batal|Cancel/i }).click();
+    await expect(dialog).toBeHidden();
+  });
+
   test('customer form blocks missing required fields and preserves dialog for correction', async ({ page }) => {
     await login(page);
     await page.goto('/master');
