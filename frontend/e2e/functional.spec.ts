@@ -697,7 +697,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
         return route.fulfill({ json: paginated([customer]) });
       }
       if (path === '/api/v1/invoices/eligible-delivery-orders' && method === 'GET') {
-        return route.fulfill({ json: paginated([deliveryOrder]) });
+        return response([deliveryOrder]);
       }
       if (path === '/api/v1/invoices' && method === 'GET') {
         return route.fulfill({ json: paginated(invoice ? [invoice] : []) });
