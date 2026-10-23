@@ -570,7 +570,6 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
 
     // The PO list depends on the selected customer; prevent selecting an unrelated PO.
     await expect(customerPoSelect).toBeDisabled();
-    const customerOptions = customerSelect.locator('option').filter({ has: { tagName: 'option' } });
     const optionValues = await customerSelect.locator('option').evaluateAll((options) =>
       options.map((option) => (option as HTMLOptionElement).value).filter(Boolean)
     );
