@@ -669,4 +669,115 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await expect.poll(async () => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   });
 
+
+  test('invoice creation and payment allocation work through real browser interactions', async ({ page }) => {
+    const customer = { id: 'e2e-customer-id', code: 'E2E-FIN', name: 'E2E Financial Customer' };
+    const deliveryOrder = {
+      id: 'e2e-delivery-id', sj_number: 'SJ-E2E-FIN-001', customer_id: customer.id,
+      delivery_date: '2026-10-22', status: 'DELIVERED', lines: [{
+        id: 'e2e-delivery-line-id', quantity: 1, unit_price_snapshot: 1250, qty_invoiced: 0,
+        acceptance_lines: [{ quantity_ok: 1, quantity_rejected: 0, acceptance: { status: 'POSTED' } }],
+      }], customer,
+    };
+    let invoice: any = null;
+    let payment: any = null;
+    let invoiceCreatePayload: any = null;
+    let paymentCreatePayload: any = null;
+
+    await login(page);
+    await page.route('**/api/v1/**', async (route) => {
+      const request = route.request();
+      const url = new URL(request.url());
+      const path = url.pathname.replace(/\\/$/, '');
+      const method = request.method();
+      const paginated = (items: unknown[]) => ({ success: true, data: { data: items, current_page: 1, last_page: 1, total: items.length }, message: 'OK' });
+      const response = (data: unknown, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify({ success: true, data, message: 'OK' }) });
+
+      if (path === '/api/v1/customers' && method === 'GET') {
+        return route.fulfill({ json: paginated([customer]) });
+      }
+      if (path === '/api/v1/invoices/eligible-delivery-orders' && method === 'GET') {
+        return route.fulfill({ json: paginated([deliveryOrder]) });
+      }
+      if (path === '/api/v1/invoices' && method === 'GET') {
+        return route.fulfill({ json: paginated(invoice ? [invoice] : []) });
+      }
+      if (path === '/api/v1/invoices' && method === 'POST') {
+        invoiceCreatePayload = request.postDataJSON();
+        invoice = {
+          id: 'e2e-invoice-id', invoice_number: 'INV-E2E-0001', customer_id: customer.id,
+          customer, invoice_date: invoiceCreatePayload.invoice_date, due_date: '2026-11-21',
+          status: 'POSTED', dpp: 1250, ppn_amount: 0, pph_amount: 0,
+          total_amount: 1250, amount_paid: 0, amount_due: 1250,
+        };
+        return response(invoice, 201);
+      }
+      if (path === `/api/v1/customers/${customer.id}/outstanding` && method === 'GET') {
+        return response({
+          customer: { id: customer.id, code: customer.code, name: customer.name },
+          total_billed: 1250, total_paid: payment?.amount ?? 0,
+          total_outstanding: Math.max(0, 1250 - (payment?.amount ?? 0)),
+          invoices: [{
+            id: invoice?.id ?? 'e2e-invoice-id', invoice_number: invoice?.invoice_number ?? 'INV-E2E-0001',
+            invoice_date: invoice?.invoice_date ?? '2026-10-22', total_amount: 1250,
+            amount_paid: payment?.amount ?? 0, amount_due: Math.max(0, 1250 - (payment?.amount ?? 0)),
+            status: payment?.amount >= 1250 ? 'PAID' : payment?.amount ? 'PARTIALLY_PAID' : 'POSTED',
+          }],
+        });
+      }
+      if (path === '/api/v1/payments' && method === 'GET') {
+        return route.fulfill({ json: paginated(payment ? [payment] : []) });
+      }
+      if (path === '/api/v1/payments' && method === 'POST') {
+        paymentCreatePayload = request.postDataJSON();
+        payment = {
+          id: 'e2e-payment-id', payment_number: 'PAY-E2E-0001', customer_id: customer.id,
+          customer, payment_date: paymentCreatePayload.payment_date, method: paymentCreatePayload.method,
+          amount: paymentCreatePayload.amount, reference_no: paymentCreatePayload.reference_no,
+          status: 'POSTED', allocations: [{
+            id: 'e2e-allocation-id', payment_id: 'e2e-payment-id',
+            invoice_id: paymentCreatePayload.allocations[0].invoice_id,
+            allocated_amount: paymentCreatePayload.allocations[0].amount,
+            invoice: { ...invoice },
+          }],
+        };
+        return response(payment, 201);
+      }
+      return route.continue();
+    });
+
+    // Invoice creation: use the UI to choose a customer and an eligible, accepted Surat Jalan.
+    await page.goto('/invoicing');
+    await page.getByRole('button', { name: /Buat Draft Invoice|Buat Invoice|Create Invoice/i }).click();
+    let dialog = page.getByRole('dialog').first();
+    await dialog.locator('select').first().selectOption(customer.id);
+    await expect(dialog.getByText('SJ-E2E-FIN-001')).toBeVisible({ timeout: 10000 });
+    await dialog.locator('input[type="checkbox"]').check();
+    await dialog.getByRole('button', { name: /Buat Draft Invoice|Buat Invoice|Create Invoice/i }).click();
+    const confirmation = page.getByRole('dialog').last();
+    await confirmation.getByRole('button').last().click();
+    await expect(dialog).toBeHidden({ timeout: 10000 });
+    await expect.poll(() => invoiceCreatePayload).not.toBeNull();
+    expect(invoiceCreatePayload.customer_id).toBe(customer.id);
+    expect(invoiceCreatePayload.delivery_order_ids).toEqual([deliveryOrder.id]);
+    await expect(page.getByText('INV-E2E-0001')).toBeVisible({ timeout: 10000 });
+
+    // Payment creation: allocate the invoice amount using the browser form, then verify the UI reload.
+    await page.goto('/payments');
+    await page.getByRole('button', { name: /Pembayaran Baru|Buat Pembayaran|New Payment/i }).click();
+    dialog = page.getByRole('dialog');
+    await dialog.locator('select').first().selectOption(customer.id);
+    const allocation = dialog.locator('input[type="number"]').first();
+    await expect(allocation).toBeVisible({ timeout: 10000 });
+    await allocation.fill('1250');
+    await dialog.getByPlaceholder('TRF-001').fill('E2E-TRANSFER-0001');
+    await dialog.getByRole('button', { name: /Pembayaran Baru|Buat Pembayaran|New Payment/i }).click();
+    await expect(dialog).toBeHidden({ timeout: 10000 });
+    await expect.poll(() => paymentCreatePayload).not.toBeNull();
+    expect(paymentCreatePayload.customer_id).toBe(customer.id);
+    expect(paymentCreatePayload.amount).toBe(1250);
+    expect(paymentCreatePayload.allocations).toEqual([{ invoice_id: invoice.id, amount: 1250 }]);
+    await expect(page.getByText('PAY-E2E-0001')).toBeVisible({ timeout: 10000 });
+  });
+
 });
