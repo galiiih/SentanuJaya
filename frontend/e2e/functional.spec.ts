@@ -558,7 +558,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
   test('Delivery creation keeps Customer PO disabled until a customer is selected and can be cancelled', async ({ page }) => {
     await login(page);
     await page.getByRole('link', { name: /Surat Jalan|Delivery/i }).click();
-    await expect(page).toHaveURL(/\\/delivery$/);
+    await expect(page).toHaveURL(new RegExp('/delivery$'));
     await page.getByRole('button', { name: /Buat Surat Jalan|Surat Jalan Baru|New Delivery/i }).click();
 
     const dialog = page.getByRole('dialog');
@@ -628,7 +628,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
   test('Delivery creation keeps Customer PO disabled until a customer is selected and can be cancelled', async ({ page }) => {
     await login(page);
     await page.getByRole('link', { name: /Surat Jalan|Delivery/i }).click();
-    await expect(page).toHaveURL(/\\/delivery$/);
+    await expect(page).toHaveURL(new RegExp('/delivery$'));
     await page.getByRole('button', { name: /Buat Surat Jalan|Surat Jalan Baru|New Delivery/i }).click();
 
     const dialog = page.getByRole('dialog');
