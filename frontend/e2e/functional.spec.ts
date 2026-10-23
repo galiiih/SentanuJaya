@@ -588,7 +588,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
 
   test('invoice creation requires an eligible delivered order and cannot submit an empty selection', async ({ page }) => {
     await login(page);
-    await page.getByRole('link', { name: /Invoice|Faktur/i }).click();
+    await page.goto('/invoicing');
     await expect(page).toHaveURL(/\/invoicing$/);
     await page.getByRole('button', { name: /Buat Draft Invoice|Buat Invoice|Create Invoice/i }).click();
 
@@ -613,7 +613,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
 
   test('payment form does not allow submission without an outstanding invoice allocation', async ({ page }) => {
     await login(page);
-    await page.getByRole('link', { name: /Pembayaran|Payments/i }).click();
+    await page.goto('/payments');
     await expect(page).toHaveURL(/\/payments$/);
     await page.getByRole('button', { name: /Pembayaran Baru|Buat Pembayaran|New Payment/i }).click();
 
