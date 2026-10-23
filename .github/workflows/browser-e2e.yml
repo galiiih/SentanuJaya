@@ -69,6 +69,11 @@ jobs:
       - name: Run invoice and payment backend integration tests
         working-directory: backend
         run: php artisan test tests/Feature/Api/V1/InvoicePaymentApiTest.php
+      # Feature tests using RefreshDatabase can reset the database and remove seeded E2E users.
+      # Reseed after backend tests so browser tests always start with a known login account.
+      - name: Restore browser E2E seed data
+        working-directory: backend
+        run: php artisan db:seed --force
       - name: Install frontend dependencies
         working-directory: frontend
         run: npm ci
