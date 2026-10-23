@@ -6,7 +6,16 @@ async function login(page: Page) {
   await page.goto('/login');
   await page.locator('#login-email').fill('admin@sentanu.local');
   await page.locator('#login-password').fill('password123');
+  const loginResponsePromise = page.waitForResponse((response) =>
+    response.url().includes('/api/v1/auth/login') && response.request().method() === 'POST',
+  );
   await page.getByRole('button', { name: 'Login' }).click();
+  const loginResponse = await loginResponsePromise;
+  if (!loginResponse.ok()) {
+    const responseBody = await loginResponse.text();
+    const visibleError = await page.locator('.auth-card').innerText().catch(() => '');
+    throw new Error(`Login API failed with HTTP ${loginResponse.status()}: ${responseBody}. UI: ${visibleError}`);
+  }
   // Wait for the actual authenticated redirect, not static branding on the login page.
   await expect(page).toHaveURL(/\/dashboard$/, { timeout: 15000 });
   await expect(page.getByRole('link', { name: /Master Data/i }).first()).toBeVisible({ timeout: 10000 });
