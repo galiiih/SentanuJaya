@@ -523,6 +523,38 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await expect(page.locator('tr').filter({ hasText: customerCode })).toHaveCount(0, { timeout: 10000 });
   });
 
+  test('Customer PO form validates required customer, PO number and item before saving', async ({ page }) => {
+    await login(page);
+    await page.getByRole('link', { name: /Customer PO/i }).click();
+    await expect(page).toHaveURL(/\\/customer-po$/);
+    await expect(page.getByRole('button', { name: /Buat Customer PO/i })).toBeVisible();
+
+    await page.getByRole('button', { name: /Buat Customer PO/i }).click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+
+    // Company may be preselected, but customer, PO number and item must be supplied.
+    await dialog.getByRole('button', { name: /Simpan Draft/i }).click();
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByText('Customer wajib dipilih.')).toBeVisible();
+    await expect(dialog.getByText('Nomor PO wajib diisi.')).toBeVisible();
+    await expect(dialog.getByText('Item wajib dipilih.')).toBeVisible();
+
+    // Correct the PO number and verify the input remains editable after validation.
+    const poNumber = dialog.locator('#po-number');
+    await poNumber.fill(`E2E-PO-${Date.now()}`);
+    await expect(poNumber).toHaveValue(/E2E-PO-/);
+    await dialog.getByRole('button', { name: /Batal/i }).click();
+    await expect(dialog).toBeHidden();
+  });
+
+  test('Delivery page opens and exposes delivery creation controls', async ({ page }) => {
+    await login(page);
+    await page.getByRole('link', { name: /Surat Jalan|Delivery/i }).click();
+    await expect(page).toHaveURL(/\\/delivery$/);
+    await expect(page.getByRole('button', { name: /Buat Surat Jalan|Buat Pengiriman|Tambah Surat Jalan|New Delivery/i })).toBeVisible();
+  });
+
   test('customer form blocks missing required fields and preserves dialog for correction', async ({ page }) => {
     await login(page);
     await page.goto('/master');
