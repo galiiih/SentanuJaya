@@ -448,8 +448,8 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
   });
 
   test('master data page remains within a mobile viewport without horizontal overflow', async ({ page }) => {
-    await page.setViewportSize({ width: 390, height: 844 });
     await login(page);
+    await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/master');
     await expect(page.getByText('Master Data & Referensi')).toBeVisible();
     await expect.poll(async () => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
