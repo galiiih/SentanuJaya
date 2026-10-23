@@ -362,7 +362,7 @@ export const invoiceApi = {
   create: (payload: InvoiceCreatePayload) => data<InvoiceRecord>('/invoices', payload),
   post: (id: string) => data<InvoiceRecord>(`/invoices/${id}/post`),
   cancel: (id: string) => data<InvoiceRecord>(`/invoices/${id}/cancel`),
-  eligibleDeliveryOrders: (customerId: string) => list<DeliveryOrderRecord>('/invoices/eligible-delivery-orders', { customer_id: customerId }),
+  eligibleDeliveryOrders: (customerId: string) => api.get<ApiResponse<DeliveryOrderRecord[]>>('/invoices/eligible-delivery-orders', { params: { customer_id: customerId } }).then((response) => response.data.data),
 };
 
 export const dashboardApi = {
