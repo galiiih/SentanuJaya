@@ -536,7 +536,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     // Company may be preselected, but customer, PO number and item must be supplied.
     await dialog.getByRole('button', { name: /Simpan Draft/i }).click();
     await expect(dialog).toBeVisible();
-    await expect(dialog.getByText('Customer wajib dipilih.')).toBeVisible();
+    await expect(dialog.getByText('Customer wajib dipilih.').first()).toBeVisible();
     await expect(dialog.getByText('Nomor PO wajib diisi.')).toBeVisible();
     await expect(dialog.getByText('Barang customer wajib dipilih.')).toBeVisible();
 
