@@ -526,7 +526,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
   test('Customer PO form validates required customer, PO number and item before saving', async ({ page }) => {
     await login(page);
     await page.getByRole('link', { name: /Customer PO/i }).click();
-    await expect(page).toHaveURL(/\\/customer-po$/);
+    await expect(page).toHaveURL(/\/customer-po$/);
     await expect(page.getByRole('button', { name: /Buat Customer PO/i })).toBeVisible();
 
     await page.getByRole('button', { name: /Buat Customer PO/i }).click();
@@ -551,7 +551,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
   test('Delivery page opens and exposes delivery creation controls', async ({ page }) => {
     await login(page);
     await page.getByRole('link', { name: /Surat Jalan|Delivery/i }).click();
-    await expect(page).toHaveURL(/\\/delivery$/);
+    await expect(page).toHaveURL(/\/delivery$/);
     await expect(page.getByRole('button', { name: /Buat Surat Jalan|Surat Jalan Baru|New Delivery/i })).toBeVisible();
   });
 
