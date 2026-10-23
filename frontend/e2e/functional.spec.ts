@@ -538,7 +538,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await expect(dialog).toBeVisible();
     await expect(dialog.getByText('Customer wajib dipilih.')).toBeVisible();
     await expect(dialog.getByText('Nomor PO wajib diisi.')).toBeVisible();
-    await expect(dialog.getByText('Item wajib dipilih.')).toBeVisible();
+    await expect(dialog.getByText('Barang customer wajib dipilih.')).toBeVisible();
 
     // Correct the PO number and verify the input remains editable after validation.
     const poNumber = dialog.locator('#po-number');
@@ -552,7 +552,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await login(page);
     await page.getByRole('link', { name: /Surat Jalan|Delivery/i }).click();
     await expect(page).toHaveURL(/\\/delivery$/);
-    await expect(page.getByRole('button', { name: /Buat Surat Jalan|Buat Pengiriman|Tambah Surat Jalan|New Delivery/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Buat Surat Jalan|Surat Jalan Baru|New Delivery/i })).toBeVisible();
   });
 
   test('customer form blocks missing required fields and preserves dialog for correction', async ({ page }) => {
