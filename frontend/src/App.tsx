@@ -110,15 +110,17 @@ function Sidebar({ mobile, onClose, closeButtonRef }: { mobile?: boolean; onClos
       ],
     },
     {
-      label: t.nav.inventory,
+      label: 'FINANCE & BILLING',
       items: [
-        { path: '/materials', label: t.nav.materials, icon: Boxes, permission: permissions.materialView, badge: 'low_stock_count' as const, alert: true },
-        { path: '/master', label: 'Master Data', icon: Package, permission: permissions.dashboardView },
+        { path: '/invoicing', label: 'Invoice', icon: Receipt, permission: permissions.invoiceView },
+        { path: '/payments', label: 'Pembayaran', icon: CircleDollarSign, permission: permissions.paymentView },
+        { path: '/reports', label: 'Laporan', icon: FileCheck, permission: permissions.invoiceView },
       ],
     },
     {
-      label: 'MASTER DATA',
+      label: t.nav.inventory,
       items: [
+        { path: '/materials', label: t.nav.materials, icon: Boxes, permission: permissions.materialView, badge: 'low_stock_count' as const, alert: true },
         { path: '/master', label: 'Master Data', icon: Package, permission: permissions.dashboardView },
       ],
     },

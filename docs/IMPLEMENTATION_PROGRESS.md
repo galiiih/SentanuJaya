@@ -9,6 +9,5 @@ Branch: master
 4. **Material & Inventory**: PASS — Company material stock, usage tracking, non-negative stock validation.
 5. **Production & QC**: PASS — Work order status flow, internal QC, reject handling.
 6. **Delivery & Customer Acceptance**: PASS — Partial deliveries, 1 SJ = 1 PO, customer acceptance OK/reject validation (only OK billable).
-7. **Invoicing**: PASS — 1 SJ per invoice, authoritative server-side `tax_condition` resolution from Customer, exact calculations (DPP, PPN 0%/11%, PPh 0%/2%/2.5%), rejection of invalid tax conditions.
-8. **Payments**: PASS — Cash and Bank Transfer, payment allocation.
-9. **Dashboard & Reporting**: PASS — Live summary KPIs, financial reporting.
+7. **Invoicing, Payments & Reporting**: PASS — Sidebar navigation updated with Invoicing, Payments, and Reports under Finance & Billing; duplicate Master Data removed. Authoritative tax conditions and 1-DO-per-invoice enforced.
+8. **Dashboard & KPI**: PASS — Live summary KPIs and reporting active.
