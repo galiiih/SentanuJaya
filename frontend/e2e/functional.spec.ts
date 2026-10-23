@@ -688,7 +688,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await page.route('**/api/v1/**', async (route) => {
       const request = route.request();
       const url = new URL(request.url());
-      const path = url.pathname.replace(/\\/$/, '');
+      const path = url.pathname.replace(/\/$/, '');
       const method = request.method();
       const paginated = (items: unknown[]) => ({ success: true, data: { data: items, current_page: 1, last_page: 1, total: items.length }, message: 'OK' });
       const response = (data: unknown, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify({ success: true, data, message: 'OK' }) });
