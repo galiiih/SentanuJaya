@@ -421,4 +421,38 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await expect(page.locator('tr').filter({ hasText: customerCode })).toHaveCount(0, { timeout: 10000 });
   });
 
+  test('customer form blocks missing required fields and preserves dialog for correction', async ({ page }) => {
+    await login(page);
+    await page.goto('/master');
+    await expect(page.getByText('Master Data & Referensi')).toBeVisible();
+    await page.getByRole('button', { name: /Tambah Customer/i }).click();
+
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+    const codeInput = dialog.getByPlaceholder('CUST-001');
+    const nameInput = dialog.getByPlaceholder('PT Sentanu Maju').first();
+    await expect(codeInput).toHaveAttribute('required', '');
+    await expect(nameInput).toHaveAttribute('required', '');
+    await expect(codeInput).toHaveJSProperty('validity.valid', false);
+    await dialog.getByRole('button', { name: /Simpan Data/i }).click();
+    await expect(dialog).toBeVisible();
+    await expect(codeInput).toHaveJSProperty('validity.valid', false);
+
+    // Correct the required fields and verify browser validity changes without losing focus.
+    await codeInput.fill(`E2E-VALID-${Date.now()}`);
+    await nameInput.fill(`Validation Customer ${Date.now()}`);
+    await expect(codeInput).toHaveJSProperty('validity.valid', true);
+    await expect(nameInput).toHaveJSProperty('validity.valid', true);
+    await dialog.getByRole('button', { name: /Batal/i }).click();
+    await expect(dialog).toBeHidden();
+  });
+
+  test('master data page remains within a mobile viewport without horizontal overflow', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await login(page);
+    await page.goto('/master');
+    await expect(page.getByText('Master Data & Referensi')).toBeVisible();
+    await expect.poll(async () => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  });
+
 });
