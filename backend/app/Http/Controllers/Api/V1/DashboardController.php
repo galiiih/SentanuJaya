@@ -95,6 +95,83 @@ class DashboardController extends BaseApiController
                 'unpaid_invoices_count' => $unpaidInvoicesCount,
                 'top_outstanding_customers' => $topCustomers,
             ],
+            'financial_trend' => $this->financialTrend(),
+            'recent_activity' => $this->recentActivity(),
+            'custody' => [
+                'total_items' => (int) $custodyItemsCount,
+            ],
+            'uninvoiced_sj_count' => DeliveryOrder::where('status', 'DELIVERED')
+                ->whereDoesntHave('invoiceLinks')
+                ->count(),
         ], 'Dashboard summary retrieved successfully');
+    }
+
+    /**
+     * Monthly financial trend for the last 6 months from actual invoices/payments.
+     */
+    private function financialTrend(): array
+    {
+        $months = collect(range(5, 0))->map(fn ($i) => now()->subMonths($i));
+
+        return $months->map(function ($month) {
+            $start = $month->copy()->startOfMonth()->toDateString();
+            $end = $month->copy()->endOfMonth()->toDateString();
+
+            $revenue = (float) Invoice::whereBetween('invoice_date', [$start, $end])
+                ->where('status', 'POSTED')
+                ->sum('total_amount');
+
+            $payments = (float) Payment::whereBetween('payment_date', [$start, $end])
+                ->where('status', 'POSTED')
+                ->sum('amount');
+
+            return [
+                'period' => $month->translatedFormat('M Y'),
+                'revenue' => round($revenue, 2),
+                'payments' => round($payments, 2),
+                'net' => round($revenue - $payments, 2),
+            ];
+        })->values()->all();
+    }
+
+    /**
+     * Recent transaction activity from actual database records.
+     */
+    private function recentActivity(): array
+    {
+        $activities = collect();
+
+        // Recent invoices
+        Invoice::with('customer')->latest('created_at')->take(3)->get()->each(function ($inv) use ($activities) {
+            $activities->push([
+                'type' => 'invoice',
+                'description' => "Invoice {$inv->invoice_number} — " . ($inv->customer->name ?? 'Unknown'),
+                'status' => $inv->status,
+                'timestamp' => $inv->created_at->toISOString(),
+            ]);
+        });
+
+        // Recent payments
+        Payment::latest('created_at')->take(3)->get()->each(function ($pmt) use ($activities) {
+            $activities->push([
+                'type' => 'payment',
+                'description' => "Pembayaran {$pmt->payment_number} — Rp " . number_format($pmt->amount, 0, ',', '.'),
+                'status' => $pmt->status,
+                'timestamp' => $pmt->created_at->toISOString(),
+            ]);
+        });
+
+        // Recent delivery orders
+        DeliveryOrder::with('customerPo.customer')->latest('created_at')->take(2)->get()->each(function ($do) use ($activities) {
+            $customerName = $do->customerPo?->customer?->name ?? 'Unknown';
+            $activities->push([
+                'type' => 'delivery',
+                'description' => "Surat Jalan {$do->sj_number} — {$customerName}",
+                'status' => $do->status,
+                'timestamp' => $do->created_at->toISOString(),
+            ]);
+        });
+
+        return $activities->sortByDesc('timestamp')->take(5)->values()->all();
     }
 }

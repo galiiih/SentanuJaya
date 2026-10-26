@@ -31,7 +31,6 @@ import { DeliveryPage } from './components/DeliveryPage';
 import { PaymentPage } from './components/PaymentPage';
 import { InvoicingPage } from './components/InvoicingPage';
 import {
-  mockStats,
   type Material,
 } from './services/mockData';
 import {
@@ -104,7 +103,7 @@ function Sidebar({ mobile, onClose, closeButtonRef }: { mobile?: boolean; onClos
       label: t.nav.operations,
       items: [
         { path: '/dashboard', label: t.nav.dashboard, icon: LayoutDashboard, permission: permissions.dashboardView },
-        { path: '/custody', label: t.nav.custody, icon: Package, permission: permissions.custodyView, badge: 'custody_count' as const },
+        { path: '/custody', label: t.nav.custody, icon: Package, permission: permissions.custodyView },
         { path: '/customer-po', label: t.nav.customerPo, icon: FileText, permission: permissions.poView },
         { path: '/delivery', label: t.nav.delivery, icon: Truck, permission: permissions.deliveryView },
       ],
@@ -120,7 +119,7 @@ function Sidebar({ mobile, onClose, closeButtonRef }: { mobile?: boolean; onClos
     {
       label: t.nav.inventory,
       items: [
-        { path: '/materials', label: t.nav.materials, icon: Boxes, permission: permissions.materialView, badge: 'low_stock_count' as const, alert: true },
+        { path: '/materials', label: t.nav.materials, icon: Boxes, permission: permissions.materialView },
         { path: '/master', label: 'Master Data', icon: Package, permission: permissions.dashboardView },
       ],
     },
@@ -139,7 +138,7 @@ function Sidebar({ mobile, onClose, closeButtonRef }: { mobile?: boolean; onClos
           if (!visibleItems.length) return null;
           return <div key={section.label}><p className="nav-section-label">{section.label}</p>{visibleItems.map((item) => {
             const Icon = item.icon;
-            return <NavLink key={item.path} to={item.path} className={({ isActive }) => `nav-item${isActive ? ' nav-item--active' : ''}`} onClick={onClose}><Icon size={18} /><span>{item.label}</span>{'badge' in item && item.badge && <em className={'alert' in item && item.alert ? 'nav-item__alert' : undefined}>{mockStats[item.badge]}</em>}</NavLink>;
+            return <NavLink key={item.path} to={item.path} className={({ isActive }) => `nav-item${isActive ? ' nav-item--active' : ''}`} onClick={onClose}><Icon size={18} /><span>{item.label}</span></NavLink>;
           })}</div>;
         })}
       </nav>
@@ -229,7 +228,7 @@ function AuthenticatedLayout() {
             <span className="header-divider" />
             <LanguageSwitcher />
             <span className="header-divider" />
-            <button className="icon-button" aria-label="Notifikasi"><Bell size={19} /></button>
+            <button className="icon-button" aria-label="Notifikasi" disabled title="Fitur notifikasi belum tersedia"><Bell size={19} /></button>
             <span className="header-divider" />
             <div className="user-avatar">{user?.name.slice(0, 2).toUpperCase()}</div>
             <div className="user-copy"><strong>{user?.name}</strong><span>{user?.role === 'ADMIN' ? 'Administrator' : user?.role}</span></div>
@@ -241,15 +240,6 @@ function AuthenticatedLayout() {
     </div>
   );
 }
-
-const demoFinancialData = [
-  { period: 'Jan', revenue: 42, expense: 28, profit: 14 },
-  { period: 'Feb', revenue: 38, expense: 25, profit: 13 },
-  { period: 'Mar', revenue: 55, expense: 32, profit: 23 },
-  { period: 'Apr', revenue: 47, expense: 30, profit: 17 },
-  { period: 'May', revenue: 61, expense: 35, profit: 26 },
-  { period: 'Jun', revenue: 53, expense: 31, profit: 22 },
-];
 
 function Dashboard() {
   const { user, hasPermission } = useAuth();
@@ -286,16 +276,20 @@ function Dashboard() {
   const op = stats?.operational ?? {};
   const fin = stats?.financial ?? {};
   const custodyCount = stats?.custody?.total_items ?? 0;
-  const uninvoicedCount = stats?.uninvoiced_sj_count ?? op.pending_acceptance ?? 0;
-  const arOutstanding = fin.ar_outstanding ?? 0;
+  const uninvoicedCount = stats?.uninvoiced_sj_count ?? 0;
+  const arOutstanding = fin.total_outstanding ?? 0;
   const productionStages = [
-    ['Raw', op.production_raw ?? 18, 'neutral'],
-    ['Paint', op.production_paint ?? 46, 'info'],
-    ['Drying', op.production_drying ?? 21, 'warning'],
-    ['Polish', op.production_polish ?? 14, 'info'],
-    ['QC', op.pending_qc ?? 12, 'success'],
-    ['Packing', op.production_packing ?? 9, 'success'],
+    ['Raw', op.production_raw ?? 0, 'neutral'],
+    ['Paint', op.production_paint ?? 0, 'info'],
+    ['Drying', op.production_drying ?? 0, 'warning'],
+    ['Polish', op.production_polish ?? 0, 'info'],
+    ['QC', op.pending_qc ?? 0, 'success'],
+    ['Packing', op.production_packing ?? 0, 'success'],
   ] as const;
+
+  const trendData: Array<{ period: string; revenue: number; payments: number; net: number }> = stats?.financial_trend ?? [];
+  const recentActivity: Array<{ type: string; description: string; status: string; timestamp: string }> = stats?.recent_activity ?? [];
+  const totalUnits = productionStages.reduce((sum, [, v]) => sum + Number(v), 0);
 
   return <>
     <PageHeader title="Dashboard" description={greeting} action={quickActions} />
@@ -303,17 +297,18 @@ function Dashboard() {
     <section className="kpi-grid" aria-label="Ringkasan operasional">
       <KpiCard label="Custody active" value={<>{custodyCount}<small> pcs</small></>} detail="Barang customer di workshop" icon={<Package size={18} />} />
       <KpiCard label="PO Aktif" value={<>{op.active_customer_pos ?? 0}<small> PO</small></>} detail="Customer Purchase Order" icon={<Boxes size={18} />} tone="info" />
-      <KpiCard label="Siap ditagihkan" value={<>{uninvoicedCount}<small> SJ/Accept</small></>} detail="Acceptance telah disetujui" icon={<FileCheck size={18} />} tone="info" />
+      <KpiCard label="Siap ditagihkan" value={<>{uninvoicedCount}<small> SJ</small></>} detail="SJ belum diinvoice" icon={<FileCheck size={18} />} tone="info" />
       <KpiCard label="Tagihan berjalan (AR)" value={currency.format(arOutstanding)} detail="Nilai outstanding invoice POSTED" icon={<CircleDollarSign size={18} />} tone="success" />
     </section>
     <div className="dashboard-grid">
-      <Card title="Production overview" action={<span className="card__meta">{(op.production_raw ?? 18) + (op.production_paint ?? 46) + (op.production_drying ?? 21) + (op.production_polish ?? 14) + (op.pending_qc ?? 12) + (op.production_packing ?? 9)} unit aktif</span>}><div className="production-summary"><p>Work order per tahap produksi</p><strong>{(op.production_raw ?? 18) + (op.production_paint ?? 46) + (op.production_drying ?? 21) + (op.production_polish ?? 14) + (op.pending_qc ?? 12) + (op.production_packing ?? 9)} <span>unit</span></strong></div><div className="production-bar" aria-label="Distribusi unit aktif berdasarkan tahap produksi">{productionStages.map(([label, value, tone]) => <div key={label} className={`production-bar__segment production-bar__segment--${tone}`} style={{ width: `${Math.max(5, Number(value) / 1.2)}%` }} title={`${label}: ${value} unit`}><span>{label}</span></div>)}</div><div className="production-legend">{productionStages.map(([label, value, tone]) => <span key={label}><i className={`status-dot status-dot--${tone}`} />{label} <strong>{value}</strong></span>)}</div></Card>
-      <Card title="Financial Summary" action={<Button variant="ghost" onClick={() => navigate('/invoicing')}>Lihat invoice</Button>}><div className="alert-item"><div><strong>Total Invoice Periode Ini</strong><span>Rp {Number(fin.total_invoice_amount ?? 0).toLocaleString('id-ID')}</span></div><div><strong>Total Pembayaran (POSTED)</strong><span>Rp {Number(fin.total_payment_amount ?? 0).toLocaleString('id-ID')}</span></div></div><p className="chart-note" style={{ marginTop: '1rem' }}>Semua perhitungan berasal dari data backend API actual.</p></Card>
-      <Card title="Revenue & Financial Trend" className="dashboard-grid__wide" action={<span className="card__meta">Live API Data</span>}><div className="chart-container"><ResponsiveContainer width="100%" height={220}><BarChart data={demoFinancialData} barGap={2}><CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" /><XAxis dataKey="period" tick={{ fontSize: 11, fill: 'var(--color-text-muted)' }} /><YAxis tick={{ fontSize: 11, fill: 'var(--color-text-muted)' }} tickFormatter={(v: number) => `${v}jt`} /><Tooltip formatter={(v) => `Rp ${v} jt`} /><Legend wrapperStyle={{ fontSize: 12 }} /><Bar dataKey="revenue" name="Revenue" fill="var(--color-info)" radius={[3, 3, 0, 0]} /><Bar dataKey="expense" name="Expense" fill="var(--color-warning)" radius={[3, 3, 0, 0]} /><Bar dataKey="profit" name="Profit" fill="var(--color-success)" radius={[3, 3, 0, 0]} /></BarChart></ResponsiveContainer></div></Card>
-      <Card title="Aktivitas terbaru" className="dashboard-grid__wide" action={<Button variant="ghost" onClick={() => void loadSummary()}>Muat ulang</Button>}><ul className="activity-list"><li><time>Live</time><span className="activity-list__icon"><CheckCircle2 size={16} /></span><div><strong>Dashboard tersinkronisasi dengan API</strong><span>Menampilkan data operasional dan keuangan aktual</span></div><StatusBadge status="ACTIVE" /></li></ul></Card>
+      <Card title="Production overview" action={<span className="card__meta">{totalUnits} unit aktif</span>}>{totalUnits === 0 ? <p className="chart-note">Belum ada data produksi.</p> : <><div className="production-summary"><p>Work order per tahap produksi</p><strong>{totalUnits} <span>unit</span></strong></div><div className="production-bar" aria-label="Distribusi unit aktif berdasarkan tahap produksi">{productionStages.map(([label, value, tone]) => <div key={label} className={`production-bar__segment production-bar__segment--${tone}`} style={{ width: `${Math.max(5, Number(value) / 1.2)}%` }} title={`${label}: ${value} unit`}><span>{label}</span></div>)}</div><div className="production-legend">{productionStages.map(([label, value, tone]) => <span key={label}><i className={`status-dot status-dot--${tone}`} />{label} <strong>{value}</strong></span>)}</div></>}</Card>
+      <Card title="Financial Summary" action={<Button variant="ghost" onClick={() => navigate('/invoicing')}>Lihat invoice</Button>}><div className="alert-item"><div><strong>Total Invoice Periode Ini</strong><span>Rp {Number(fin.total_invoice_period ?? 0).toLocaleString('id-ID')}</span></div><div><strong>Total Pembayaran (POSTED)</strong><span>Rp {Number(fin.total_payment_posted ?? 0).toLocaleString('id-ID')}</span></div></div></Card>
+      <Card title="Revenue & Financial Trend" className="dashboard-grid__wide" action={<span className="card__meta">{trendData.length ? 'Data aktual' : 'Belum ada data'}</span>}>{trendData.length === 0 ? <p className="chart-note">Belum ada data transaksi untuk ditampilkan.</p> : <div className="chart-container"><ResponsiveContainer width="100%" height={220}><BarChart data={trendData} barGap={2}><CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" /><XAxis dataKey="period" tick={{ fontSize: 11, fill: 'var(--color-text-muted)' }} /><YAxis tick={{ fontSize: 11, fill: 'var(--color-text-muted)' }} tickFormatter={(v: number) => `${(v / 1000000).toFixed(0)}jt`} /><Tooltip formatter={(v) => `Rp ${Number(v).toLocaleString('id-ID')}`} /><Legend wrapperStyle={{ fontSize: 12 }} /><Bar dataKey="revenue" name="Revenue" fill="var(--color-info)" radius={[3, 3, 0, 0]} /><Bar dataKey="payments" name="Pembayaran" fill="var(--color-warning)" radius={[3, 3, 0, 0]} /><Bar dataKey="net" name="Net" fill="var(--color-success)" radius={[3, 3, 0, 0]} /></BarChart></ResponsiveContainer></div>}</Card>
+      <Card title="Aktivitas terbaru" className="dashboard-grid__wide" action={<Button variant="ghost" onClick={() => void loadSummary()}>Muat ulang</Button>}>{recentActivity.length === 0 ? <p className="chart-note">Belum ada aktivitas transaksi.</p> : <ul className="activity-list">{recentActivity.map((act, i) => <li key={i}><time>{new Date(act.timestamp).toLocaleDateString('id-ID')}</time><span className="activity-list__icon"><CheckCircle2 size={16} /></span><div><strong>{act.description}</strong><span>{act.type}</span></div><StatusBadge status={act.status} /></li>)}</ul>}</Card>
     </div>
   </>;
 }
+
 
 const receiptColumns: DataTableColumn<GoodsReceipt>[] = [
   { id: 'number', header: 'No. STB', cell: (item) => <strong className="font-mono">{item.stb_number}</strong>, sortValue: (item) => item.stb_number },
