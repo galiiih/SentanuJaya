@@ -145,6 +145,44 @@ class DashboardApiTest extends TestCase
             'status' => 'POSTED',
         ]);
 
+        // Delivered DO with invoice linked (uninvoiced_sj_count should exclude this)
+        $doDeliveredWithInvoice = DeliveryOrder::create([
+            'company_id' => $company->id,
+            'branch_id' => $branch->id,
+            'customer_id' => $customer->id,
+            'sj_number' => 'SJ-DELIVERED-03',
+            'delivery_date' => now()->toDateString(),
+            'status' => 'DELIVERED',
+        ]);
+
+        \App\Models\Acceptance::create([
+            'company_id' => $company->id,
+            'branch_id' => $branch->id,
+            'customer_id' => $customer->id,
+            'delivery_order_id' => $doDeliveredWithInvoice->id,
+            'acceptance_number' => 'ACC-03',
+            'acceptance_date' => now()->toDateString(),
+            'status' => 'POSTED',
+        ]);
+
+        $invoice = \App\Models\Invoice::create([
+            'company_id' => $company->id,
+            'branch_id' => $branch->id,
+            'customer_id' => $customer->id,
+            'invoice_number' => 'INV-DASH-01',
+            'invoice_date' => now()->toDateString(),
+            'due_date' => now()->addDays(30)->toDateString(),
+            'total_amount' => 500.00,
+            'subtotal' => 500.00,
+            'status' => 'POSTED',
+        ]);
+
+        \App\Models\InvoiceDeliveryLink::create([
+            'invoice_id' => $invoice->id,
+            'delivery_order_id' => $doDeliveredWithInvoice->id,
+            'amount_billed' => 500.00,
+        ]);
+
         // DO not delivered (e.g. DRAFT)
         $doDraft = DeliveryOrder::create([
             'company_id' => $company->id,
@@ -158,12 +196,18 @@ class DashboardApiTest extends TestCase
         $response = $this->actingAs($admin)->getJson('/api/v1/dashboard/summary');
         $response->assertOk();
 
-        $data = $response->json('data.operational');
-        
+        $json = $response->json('data');
+        $op = $json['operational'];
+
         // Exact assertions
-        $this->assertEquals(1, $data['active_customer_pos']);
-        $this->assertEquals(1, $data['ready_to_ship']); // Only $doReady (SUBMITTED)
-        $this->assertEquals(1, $data['pending_acceptance']); // Only $doDeliveredWithoutAcceptance
-        $this->assertEquals(1, $data['pending_qc']);
+        $this->assertEquals(1, $op['active_customer_pos']);
+        $this->assertEquals(1, $op['ready_to_ship']); // Only $doReady (SUBMITTED)
+        $this->assertEquals(1, $op['pending_acceptance']); // Only $doDeliveredWithoutAcceptance ($doDeliveredWithAcceptance has acceptance)
+        $this->assertEquals(1, $op['pending_qc']);
+
+        // uninvoiced_sj_count should count DELIVERED DOs without invoice links:
+        // $doDeliveredWithoutAcceptance (1) + $doDeliveredWithAcceptance (1) = 2.
+        // ($doDeliveredWithInvoice has an invoice link, $doReady is SUBMITTED, $doDraft is DRAFT)
+        $this->assertEquals(2, $json['uninvoiced_sj_count']);
     }
 }
