@@ -105,8 +105,8 @@ class DashboardApiTest extends TestCase
             'status' => 'SUBMITTED',
         ]);
 
-        // Submitted DO (Ready to ship / awaiting dispatch) vs Delivered DO (already shipped)
-        DeliveryOrder::create([
+        // Submitted DO (Ready to ship / awaiting dispatch)
+        $doReady = DeliveryOrder::create([
             'company_id' => $company->id,
             'branch_id' => $branch->id,
             'customer_id' => $customer->id,
@@ -115,7 +115,8 @@ class DashboardApiTest extends TestCase
             'status' => 'SUBMITTED',
         ]);
 
-        DeliveryOrder::create([
+        // Delivered DO without acceptance (pending acceptance)
+        $doDeliveredWithoutAcceptance = DeliveryOrder::create([
             'company_id' => $company->id,
             'branch_id' => $branch->id,
             'customer_id' => $customer->id,
@@ -124,14 +125,45 @@ class DashboardApiTest extends TestCase
             'status' => 'DELIVERED',
         ]);
 
+        // Delivered DO with acceptance (not pending acceptance)
+        $doDeliveredWithAcceptance = DeliveryOrder::create([
+            'company_id' => $company->id,
+            'branch_id' => $branch->id,
+            'customer_id' => $customer->id,
+            'sj_number' => 'SJ-DELIVERED-02',
+            'delivery_date' => now()->toDateString(),
+            'status' => 'DELIVERED',
+        ]);
+
+        \App\Models\Acceptance::create([
+            'company_id' => $company->id,
+            'branch_id' => $branch->id,
+            'customer_id' => $customer->id,
+            'delivery_order_id' => $doDeliveredWithAcceptance->id,
+            'acceptance_number' => 'ACC-01',
+            'acceptance_date' => now()->toDateString(),
+            'status' => 'POSTED',
+        ]);
+
+        // DO not delivered (e.g. DRAFT)
+        $doDraft = DeliveryOrder::create([
+            'company_id' => $company->id,
+            'branch_id' => $branch->id,
+            'customer_id' => $customer->id,
+            'sj_number' => 'SJ-DRAFT-01',
+            'delivery_date' => now()->toDateString(),
+            'status' => 'DRAFT',
+        ]);
+
         $response = $this->actingAs($admin)->getJson('/api/v1/dashboard/summary');
         $response->assertOk();
 
         $data = $response->json('data.operational');
+        
+        // Exact assertions
         $this->assertEquals(1, $data['active_customer_pos']);
-        // ready_to_ship should distinguish SUBMITTED / approved from already DELIVERED
-        $this->assertEquals(1, $data['ready_to_ship']);
-        $this->assertEquals(1, $data['pending_acceptance']);
+        $this->assertEquals(1, $data['ready_to_ship']); // Only $doReady (SUBMITTED)
+        $this->assertEquals(1, $data['pending_acceptance']); // Only $doDeliveredWithoutAcceptance
         $this->assertEquals(1, $data['pending_qc']);
     }
 }
