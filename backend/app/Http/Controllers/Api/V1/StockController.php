@@ -50,7 +50,7 @@ class StockController extends BaseApiController
         abort_unless($request->user()?->hasPermission('master.view'), 403, 'Forbidden');
 
         // Find materials where total stock across warehouses <= minimum_stock
-        $materials = Material::with(['stockUom', company: ['warehouses']])->get()->map(function ($material) {
+        $materials = Material::with(['stockUom'])->get()->map(function ($material) {
             $totalStock = Stock::where('material_id', $material->id)->sum('quantity_on_hand');
             return [
                 'material' => $material,
