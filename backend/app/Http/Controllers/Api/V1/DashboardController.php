@@ -27,7 +27,7 @@ class DashboardController extends BaseApiController
         
         // Production jobs status (mock/placeholder or via customer_items / delivery_orders lifecycle)
         // Using acceptance or delivery order statuses as operational proxy
-        $readyToShip = DeliveryOrder::where('status', 'DELIVERED')->count();
+        $readyToShip = DeliveryOrder::where('status', 'SUBMITTED')->count();
         $pendingAcceptance = DeliveryOrder::where('status', 'DELIVERED')->whereDoesntHave('acceptances')->count();
         $pendingQc = GoodsReceipt::where('status', 'SUBMITTED')->count();
         $custodyItemsCount = CustodyBalance::sum('balance_quantity');

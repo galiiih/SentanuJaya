@@ -95,7 +95,7 @@ class DashboardApiTest extends TestCase
             'status' => 'ACTIVE',
         ]);
 
-        // Pending QC Goods Receipt (status DRAFT or SUBMITTED)
+        // Pending QC Goods Receipt (status SUBMITTED)
         \App\Models\GoodsReceipt::create([
             'company_id' => $company->id,
             'branch_id' => $branch->id,
@@ -105,12 +105,21 @@ class DashboardApiTest extends TestCase
             'status' => 'SUBMITTED',
         ]);
 
-        // Ready to ship / Delivered DO
-        $do = DeliveryOrder::create([
+        // Submitted DO (Ready to ship / awaiting dispatch) vs Delivered DO (already shipped)
+        DeliveryOrder::create([
             'company_id' => $company->id,
             'branch_id' => $branch->id,
             'customer_id' => $customer->id,
-            'sj_number' => 'SJ-DASH-01',
+            'sj_number' => 'SJ-READY-01',
+            'delivery_date' => now()->toDateString(),
+            'status' => 'SUBMITTED',
+        ]);
+
+        DeliveryOrder::create([
+            'company_id' => $company->id,
+            'branch_id' => $branch->id,
+            'customer_id' => $customer->id,
+            'sj_number' => 'SJ-DELIVERED-01',
             'delivery_date' => now()->toDateString(),
             'status' => 'DELIVERED',
         ]);
@@ -120,6 +129,7 @@ class DashboardApiTest extends TestCase
 
         $data = $response->json('data.operational');
         $this->assertEquals(1, $data['active_customer_pos']);
+        // ready_to_ship should distinguish SUBMITTED / approved from already DELIVERED
         $this->assertEquals(1, $data['ready_to_ship']);
         $this->assertEquals(1, $data['pending_acceptance']);
         $this->assertEquals(1, $data['pending_qc']);
