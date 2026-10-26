@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Api\V1;
 
+use App\Models\DeliveryOrder;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -78,18 +79,49 @@ class DashboardApiTest extends TestCase
     }
 
     /** @test */
-    public function test_financial_trend_has_zero_values_without_data()
+    public function test_dashboard_summary_with_diverse_data()
     {
         $admin = User::factory()->create(['role' => 'ADMIN']);
+        $company = \App\Models\Company::create(['name' => 'PT Sentanu', 'code' => 'SJ']);
+        $branch = \App\Models\Branch::create(['company_id' => $company->id, 'name' => 'HQ', 'code' => 'HQ']);
+        $customer = \App\Models\Customer::create(['company_id' => $company->id, 'name' => 'Cust A', 'code' => 'CUSTA', 'tax_condition' => 1]);
+
+        // Active PO
+        \App\Models\CustomerPo::create([
+            'company_id' => $company->id,
+            'customer_id' => $customer->id,
+            'po_number' => 'PO-DASH-01',
+            'po_date' => now()->toDateString(),
+            'status' => 'ACTIVE',
+        ]);
+
+        // Pending QC Goods Receipt (status DRAFT or SUBMITTED)
+        \App\Models\GoodsReceipt::create([
+            'company_id' => $company->id,
+            'branch_id' => $branch->id,
+            'customer_id' => $customer->id,
+            'stb_number' => 'STB-DASH-01',
+            'received_date' => now()->toDateString(),
+            'status' => 'SUBMITTED',
+        ]);
+
+        // Ready to ship / Delivered DO
+        $do = DeliveryOrder::create([
+            'company_id' => $company->id,
+            'branch_id' => $branch->id,
+            'customer_id' => $customer->id,
+            'sj_number' => 'SJ-DASH-01',
+            'delivery_date' => now()->toDateString(),
+            'status' => 'DELIVERED',
+        ]);
 
         $response = $this->actingAs($admin)->getJson('/api/v1/dashboard/summary');
         $response->assertOk();
 
-        $trend = $response->json('data.financial_trend');
-        foreach ($trend as $month) {
-            $this->assertEquals(0, $month['revenue']);
-            $this->assertEquals(0, $month['payments']);
-            $this->assertEquals(0, $month['net']);
-        }
+        $data = $response->json('data.operational');
+        $this->assertEquals(1, $data['active_customer_pos']);
+        $this->assertEquals(1, $data['ready_to_ship']);
+        $this->assertEquals(1, $data['pending_acceptance']);
+        $this->assertEquals(1, $data['pending_qc']);
     }
 }
