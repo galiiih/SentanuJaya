@@ -57,7 +57,7 @@ class ReportController extends BaseApiController
                 ->join('payments', 'payments.id', '=', 'payment_allocations.payment_id')
                 ->whereIn('payment_allocations.invoice_id', $invoiceIds)
                 ->where('payments.status', 'POSTED')
-                ->sum('payment_allocations.amount');
+                ->sum('payment_allocations.allocated_amount');
             $outstanding = max(0, round($totalBilled - $totalPaid, 2));
 
             return [
