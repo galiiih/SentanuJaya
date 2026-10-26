@@ -44,7 +44,7 @@ class DashboardController extends BaseApiController
             ->where('status', 'POSTED')
             ->sum('amount');
 
-        $unpaidInvoicesCount = Invoice::where('status', 'POSTED')->count();
+        $unpaidInvoicesCount = Invoice::whereIn('status', [Invoice::STATUS_POSTED, Invoice::STATUS_PARTIALLY_PAID])->count();
 
         // Outstanding & Top Customers by Outstanding
         $topCustomers = Customer::with('invoices')->get()->map(function ($customer) {
