@@ -16,6 +16,7 @@ export type GoodsReceiptStatus = 'DRAFT' | 'SUBMITTED' | 'POSTED' | 'CANCELLED';
 export type Condition = 'GOOD' | 'DENT' | 'CRACK' | 'OLD_PAINT' | 'OTHER';
 export type DraftLine = Omit<GoodsReceiptLine, 'id' | 'customer_item'>;
 export type DraftPayload = { company_id: string; branch_id: string; customer_id: string; received_date: string; received_time?: string; delivered_by_name?: string; vehicle_plate?: string; notes?: string; lines: DraftLine[] };
+export interface Material { id: string; sku: string; name: string; category: string; quantity_on_hand: number; unit: string; minimum_stock: number; avg_cost: number; }
 
 const api = axios.create({ baseURL: '/api/v1', withCredentials: true, headers: { Accept: 'application/json' } });
 
