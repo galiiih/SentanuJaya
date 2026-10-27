@@ -792,6 +792,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     // Capture the actual print stylesheet rendering so the CI artifact can be visually reviewed.
     await page.emulateMedia({ media: 'print' });
     await page.screenshot({ path: testInfo.outputPath('invoice-print-preview.png'), fullPage: true });
+    await page.pdf({ path: testInfo.outputPath('invoice-print-preview.pdf'), format: 'A4', printBackground: true });
     await page.emulateMedia({ media: 'screen' });
     await invoiceDetail.getByRole('button', { name: /Cetak Invoice/i }).click();
     await expect.poll(() => page.evaluate(() => (window as Window & { __printCalled?: boolean }).__printCalled)).toBe(true);
@@ -898,6 +899,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     // Capture the actual print stylesheet rendering so the CI artifact can be visually reviewed.
     await page.emulateMedia({ media: 'print' });
     await page.screenshot({ path: testInfo.outputPath('surat-jalan-print-preview.png'), fullPage: true });
+    await page.pdf({ path: testInfo.outputPath('surat-jalan-print-preview.pdf'), format: 'A4', printBackground: true });
     await page.emulateMedia({ media: 'screen' });
     await detail.getByRole('button', { name: /Cetak Surat Jalan/i }).click();
     await expect.poll(() => page.evaluate(() =>
