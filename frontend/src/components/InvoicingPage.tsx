@@ -342,6 +342,7 @@ export function InvoicingPage() {
       {/* Detail Modal */}
       <Modal open={!!detail} onClose={() => setDetail(null)} title={detail?.invoice_number ?? ''}>
         {detail && (
+          <>
           <div className="confirmation-dialog__body">
             <div className="no-print" style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}><Button onClick={() => window.print()}><FileText size={16} /> Cetak Invoice</Button></div>
             <div className="dashboard-grid">
@@ -431,6 +432,7 @@ export function InvoicingPage() {
             <footer className="print-signatures"><div>Hormat kami,<br /><br /><br />________________________</div><div>Penerima,<br /><br /><br />________________________</div></footer>
             <div className="print-footer">Dokumen dicetak dari Sentanu Jaya ERP.</div>
           </section>
+          </>
         )}
       </Modal>
     </>
