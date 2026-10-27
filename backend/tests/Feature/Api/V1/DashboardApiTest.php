@@ -71,6 +71,80 @@ class DashboardApiTest extends TestCase
         $this->assertIsInt($data['custody']['total_items']);
     }
 
+
+    /** @test */
+    public function test_dashboard_counts_only_remaining_posted_acceptance_ok_quantity_as_invoiceable()
+    {
+        $admin = User::factory()->create(['role' => 'ADMIN']);
+        $company = \App\Models\Company::create(['name' => 'PT Sentanu Invoiceable', 'code' => 'SJ-INV']);
+        $branch = \App\Models\Branch::create(['company_id' => $company->id, 'name' => 'HQ', 'code' => 'HQ-INV']);
+        $customer = \App\Models\Customer::create([
+            'company_id' => $company->id,
+            'name' => 'Customer Invoiceable',
+            'code' => 'CUST-INV',
+            'tax_condition' => 1,
+        ]);
+        $item = \App\Models\CustomerItem::create([
+            'customer_id' => $customer->id,
+            'code' => 'ITEM-INV',
+            'name' => 'Body Kit',
+        ]);
+        $do = DeliveryOrder::create([
+            'company_id' => $company->id,
+            'branch_id' => $branch->id,
+            'customer_id' => $customer->id,
+            'sj_number' => 'SJ-INV-01',
+            'delivery_date' => now()->toDateString(),
+            'status' => 'DELIVERED',
+        ]);
+        $line = \App\Models\DeliveryOrderLine::create([
+            'delivery_order_id' => $do->id,
+            'customer_item_id' => $item->id,
+            'quantity' => 5,
+            'unit_price_snapshot' => 100,
+            'qty_invoiced' => 2,
+        ]);
+        $acceptance = \App\Models\Acceptance::create([
+            'delivery_order_id' => $do->id,
+            'acceptance_number' => 'ACC-INV-01',
+            'acceptance_date' => now()->toDateString(),
+            'status' => \App\Models\Acceptance::STATUS_POSTED,
+        ]);
+        \App\Models\AcceptanceLine::create([
+            'acceptance_id' => $acceptance->id,
+            'delivery_order_line_id' => $line->id,
+            'quantity_ok' => 5,
+            'quantity_rejected' => 0,
+        ]);
+
+        // A linked invoice may cover only part of the accepted quantity; the remaining quantity
+        // must still keep this SJ visible as invoiceable, matching InvoiceController eligibility.
+        $invoice = \App\Models\Invoice::create([
+            'company_id' => $company->id,
+            'branch_id' => $branch->id,
+            'customer_id' => $customer->id,
+            'invoice_number' => 'INV-INV-01',
+            'invoice_date' => now()->toDateString(),
+            'due_date' => now()->addDays(30)->toDateString(),
+            'subtotal' => 200,
+            'total_amount' => 200,
+            'status' => 'POSTED',
+        ]);
+        \App\Models\InvoiceDeliveryLink::create([
+            'invoice_id' => $invoice->id,
+            'delivery_order_id' => $do->id,
+            'amount_billed' => 200,
+        ]);
+
+        $response = $this->actingAs($admin)->getJson('/api/v1/dashboard/summary');
+        $response->assertOk()->assertJsonPath('data.uninvoiced_sj_count', 1);
+
+        // Once all accepted OK quantity is invoiced, this SJ is no longer invoiceable.
+        $line->update(['qty_invoiced' => 5]);
+        $response = $this->actingAs($admin)->getJson('/api/v1/dashboard/summary');
+        $response->assertOk()->assertJsonPath('data.uninvoiced_sj_count', 0);
+    }
+
     /** @test */
     public function test_unauthenticated_cannot_access_dashboard()
     {
@@ -205,9 +279,9 @@ class DashboardApiTest extends TestCase
         $this->assertEquals(1, $op['pending_acceptance']); // Only $doDeliveredWithoutAcceptance ($doDeliveredWithAcceptance has acceptance)
         $this->assertEquals(1, $op['pending_qc']);
 
-        // uninvoiced_sj_count should count DELIVERED DOs without invoice links:
-        // $doDeliveredWithoutAcceptance (1) + $doDeliveredWithAcceptance (1) = 2.
-        // ($doDeliveredWithInvoice has an invoice link, $doReady is SUBMITTED, $doDraft is DRAFT)
-        $this->assertEquals(2, $json['uninvoiced_sj_count']);
+        // Neither delivered DO has an invoiceable line: one has no POSTED acceptance,
+        // and the other has a POSTED acceptance header but no accepted line quantities.
+        // The invoiced DO, submitted DO, and draft DO must also be excluded.
+        $this->assertEquals(0, $json['uninvoiced_sj_count']);
     }
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Plus, Edit, Trash2, Users, Layers, Package, Tag, Building2, BookOpen, Wrench, FileSpreadsheet } from 'lucide-react';
 import { apiError, type Customer, type CustomerItem } from '../services/api';
 import axios from 'axios';
@@ -98,6 +98,8 @@ export function MasterDataPage() {
   const [tab, setTab] = useState<MasterKey>('customers');
   const [data, setData] = useState<any[]>([]);
   const [, setLoading] = useState(true);
+  // Ignore stale list responses when users switch tabs or save repeatedly.
+  const loadRequestId = useRef(0);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
 
@@ -137,15 +139,23 @@ export function MasterDataPage() {
   };
 
   const loadData = async () => {
+    const requestId = ++loadRequestId.current;
+    const requestedTab = tab;
     setLoading(true);
     setError('');
     try {
-      const res = await masterApi[tab].list();
-      setData(Array.isArray(res) ? res : []);
+      const res = await masterApi[requestedTab].list();
+      if (requestId === loadRequestId.current) {
+        setData(Array.isArray(res) ? res : []);
+      }
     } catch (err: any) {
-      setError(apiError(err));
+      if (requestId === loadRequestId.current) {
+        setError(apiError(err));
+      }
     } finally {
-      setLoading(false);
+      if (requestId === loadRequestId.current) {
+        setLoading(false);
+      }
     }
   };
 
@@ -154,6 +164,9 @@ export function MasterDataPage() {
   }, []);
 
   useEffect(() => {
+    // Clear the previous tab immediately so its rows cannot remain interactive
+    // while the newly selected tab is still loading.
+    setData([]);
     loadData();
   }, [tab]);
 
@@ -201,7 +214,9 @@ export function MasterDataPage() {
         setNotice('Data master berhasil ditambahkan.');
       }
       setModalOpen(false);
-      loadData();
+      // Finish refreshing the table before the save flow settles so callers see
+      // one stable, server-backed state rather than a late competing render.
+      await loadData();
     } catch (err: any) {
       setError(apiError(err));
     } finally {
