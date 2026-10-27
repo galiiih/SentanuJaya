@@ -683,8 +683,10 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     const customer = { id: 'e2e-customer-id', code: 'E2E-FIN', name: 'E2E Financial Customer' };
     const deliveryOrder = {
       id: 'e2e-delivery-id', sj_number: 'SJ-E2E-FIN-001', customer_id: customer.id,
-      delivery_date: '2026-10-22', status: 'DELIVERED', lines: [{
-        id: 'e2e-delivery-line-id', quantity: 1, unit_price_snapshot: 1250, qty_invoiced: 0,
+      delivery_date: '2026-10-22', status: 'DELIVERED', shipping_address: 'Jl. Contoh No. 10, Jakarta',
+      customer_po_number: 'PO-E2E-001', customer_po: { po_number: 'PO-E2E-001' },
+      lines: [{
+        id: 'e2e-delivery-line-id', quantity: 1, color_code: 'BLACK', unit_price_snapshot: 1250, qty_invoiced: 0,
         acceptance_lines: [{ quantity_ok: 1, quantity_rejected: 0, acceptance: { status: 'POSTED' } }],
       }], customer,
     };
@@ -711,13 +713,18 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
       if (path === '/api/v1/invoices' && method === 'GET') {
         return route.fulfill({ json: paginated(invoice ? [invoice] : []) });
       }
+      if (path === '/api/v1/invoices/e2e-invoice-id' && method === 'GET') {
+        return response(invoice ?? { id: 'e2e-invoice-id', invoice_number: 'INV-E2E-0001', customer });
+      }
       if (path === '/api/v1/invoices' && method === 'POST') {
         invoiceCreatePayload = request.postDataJSON();
         invoice = {
           id: 'e2e-invoice-id', invoice_number: 'INV-E2E-0001', customer_id: customer.id,
           customer, invoice_date: invoiceCreatePayload.invoice_date, due_date: '2026-11-21',
           status: 'POSTED', dpp: 1250, ppn_amount: 0, pph_amount: 0,
-          total_amount: 1250, amount_paid: 0, amount_due: 1250,
+          total_amount: 1250, amount_paid: 0, amount_due: 1250, notes: 'E2E print check',
+          lines: [{ id: 'e2e-invoice-line-id', description: 'Body Kit Spoiler', quantity: 1, unit_price_snapshot: 1250, subtotal: 1250, delivery_order_line: { color_code: 'BLACK' } }],
+          delivery_links: [{ delivery_order_id: deliveryOrder.id, delivery_order: deliveryOrder }],
         };
         return response(invoice, 201);
       }
@@ -770,6 +777,21 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     expect(invoiceCreatePayload.customer_id).toBe(customer.id);
     expect(invoiceCreatePayload.delivery_order_ids).toEqual([deliveryOrder.id]);
     await expect(page.getByText('INV-E2E-0001')).toBeVisible({ timeout: 10000 });
+
+    // Verify the Invoice detail print document exposes the expected fields and invokes the browser print dialog.
+    await page.evaluate(() => { window.print = () => { (window as Window & { __printCalled?: boolean }).__printCalled = true; }; });
+    const invoiceRow = page.locator('tr').filter({ hasText: 'INV-E2E-0001' });
+    await invoiceRow.getByRole('button').first().click();
+    const invoiceDetail = page.getByRole('dialog');
+    await expect(invoiceDetail.getByRole('button', { name: /Cetak Invoice/i })).toBeVisible();
+    const printDocument = invoiceDetail.locator('.print-document');
+    await expect(printDocument).toContainText('INV-E2E-0001');
+    await expect(printDocument).toContainText('PO-E2E-001');
+    await expect(printDocument).toContainText('BLACK');
+    await expect(printDocument).toContainText('Jl. Contoh No. 10, Jakarta');
+    await invoiceDetail.getByRole('button', { name: /Cetak Invoice/i }).click();
+    await expect.poll(() => page.evaluate(() => (window as Window & { __printCalled?: boolean }).__printCalled)).toBe(true);
+    await invoiceDetail.getByRole('button', { name: /Tutup|Close/i }).click().catch(() => {});
 
     // Payment creation: allocate the invoice amount using the browser form, then verify the UI reload.
     await page.goto('/payments');
