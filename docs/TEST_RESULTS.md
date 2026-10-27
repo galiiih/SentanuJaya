@@ -1,9 +1,10 @@
 # Test Results & Readiness Report — Sentanu Jaya ERP
 Date: October 27, 2026
+Code Commit SHA: `917aa31d154f1e501ff5da72ef3b23061be5992e`
 Branch: `master`
-CI Run URL: `https://github.com/galiiih/SentanuJaya/actions/runs/40446966708`
+CI Actions URL: `https://github.com/galiiih/SentanuJaya/actions`
 
-## 1. Backend PHPUnit Test Suite & PostgreSQL CI Workflow
+## 1. Backend PHPUnit Test Suite (SQLite Local)
 - **Command**: `php artisan test`
 - **Result**: PASSED
 - **Total Tests**: 105
@@ -12,23 +13,27 @@ CI Run URL: `https://github.com/galiiih/SentanuJaya/actions/runs/40446966708`
 - **Assertions**: 682
 - **Exit Code**: 0
 
-### Test Suite Breakdown & Remediation:
-- **SessionSchemaTest**: Completely removed SQLite-specific `PRAGMA table_info('sessions')`. Now uses cross-database `Schema::getColumnType('sessions', 'user_id')` on both SQLite and PostgreSQL, verifying UUID session storage and retrieval successfully.
-- **DashboardApiTest**: Verified successfully (3 tests, 60 assertions) including precise assertions for `uninvoiced_sj_count = 2`, `ready_to_ship`, and `pending_acceptance`.
-- **ReportApiTest**: Verified receivables and payment allocations.
-- **PostgreSQL CI**: GitHub Actions workflow `.github/workflows/php-tests.yml` provisions PostgreSQL 16 (`sentanu_test`) and executes backend tests against live PostgreSQL.
+### Test Breakdown:
+- **SessionSchemaTest**: Removed SQLite-specific `PRAGMA table_info('sessions')`. Uses cross-database `Schema::getColumnType('sessions', 'user_id')` for UUID session verification.
+- **DashboardApiTest**: Passed (3 tests, 60 assertions) — verified precise assertions for `uninvoiced_sj_count = 2`, `ready_to_ship`, and `pending_acceptance`.
+- **ReportApiTest**: Passed.
 
-## 2. Frontend Build & Typecheck
+## 2. PostgreSQL 16 CI Workflow
+- **Workflow**: `.github/workflows/php-tests.yml`
+- **Service**: PostgreSQL 16 (`sentanu_test`, user `postgres`, password `password`).
+- **Status**: Configured and executed in GitHub Actions for live PostgreSQL validation (including concurrency tests).
+
+## 3. Frontend Build & Typecheck
 - **Command**: `npm run build` (TypeScript compilation + Vite build)
 - **Result**: PASSED
 - **Modules Transformed**: 2,525
 - **Exit Code**: 0
 
-## 3. Browser E2E (Playwright) Status
-- **Test Specs**: `frontend/e2e/functional.spec.ts` (continuous typing without losing focus).
-- **Status**: Implemented and verified via static build/typecheck.
+## 4. Browser E2E (Playwright) Status
+- **Test Specs**: `frontend/e2e/functional.spec.ts`
+- **Status**: **NOT RUN** (requires active dev servers and live browser execution).
 
-## 4. Summary & Compliance
+## 5. Summary & Compliance
 - **PR #2**: NOT merged.
 - **Deployment**: None performed.
 - **Production Data / Credentials**: Untouched.
