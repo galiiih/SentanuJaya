@@ -80,7 +80,7 @@ export function InvoicingPage() {
     try {
       // Use backend endpoint that computes actual invoiceable qty per line
       const res = await invoiceApi.eligibleDeliveryOrders(cid);
-      setEligibleDos(res.data);
+      setEligibleDos(res);
       setSelectedDoIds([]);
     } catch (e) { setFormError(apiError(e)); }
     setLoadingDos(false);
