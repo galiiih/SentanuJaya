@@ -1,24 +1,20 @@
 # Test Results & Readiness Report — Sentanu Jaya ERP
 Date: October 26, 2026
-Code Commit SHA: `b44909cc3cdf78c94e567e14f5ae25001608041e`
-Documentation SHA / Update: `b44909cc3cdf78c94e567e14f5ae25001608041e`
 Branch: `master`
 
 ## 1. Backend PHPUnit Test Suite & PostgreSQL CI Workflow
-- **Command**: `php artisan test` (Local SQLite / PostgreSQL CI)
+- **Command**: `php artisan test` (Local SQLite & PostgreSQL CI)
 - **Result**: PASSED
 - **Total Tests**: 105
 - **Passed**: 103
 - **Skipped**: 2 (`PostgresPaymentConcurrencyTest` — skipped locally on SQLite due to lack of row-level locking support; executed natively in GitHub Actions CI with PostgreSQL 16 service).
-- **Assertions**: 679
+- **Assertions**: 683
 - **Exit Code**: 0
 
-### Key Regression Assertions Verified:
-- Dashboard summary accurately counts:
-  - `ready_to_ship`: counts DO with status `SUBMITTED` (`= 1` in fixture).
-  - `pending_acceptance`: counts DO with status `DELIVERED` without acceptance (`= 1` in fixture); excludes DO with acceptance.
-  - `uninvoiced_sj_count`: counts Delivery Orders with status `DELIVERED` that have no linked invoice (`= 2` in fixture); excludes DOs with invoices (`SJ-DELIVERED-03`), non-delivered DOs (`SJ-DRAFT-01`), and submitted DOs (`SJ-READY-01`).
-- **GitHub Actions CI**: Configured via `.github/workflows/php-tests.yml` utilizing PostgreSQL 16 service container (`sentanu_test`) to ensure concurrency and transaction tests execute under real PostgreSQL conditions.
+### Key Fixes & Regression Assertions Verified:
+- **SessionSchemaTest**: Refactored from SQLite-specific `PRAGMA table_info('sessions')` to a cross-database schema and functional test that verifies `sessions.user_id` accepts and retrieves UUID primary keys correctly across both SQLite and PostgreSQL.
+- **Dashboard summary**: Accurately counts `ready_to_ship` (`SUBMITTED`), `pending_acceptance` (`DELIVERED` without acceptance), and `uninvoiced_sj_count` (`DELIVERED` without invoice links `= 2` in fixture).
+- **GitHub Actions CI**: Configured via `.github/workflows/php-tests.yml` with PostgreSQL 16 service container (`sentanu_test`).
 
 ## 2. Frontend Build & Typecheck
 - **Command**: `npm run build` (TypeScript compilation + Vite build)
@@ -28,7 +24,7 @@ Branch: `master`
 
 ## 3. Browser E2E (Playwright) Status
 - **Test Specs**: Implemented in `frontend/e2e/functional.spec.ts` (including continuous typing without losing focus).
-- **Local Execution Status**: UNVERIFIED locally (requires simultaneous frontend dev server and backend API running). Playwright browser binaries downloaded successfully, but execution without active dev server results in login timeout. Formal verification assigned to CI / local dev environment with running servers.
+- **Local Execution Status**: UNVERIFIED locally without active dev servers; Playwright binaries installed successfully.
 
 ## 4. Summary & Compliance
 - **PR #2**: NOT merged.
