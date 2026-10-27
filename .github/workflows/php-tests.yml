@@ -40,6 +40,10 @@ jobs:
         working-directory: ./backend
         run: composer install --prefer-dist --no-progress --no-suggest
 
+      - name: Prepare test environment file
+        working-directory: ./backend
+        run: touch .env
+
       - name: Run PHPUnit Tests with PostgreSQL
         working-directory: ./backend
         env:
