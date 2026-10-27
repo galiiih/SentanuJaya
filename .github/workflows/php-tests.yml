@@ -49,4 +49,7 @@ jobs:
           DB_DATABASE: sentanu_test
           DB_USERNAME: postgres
           DB_PASSWORD: password
-        run: php artisan test
+        run: |
+          php artisan config:cache
+          php artisan event:cache
+          php artisan test
