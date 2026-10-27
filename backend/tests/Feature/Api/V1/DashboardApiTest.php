@@ -119,7 +119,7 @@ class DashboardApiTest extends TestCase
 
         // A linked invoice may cover only part of the accepted quantity; the remaining quantity
         // must still keep this SJ visible as invoiceable, matching InvoiceController eligibility.
-        $invoice = \\App\\Models\\Invoice::create([
+        $invoice = \App\Models\Invoice::create([
             'company_id' => $company->id,
             'branch_id' => $branch->id,
             'customer_id' => $customer->id,
@@ -130,7 +130,7 @@ class DashboardApiTest extends TestCase
             'total_amount' => 200,
             'status' => 'POSTED',
         ]);
-        \\App\\Models\\InvoiceDeliveryLink::create([
+        \App\Models\InvoiceDeliveryLink::create([
             'invoice_id' => $invoice->id,
             'delivery_order_id' => $do->id,
             'amount_billed' => 200,
