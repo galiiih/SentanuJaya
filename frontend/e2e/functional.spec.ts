@@ -679,7 +679,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
   });
 
 
-  test('invoice creation and payment allocation work through real browser interactions', async ({ page }) => {
+  test('invoice creation and payment allocation work through real browser interactions', async ({ page }, testInfo) => {
     const customer = { id: 'e2e-customer-id', code: 'E2E-FIN', name: 'E2E Financial Customer' };
     const deliveryOrder = {
       id: 'e2e-delivery-id', sj_number: 'SJ-E2E-FIN-001', customer_id: customer.id,
@@ -789,6 +789,10 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await expect(printDocument).toContainText('PO-E2E-001');
     await expect(printDocument).toContainText('BLACK');
     await expect(printDocument).toContainText('Jl. Contoh No. 10, Jakarta');
+    // Capture the actual print stylesheet rendering so the CI artifact can be visually reviewed.
+    await page.emulateMedia({ media: 'print' });
+    await page.screenshot({ path: testInfo.outputPath('invoice-print-preview.png'), fullPage: true });
+    await page.emulateMedia({ media: 'screen' });
     await invoiceDetail.getByRole('button', { name: /Cetak Invoice/i }).click();
     await expect.poll(() => page.evaluate(() => (window as Window & { __printCalled?: boolean }).__printCalled)).toBe(true);
     await invoiceDetail.getByRole('button', { name: /Tutup|Close/i }).click().catch(() => {});
@@ -812,7 +816,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
   });
 
 
-  test('Surat Jalan print document exposes delivery fields and invokes browser print', async ({ page }) => {
+  test('Surat Jalan print document exposes delivery fields and invokes browser print', async ({ page }, testInfo) => {
     const customer = { id: '11111111-1111-4111-8111-111111111111', code: 'E2E-SJ', name: 'E2E Surat Jalan Customer' };
     const deliveryOrder = {
       id: '22222222-2222-4222-8222-222222222222',
@@ -891,6 +895,10 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await expect(printDocument).toContainText('Budi E2E');
     await expect(printDocument).toContainText('B 1234 E2E');
 
+    // Capture the actual print stylesheet rendering so the CI artifact can be visually reviewed.
+    await page.emulateMedia({ media: 'print' });
+    await page.screenshot({ path: testInfo.outputPath('surat-jalan-print-preview.png'), fullPage: true });
+    await page.emulateMedia({ media: 'screen' });
     await detail.getByRole('button', { name: /Cetak Surat Jalan/i }).click();
     await expect.poll(() => page.evaluate(() =>
       (window as Window & { __printCalled?: boolean }).__printCalled
