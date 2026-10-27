@@ -117,6 +117,25 @@ class DashboardApiTest extends TestCase
             'quantity_rejected' => 0,
         ]);
 
+        // A linked invoice may cover only part of the accepted quantity; the remaining quantity
+        // must still keep this SJ visible as invoiceable, matching InvoiceController eligibility.
+        $invoice = \\App\\Models\\Invoice::create([
+            'company_id' => $company->id,
+            'branch_id' => $branch->id,
+            'customer_id' => $customer->id,
+            'invoice_number' => 'INV-INV-01',
+            'invoice_date' => now()->toDateString(),
+            'due_date' => now()->addDays(30)->toDateString(),
+            'subtotal' => 200,
+            'total_amount' => 200,
+            'status' => 'POSTED',
+        ]);
+        \\App\\Models\\InvoiceDeliveryLink::create([
+            'invoice_id' => $invoice->id,
+            'delivery_order_id' => $do->id,
+            'amount_billed' => 200,
+        ]);
+
         $response = $this->actingAs($admin)->getJson('/api/v1/dashboard/summary');
         $response->assertOk()->assertJsonPath('data.uninvoiced_sj_count', 1);
 
