@@ -1,0 +1,56 @@
+name: PHP & PostgreSQL Tests
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: sentanu_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, xml, ctype, iconv, intl, pdo_pgsql, pgsql
+          coverage: none
+
+      - name: Install Composer dependencies
+        working-directory: ./backend
+        run: composer install --prefer-dist --no-progress --no-suggest
+
+      - name: Prepare test environment file
+        working-directory: ./backend
+        run: touch .env
+
+      - name: Run PHPUnit Tests with PostgreSQL
+        working-directory: ./backend
+        env:
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_DATABASE: sentanu_test
+          DB_USERNAME: postgres
+          DB_PASSWORD: password
+        run: php artisan test --display-warnings
