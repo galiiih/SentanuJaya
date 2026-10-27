@@ -100,8 +100,22 @@ class DashboardController extends BaseApiController
             'custody' => [
                 'total_items' => (int) $custodyItemsCount,
             ],
-            'uninvoiced_sj_count' => DeliveryOrder::where('status', 'DELIVERED')
+            // Only count delivered Surat Jalan with accepted, POSTED quantity still eligible for invoicing.
+            // Match InvoiceController::eligibleDeliveryOrders so the dashboard never counts an unaccepted/rejected SJ as billable.
+            'uninvoiced_sj_count' => DeliveryOrder::query()
+                ->where('status', 'DELIVERED')
                 ->whereDoesntHave('invoiceLinks')
+                ->with(['lines.acceptanceLines.acceptance'])
+                ->get()
+                ->filter(function ($deliveryOrder) {
+                    return $deliveryOrder->lines->contains(function ($line) {
+                        $qtyOk = (float) $line->acceptanceLines
+                            ->filter(fn ($acceptanceLine) => $acceptanceLine->acceptance?->status === Acceptance::STATUS_POSTED)
+                            ->sum('quantity_ok');
+
+                        return $qtyOk > (float) $line->qty_invoiced;
+                    });
+                })
                 ->count(),
         ], 'Dashboard summary retrieved successfully');
     }
