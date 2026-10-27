@@ -104,7 +104,6 @@ class DashboardController extends BaseApiController
             // Match InvoiceController::eligibleDeliveryOrders so the dashboard never counts an unaccepted/rejected SJ as billable.
             'uninvoiced_sj_count' => DeliveryOrder::query()
                 ->where('status', 'DELIVERED')
-                ->whereDoesntHave('invoiceLinks')
                 ->with(['lines.acceptanceLines.acceptance'])
                 ->get()
                 ->filter(function ($deliveryOrder) {
