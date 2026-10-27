@@ -236,7 +236,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   body * { visibility: hidden !important; }
   .print-document, .print-document * { visibility: visible !important; }
   .print-document { display: block !important; position: absolute !important; inset: 0 auto auto 0 !important; width: 100% !important; color: #111827 !important; background: #fff !important; font: 10pt/1.4 Arial, sans-serif !important; }
-  .no-print, button, .modal__overlay, .modal-overlay { display: none !important; }
+  .no-print, button { display: none !important; }
   .print-doc-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0f172a; padding-bottom: 12px; margin-bottom: 20px; }
   .print-brand { font-size: 20pt; font-weight: 800; letter-spacing: .04em; }
   .print-subtitle { margin-top: 3px; color: #475569; font-size: 8pt; letter-spacing: .08em; }
