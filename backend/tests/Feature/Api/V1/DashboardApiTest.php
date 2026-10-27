@@ -76,15 +76,15 @@ class DashboardApiTest extends TestCase
     public function test_dashboard_counts_only_remaining_posted_acceptance_ok_quantity_as_invoiceable()
     {
         $admin = User::factory()->create(['role' => 'ADMIN']);
-        $company = \\App\\Models\\Company::create(['name' => 'PT Sentanu Invoiceable', 'code' => 'SJ-INV']);
-        $branch = \\App\\Models\\Branch::create(['company_id' => $company->id, 'name' => 'HQ', 'code' => 'HQ-INV']);
-        $customer = \\App\\Models\\Customer::create([
+        $company = \App\Models\Company::create(['name' => 'PT Sentanu Invoiceable', 'code' => 'SJ-INV']);
+        $branch = \App\Models\Branch::create(['company_id' => $company->id, 'name' => 'HQ', 'code' => 'HQ-INV']);
+        $customer = \App\Models\Customer::create([
             'company_id' => $company->id,
             'name' => 'Customer Invoiceable',
             'code' => 'CUST-INV',
             'tax_condition' => 1,
         ]);
-        $item = \\App\\Models\\CustomerItem::create([
+        $item = \App\Models\CustomerItem::create([
             'customer_id' => $customer->id,
             'code' => 'ITEM-INV',
             'name' => 'Body Kit',
@@ -97,20 +97,20 @@ class DashboardApiTest extends TestCase
             'delivery_date' => now()->toDateString(),
             'status' => 'DELIVERED',
         ]);
-        $line = \\App\\Models\\DeliveryOrderLine::create([
+        $line = \App\Models\DeliveryOrderLine::create([
             'delivery_order_id' => $do->id,
             'customer_item_id' => $item->id,
             'quantity' => 5,
             'unit_price_snapshot' => 100,
             'qty_invoiced' => 2,
         ]);
-        $acceptance = \\App\\Models\\Acceptance::create([
+        $acceptance = \App\Models\Acceptance::create([
             'delivery_order_id' => $do->id,
             'acceptance_number' => 'ACC-INV-01',
             'acceptance_date' => now()->toDateString(),
-            'status' => \\App\\Models\\Acceptance::STATUS_POSTED,
+            'status' => \App\Models\Acceptance::STATUS_POSTED,
         ]);
-        \\App\\Models\\AcceptanceLine::create([
+        \App\Models\AcceptanceLine::create([
             'acceptance_id' => $acceptance->id,
             'delivery_order_line_id' => $line->id,
             'quantity_ok' => 5,
