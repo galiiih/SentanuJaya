@@ -205,9 +205,9 @@ class DashboardApiTest extends TestCase
         $this->assertEquals(1, $op['pending_acceptance']); // Only $doDeliveredWithoutAcceptance ($doDeliveredWithAcceptance has acceptance)
         $this->assertEquals(1, $op['pending_qc']);
 
-        // uninvoiced_sj_count should count DELIVERED DOs without invoice links:
-        // $doDeliveredWithoutAcceptance (1) + $doDeliveredWithAcceptance (1) = 2.
-        // ($doDeliveredWithInvoice has an invoice link, $doReady is SUBMITTED, $doDraft is DRAFT)
-        $this->assertEquals(2, $json['uninvoiced_sj_count']);
+        // Neither delivered DO has an invoiceable line: one has no POSTED acceptance,
+        // and the other has a POSTED acceptance header but no accepted line quantities.
+        // The invoiced DO, submitted DO, and draft DO must also be excluded.
+        $this->assertEquals(0, $json['uninvoiced_sj_count']);
     }
 }
