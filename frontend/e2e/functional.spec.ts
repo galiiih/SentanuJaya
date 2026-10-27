@@ -679,12 +679,14 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
   });
 
 
-  test('invoice creation and payment allocation work through real browser interactions', async ({ page }) => {
+  test('invoice creation and payment allocation work through real browser interactions', async ({ page }, testInfo) => {
     const customer = { id: 'e2e-customer-id', code: 'E2E-FIN', name: 'E2E Financial Customer' };
     const deliveryOrder = {
       id: 'e2e-delivery-id', sj_number: 'SJ-E2E-FIN-001', customer_id: customer.id,
-      delivery_date: '2026-10-22', status: 'DELIVERED', lines: [{
-        id: 'e2e-delivery-line-id', quantity: 1, unit_price_snapshot: 1250, qty_invoiced: 0,
+      delivery_date: '2026-10-22', status: 'DELIVERED', shipping_address: 'Jl. Contoh No. 10, Jakarta',
+      customer_po_number: 'PO-E2E-001', customer_po: { po_number: 'PO-E2E-001' },
+      lines: [{
+        id: 'e2e-delivery-line-id', quantity: 1, color_code: 'BLACK', unit_price_snapshot: 1250, qty_invoiced: 0,
         acceptance_lines: [{ quantity_ok: 1, quantity_rejected: 0, acceptance: { status: 'POSTED' } }],
       }], customer,
     };
@@ -711,13 +713,18 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
       if (path === '/api/v1/invoices' && method === 'GET') {
         return route.fulfill({ json: paginated(invoice ? [invoice] : []) });
       }
+      if (path === '/api/v1/invoices/e2e-invoice-id' && method === 'GET') {
+        return response(invoice ?? { id: 'e2e-invoice-id', invoice_number: 'INV-E2E-0001', customer });
+      }
       if (path === '/api/v1/invoices' && method === 'POST') {
         invoiceCreatePayload = request.postDataJSON();
         invoice = {
           id: 'e2e-invoice-id', invoice_number: 'INV-E2E-0001', customer_id: customer.id,
           customer, invoice_date: invoiceCreatePayload.invoice_date, due_date: '2026-11-21',
           status: 'POSTED', dpp: 1250, ppn_amount: 0, pph_amount: 0,
-          total_amount: 1250, amount_paid: 0, amount_due: 1250,
+          total_amount: 1250, amount_paid: 0, amount_due: 1250, notes: 'E2E print check',
+          lines: [{ id: 'e2e-invoice-line-id', description: 'Body Kit Spoiler', quantity: 1, unit_price_snapshot: 1250, subtotal: 1250, delivery_order_line: { color_code: 'BLACK' } }],
+          delivery_links: [{ delivery_order_id: deliveryOrder.id, delivery_order: deliveryOrder }],
         };
         return response(invoice, 201);
       }
@@ -771,6 +778,26 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     expect(invoiceCreatePayload.delivery_order_ids).toEqual([deliveryOrder.id]);
     await expect(page.getByText('INV-E2E-0001')).toBeVisible({ timeout: 10000 });
 
+    // Verify the Invoice detail print document exposes the expected fields and invokes the browser print dialog.
+    await page.evaluate(() => { window.print = () => { (window as Window & { __printCalled?: boolean }).__printCalled = true; }; });
+    const invoiceRow = page.locator('tr').filter({ hasText: 'INV-E2E-0001' });
+    await invoiceRow.getByRole('button').first().click();
+    const invoiceDetail = page.getByRole('dialog');
+    await expect(invoiceDetail.getByRole('button', { name: /Cetak Invoice/i })).toBeVisible();
+    const printDocument = invoiceDetail.locator('.print-document');
+    await expect(printDocument).toContainText('INV-E2E-0001');
+    await expect(printDocument).toContainText('PO-E2E-001');
+    await expect(printDocument).toContainText('BLACK');
+    await expect(printDocument).toContainText('Jl. Contoh No. 10, Jakarta');
+    // Capture the actual print stylesheet rendering so the CI artifact can be visually reviewed.
+    await page.emulateMedia({ media: 'print' });
+    await page.screenshot({ path: testInfo.outputPath('invoice-print-preview.png'), fullPage: true });
+    await page.pdf({ path: testInfo.outputPath('invoice-print-preview.pdf'), format: 'A4', printBackground: true });
+    await page.emulateMedia({ media: 'screen' });
+    await invoiceDetail.getByRole('button', { name: /Cetak Invoice/i }).click();
+    await expect.poll(() => page.evaluate(() => (window as Window & { __printCalled?: boolean }).__printCalled)).toBe(true);
+    await invoiceDetail.getByRole('button', { name: /Tutup|Close/i }).click().catch(() => {});
+
     // Payment creation: allocate the invoice amount using the browser form, then verify the UI reload.
     await page.goto('/payments');
     await page.getByRole('button', { name: /Pembayaran Baru|Buat Pembayaran|New Payment/i }).click();
@@ -787,6 +814,97 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     expect(paymentCreatePayload.amount).toBe(1250);
     expect(paymentCreatePayload.allocations).toEqual([{ invoice_id: invoice.id, amount: 1250 }]);
     await expect(page.getByText('PAY-E2E-0001')).toBeVisible({ timeout: 10000 });
+  });
+
+
+  test('Surat Jalan print document exposes delivery fields and invokes browser print', async ({ page }, testInfo) => {
+    const customer = { id: '11111111-1111-4111-8111-111111111111', code: 'E2E-SJ', name: 'E2E Surat Jalan Customer' };
+    const deliveryOrder = {
+      id: '22222222-2222-4222-8222-222222222222',
+      sj_number: 'SJ-E2E-PRINT-001',
+      company_id: '33333333-3333-4333-8333-333333333333',
+      branch_id: '44444444-4444-4444-8444-444444444444',
+      customer_id: customer.id,
+      customer_po_id: '55555555-5555-4555-8555-555555555555',
+      customer_po_number: 'PO-E2E-SJ-001',
+      customer_po: { id: '55555555-5555-4555-8555-555555555555', po_number: 'PO-E2E-SJ-001' },
+      delivery_date: '2026-10-27',
+      shipping_address: 'Jl. Uji Cetak No. 15, Jakarta',
+      driver_name: 'Budi E2E',
+      vehicle_plate: 'B 1234 E2E',
+      notes: 'Catatan uji cetak Surat Jalan',
+      status: 'DELIVERED',
+      customer,
+      lines: [{
+        id: '66666666-6666-4666-8666-666666666666',
+        customer_item_id: '77777777-7777-4777-8777-777777777777',
+        customer_item: { id: '77777777-7777-4777-8777-777777777777', name: 'Body Kit Spoiler' },
+        color_code: 'BLACK',
+        quantity: 2,
+        notes: 'Finishing glossy',
+      }],
+    };
+
+    await login(page);
+    await page.route('**/api/v1/**', async (route) => {
+      const url = new URL(route.request().url());
+      const path = url.pathname.replace(/\/$/, '');
+      const method = route.request().method();
+      const paginated = (items: unknown[]) => ({
+        success: true,
+        data: { data: items, current_page: 1, last_page: 1, total: items.length },
+        message: 'OK',
+      });
+      if (method === 'GET' && path === '/api/v1/delivery-orders') {
+        return route.fulfill({ json: paginated([deliveryOrder]) });
+      }
+      if (method === 'GET' && path === '/api/v1/customer-pos') {
+        return route.fulfill({ json: paginated([]) });
+      }
+      if (method === 'GET' && path === '/api/v1/companies') {
+        return route.fulfill({ json: paginated([]) });
+      }
+      if (method === 'GET' && path === '/api/v1/branches') {
+        return route.fulfill({ json: paginated([]) });
+      }
+      if (method === 'GET' && path === '/api/v1/customers') {
+        return route.fulfill({ json: paginated([customer]) });
+      }
+      return route.continue();
+    });
+
+    await page.addInitScript(() => {
+      window.print = () => {
+        (window as Window & { __printCalled?: boolean }).__printCalled = true;
+      };
+    });
+    await page.goto('/delivery');
+    const sjRow = page.locator('tr').filter({ hasText: 'SJ-E2E-PRINT-001' });
+    await expect(sjRow).toBeVisible({ timeout: 10000 });
+    await sjRow.getByRole('button').first().click();
+
+    const detail = page.getByRole('dialog');
+    await expect(detail.getByRole('button', { name: /Cetak Surat Jalan/i })).toBeVisible();
+    const printDocument = detail.locator('.print-document');
+    await expect(printDocument).toContainText('SJ-E2E-PRINT-001');
+    await expect(printDocument).toContainText('PO-E2E-SJ-001');
+    await expect(printDocument).toContainText('E2E Surat Jalan Customer');
+    await expect(printDocument).toContainText('Jl. Uji Cetak No. 15, Jakarta');
+    await expect(printDocument).toContainText('Body Kit Spoiler');
+    await expect(printDocument).toContainText('BLACK');
+    await expect(printDocument).toContainText('Finishing glossy');
+    await expect(printDocument).toContainText('Budi E2E');
+    await expect(printDocument).toContainText('B 1234 E2E');
+
+    // Capture the actual print stylesheet rendering so the CI artifact can be visually reviewed.
+    await page.emulateMedia({ media: 'print' });
+    await page.screenshot({ path: testInfo.outputPath('surat-jalan-print-preview.png'), fullPage: true });
+    await page.pdf({ path: testInfo.outputPath('surat-jalan-print-preview.pdf'), format: 'A4', printBackground: true });
+    await page.emulateMedia({ media: 'screen' });
+    await detail.getByRole('button', { name: /Cetak Surat Jalan/i }).click();
+    await expect.poll(() => page.evaluate(() =>
+      (window as Window & { __printCalled?: boolean }).__printCalled
+    )).toBe(true);
   });
 
 });
