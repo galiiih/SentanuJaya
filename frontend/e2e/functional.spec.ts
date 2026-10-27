@@ -811,4 +811,90 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await expect(page.getByText('PAY-E2E-0001')).toBeVisible({ timeout: 10000 });
   });
 
+
+  test('Surat Jalan print document exposes delivery fields and invokes browser print', async ({ page }) => {
+    const customer = { id: 'e2e-sj-customer-id', code: 'E2E-SJ', name: 'E2E Surat Jalan Customer' };
+    const deliveryOrder = {
+      id: 'e2e-sj-id',
+      sj_number: 'SJ-E2E-PRINT-001',
+      company_id: 'e2e-company-id',
+      branch_id: 'e2e-branch-id',
+      customer_id: customer.id,
+      customer_po_id: 'e2e-po-id',
+      customer_po_number: 'PO-E2E-SJ-001',
+      customer_po: { id: 'e2e-po-id', po_number: 'PO-E2E-SJ-001' },
+      delivery_date: '2026-10-27',
+      shipping_address: 'Jl. Uji Cetak No. 15, Jakarta',
+      driver_name: 'Budi E2E',
+      vehicle_plate: 'B 1234 E2E',
+      notes: 'Catatan uji cetak Surat Jalan',
+      status: 'DELIVERED',
+      customer,
+      lines: [{
+        id: 'e2e-sj-line-id',
+        customer_item_id: 'e2e-item-id',
+        customer_item: { id: 'e2e-item-id', name: 'Body Kit Spoiler' },
+        color_code: 'BLACK',
+        quantity: 2,
+        notes: 'Finishing glossy',
+      }],
+    };
+
+    await login(page);
+    await page.route('**/api/v1/**', async (route) => {
+      const url = new URL(route.request().url());
+      const path = url.pathname.replace(/\\/$/, '');
+      const method = route.request().method();
+      const paginated = (items: unknown[]) => ({
+        success: true,
+        data: { data: items, current_page: 1, last_page: 1, total: items.length },
+        message: 'OK',
+      });
+      if (method === 'GET' && path === '/api/v1/delivery-orders') {
+        return route.fulfill({ json: paginated([deliveryOrder]) });
+      }
+      if (method === 'GET' && path === '/api/v1/customer-pos') {
+        return route.fulfill({ json: paginated([]) });
+      }
+      if (method === 'GET' && path === '/api/v1/companies') {
+        return route.fulfill({ json: paginated([]) });
+      }
+      if (method === 'GET' && path === '/api/v1/branches') {
+        return route.fulfill({ json: paginated([]) });
+      }
+      if (method === 'GET' && path === '/api/v1/customers') {
+        return route.fulfill({ json: paginated([customer]) });
+      }
+      return route.continue();
+    });
+
+    await page.evaluate(() => {
+      window.print = () => {
+        (window as Window & { __printCalled?: boolean }).__printCalled = true;
+      };
+    });
+    await page.goto('/delivery');
+    const sjRow = page.locator('tr').filter({ hasText: 'SJ-E2E-PRINT-001' });
+    await expect(sjRow).toBeVisible({ timeout: 10000 });
+    await sjRow.getByRole('button').first().click();
+
+    const detail = page.getByRole('dialog');
+    await expect(detail.getByRole('button', { name: /Cetak Surat Jalan/i })).toBeVisible();
+    const printDocument = detail.locator('.print-document');
+    await expect(printDocument).toContainText('SJ-E2E-PRINT-001');
+    await expect(printDocument).toContainText('PO-E2E-SJ-001');
+    await expect(printDocument).toContainText('E2E Surat Jalan Customer');
+    await expect(printDocument).toContainText('Jl. Uji Cetak No. 15, Jakarta');
+    await expect(printDocument).toContainText('Body Kit Spoiler');
+    await expect(printDocument).toContainText('BLACK');
+    await expect(printDocument).toContainText('Finishing glossy');
+    await expect(printDocument).toContainText('Budi E2E');
+    await expect(printDocument).toContainText('B 1234 E2E');
+
+    await detail.getByRole('button', { name: /Cetak Surat Jalan/i }).click();
+    await expect.poll(() => page.evaluate(() =>
+      (window as Window & { __printCalled?: boolean }).__printCalled
+    )).toBe(true);
+  });
+
 });
