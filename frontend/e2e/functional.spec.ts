@@ -843,7 +843,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await login(page);
     await page.route('**/api/v1/**', async (route) => {
       const url = new URL(route.request().url());
-      const path = url.pathname.replace(/\\/$/, '');
+      const path = url.pathname.replace(/\/$/, '');
       const method = route.request().method();
       const paginated = (items: unknown[]) => ({
         success: true,
