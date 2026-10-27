@@ -813,16 +813,16 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
 
 
   test('Surat Jalan print document exposes delivery fields and invokes browser print', async ({ page }) => {
-    const customer = { id: 'e2e-sj-customer-id', code: 'E2E-SJ', name: 'E2E Surat Jalan Customer' };
+    const customer = { id: '11111111-1111-4111-8111-111111111111', code: 'E2E-SJ', name: 'E2E Surat Jalan Customer' };
     const deliveryOrder = {
-      id: 'e2e-sj-id',
+      id: '22222222-2222-4222-8222-222222222222',
       sj_number: 'SJ-E2E-PRINT-001',
-      company_id: 'e2e-company-id',
-      branch_id: 'e2e-branch-id',
+      company_id: '33333333-3333-4333-8333-333333333333',
+      branch_id: '44444444-4444-4444-8444-444444444444',
       customer_id: customer.id,
-      customer_po_id: 'e2e-po-id',
+      customer_po_id: '55555555-5555-4555-8555-555555555555',
       customer_po_number: 'PO-E2E-SJ-001',
-      customer_po: { id: 'e2e-po-id', po_number: 'PO-E2E-SJ-001' },
+      customer_po: { id: '55555555-5555-4555-8555-555555555555', po_number: 'PO-E2E-SJ-001' },
       delivery_date: '2026-10-27',
       shipping_address: 'Jl. Uji Cetak No. 15, Jakarta',
       driver_name: 'Budi E2E',
@@ -831,9 +831,9 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
       status: 'DELIVERED',
       customer,
       lines: [{
-        id: 'e2e-sj-line-id',
-        customer_item_id: 'e2e-item-id',
-        customer_item: { id: 'e2e-item-id', name: 'Body Kit Spoiler' },
+        id: '66666666-6666-4666-8666-666666666666',
+        customer_item_id: '77777777-7777-4777-8777-777777777777',
+        customer_item: { id: '77777777-7777-4777-8777-777777777777', name: 'Body Kit Spoiler' },
         color_code: 'BLACK',
         quantity: 2,
         notes: 'Finishing glossy',
@@ -868,7 +868,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
       return route.continue();
     });
 
-    await page.evaluate(() => {
+    await page.addInitScript(() => {
       window.print = () => {
         (window as Window & { __printCalled?: boolean }).__printCalled = true;
       };
