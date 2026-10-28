@@ -25,7 +25,7 @@ return new class extends Migration
             $table->longText('content')->nullable();
             $table->longText('css')->nullable();
             $table->longText('gjs_project')->nullable();
-            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignUuid('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
         });
     }

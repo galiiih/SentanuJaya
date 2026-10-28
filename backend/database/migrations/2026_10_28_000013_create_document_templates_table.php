@@ -18,7 +18,7 @@ return new class extends Migration
             $table->unsignedInteger('version')->default(1);
             $table->boolean('is_active')->default(false);
             $table->string('status')->default('draft'); // 'draft', 'active'
-            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignUuid('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
         });
     }
