@@ -36,7 +36,7 @@ return new class extends Migration
             $duplicates = DB::table('document_template_versions')
                 ->select('document_template_id', 'version', DB::raw('count(*) as cnt'))
                 ->groupBy('document_template_id', 'version')
-                ->having('cnt', '>', 1)
+                ->having(DB::raw('count(*)'), '>', 1)
                 ->get();
 
             if ($duplicates->isNotEmpty()) {
