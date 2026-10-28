@@ -2,9 +2,9 @@ name: PHP & PostgreSQL Tests
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, feat/template-management-grapesjs ]
   pull_request:
-    branches: [ master ]
+    branches: [ master, feat/template-management-grapesjs ]
 
 jobs:
   test:
