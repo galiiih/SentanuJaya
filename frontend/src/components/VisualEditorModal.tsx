@@ -76,8 +76,21 @@ export default function VisualEditorModal({ template, onClose, onSaved }: Visual
 
     editorRef.current = editor;
 
-    if (template.content) {
+    if (template.gjs_project) {
+      try {
+        const projectData = JSON.parse(template.gjs_project);
+        editor.loadProjectData(projectData);
+      } catch (e) {
+        if (template.content) {
+          editor.setComponents(template.content);
+        }
+      }
+    } else if (template.content) {
       editor.setComponents(template.content);
+    }
+
+    if (template.css) {
+      editor.setStyle(template.css);
     }
 
     return () => {
@@ -92,16 +105,20 @@ export default function VisualEditorModal({ template, onClose, onSaved }: Visual
     setIsSaving(true);
 
     try {
-      const html = editorRef.current.getHtml();
-      const css = editorRef.current.getCss();
+      const editor = editorRef.current;
+      const html = editor.getHtml();
+      const css = editor.getCss();
+      const projectData = editor.getProjectData();
       const fullContent = `<!DOCTYPE html><html><head><style>${css}</style></head><body>${html}</body></html>`;
 
       await documentTemplateApi.update(template.id, {
         name: template.name,
         content: fullContent,
+        css: css,
+        gjs_project: JSON.stringify(projectData),
       });
 
-      setSuccess('Template visual berhasil disimpan.');
+      setSuccess('Template visual dan GrapesJS project berhasil disimpan.');
       setTimeout(() => {
         onSaved();
       }, 800);
@@ -146,7 +163,7 @@ export default function VisualEditorModal({ template, onClose, onSaved }: Visual
       <header className="bg-slate-900 text-white px-6 py-3 flex justify-between items-center shadow">
         <div>
           <h1 className="text-base font-bold">Visual Drag-and-Drop Editor: {template.name}</h1>
-          <p className="text-xs text-slate-400">GrapesJS WYSIWYG Editor — Sinkronisasi Otomatis ke HTML Template</p>
+          <p className="text-xs text-slate-400">GrapesJS WYSIWYG Editor — Sinkronisasi Dua Arah & Project Persistence</p>
         </div>
         <div className="flex items-center space-x-3">
           <button

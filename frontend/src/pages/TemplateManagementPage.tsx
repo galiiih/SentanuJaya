@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { documentTemplateApi, apiError } from '../services/api';
-import type { DocumentTemplateRecord } from '../services/api';
+import type { DocumentTemplateRecord, DocumentTemplateVersionRecord } from '../services/api';
 import VisualEditorModal from '../components/VisualEditorModal';
 
 export default function TemplateManagementPage() {
@@ -23,6 +23,11 @@ export default function TemplateManagementPage() {
   const [editContent, setEditContent] = useState('');
   const [editName, setEditName] = useState('');
   const [previewHtml, setPreviewHtml] = useState('');
+
+  // Version History Modal state
+  const [versionTemplate, setVersionTemplate] = useState<DocumentTemplateRecord | null>(null);
+  const [versionsList, setVersionsList] = useState<DocumentTemplateVersionRecord[]>([]);
+  const [loadingVersions, setLoadingVersions] = useState(false);
 
   const loadTemplates = async () => {
     setLoading(true);
@@ -81,8 +86,35 @@ export default function TemplateManagementPage() {
         name: editName,
         content: editContent,
       });
-      setSuccessMsg('Template berhasil diperbarui.');
+      setSuccessMsg('Template berhasil diperbarui (versi snapshot baru disimpan).');
       setEditingTemplate(null);
+      loadTemplates();
+    } catch (err: unknown) {
+      setError(apiError(err));
+    }
+  };
+
+  const handleOpenVersions = async (tpl: DocumentTemplateRecord) => {
+    setVersionTemplate(tpl);
+    setLoadingVersions(true);
+    try {
+      const versions = await documentTemplateApi.versions(tpl.id);
+      setVersionsList(versions);
+    } catch (err: unknown) {
+      setError(apiError(err));
+    } finally {
+      setLoadingVersions(false);
+    }
+  };
+
+  const handleRestoreVersion = async (tplId: number, versionNum: number) => {
+    if (!confirm(`Pulihkan template ke versi v${versionNum}? Snapshot baru akan dibuat untuk merekam pemulihan ini.`)) return;
+    setError(null);
+    setSuccessMsg(null);
+    try {
+      await documentTemplateApi.restore(tplId, versionNum);
+      setSuccessMsg(`Template berhasil dipulihkan ke versi v${versionNum}.`);
+      setVersionTemplate(null);
       loadTemplates();
     } catch (err: unknown) {
       setError(apiError(err));
@@ -122,7 +154,7 @@ export default function TemplateManagementPage() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900">Manajemen Template & HTML Editor</h1>
-          <p className="text-sm text-slate-600">Kelola template cetak Surat Jalan dan Invoice dengan editor HTML aman & sinkronisasi ERP.</p>
+          <p className="text-sm text-slate-600">Kelola template cetak Surat Jalan dan Invoice dengan editor HTML aman, GrapesJS visual builder, & version history.</p>
         </div>
         <button
           onClick={() => setShowUploadModal(true)}
@@ -184,7 +216,15 @@ export default function TemplateManagementPage() {
                     )}
                   </td>
                   <td className="px-6 py-4 uppercase text-xs font-bold text-slate-600">{tpl.format}</td>
-                  <td className="px-6 py-4 text-slate-600">v{tpl.version}</td>
+                  <td className="px-6 py-4 text-slate-600">
+                    <button
+                      onClick={() => handleOpenVersions(tpl)}
+                      className="underline hover:text-indigo-600 font-medium"
+                      title="Klik untuk melihat riwayat versi"
+                    >
+                      v{tpl.version} 📋
+                    </button>
+                  </td>
                   <td className="px-6 py-4">
                     <span
                       className={`inline-flex px-2 py-1 text-xs rounded font-semibold ${
@@ -199,22 +239,28 @@ export default function TemplateManagementPage() {
                       <>
                         <button
                           onClick={() => setVisualTemplate(tpl)}
-                          className="px-3 py-1 bg-indigo-50 text-indigo-700 rounded hover:bg-indigo-100 transition font-medium"
+                          className="px-3 py-1 bg-indigo-50 text-indigo-700 rounded hover:bg-indigo-100 transition font-medium text-xs"
                         >
                           Visual Editor
                         </button>
                         <button
                           onClick={() => handleOpenEditor(tpl)}
-                          className="px-3 py-1 bg-slate-100 text-slate-700 rounded hover:bg-slate-200 transition font-medium"
+                          className="px-3 py-1 bg-slate-100 text-slate-700 rounded hover:bg-slate-200 transition font-medium text-xs"
                         >
                           HTML Editor
                         </button>
                       </>
                     )}
+                    <button
+                      onClick={() => handleOpenVersions(tpl)}
+                      className="px-3 py-1 bg-amber-50 text-amber-700 rounded hover:bg-amber-100 transition font-medium text-xs"
+                    >
+                      Riwayat Versi
+                    </button>
                     {!tpl.is_active && (
                       <button
                         onClick={() => handleActivate(tpl.id)}
-                        className="px-3 py-1 bg-indigo-50 text-indigo-700 rounded hover:bg-indigo-100 transition font-medium"
+                        className="px-3 py-1 bg-emerald-50 text-emerald-700 rounded hover:bg-emerald-100 transition font-medium text-xs"
                       >
                         Aktifkan
                       </button>
@@ -222,7 +268,7 @@ export default function TemplateManagementPage() {
                     {!tpl.is_active && (
                       <button
                         onClick={() => handleDelete(tpl.id)}
-                        className="px-3 py-1 bg-red-50 text-red-600 rounded hover:bg-red-100 transition font-medium"
+                        className="px-3 py-1 bg-red-50 text-red-600 rounded hover:bg-red-100 transition font-medium text-xs"
                       >
                         Hapus
                       </button>
@@ -359,13 +405,13 @@ export default function TemplateManagementPage() {
                 />
               </div>
 
-              {/* Sandboxed iframe preview pane */}
+              {/* Secure Sandboxed iframe preview pane (sandbox="allow-scripts" without allow-same-origin) */}
               <div className="flex flex-col p-4 space-y-3 bg-slate-100">
-                <span className="text-xs font-semibold text-slate-600">Live Sandboxed Preview</span>
+                <span className="text-xs font-semibold text-slate-600">Live Sandboxed Preview (Zero Origin Access)</span>
                 <div className="flex-1 bg-white border border-slate-300 rounded shadow-inner overflow-hidden">
                   <iframe
                     srcDoc={previewHtml}
-                    sandbox="allow-same-origin"
+                    sandbox="allow-scripts"
                     title="Template Preview"
                     className="w-full h-full border-0"
                   />
@@ -385,6 +431,61 @@ export default function TemplateManagementPage() {
                 className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 shadow"
               >
                 Simpan Perubahan (v{editingTemplate.version + 1})
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Version History Modal */}
+      {versionTemplate && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-none flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full p-6 space-y-4">
+            <div className="flex justify-between items-center border-b pb-3">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">Riwayat Versi: {versionTemplate.name}</h2>
+                <p className="text-xs text-slate-500">Pilih versi snapshot sebelumnya untuk dipulihkan</p>
+              </div>
+              <button
+                onClick={() => setVersionTemplate(null)}
+                className="text-slate-400 hover:text-slate-600 font-bold text-lg"
+              >
+                ✕
+              </button>
+            </div>
+
+            {loadingVersions ? (
+              <div className="py-8 text-center text-slate-500">Memuat riwayat versi...</div>
+            ) : versionsList.length === 0 ? (
+              <div className="py-8 text-center text-slate-500">Belum ada riwayat snapshot tersimpan.</div>
+            ) : (
+              <div className="max-h-96 overflow-y-auto divide-y divide-slate-100">
+                {versionsList.map((ver) => (
+                  <div key={ver.id} className="py-3 flex justify-between items-center hover:bg-slate-50 px-3 rounded">
+                    <div>
+                      <div className="flex items-center space-x-2">
+                        <span className="font-bold text-sm text-indigo-600">Versi v{ver.version}</span>
+                        <span className="text-xs text-slate-500">({ver.name})</span>
+                      </div>
+                      <div className="text-xs text-slate-400 mt-0.5">Dibuat pada: {ver.created_at}</div>
+                    </div>
+                    <button
+                      onClick={() => handleRestoreVersion(versionTemplate.id, ver.version)}
+                      className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-xs font-semibold shadow transition"
+                    >
+                      Pulihkan Versi Ini
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="flex justify-end pt-3 border-t">
+              <button
+                onClick={() => setVersionTemplate(null)}
+                className="px-4 py-2 border border-slate-300 rounded-lg text-sm text-slate-700 hover:bg-slate-50 font-medium"
+              >
+                Tutup
               </button>
             </div>
           </div>

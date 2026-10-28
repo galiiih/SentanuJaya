@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Models\DocumentTemplate;
+use App\Models\DocumentTemplateVersion;
 use App\Http\Controllers\Api\BaseApiController;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -38,7 +39,9 @@ class DocumentTemplateController extends BaseApiController
             'document_type' => 'required|string|in:invoice,surat_jalan',
             'format' => 'required|string|in:html,docx,xlsx',
             'content' => 'nullable|required_if:format,html|string',
-            'file' => 'nullable|file|mimes:html,htm,docx,xlsx|max:5120', // max 5MB
+            'css' => 'nullable|string',
+            'gjs_project' => 'nullable|string',
+            'file' => 'nullable|file|mimes:html,htm,docx,xlsx|max:5120',
         ]);
 
         if ($validator->fails()) {
@@ -66,10 +69,23 @@ class DocumentTemplateController extends BaseApiController
             'document_type' => $request->input('document_type'),
             'format' => $request->input('format'),
             'content' => $content,
+            'css' => $request->input('css'),
+            'gjs_project' => $request->input('gjs_project'),
             'file_path' => $filePath,
             'version' => 1,
             'status' => 'draft',
             'is_active' => false,
+            'created_by' => $user->id,
+        ]);
+
+        // Create version snapshot
+        DocumentTemplateVersion::create([
+            'document_template_id' => $template->id,
+            'version' => 1,
+            'name' => $template->name,
+            'content' => $template->content,
+            'css' => $template->css,
+            'gjs_project' => $template->gjs_project,
             'created_by' => $user->id,
         ]);
 
@@ -87,7 +103,7 @@ class DocumentTemplateController extends BaseApiController
 
         return response()->json([
             'status' => 'success',
-            'data' => $documentTemplate,
+            'data' => $documentTemplate->load('versions'),
         ]);
     }
 
@@ -99,6 +115,8 @@ class DocumentTemplateController extends BaseApiController
         $validator = Validator::make($request->all(), [
             'name' => 'sometimes|required|string|max:255',
             'content' => 'sometimes|nullable|string',
+            'css' => 'sometimes|nullable|string',
+            'gjs_project' => 'sometimes|nullable|string',
             'status' => 'sometimes|string|in:draft,active',
         ]);
 
@@ -115,8 +133,21 @@ class DocumentTemplateController extends BaseApiController
         $documentTemplate->update([
             'name' => $request->input('name', $documentTemplate->name),
             'content' => $request->input('content', $documentTemplate->content),
+            'css' => $request->input('css', $documentTemplate->css),
+            'gjs_project' => $request->input('gjs_project', $documentTemplate->gjs_project),
             'status' => $request->input('status', $documentTemplate->status),
             'version' => $newVersion,
+        ]);
+
+        // Create version snapshot for history & rollback
+        DocumentTemplateVersion::create([
+            'document_template_id' => $documentTemplate->id,
+            'version' => $newVersion,
+            'name' => $documentTemplate->name,
+            'content' => $documentTemplate->content,
+            'css' => $documentTemplate->css,
+            'gjs_project' => $documentTemplate->gjs_project,
+            'created_by' => $user->id,
         ]);
 
         return response()->json([
@@ -126,12 +157,69 @@ class DocumentTemplateController extends BaseApiController
         ]);
     }
 
+    public function versions(Request $request, DocumentTemplate $documentTemplate): JsonResponse
+    {
+        $user = $request->user();
+        abort_unless($user && in_array($user->role, ['ADMIN', 'OWNER', 'STAFF'], true), 403, 'Forbidden');
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $documentTemplate->versions,
+        ]);
+    }
+
+    public function restoreVersion(Request $request, DocumentTemplate $documentTemplate, int $version): JsonResponse
+    {
+        return $this->restore($request, $documentTemplate, $version);
+    }
+
+    public function restore(Request $request, DocumentTemplate $documentTemplate, int $version): JsonResponse
+    {
+        $user = $request->user();
+        abort_unless($user && in_array($user->role, ['ADMIN', 'OWNER', 'STAFF'], true), 403, 'Forbidden');
+
+        $targetVersion = $documentTemplate->versions()->where('version', $version)->first();
+
+        if (!$targetVersion) {
+            return response()->json([
+                'status' => 'error',
+                'message' => "Version v{$version} not found for this template.",
+            ], 404);
+        }
+
+        $newVersion = $documentTemplate->version + 1;
+
+        $documentTemplate->update([
+            'name' => $targetVersion->name,
+            'content' => $targetVersion->content,
+            'css' => $targetVersion->css,
+            'gjs_project' => $targetVersion->gjs_project,
+            'version' => $newVersion,
+        ]);
+
+        // Create a new version snapshot recording the restoration
+        DocumentTemplateVersion::create([
+            'document_template_id' => $documentTemplate->id,
+            'version' => $newVersion,
+            'name' => $documentTemplate->name,
+            'content' => $documentTemplate->content,
+            'css' => $documentTemplate->css,
+            'gjs_project' => $documentTemplate->gjs_project,
+            'created_by' => $user->id,
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => "Template successfully restored to version v{$version} as new version v{$newVersion}",
+            'data' => $documentTemplate->load('versions'),
+        ]);
+    }
+
     public function activate(Request $request, DocumentTemplate $documentTemplate): JsonResponse
     {
         $user = $request->user();
         abort_unless($user && in_array($user->role, ['ADMIN', 'OWNER'], true), 403, 'Forbidden: Admin or Owner required to activate templates');
 
-        // Deactivate all templates of the same document type
         DocumentTemplate::where('document_type', $documentTemplate->document_type)
             ->update(['is_active' => false, 'status' => 'draft']);
 

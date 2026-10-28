@@ -100,6 +100,8 @@ Route::prefix('v1')->group(function () {
                 Route::apiResource('payments', PaymentController::class)->only(['index', 'store', 'show']);
 
                 // Document Templates & HTML Editor
+                Route::get('document-templates/{documentTemplate}/versions', [\App\Http\Controllers\Api\V1\DocumentTemplateController::class, 'versions']);
+                Route::post('document-templates/{documentTemplate}/restore/{version}', [\App\Http\Controllers\Api\V1\DocumentTemplateController::class, 'restoreVersion']);
                 Route::post('document-templates/{documentTemplate}/activate', [\App\Http\Controllers\Api\V1\DocumentTemplateController::class, 'activate']);
                 Route::apiResource('document-templates', \App\Http\Controllers\Api\V1\DocumentTemplateController::class);
 

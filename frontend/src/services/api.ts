@@ -385,16 +385,30 @@ export const paymentApi = {
     api.get<ApiResponse<CustomerOutstanding>>(`/customers/${customerId}/outstanding`).then((r) => r.data.data),
 };
 
+export type DocumentTemplateVersionRecord = {
+  id: number;
+  document_template_id: number;
+  version: number;
+  name: string;
+  content?: string;
+  css?: string;
+  gjs_project?: string;
+  created_at: string;
+};
+
 export type DocumentTemplateRecord = {
   id: number;
   name: string;
   document_type: 'invoice' | 'surat_jalan';
   format: 'html' | 'docx' | 'xlsx';
   content?: string;
+  css?: string;
+  gjs_project?: string;
   file_path?: string;
   version: number;
   is_active: boolean;
   status: 'draft' | 'active';
+  versions?: DocumentTemplateVersionRecord[];
   created_at: string;
   updated_at: string;
 };
@@ -402,8 +416,10 @@ export type DocumentTemplateRecord = {
 export const documentTemplateApi = {
   list: (params?: Record<string, string | number>) => list<DocumentTemplateRecord>('/document-templates', params),
   get: (id: number) => api.get<ApiResponse<DocumentTemplateRecord>>(`/document-templates/${id}`).then((r) => r.data.data),
-  create: (formData: FormData) => api.post<ApiResponse<DocumentTemplateRecord>>('/document-templates', formData, { headers: { 'Content-Type': 'multipart/form-data' } }).then((r) => r.data.data),
-  update: (id: number, payload: { name?: string; content?: string; status?: string }) => api.put<ApiResponse<DocumentTemplateRecord>>(`/document-templates/${id}`, payload).then((r) => r.data.data),
+  create: (payload: any) => api.post<ApiResponse<DocumentTemplateRecord>>('/document-templates', payload, payload instanceof FormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {}).then((r) => r.data.data),
+  update: (id: number, payload: { name?: string; content?: string; css?: string; gjs_project?: string; status?: string }) => api.put<ApiResponse<DocumentTemplateRecord>>(`/document-templates/{id}`.replace('{id}', String(id)), payload).then((r) => r.data.data),
   activate: (id: number) => data<DocumentTemplateRecord>(`/document-templates/${id}/activate`),
   delete: (id: number) => api.delete<ApiResponse<any>>(`/document-templates/${id}`).then((r) => r.data),
+  versions: (id: number) => api.get<ApiResponse<DocumentTemplateVersionRecord[]>>(`/document-templates/${id}/versions`).then((r) => r.data.data),
+  restore: (id: number, version: number) => api.post<ApiResponse<DocumentTemplateRecord>>(`/document-templates/${id}/restore/${version}`).then((r) => r.data.data),
 };
