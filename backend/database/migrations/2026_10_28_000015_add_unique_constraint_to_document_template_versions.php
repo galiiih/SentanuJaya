@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 use App\Models\DocumentTemplate;
 use App\Models\DocumentTemplateVersion;
 
@@ -10,7 +11,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Backfill baseline versions for any legacy templates missing version snapshots safely & idempotently
+        // 1. Backfill baseline versions for any legacy templates missing version snapshots safely & idempotently
         $templates = DocumentTemplate::all();
         foreach ($templates as $tpl) {
             if ($tpl->versions()->count() === 0) {
@@ -30,6 +31,39 @@ return new class extends Migration
             }
         }
 
+        // 2. Detect potential duplicate (document_template_id, version) pairs before adding unique index
+        $duplicates = DB::table('document_template_versions')
+            ->select('document_template_id', 'version', DB::raw('count(*) as cnt'))
+            ->groupBy('document_template_id', 'version')
+            ->having('cnt', '>', 1)
+            ->get();
+
+        if ($duplicates->isNotEmpty()) {
+            foreach ($duplicates as $dup) {
+                // Reconcile safely: keep the earliest created or latest record, remove exact duplicates or merge safely
+                $versions = DB::table('document_template_versions')
+                    ->where('document_template_id', $dup->document_template_id)
+                    ->where('version', $dup->version)
+                    ->orderBy('created_at', 'asc')
+                    ->get();
+
+                // Keep the first one, inspect others
+                $primary = $versions->first();
+                $redundants = $versions->slice(1);
+
+                foreach ($redundants as $redundant) {
+                    // If content is identical or empty, safe to delete duplicate row
+                    if ($redundant->content === $primary->content && $redundant->name === $primary->name) {
+                        DB::table('document_template_versions')->where('id', $redundant->id)->delete();
+                    } else {
+                        // Unresolvable conflicting content for same version number - fail with clear message
+                        throw new \RuntimeException("Migration failed: Unresolvable duplicate conflict for document_template_id {$dup->document_template_id} at version {$dup->version} with conflicting content.");
+                    }
+                }
+            }
+        }
+
+        // 3. Add unique constraint safely
         Schema::table('document_template_versions', function (Blueprint $table) {
             $table->unique(['document_template_id', 'version'], 'doc_template_version_unique');
         });
@@ -40,5 +74,6 @@ return new class extends Migration
         Schema::table('document_template_versions', function (Blueprint $table) {
             $table->dropUnique('doc_template_version_unique');
         });
+        // Note: down() drops the unique constraint but deliberately preserves all version history data.
     }
 };
