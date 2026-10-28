@@ -384,3 +384,26 @@ export const paymentApi = {
   customerOutstanding: (customerId: string) =>
     api.get<ApiResponse<CustomerOutstanding>>(`/customers/${customerId}/outstanding`).then((r) => r.data.data),
 };
+
+export type DocumentTemplateRecord = {
+  id: number;
+  name: string;
+  document_type: 'invoice' | 'surat_jalan';
+  format: 'html' | 'docx' | 'xlsx';
+  content?: string;
+  file_path?: string;
+  version: number;
+  is_active: boolean;
+  status: 'draft' | 'active';
+  created_at: string;
+  updated_at: string;
+};
+
+export const documentTemplateApi = {
+  list: (params?: Record<string, string | number>) => list<DocumentTemplateRecord>('/document-templates', params),
+  get: (id: number) => api.get<ApiResponse<DocumentTemplateRecord>>(`/document-templates/${id}`).then((r) => r.data.data),
+  create: (formData: FormData) => api.post<ApiResponse<DocumentTemplateRecord>>('/document-templates', formData, { headers: { 'Content-Type': 'multipart/form-data' } }).then((r) => r.data.data),
+  update: (id: number, payload: { name?: string; content?: string; status?: string }) => api.put<ApiResponse<DocumentTemplateRecord>>(`/document-templates/${id}`, payload).then((r) => r.data.data),
+  activate: (id: number) => data<DocumentTemplateRecord>(`/document-templates/${id}/activate`),
+  delete: (id: number) => api.delete<ApiResponse<any>>(`/document-templates/${id}`).then((r) => r.data),
+};

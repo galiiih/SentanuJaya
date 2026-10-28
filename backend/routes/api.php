@@ -99,6 +99,10 @@ Route::prefix('v1')->group(function () {
                 Route::get('customers/{customer}/outstanding', [PaymentController::class, 'customerOutstanding']);
                 Route::apiResource('payments', PaymentController::class)->only(['index', 'store', 'show']);
 
+                // Document Templates & HTML Editor
+                Route::post('document-templates/{documentTemplate}/activate', [\App\Http\Controllers\Api\V1\DocumentTemplateController::class, 'activate']);
+                Route::apiResource('document-templates', \App\Http\Controllers\Api\V1\DocumentTemplateController::class);
+
                 // Dashboard Summary
                 Route::get('dashboard/summary', [DashboardController::class, 'summary']);
 

@@ -30,6 +30,7 @@ import { CustomerPoPage } from './components/CustomerPoPage';
 import { DeliveryPage } from './components/DeliveryPage';
 import { PaymentPage } from './components/PaymentPage';
 import { InvoicingPage } from './components/InvoicingPage';
+import TemplateManagementPage from './pages/TemplateManagementPage';
 import {
   type Material,
 } from './services/api';
@@ -114,6 +115,7 @@ function Sidebar({ mobile, onClose, closeButtonRef }: { mobile?: boolean; onClos
         { path: '/invoicing', label: 'Invoice', icon: Receipt, permission: permissions.invoiceView },
         { path: '/payments', label: 'Pembayaran', icon: CircleDollarSign, permission: permissions.paymentView },
         { path: '/reports', label: 'Laporan', icon: FileCheck, permission: permissions.invoiceView },
+        { path: '/templates', label: 'Template Dokumen', icon: FileText, permission: permissions.invoiceView },
       ],
     },
     {
@@ -459,6 +461,7 @@ export function App() {
           <Route path="/delivery" element={<RequirePermission permission={permissions.deliveryView}><DeliveryPage /></RequirePermission>} />
           <Route path="/materials" element={<RequirePermission permission={permissions.materialView}><MaterialsPage /></RequirePermission>} />
           <Route path="/invoicing" element={<RequirePermission permission={permissions.invoiceView}><InvoicingPage /></RequirePermission>} />
+          <Route path="/templates" element={<RequirePermission permission={permissions.invoiceView}><TemplateManagementPage /></RequirePermission>} />
           <Route path="/reports" element={<RequirePermission permission={permissions.invoiceView}><ReportsPage /></RequirePermission>} />
           <Route path="/master" element={<RequirePermission permission={permissions.dashboardView}><MasterDataPage /></RequirePermission>} />
           <Route path="/payments" element={<RequirePermission permission={permissions.paymentView}><PaymentPage /></RequirePermission>} />
