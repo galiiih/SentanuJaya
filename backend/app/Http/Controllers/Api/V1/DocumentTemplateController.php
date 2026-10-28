@@ -15,17 +15,24 @@ class DocumentTemplateController extends BaseApiController
 {
     protected function ensureBaselineVersion(DocumentTemplate $template, ?string $userId = null): void
     {
-        if ($template->versions()->count() === 0) {
-            DocumentTemplateVersion::create([
-                'document_template_id' => $template->id,
-                'version' => $template->version ?? 1,
-                'name' => $template->name,
-                'content' => $template->content,
-                'css' => $template->css,
-                'gjs_project' => $template->gjs_project,
-                'created_by' => $userId ?? $template->created_by ?? 1,
-            ]);
-        }
+        DB::transaction(function () use ($template, $userId) {
+            $locked = DocumentTemplate::where('id', $template->id)->lockForUpdate()->first();
+            if ($locked && $locked->versions()->count() === 0) {
+                DocumentTemplateVersion::firstOrCreate(
+                    [
+                        'document_template_id' => $template->id,
+                        'version' => $template->version ?? 1,
+                    ],
+                    [
+                        'name' => $template->name,
+                        'content' => $template->content,
+                        'css' => $template->css,
+                        'gjs_project' => $template->gjs_project,
+                        'created_by' => $userId ?? $template->created_by,
+                    ]
+                );
+            }
+        });
     }
 
     public function index(Request $request): JsonResponse
@@ -39,14 +46,9 @@ class DocumentTemplateController extends BaseApiController
             $query->where('document_type', $request->input('document_type'));
         }
 
-        $templates = $query->get();
-        foreach ($templates as $tpl) {
-            $this->ensureBaselineVersion($tpl, $user->id);
-        }
-
         return response()->json([
             'status' => 'success',
-            'data' => $templates,
+            'data' => $query->get(),
         ]);
     }
 
@@ -100,15 +102,19 @@ class DocumentTemplateController extends BaseApiController
                 'created_by' => $user->id,
             ]);
 
-            DocumentTemplateVersion::create([
-                'document_template_id' => $template->id,
-                'version' => 1,
-                'name' => $template->name,
-                'content' => $template->content,
-                'css' => $template->css,
-                'gjs_project' => $template->gjs_project,
-                'created_by' => $user->id,
-            ]);
+            DocumentTemplateVersion::firstOrCreate(
+                [
+                    'document_template_id' => $template->id,
+                    'version' => 1,
+                ],
+                [
+                    'name' => $template->name,
+                    'content' => $template->content,
+                    'css' => $template->css,
+                    'gjs_project' => $template->gjs_project,
+                    'created_by' => $user->id,
+                ]
+            );
 
             return response()->json([
                 'status' => 'success',
@@ -166,15 +172,19 @@ class DocumentTemplateController extends BaseApiController
                 'version' => $newVersion,
             ]);
 
-            DocumentTemplateVersion::create([
-                'document_template_id' => $documentTemplate->id,
-                'version' => $newVersion,
-                'name' => $documentTemplate->name,
-                'content' => $documentTemplate->content,
-                'css' => $documentTemplate->css,
-                'gjs_project' => $documentTemplate->gjs_project,
-                'created_by' => $user->id,
-            ]);
+            DocumentTemplateVersion::firstOrCreate(
+                [
+                    'document_template_id' => $documentTemplate->id,
+                    'version' => $newVersion,
+                ],
+                [
+                    'name' => $documentTemplate->name,
+                    'content' => $documentTemplate->content,
+                    'css' => $documentTemplate->css,
+                    'gjs_project' => $documentTemplate->gjs_project,
+                    'created_by' => $user->id,
+                ]
+            );
 
             return response()->json([
                 'status' => 'success',
@@ -229,15 +239,19 @@ class DocumentTemplateController extends BaseApiController
                 'version' => $newVersion,
             ]);
 
-            DocumentTemplateVersion::create([
-                'document_template_id' => $documentTemplate->id,
-                'version' => $newVersion,
-                'name' => $documentTemplate->name,
-                'content' => $documentTemplate->content,
-                'css' => $documentTemplate->css,
-                'gjs_project' => $documentTemplate->gjs_project,
-                'created_by' => $user->id,
-            ]);
+            DocumentTemplateVersion::firstOrCreate(
+                [
+                    'document_template_id' => $documentTemplate->id,
+                    'version' => $newVersion,
+                ],
+                [
+                    'name' => $documentTemplate->name,
+                    'content' => $documentTemplate->content,
+                    'css' => $documentTemplate->css,
+                    'gjs_project' => $documentTemplate->gjs_project,
+                    'created_by' => $user->id,
+                ]
+            );
 
             return response()->json([
                 'status' => 'success',
