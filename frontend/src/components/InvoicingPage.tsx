@@ -167,6 +167,7 @@ export function InvoicingPage() {
   };
 
   const canCreate = hasPermission(permissions.invoiceCreate);
+  const canApprove = hasPermission(permissions.invoiceApprove);
   const isDraft = (inv: InvoiceRecord) => inv.status === 'DRAFT';
 
   const columns: DataTableColumn<InvoiceRecord>[] = [
@@ -181,11 +182,11 @@ export function InvoicingPage() {
       cell: (r) => (
         <span style={{ display: 'flex', gap: '0.25rem' }}>
           <Button variant="ghost" onClick={() => viewDetail(r.id)}><Eye size={16} /></Button>
+          {canApprove && isDraft(r) && (
+            <Button variant="ghost" onClick={() => setPostTarget(r)} aria-label="Post invoice"><Send size={16} /></Button>
+          )}
           {canCreate && isDraft(r) && (
-            <>
-              <Button variant="ghost" onClick={() => setPostTarget(r)}><Send size={16} /></Button>
-              <Button variant="ghost" onClick={() => setCancelTarget(r)}><XCircle size={16} /></Button>
-            </>
+            <Button variant="ghost" onClick={() => setCancelTarget(r)} aria-label="Cancel draft invoice"><XCircle size={16} /></Button>
           )}
         </span>
       ),
