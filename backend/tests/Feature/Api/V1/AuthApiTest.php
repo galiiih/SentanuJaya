@@ -76,6 +76,26 @@ class AuthApiTest extends TestCase
         $this->getJson('/api/v1/auth/me')->assertUnauthorized();
     }
 
+    public function test_inactive_user_cannot_login(): void
+    {
+        $user = User::create([
+            'username' => 'inactive-' . fake()->unique()->numerify('####'),
+            'email' => fake()->unique()->safeEmail(),
+            'password' => Hash::make('password'),
+            'full_name' => 'Inactive User',
+            'role' => 'ADMIN',
+            'is_active' => false,
+        ]);
+
+        $this->postJson('/api/v1/auth/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ])->assertUnprocessable()
+            ->assertJsonPath('message', 'Email atau password tidak sesuai.');
+
+        $this->getJson('/api/v1/auth/me')->assertUnauthorized();
+    }
+
     private function makeUser(): User
     {
         return User::create([
