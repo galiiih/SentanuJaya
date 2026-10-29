@@ -210,6 +210,21 @@ function AuthenticatedLayout() {
   const pageKey = routePages[location.pathname] ?? 'dashboard';
   const pageTitle = t.pages[`${pageKey}Title` as keyof typeof t.pages] || 'Dashboard';
 
+  const breadcrumbMap: Record<string, string[]> = {
+    '/dashboard': ['Workspace', 'Dashboard'],
+    '/custody': ['Workspace', 'Operasional', 'Penitindahan STB'],
+    '/customer-po': ['Workspace', 'Operasional', 'Customer PO'],
+    '/delivery': ['Workspace', 'Operasional', 'Delivery'],
+    '/invoicing': ['Workspace', 'Finance & Billing', 'Invoice'],
+    '/payments': ['Workspace', 'Finance & Billing', 'Pembayaran'],
+    '/reports': ['Workspace', 'Finance & Billing', 'Laporan'],
+    '/templates': ['Workspace', 'Finance & Billing', 'Template Dokumen'],
+    '/materials': ['Workspace', 'Inventaris', 'Material'],
+    '/master': ['Workspace', 'Inventaris', 'Master Data'],
+    '/users': ['Workspace', 'Inventaris', 'Manajemen Pengguna'],
+  };
+  const breadcrumbItems = breadcrumbMap[location.pathname] || ['Workspace', pageTitle];
+
   useEffect(() => {
     if (!drawerOpen) return;
     drawerCloseButton.current?.focus();
@@ -240,7 +255,7 @@ function AuthenticatedLayout() {
             <div className="user-menu"><button className="icon-button" aria-label="Menu pengguna" aria-expanded={menuOpen} onClick={() => setMenuOpen((value) => !value)}><Menu size={18} /></button>{menuOpen && <div className="user-menu__popover"><strong>{user?.name}</strong><span>{user?.email}</span><Button variant="ghost" onClick={signOut}><LogOut size={15} /> {t.nav.logout}</Button></div>}</div>
           </div>
         </header>
-        <main className="app-content"><Breadcrumb items={['Workspace', pageTitle]} /><Outlet /></main>
+        <main className="app-content"><Breadcrumb items={breadcrumbItems} /><Outlet /></main>
       </div>
     </div>
   );
