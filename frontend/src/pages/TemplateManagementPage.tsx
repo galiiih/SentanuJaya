@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { documentTemplateApi, apiError } from '../services/api';
 import type { DocumentTemplateRecord, DocumentTemplateVersionRecord } from '../services/api';
 import VisualEditorModal from '../components/VisualEditorModal';
+import { PageHeader, Button, Card, DataTable, type DataTableColumn } from '../components/ui';
+import { Plus } from 'lucide-react';
 
 export default function TemplateManagementPage() {
   const [templates, setTemplates] = useState<DocumentTemplateRecord[]>([]);
@@ -149,30 +151,127 @@ export default function TemplateManagementPage() {
 
   const filteredTemplates = templates.filter((t) => t.document_type === activeTab);
 
-  return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Manajemen Template & HTML Editor</h1>
-          <p className="text-sm text-slate-600">Kelola template cetak Surat Jalan dan Invoice dengan editor HTML aman, GrapesJS visual builder, & version history.</p>
-        </div>
+  const columns: DataTableColumn<DocumentTemplateRecord & { id: string }>[] = [
+    {
+      id: 'name',
+      header: 'Nama Template',
+      cell: (tpl) => (
+        <span className="font-medium text-slate-900 dark:text-slate-100 flex items-center space-x-2">
+          <span>{tpl.name}</span>
+          {tpl.is_active && (
+            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300">
+              Aktif
+            </span>
+          )}
+        </span>
+      ),
+    },
+    {
+      id: 'format',
+      header: 'Format',
+      cell: (tpl) => <span className="uppercase text-xs font-bold text-slate-600 dark:text-slate-400">{tpl.format}</span>,
+    },
+    {
+      id: 'version',
+      header: 'Versi',
+      cell: (tpl) => (
         <button
-          onClick={() => setShowUploadModal(true)}
-          className="px-4 py-2 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700 font-medium text-sm transition"
+          onClick={() => handleOpenVersions(tpl)}
+          className="underline hover:text-indigo-600 dark:hover:text-indigo-400 font-medium"
+          title="Klik untuk melihat riwayat versi"
         >
-          + Unggah / Buat Template
+          v{tpl.version} 📋
         </button>
-      </div>
+      ),
+    },
+    {
+      id: 'status',
+      header: 'Status',
+      cell: (tpl) => (
+        <span
+          className={`inline-flex px-2 py-1 text-xs rounded font-semibold ${
+            tpl.status === 'active' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300' : 'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300'
+          }`}
+        >
+          {tpl.status}
+        </span>
+      ),
+    },
+    {
+      id: 'actions',
+      header: 'Aksi',
+      align: 'right',
+      cell: (tpl) => (
+        <div className="flex justify-end space-x-2">
+          {tpl.format === 'html' && (
+            <>
+              <button
+                onClick={() => setVisualTemplate(tpl)}
+                className="px-2.5 py-1 bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 rounded hover:bg-indigo-100 transition font-medium text-xs"
+              >
+                Visual Editor
+              </button>
+              <button
+                onClick={() => handleOpenEditor(tpl)}
+                className="px-2.5 py-1 bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 rounded hover:bg-slate-200 transition font-medium text-xs"
+              >
+                HTML Editor
+              </button>
+            </>
+          )}
+          <button
+            onClick={() => handleOpenVersions(tpl)}
+            className="px-2.5 py-1 bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300 rounded hover:bg-amber-100 transition font-medium text-xs"
+          >
+            Versi
+          </button>
+          {!tpl.is_active && (
+            <button
+              onClick={() => handleActivate(tpl.id)}
+              className="px-2.5 py-1 bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 rounded hover:bg-emerald-100 transition font-medium text-xs"
+            >
+              Aktifkan
+            </button>
+          )}
+          {!tpl.is_active && (
+            <button
+              onClick={() => handleDelete(tpl.id)}
+              className="px-2.5 py-1 bg-red-50 text-red-600 dark:bg-red-950 dark:text-red-300 rounded hover:bg-red-100 transition font-medium text-xs"
+            >
+              Hapus
+            </button>
+          )}
+        </div>
+      ),
+    },
+  ];
+
+  const tableRows = filteredTemplates.map((tpl) => ({
+    ...tpl,
+    id: String(tpl.id),
+  })) as (DocumentTemplateRecord & { id: string })[];
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="Manajemen Template & HTML Editor"
+        description="Kelola template cetak Surat Jalan dan Invoice dengan editor HTML aman, GrapesJS visual builder, & version history."
+        action={
+          <Button onClick={() => setShowUploadModal(true)}>
+            <Plus size={16} /> Unggah / Buat Template
+          </Button>
+        }
+      />
 
       {error && <div className="p-4 bg-red-50 text-red-700 rounded-lg text-sm border border-red-200">{error}</div>}
       {successMsg && <div className="p-4 bg-emerald-50 text-emerald-700 rounded-lg text-sm border border-emerald-200">{successMsg}</div>}
 
       {/* Tabs */}
-      <div className="flex border-b border-slate-200 space-x-6">
+      <div className="flex border-b border-slate-200 dark:border-slate-800 space-x-6">
         <button
           onClick={() => setActiveTab('invoice')}
           className={`pb-3 text-sm font-semibold border-b-2 transition ${
-            activeTab === 'invoice' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700'
+            activeTab === 'invoice' ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400'
           }`}
         >
           Template Invoice ({templates.filter((t) => t.document_type === 'invoice').length})
@@ -180,106 +279,26 @@ export default function TemplateManagementPage() {
         <button
           onClick={() => setActiveTab('surat_jalan')}
           className={`pb-3 text-sm font-semibold border-b-2 transition ${
-            activeTab === 'surat_jalan' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500 hover:text-slate-700'
+            activeTab === 'surat_jalan' ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400'
           }`}
         >
           Template Surat Jalan ({templates.filter((t) => t.document_type === 'surat_jalan').length})
         </button>
       </div>
 
-      {/* Templates Table */}
-      <div className="bg-white shadow rounded-lg overflow-hidden border border-slate-200">
+      <Card>
         {loading ? (
           <div className="p-8 text-center text-slate-500">Memuat template...</div>
-        ) : filteredTemplates.length === 0 ? (
-          <div className="p-8 text-center text-slate-500">Belum ada template untuk kategori ini.</div>
         ) : (
-          <table className="min-w-full divide-y divide-slate-200 text-sm">
-            <thead className="bg-slate-50 text-slate-700 font-semibold">
-              <tr>
-                <th className="px-6 py-3 text-left">Nama Template</th>
-                <th className="px-6 py-3 text-left">Format</th>
-                <th className="px-6 py-3 text-left">Versi</th>
-                <th className="px-6 py-3 text-left">Status</th>
-                <th className="px-6 py-3 text-right">Aksi</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200">
-              {filteredTemplates.map((tpl) => (
-                <tr key={tpl.id} className="hover:bg-slate-50 transition">
-                  <td className="px-6 py-4 font-medium text-slate-900">
-                    {tpl.name}
-                    {tpl.is_active && (
-                      <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800">
-                        Aktif
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 uppercase text-xs font-bold text-slate-600">{tpl.format}</td>
-                  <td className="px-6 py-4 text-slate-600">
-                    <button
-                      onClick={() => handleOpenVersions(tpl)}
-                      className="underline hover:text-indigo-600 font-medium"
-                      title="Klik untuk melihat riwayat versi"
-                    >
-                      v{tpl.version} 📋
-                    </button>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={`inline-flex px-2 py-1 text-xs rounded font-semibold ${
-                        tpl.status === 'active' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
-                      }`}
-                    >
-                      {tpl.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right space-x-2">
-                    {tpl.format === 'html' && (
-                      <>
-                        <button
-                          onClick={() => setVisualTemplate(tpl)}
-                          className="px-3 py-1 bg-indigo-50 text-indigo-700 rounded hover:bg-indigo-100 transition font-medium text-xs"
-                        >
-                          Visual Editor
-                        </button>
-                        <button
-                          onClick={() => handleOpenEditor(tpl)}
-                          className="px-3 py-1 bg-slate-100 text-slate-700 rounded hover:bg-slate-200 transition font-medium text-xs"
-                        >
-                          HTML Editor
-                        </button>
-                      </>
-                    )}
-                    <button
-                      onClick={() => handleOpenVersions(tpl)}
-                      className="px-3 py-1 bg-amber-50 text-amber-700 rounded hover:bg-amber-100 transition font-medium text-xs"
-                    >
-                      Riwayat Versi
-                    </button>
-                    {!tpl.is_active && (
-                      <button
-                        onClick={() => handleActivate(tpl.id)}
-                        className="px-3 py-1 bg-emerald-50 text-emerald-700 rounded hover:bg-emerald-100 transition font-medium text-xs"
-                      >
-                        Aktifkan
-                      </button>
-                    )}
-                    {!tpl.is_active && (
-                      <button
-                        onClick={() => handleDelete(tpl.id)}
-                        className="px-3 py-1 bg-red-50 text-red-600 rounded hover:bg-red-100 transition font-medium text-xs"
-                      >
-                        Hapus
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <DataTable
+            columns={columns}
+            rows={tableRows}
+            searchText={(tpl) => `${tpl.name} ${tpl.format} ${tpl.status}`}
+            emptyTitle="Belum ada template"
+            emptyDescription="Belum ada template untuk kategori ini. Klik tombol Unggah / Buat Template untuk mulai."
+          />
         )}
-      </div>
+      </Card>
 
       {/* Upload Modal */}
       {showUploadModal && (
