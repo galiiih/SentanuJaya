@@ -391,36 +391,6 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   clip-path: inset(50%);
   white-space: nowrap;
 }
-.sidebar--collapsed .nav-item::after {
-  content: attr(data-tooltip);
-  position: absolute;
-  z-index: 150;
-  left: calc(100% + .7rem);
-  top: 50%;
-  transform: translate(-.25rem, -50%);
-  width: max-content;
-  max-width: 14rem;
-  padding: .48rem .68rem;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  background: var(--color-surface);
-  color: var(--color-text);
-  box-shadow: var(--shadow-md);
-  font-size: .76rem;
-  font-weight: 650;
-  line-height: 1.25;
-  white-space: normal;
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-  transition: opacity 120ms ease, transform 120ms ease, visibility 120ms ease;
-}
-.sidebar--collapsed .nav-item:hover::after,
-.sidebar--collapsed .nav-item:focus-visible::after {
-  opacity: 1;
-  visibility: visible;
-  transform: translate(0, -50%);
-}
 .sidebar--collapsed .sidebar__foot {
   justify-content: center;
   padding: .7rem .25rem;
@@ -457,8 +427,9 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   .sidebar--mobile .nav-item::after { display: none; }
 }
 
-/* Let the collapsed rail's visual tooltips escape the navigation container. */
+/* Keep the navigation list scrollable; collapsed labels use the native title tooltip. */
 @media (min-width: 821px) {
-  .sidebar--collapsed { overflow: visible; }
-  .sidebar--collapsed .sidebar__nav { overflow: visible; }
+  .sidebar--collapsed { overflow: hidden; }
+  .sidebar--collapsed .sidebar__nav { overflow-y: auto; overflow-x: hidden; }
+  .sidebar--collapsed .nav-item::after { content: none; display: none; }
 }
