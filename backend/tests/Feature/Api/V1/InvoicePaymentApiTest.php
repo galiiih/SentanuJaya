@@ -183,7 +183,12 @@ class InvoicePaymentApiTest extends TestCase
     $this->assertSame('UNINVOICED', $s['do']->fresh()->invoice_status);
 
     $freshDraft = app(InvoiceService::class)->buildDraftInvoice([$s['do']->id], $s['customer']->id, '2026-10-06', 2, $admin->id);
-    $this->actingAs($admin)->postJson("/api/v1/invoices/{$freshDraft->id}/post")->assertOk();
+    $owner = $this->user('OWNER');
+
+    $this->actingAs($admin)->postJson("/api/v1/invoices/{$freshDraft->id}/post")->assertForbidden();
+    $this->assertSame(Invoice::STATUS_DRAFT, $freshDraft->fresh()->status);
+
+    $this->actingAs($owner)->postJson("/api/v1/invoices/{$freshDraft->id}/post")->assertOk();
     $this->assertSame(Invoice::STATUS_POSTED, $freshDraft->fresh()->status);
     }
 
