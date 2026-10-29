@@ -31,15 +31,9 @@ Indeks dokumentasi untuk ERP custom Sentanu Jaya. Dokumentasi ini mencakup atura
 - `07_SECURITY_AND_TESTING_WORKFLOW.md` — praktik keamanan dan testing.
 - `AI_AGENT_ORCHESTRATION.md` — peran orchestrator/agent, delegasi, bukti, dan verifikasi.
 
-## Implementasi dan audit fase
+## Implementasi dan audit historis
 
-Dokumen berikut adalah catatan fase dan perlu diverifikasi tanggal/statusnya sebelum dijadikan instruksi:
-
-- `PHASE_2_MASTER_DATA_AUDIT.md`
-- `PHASE_3_GOODS_RECEIPT_IMPLEMENTATION.md`
-- `SYSTEM_CRITIQUE_AND_REFINEMENTS.md`
-- `MASTER_PROMPT_SUMMARY.md`
-- `STEP2_INIT_PLAN.md` dan `STEP*_COMPLETION_REPORT.md` di root repository
+Laporan fase lama disimpan di `archive/phase-reports/`; laporan STEP di `archive/implementation-reports/`. Semua laporan tersebut merupakan snapshot pada commit tertentu dan bukan status terkini. `SYSTEM_CRITIQUE_AND_REFINEMENTS.md` dan `MASTER_PROMPT_SUMMARY.md` juga merupakan referensi desain/historis; cocokkan dengan keputusan Owner terbaru dan source aktif.
 
 Untuk status terkini, gunakan GitHub Actions pada commit yang diperiksa dan jalankan test suite yang relevan. Jangan menyalin status PASS dari laporan lama ke status proyek saat ini.
 
@@ -67,6 +61,7 @@ Repository sudah mencakup backend/API dan frontend untuk area Master Data, Custo
 - `archive/uat/` — dokumen hasil UAT historis; perlu dikaitkan dengan commit dan skenario yang diuji sebelum dijadikan bukti release.
 - `archive/phase3-design/` — spesifikasi desain fase terdahulu; gunakan hanya sebagai referensi setelah dibandingkan dengan source dan keputusan terbaru.
 - `archive/implementation-notes/phase4-chat-notes.txt` — catatan prompt/implementasi terdahulu, dipertahankan untuk histori dan bukan instruksi aktif.
+- `archive/phase-reports/` — audit dan laporan fase 2–5; statusnya hanya berlaku pada commit/snapshot asal.
 
 ## Perubahan dokumentasi
 
