@@ -151,16 +151,16 @@ export default function UsersManagementPage() {
                     <td className="px-6 py-4 font-medium">{u.name}</td>
                     <td className="px-6 py-4 text-[var(--color-text-secondary)]">{u.email}</td>
                     <td className="px-6 py-4">
-                      <span className={`inline-flex px-2 py-1 text-xs rounded font-bold ${
-                        u.role === 'OWNER' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300' :
-                        u.role === 'ADMIN' ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300' : 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300'
+                      <span className={`inline-flex px-2.5 py-1 text-xs rounded-md font-bold ${
+                        u.role === 'OWNER' ? 'bg-purple-600 text-white shadow-sm' :
+                        u.role === 'ADMIN' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-700 text-white shadow-sm'
                       }`}>
                         {u.role}
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`inline-flex px-2 py-0.5 text-xs rounded font-semibold ${
-                        u.is_active ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300' : 'bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-400'
+                      <span className={`inline-flex px-2.5 py-1 text-xs rounded-md font-bold ${
+                        u.is_active ? 'bg-emerald-600 text-white shadow-sm' : 'bg-red-600 text-white shadow-sm'
                       }`}>
                         {u.is_active ? 'Aktif' : 'Nonaktif'}
                       </span>
