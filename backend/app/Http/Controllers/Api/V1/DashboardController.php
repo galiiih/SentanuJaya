@@ -56,7 +56,7 @@ class DashboardController extends BaseApiController
             $unpaidInvoicesCount = Invoice::whereIn('status', [Invoice::STATUS_POSTED, Invoice::STATUS_PARTIALLY_PAID])->count();
     
             // Outstanding & Top Customers by Outstanding
-            $topCustomers = Customer::with('invoices')->get()->map(function ($customer) {
+            $topCustomers = Customer::query()->get()->map(function ($customer) {
                 $invoices = $customer->invoices()->where('status', 'POSTED')->get();
                 $totalBilled = $invoices->sum('total_amount');
                 $invoiceIds = $invoices->pluck('id');
@@ -89,8 +89,6 @@ class DashboardController extends BaseApiController
     
     
         }
-
-        $canViewFinancial = $user->hasPermission('invoice.view');
 
         $data = [
             'operational' => [
