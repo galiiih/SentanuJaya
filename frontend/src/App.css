@@ -170,6 +170,13 @@
   margin-bottom: 0.35rem !important;
 }
 
+/* Remove internal container scrollbars so the modal body flows natively as 1 scrollbar */
+.glass-modal .confirmation-dialog__body,
+.modal .confirmation-dialog__body {
+  max-height: none !important;
+  overflow-y: visible !important;
+}
+
 @import "tailwindcss";
 
 :root {
