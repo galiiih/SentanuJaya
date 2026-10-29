@@ -284,38 +284,38 @@ export default function TemplateManagementPage() {
       {/* Upload Modal */}
       {showUploadModal && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-none flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-xl max-w-lg w-full p-6 space-y-4">
-            <h2 className="text-lg font-bold text-slate-900">Unggah / Buat Template Baru</h2>
+          <div className="bg-slate-900 border border-slate-700 text-slate-100 rounded-xl shadow-xl max-w-lg w-full p-6 space-y-4">
+            <h2 className="text-lg font-bold text-white">Unggah / Buat Template Baru</h2>
             <form onSubmit={handleUploadSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Nama Template</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Nama Template</label>
                 <input
                   type="text"
                   required
                   value={uploadName}
                   onChange={(e) => setUploadName(e.target.value)}
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500"
+                  className="w-full bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 placeholder-slate-500"
                   placeholder="Contoh: Template Invoice Standar"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Jenis Dokumen</label>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Jenis Dokumen</label>
                   <select
                     value={uploadType}
                     onChange={(e) => setUploadType(e.target.value as 'invoice' | 'surat_jalan')}
-                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
+                    className="w-full bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-2 text-sm"
                   >
                     <option value="invoice">Invoice</option>
                     <option value="surat_jalan">Surat Jalan</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Format</label>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Format</label>
                   <select
                     value={uploadFormat}
                     onChange={(e) => setUploadFormat(e.target.value as 'html' | 'docx' | 'xlsx')}
-                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
+                    className="w-full bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-2 text-sm"
                   >
                     <option value="html">HTML</option>
                     <option value="docx">Word (.docx)</option>
@@ -326,31 +326,31 @@ export default function TemplateManagementPage() {
 
               {uploadFormat === 'html' && (
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Konten HTML (Opsional jika unggah file)</label>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Konten HTML (Opsional jika unggah file)</label>
                   <textarea
                     rows={5}
                     value={uploadContent}
                     onChange={(e) => setUploadContent(e.target.value)}
-                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs font-mono"
+                    className="w-full bg-slate-800 border border-slate-700 text-emerald-300 rounded-lg px-3 py-2 text-xs font-mono placeholder-slate-500"
                     placeholder="<html><body>...</body></html>"
                   />
                 </div>
               )}
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">File Template (Opsional)</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">File Template (Opsional)</label>
                 <input
                   type="file"
                   onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
-                  className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                  className="w-full text-sm text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-slate-800 file:text-indigo-300 hover:file:bg-slate-700"
                 />
               </div>
 
-              <div className="flex justify-end space-x-3 pt-4 border-t border-slate-200">
+              <div className="flex justify-end space-x-3 pt-4 border-t border-slate-800">
                 <button
                   type="button"
                   onClick={() => setShowUploadModal(false)}
-                  className="px-4 py-2 border border-slate-300 rounded-lg text-sm text-slate-700 hover:bg-slate-50 font-medium"
+                  className="px-4 py-2 border border-slate-700 rounded-lg text-sm text-slate-300 hover:bg-slate-800 font-medium"
                 >
                   Batal
                 </button>
@@ -392,7 +392,7 @@ export default function TemplateManagementPage() {
                     type="text"
                     value={editName}
                     onChange={(e) => setEditName(e.target.value)}
-                    className="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white"
+                    className="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white placeholder-slate-400"
                   />
                 </div>
                 <textarea
