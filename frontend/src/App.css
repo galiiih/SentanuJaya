@@ -1,4 +1,4 @@
-/* GLOBAL CLEAN GLASSMORPHISM FORMS & MODALS (NO BACKGROUND BLUR) */
+/* GLOBAL GLASSMORPHISM REFINED ACCORDING TO EXACT SPEC */
 .glass-modal-overlay,
 .modal-backdrop {
   position: fixed !important;
@@ -8,7 +8,7 @@
   align-items: center !important;
   justify-content: center !important;
   padding: 1.5rem !important;
-  background: rgba(15, 23, 42, 0.6) !important;
+  background: rgba(15, 23, 42, 0.55) !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
 }
@@ -20,22 +20,66 @@
   max-width: 44rem !important;
   max-height: 88vh !important;
   overflow-y: auto !important;
-  background: var(--color-surface, #1E293B) !important;
-  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
-  backdrop-filter: blur(24px) saturate(180%) !important;
-  border: 1px solid var(--color-border-strong, rgba(255, 255, 255, 0.15)) !important;
-  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
-  border-radius: 1rem !important;
+  
+  /* Exact Glassmorphism specs adapted for dynamic form container sizing */
+  background: rgba(30, 41, 59, 0.75) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  border-radius: 20px !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  box-shadow: 
+    0 12px 40px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 0 30px 10px rgba(255, 255, 255, 0.05) !important;
   padding: 2rem !important;
-  color: var(--color-text, #F8FAFC) !important;
+  color: #F8FAFC !important;
 }
 
 [data-theme="light"] .glass-modal,
 [data-theme="light"] .modal {
-  background: rgba(255, 255, 255, 0.92) !important;
-  border: 1px solid rgba(203, 213, 225, 0.8) !important;
-  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+  background: rgba(255, 255, 255, 0.85) !important;
+  border: 1px solid rgba(255, 255, 255, 0.6) !important;
+  box-shadow: 
+    0 12px 40px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.2),
+    inset 0 0 30px 10px rgba(255, 255, 255, 0.4) !important;
   color: #0F172A !important;
+}
+
+.glass-modal::before,
+.modal::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.8),
+    transparent
+  );
+  pointer-events: none;
+}
+
+.glass-modal::after,
+.modal::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 100%;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.8),
+    transparent,
+    rgba(255, 255, 255, 0.3)
+  );
+  pointer-events: none;
 }
 
 .glass-modal .modal__header,
@@ -44,13 +88,13 @@
   align-items: center !important;
   justify-content: space-between !important;
   padding-bottom: 1rem !important;
-  border-bottom: 1px solid var(--color-border, rgba(255, 255, 255, 0.1)) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
   margin-bottom: 1.25rem !important;
 }
 
 [data-theme="light"] .glass-modal .modal__header,
 [data-theme="light"] .modal .modal__header {
-  border-bottom: 1px solid #E2E8F0 !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1) !important;
 }
 
 .glass-modal .modal__header h2, 
@@ -69,9 +113,9 @@
 .modal input,
 .modal select,
 .modal textarea {
-  background: var(--color-surface-raised, #0F172A) !important;
-  border: 1px solid var(--color-border-strong, rgba(255, 255, 255, 0.2)) !important;
-  color: var(--color-text, #F8FAFC) !important;
+  background: rgba(15, 23, 42, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #F8FAFC !important;
   border-radius: 0.5rem !important;
   padding: 0.65rem 0.85rem !important;
   width: 100% !important;
@@ -85,8 +129,8 @@
 [data-theme="light"] .modal input,
 [data-theme="light"] .modal select,
 [data-theme="light"] .modal textarea {
-  background: #FFFFFF !important;
-  border: 1px solid #CBD5E1 !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  border: 1px solid rgba(148, 163, 184, 0.6) !important;
   color: #0F172A !important;
 }
 
@@ -94,7 +138,14 @@
 .glass-modal textarea::placeholder,
 .modal input::placeholder,
 .modal textarea::placeholder {
-  color: var(--color-text-muted, #94A3B8) !important;
+  color: #94A3B8 !important;
+}
+
+[data-theme="light"] .glass-modal input::placeholder, 
+[data-theme="light"] .glass-modal textarea::placeholder,
+[data-theme="light"] .modal input::placeholder,
+[data-theme="light"] .modal textarea::placeholder {
+  color: #64748B !important;
 }
 
 .glass-modal input:focus, 
@@ -103,8 +154,8 @@
 .modal input:focus,
 .modal select:focus,
 .modal textarea:focus {
-  border-color: var(--color-primary, #0284C7) !important;
-  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.25) !important;
+  border-color: #38BDF8 !important;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.3) !important;
   outline: none !important;
 }
 
