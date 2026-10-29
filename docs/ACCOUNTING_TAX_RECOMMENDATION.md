@@ -133,7 +133,7 @@ Jangan memakai label `PPh 2.5%` atau `PPh 2%` sebagai aturan universal tanpa tax
 
 ### 4. Faktur pajak
 
-Status PKP menjadi keputusan wajib. Jika PKP, siapkan register NSFP dan data faktur manual pada MVP-3. Integrasi e-Faktur API ditunda.
+Keputusan Owner yang tercatat: Sentanu Jaya sudah PKP dan menggunakan Coretax DJP; tanggal efektif PKP masih perlu dikonfirmasi. Siapkan register NSFP dan pencatatan faktur manual pada MVP-3. Integrasi e-Faktur API ditunda.
 
 ### 5. Pembelian material
 
@@ -141,8 +141,8 @@ Simpan PPN Masukan dari supplier bila memenuhi syarat dokumen dan pengkreditan. 
 
 ## Keputusan yang harus dikunci akuntan/pajak
 
-1. Status PKP Sentanu.
-2. Klasifikasi jasa painting/finishing untuk PPN.
+1. Konfirmasi tanggal efektif PKP dan kelengkapan administrasi Coretax.
+2. Konfirmasi klasifikasi jasa painting/finishing untuk PPN.
 3. Apakah customer tertentu memotong PPh 23, PPh final, atau tidak memotong.
 4. Dasar potong yang benar untuk setiap jenis customer.
 5. PPN atas uang muka.
