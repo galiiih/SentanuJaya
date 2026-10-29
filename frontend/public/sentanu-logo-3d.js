@@ -144,6 +144,15 @@ function make(el){
   return {replay:play};
 }
 window.SentanuLogo={replay:function(){instances.forEach(function(i){i.replay()})}};
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);
-else boot();
+function initObserver(){
+  if(window.MutationObserver){
+    new MutationObserver(function(){ boot(); }).observe(document.body, {childList:true, subtree:true});
+  }
+}
+if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded', function(){ boot(); initObserver(); });
+}else{
+  boot();
+  initObserver();
+}
 })();
