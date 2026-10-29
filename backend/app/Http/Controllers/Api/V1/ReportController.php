@@ -18,8 +18,7 @@ class ReportController extends BaseApiController
 {
     public function financial(Request $request): JsonResponse
     {
-        $user = $request->user();
-        abort_unless($user && in_array($user->role, ['ADMIN', 'OWNER', 'STAFF'], true), 403, 'Forbidden');
+        abort_unless($request->user()?->hasPermission('report.view'), 403, 'Forbidden');
 
         $startDate = $request->input('start_date', now()->startOfMonth()->toDateString());
         $endDate = $request->input('end_date', now()->endOfMonth()->toDateString());
@@ -46,8 +45,7 @@ class ReportController extends BaseApiController
 
     public function receivables(Request $request): JsonResponse
     {
-        $user = $request->user();
-        abort_unless($user && in_array($user->role, ['ADMIN', 'OWNER', 'STAFF'], true), 403, 'Forbidden');
+        abort_unless($request->user()?->hasPermission('report.view'), 403, 'Forbidden');
 
         $customers = Customer::with('invoices')->get()->map(function ($customer) {
             $invoices = $customer->invoices()->where('status', 'POSTED')->get();
@@ -78,8 +76,7 @@ class ReportController extends BaseApiController
 
     public function operational(Request $request): JsonResponse
     {
-        $user = $request->user();
-        abort_unless($user && in_array($user->role, ['ADMIN', 'OWNER', 'STAFF'], true), 403, 'Forbidden');
+        abort_unless($request->user()?->hasPermission('report.view'), 403, 'Forbidden');
 
         $activePos = CustomerPo::with('customer', 'lines')->where('status', 'ACTIVE')->get();
         $goodsReceipts = GoodsReceipt::with('supplier')->latest()->take(50)->get();
@@ -94,8 +91,7 @@ class ReportController extends BaseApiController
 
     public function custody(Request $request): JsonResponse
     {
-        $user = $request->user();
-        abort_unless($user && in_array($user->role, ['ADMIN', 'OWNER', 'STAFF'], true), 403, 'Forbidden');
+        abort_unless($request->user()?->hasPermission('report.view'), 403, 'Forbidden');
 
         $balances = CustodyBalance::with('customer', 'customerItem')->get();
 
