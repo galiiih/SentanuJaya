@@ -1,42 +1,30 @@
-# Test Results & Readiness Report — Sentanu Jaya ERP
-Date: October 27, 2026
-Code Commit SHA: `791be7fa29759bc4c01777d121c210d3e5aa4950`
-Branch: `master`
-CI Actions URL: `https://github.com/galiiih/SentanuJaya/actions`
+# Catatan Hasil Test — Snapshot Historis
 
-## 1. Backend PHPUnit Test Suite (SQLite Local)
-- **Command**: `php artisan test`
-- **Result**: PASSED
-- **Total Tests**: 105
-- **Passed**: 103
-- **Skipped**: 2
-- **Assertions**: 682
-- **Exit Code**: 0
+Dokumen ini menyimpan laporan pengujian yang dicatat pada 27 Oktober 2026 untuk commit 791be7fa29759bc4c01777d121c210d3e5aa4950 pada branch master. Hasil di bawah ini hanya berlaku untuk commit dan environment yang disebut pada laporan saat itu; hasil tersebut bukan status CI terkini.
 
-### Test Breakdown & Warnings Mitigation:
-- **Warnings Diagnosis**: Traced file-reading/bootstrap warnings (`file_get_contents`) in CI to dynamic package manifest discovery on every test boot. Mitigated by adding `php artisan config:cache` and `php artisan event:cache` in `.github/workflows/php-tests.yml`.
-- **SessionSchemaTest**: Removed SQLite-specific `PRAGMA table_info('sessions')`. Uses cross-database `Schema::getColumnType('sessions', 'user_id')` for UUID session verification.
-- **DashboardApiTest**: Passed (3 tests, 60 assertions) — verified precise assertions for `uninvoiced_sj_count = 2`, `ready_to_ship`, and `pending_acceptance`.
-- **ReportApiTest**: Passed.
+## 1. Hasil yang dilaporkan saat itu
 
-## 2. PostgreSQL 16 CI Workflow
-- **Workflow**: `.github/workflows/php-tests.yml`
-- **Service**: PostgreSQL 16 (`sentanu_test`, user `postgres`, password `password`).
-- **Status**: Configured with config/event caching and executed in GitHub Actions for live PostgreSQL validation.
+- Backend PHPUnit di SQLite lokal: 105 test, 103 passed, 2 skipped, 682 assertions; exit code 0.
+- PostgreSQL 16: workflow .github/workflows/php-tests.yml tersedia untuk validasi database.
+- Frontend build/typecheck: npm run build dilaporkan berhasil dengan 2.525 modul ditransformasi.
+- Browser E2E: dilaporkan belum dijalankan pada saat snapshot dibuat.
+- Deployment produksi: tidak dilakukan menurut laporan saat itu.
 
-## 3. Frontend Build & Typecheck
-- **Command**: `npm run build` (TypeScript compilation + Vite build)
-- **Result**: PASSED
-- **Modules Transformed**: 2,525
-- **Exit Code**: 0
+Informasi di atas merupakan catatan historis yang belum diverifikasi ulang pada commit main saat ini.
 
-## 4. Browser E2E (Playwright) Status
-- **Test Specs**: `frontend/e2e/functional.spec.ts`
-- **Status**: **NOT RUN** (requires active dev servers and live browser execution environment).
+## 2. Verifikasi yang wajib dilakukan untuk status terkini
 
-## 5. Summary & Compliance
-- **PR #2**: NOT merged.
-- **Deployment**: None performed.
-- **Production Data / Credentials**: Untouched.
+Sebelum menyatakan build atau release PASS, periksa:
 
+1. Commit SHA dan branch yang diuji.
+2. Run GitHub Actions terbaru untuk commit tersebut, termasuk status semua job.
+3. Backend tests terhadap database yang ditargetkan (terutama PostgreSQL).
+4. Frontend npm run build dan lint jika menjadi bagian workflow.
+5. Browser E2E Playwright; jangan menyamakan build sukses dengan E2E sukses.
+6. Test yang skipped, failed, flaky, atau tidak dijalankan beserta alasannya.
 
+Workflow CI adalah bukti hasil eksekusi hanya jika run terkait benar-benar selesai. Halaman Actions: https://github.com/galiiih/SentanuJaya/actions
+
+## 3. Batasan
+
+Laporan ini tidak membuktikan kesiapan production, backup/restore, keamanan deployment, atau penerimaan UAT. Jangan menggunakan angka test lama untuk menggantikan hasil pengujian commit terbaru.
