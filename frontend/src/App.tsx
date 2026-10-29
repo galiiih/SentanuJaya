@@ -445,7 +445,7 @@ function MaterialsPage() {
       .catch((err: any) => console.error('Failed to load materials', err));
   }, []);
 
-  return <><PageHeader title={t.pages.materialsTitle} description={t.pages.materialsDesc} action={<Button><Plus size={16} /> Purchase material</Button>} /><Card><DataTable columns={materialColumns} rows={materials} searchText={(item) => `${item.sku} ${item.name} ${item.category}`} emptyTitle="Belum ada material" emptyDescription="Data material akan muncul setelah master material tersedia." /></Card></>;
+  return <><PageHeader title={t.pages.materialsTitle} description={t.pages.materialsDesc} action={<Button onClick={() => alert('Fitur Penerimaan / Pembelian Material (Material Receipt) dapat dikelola melalui Master Data / modul inventaris.')}><Plus size={16} /> Purchase material</Button>} /><Card><DataTable columns={materialColumns} rows={materials} searchText={(item) => `${item.sku} ${item.name} ${item.category}`} emptyTitle="Belum ada material" emptyDescription="Data material akan muncul setelah master material tersedia." /></Card></>;
 }
 
 function LoginPage() {
