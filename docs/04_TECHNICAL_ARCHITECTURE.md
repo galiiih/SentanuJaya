@@ -3,13 +3,15 @@
 
 ---
 
-## 1. PILIHAN TEKNOLOGI — DISETUJUI SEBAGAI REKOMENDASI
+## 1. PILIHAN TEKNOLOGI — DOKUMEN DESAIN HISTORIS
+
+> Catatan: tabel berikut berasal dari rancangan awal. Manifest saat ini mensyaratkan Laravel Framework ^13.17, PHP ^8.3, React ^19.2.8, TypeScript ~6.0.2, Vite ^8.3.0, React Router DOM ^7.18.4, dan Tailwind CSS ^4.3.3. Redis dan object storage tidak boleh dianggap aktif tanpa bukti konfigurasi. Source code, manifest, migrations, dan CI terbaru adalah acuan implementasi.
 
 Detail keputusan ada di `TECH_STACK_DECISION.md`.
 
 | Lapisan | Pilihan |
 |---|---|
-| Backend/API | Laravel 11, PHP 8.3 |
+| Backend/API | Laravel 13, PHP 8.3 (manifest aktual) |
 | Frontend | React + TypeScript + Vite |
 | Database | PostgreSQL 16 |
 | ORM/migration | Laravel Eloquent + Laravel Migrations |
