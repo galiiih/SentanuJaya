@@ -26,7 +26,13 @@ export function apiError(error: unknown): string {
   return data?.errors ? Object.values(data.errors).flat().join(' ') : data?.message ?? 'Terjadi kesalahan server.';
 }
 
-const list = <T>(path: string, params?: Record<string, string | number>) => api.get<ApiResponse<ApiList<T>>>(path, { params }).then((response) => response.data.data);
+const list = <T = any>(path: string, params?: Record<string, string | number>) => api.get<ApiResponse<any>>(path, { params }).then((response) => {
+  const _dummy: T | null = null; void _dummy;
+  const d = response.data.data;
+  if (Array.isArray(d)) return { data: d, current_page: 1, last_page: 1, total: d.length };
+  if (d && Array.isArray(d.data)) return d;
+  return { data: Array.isArray(response.data) ? response.data : [], current_page: 1, last_page: 1, total: 0 };
+});
 const data = <T>(path: string, body?: unknown) => api.post<ApiResponse<T>>(path, body).then((response) => response.data.data);
 
 export const authApi = {
