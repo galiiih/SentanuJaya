@@ -18,6 +18,7 @@ import {
   ShieldCheck,
   Sun,
   Truck,
+  Users,
   X,
 } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
@@ -31,6 +32,7 @@ import { DeliveryPage } from './components/DeliveryPage';
 import { PaymentPage } from './components/PaymentPage';
 import { InvoicingPage } from './components/InvoicingPage';
 import TemplateManagementPage from './pages/TemplateManagementPage';
+import UsersManagementPage from './pages/UsersManagementPage';
 import {
   type Material,
 } from './services/api';
@@ -123,6 +125,7 @@ function Sidebar({ mobile, onClose, closeButtonRef }: { mobile?: boolean; onClos
       items: [
         { path: '/materials', label: t.nav.materials, icon: Boxes, permission: permissions.materialView },
         { path: '/master', label: 'Master Data', icon: Package, permission: permissions.dashboardView },
+        { path: '/users', label: 'Manajemen Pengguna', icon: Users, permission: permissions.userManage },
       ],
     },
   ];
@@ -464,6 +467,7 @@ export function App() {
           <Route path="/templates" element={<RequirePermission permission={permissions.invoiceView}><TemplateManagementPage /></RequirePermission>} />
           <Route path="/reports" element={<RequirePermission permission={permissions.invoiceView}><ReportsPage /></RequirePermission>} />
           <Route path="/master" element={<RequirePermission permission={permissions.dashboardView}><MasterDataPage /></RequirePermission>} />
+          <Route path="/users" element={<RequirePermission permission={permissions.userManage}><UsersManagementPage /></RequirePermission>} />
           <Route path="/payments" element={<RequirePermission permission={permissions.paymentView}><PaymentPage /></RequirePermission>} />
           <Route path="/403" element={<ErrorPage code="403" title="Access Denied" description="Anda tidak memiliki izin untuk membuka halaman ini." />} />
           <Route path="*" element={<ErrorPage code="404" title="Not Found" description="Halaman yang Anda cari tidak tersedia." />} />

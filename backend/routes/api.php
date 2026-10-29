@@ -35,6 +35,7 @@ use App\Http\Controllers\Api\V1\{
     MaterialUsageController,
     StockController,
     WorkOrderController,
+    UserController,
 };
 
 Route::prefix('v1')->group(function () {
@@ -131,5 +132,8 @@ Route::prefix('v1')->group(function () {
                 Route::apiResource('work-orders', WorkOrderController::class);
                 Route::post('work-order-lines/{line}/stage-movements', [WorkOrderController::class, 'storeStageMovement']);
                 Route::post('work-order-lines/{line}/qc-inspections', [WorkOrderController::class, 'storeQcInspection']);
+
+                // User Management
+                Route::apiResource('users', UserController::class);
             });
         });
