@@ -1,97 +1,67 @@
-# SENTANU ERP — DOCUMENT INDEX
+# Sentanu Jaya ERP — Dokumentasi
 
-## Source of truth
+Indeks dokumentasi untuk ERP custom Sentanu Jaya. Dokumentasi ini mencakup aturan bisnis, desain, implementasi, testing, dan catatan historis.
 
-1. `GREENFIELD_MASTER_BASELINE.md` — aturan bisnis terkunci (V2.1 - All Decisions Resolved).
-2. `OPEN_DECISIONS_RESOLVED.md` — 25 keputusan bisnis yang sudah dijawab Owner (2026-09-23).
-3. `MVP_ROADMAP.md` — pembagian MVP-1 sampai MVP-4.
-4. `TECH_STACK_DECISION.md` — keputusan stack (Laravel 11 + React/Vite + Eloquent + PostgreSQL + Redis).
-5. `DATABASE_SCHEMA.md` — schema PostgreSQL MVP-first untuk Laravel Eloquent.
-6. `STATE_MACHINES.md` — status dan transisi setiap menu.
-7. `API_AND_WIREFRAME.md` — fungsi API, endpoint minimum, dan wireframe awal.
-12|8. `ACCOUNTING_TAX_RECOMMENDATION.md` — rekomendasi akuntansi/pajak dan rujukan hukum.
-13|9. `07_SECURITY_AND_TESTING_WORKFLOW.md` — standar keamanan, pemisahan tugas (SoD), dan testing/debugging suite.
+## Cara menentukan dokumen yang berlaku
 
-## AI-agent orchestration
+1. **Keputusan bisnis:** gunakan keputusan Owner terbaru dan baseline bisnis yang disahkan.
+2. **Implementasi aktual:** periksa source code, migrations, routes, tests, dan CI pada branch/commit yang sedang dikerjakan.
+3. **Roadmap:** gunakan roadmap yang telah diperbarui; jangan menganggap rencana fase lama sebagai status saat ini.
+4. **Dokumen historis:** laporan `STEP*_...` dan `PHASE_*` adalah catatan pekerjaan pada waktu tertentu. Statusnya tidak otomatis mencerminkan kondisi repository sekarang.
+5. **Jika ada konflik:** keputusan Owner terbaru mengalahkan dokumen lama; implementasi dan test terbaru menjadi bukti status teknis, bukan klaim laporan lama.
 
-- `AI_AGENT_ORCHESTRATION.md` — ChatGPT sebagai Main Orchestrator; pembagian tanggung jawab agent, siklus delegasi, kontrak bukti, dan verifikasi hasil. E2E testing adalah salah satu task QA, bukan orchestration utama.
+## Dokumen bisnis dan baseline
 
-## Dokumen pendukung
+- `GREENFIELD_MASTER_BASELINE.md` — baseline aturan bisnis awal; cek keputusan Owner yang lebih baru sebelum menggunakannya.
+- `OPEN_DECISIONS_RESOLVED.md` — kumpulan keputusan bisnis terdahulu.
+- `PRD.md` — requirement dan acceptance criteria awal.
+- `MVP_ROADMAP.md` — rencana pembagian MVP; status pelaksanaan harus diverifikasi terhadap source dan CI.
+- `FORM_DIGITALIZATION.md` — pemetaan form bisnis.
+- `ACCOUNTING_TAX_RECOMMENDATION.md` — rekomendasi accounting/tax; bukan pengganti keputusan akuntan atau regulasi terbaru.
 
-- `PRD.md` — requirement V1 dan acceptance criteria. Gunakan bersama `MVP_ROADMAP.md`; PRD lama belum menggantikan pembagian MVP baru.
-- `02_ERD.md` — ERD konseptual V1; perlu diselaraskan saat migration MVP-1 dibuat.
-- `04_TECHNICAL_ARCHITECTURE.md` — arsitektur teknis, mengikuti `TECH_STACK_DECISION.md`.
+## Arsitektur dan desain
+
+- `TECH_STACK_DECISION.md` — keputusan stack historis; cek `backend/composer.json` dan `frontend/package.json` untuk versi dependency aktual.
+- `DATABASE_SCHEMA.md` — rancangan schema; cek migrations aktif untuk schema aktual.
+- `STATE_MACHINES.md` — rancangan lifecycle.
+- `API_AND_WIREFRAME.md` — rancangan API/UI awal; cek route dan frontend aktual.
+- `02_ERD.md` — ERD konseptual.
+- `04_TECHNICAL_ARCHITECTURE.md` — rancangan arsitektur.
 - `05_SECURITY.md` — security design.
-- `06_BUILD_PLAN.md` — build plan jangka panjang; eksekusi aktual mengikuti `MVP_ROADMAP.md`.
-- `FORM_DIGITALIZATION.md` — pemetaan form fisik.
-- `SYSTEM_CRITIQUE_AND_REFINEMENTS.md` — analisis gap dan keputusan historis.
-- `PHASE_2_MASTER_DATA_AUDIT.md` — audit schema/model dan status Phase 2.
-- `PHASE_3_GOODS_RECEIPT_IMPLEMENTATION.md` — implementasi STB, custody, session auth Phase 3.
-- `MASTER_PROMPT_SUMMARY.md` — ringkasan master prompt.
-- `README.md` — ringkasan proyek.
+- `07_SECURITY_AND_TESTING_WORKFLOW.md` — praktik keamanan dan testing.
+- `AI_AGENT_ORCHESTRATION.md` — peran orchestrator/agent, delegasi, bukti, dan verifikasi.
 
-## Referensi asli
+## Implementasi dan audit fase
+
+Dokumen berikut adalah catatan fase dan perlu diverifikasi tanggal/statusnya sebelum dijadikan instruksi:
+
+- `PHASE_2_MASTER_DATA_AUDIT.md`
+- `PHASE_3_GOODS_RECEIPT_IMPLEMENTATION.md`
+- `SYSTEM_CRITIQUE_AND_REFINEMENTS.md`
+- `MASTER_PROMPT_SUMMARY.md`
+- `STEP2_INIT_PLAN.md` dan `STEP*_COMPLETION_REPORT.md` di root repository
+
+Untuk status terkini, gunakan GitHub Actions pada commit yang diperiksa dan jalankan test suite yang relevan. Jangan menyalin status PASS dari laporan lama ke status proyek saat ini.
+
+## Referensi bisnis asli
 
 - `DAFTAR TAGIHAN CUSTOMER.pdf`
 - `PEMBELIAN.pdf`
 
-## Aturan konflik
+Dokumen sumber ini dipertahankan sebagai referensi. Aturan yang berlaku tetap mengikuti keputusan Owner terbaru.
 
-1. Keputusan Owner terbaru mengalahkan semua dokumen.
-2. `GREENFIELD_MASTER_BASELINE.md` mengalahkan dokumen teknis jika konflik bisnis.
-3. `MVP_ROADMAP.md` menentukan fitur tahap berjalan.
-4. `DATABASE_SCHEMA.md` adalah schema aktif MVP-1; tabel fase berikutnya belum dibuat.
-5. Dokumen historis dipertahankan hanya sebagai referensi, bukan instruksi implementasi.
+## Stack aktual yang tercatat di manifest
 
-## Status saat ini
+- Backend: Laravel 13, PHP 8.3 — `backend/composer.json`.
+- Frontend: React 19, TypeScript 6, Vite 8, React Router 7, Tailwind CSS 4 — `frontend/package.json`.
+- Database target: PostgreSQL; cek `.env.example`, config, migrations, dan CI untuk environment yang digunakan.
 
-```text
-Dokumentasi bisnis       : SELESAI (V2.1 Baseline)
-Open decisions           : 25/25 RESOLVED (2026-09-23)
-MVP breakdown            : SELESAI (MVP-1 s/d MVP-4)
-Tech stack final         : Laravel 13 + React/Vite/TS + Eloquent + PostgreSQL 16
-Wireframe awal           : SELESAI
-Schema MVP-1             : SELESAI (Laravel Eloquent compatible)
-Hosting target           : VPS (Hostinger KVM / BiznetGio / IDCloudHost)
+## Modul ERP saat ini
 
---- STATUS EKSEKUSI ---
+Repository sudah mencakup backend/API dan frontend untuk area Master Data, Customer PO, Goods Receipt/Custody, material inventory, Work Order/Production, Delivery/Acceptance, Invoice, Payments, Dashboard, dan Reports. Rincian route backend dapat diperiksa di `backend/routes/api.php`; status tiap alur harus dibuktikan dengan test/CI terbaru.
 
-Phase 0 — Design System & App Shell    : ✅ SELESAI
-  build       : npm run build PASS
-  lint        : npx oxlint src PASS
-  komponen    : AppShell, Sidebar, Header, Breadcrumb, Button, Card,
-                StatusBadge, DataTable, FormField, Input, Select, Alert,
-                Modal, Toast, ConfirmationDialog, Textarea, NumberInput,
-                CurrencyInput, Checkbox, Radio, FileUpload, DatePicker
+## Perubahan dokumentasi
 
-Phase 1 — Authentication & RBAC        : ✅ SELESAI
-  roles       : ADMIN, OWNER, STAFF
-  auth        : Session-based (Laravel DB sessions, no Sanctum)
-  guards      : auth middleware, canPostGoodsReceipt()
-  browser     : Login, logout, session persistence verified
+Dokumentasi root dan indeks harus tetap menjawab: apa aplikasi ini, bagaimana struktur repository, cara menjalankan backend/frontend, dan di mana menemukan keputusan bisnis serta bukti test. Hindari memasukkan status fase yang kedaluwarsa ke dokumen entry point.
 
-Phase 2 — Master Data Foundation       : ✅ SELESAI
-  resources   : 17 master data resources, 85+ CRUD endpoints
-  tests       : 11/11 PASS, 61 assertions
-  detail      : docs/PHASE_2_MASTER_DATA_AUDIT.md
-
-Phase 3 — Goods Receipt / STB          : ✅ SELESAI
-  backend     : STB CRUD, submit/post/cancel, CustodyService,
-                custody balance/ledger/locations API
-  frontend    : STB list, draft editor, lifecycle actions,
-                custody balance table, custody ledger table
-  auth        : Session auth (login/me/logout), Vite API proxy
-  tests       : 27 tests, 159 assertions PASS
-  lint/build  : PASS
-  browser E2E : STB-202610-0001 POSTED, 10 pcs, IN FROM CUSTOMER ✅
-  translations: ID + EN complete (goods_receipt.*, auth.*)
-  detail      : docs/PHASE_3_GOODS_RECEIPT_IMPLEMENTATION.md
-
-Phase 4 — Surat Jalan & Acceptance     : DESIGN GATE
-  status      : Design document drafted, business decisions pending
-  blockers    : Invoice cardinality, partial acceptance policy,
-                rejected goods treatment, delivery role matrix,
-                Customer PO dependency
-```
-
-Terakhir diperbarui: 2026-10-04.
+Terakhir diperbarui: 2026-10-29.
