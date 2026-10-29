@@ -1,13 +1,11 @@
 # Implementation Progress — Sentanu Jaya ERP
-Date: October 23, 2026
-Branch: master
+Date: October 29, 2026
+Branch: feat/template-management-grapesjs
 
-## Core Modules Status
-1. **Authentication & Authorization**: PASS — Role-based access (ADMIN, OWNER, STAFF), session token handling, and API guards verified.
-2. **Master Data**: PASS — Customers, suppliers, items, colors, treatments, pricing rules, and tax conditions (1, 2, 3) fully operational.
-3. **Customer PO & Custody Inbound**: PASS — STB tracking, inbound goods, and custody balance.
-4. **Material & Inventory**: PASS — Company material stock, usage tracking, non-negative stock validation.
-5. **Production & QC**: PASS — Work order status flow, internal QC, reject handling.
-6. **Delivery & Customer Acceptance**: PASS — Partial deliveries, 1 SJ = 1 PO, customer acceptance OK/reject validation (only OK billable).
-7. **Invoicing, Payments & Reporting**: PASS — Sidebar navigation updated with Invoicing, Payments, and Reports under Finance & Billing; duplicate Master Data removed. Authoritative tax conditions and 1-DO-per-invoice enforced.
-8. **Dashboard & KPI**: PASS — Live summary KPIs and reporting active.
+## Core Modules & Recent Fixes Status
+1. **Authentication & Authorization**: PASS — Role-based access, session token handling, and API guards verified.
+2. **Master Data & Users**: PASS — User management, high-contrast badges, breadcrumb route hierarchies.
+3. **3D Logo Animation**: PASS — Integrated MutationObserver for SPA dynamic mounts, enabled continuous animation loop with 2.5s pause (`data-loop="true"`).
+4. **Advanced Reporting & Analytics**: PASS — Replaced raw JSON `<pre>` dumps with clean structured data tables, status badges, currency formatting (IDR), and KPI summary cards across financial, receivables, operational, and custody tabs.
+5. **Template Management**: PASS — Fixed blank white screen on menu selection by updating API list helper to robustly handle both paginated objects and plain array responses (`documentTemplates`).
+6. **Testing & QA**: PASS — 118 PHPUnit backend tests passed successfully; Frontend build (`2530 modules transformed`) verified with zero errors.
