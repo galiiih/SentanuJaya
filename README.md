@@ -1,107 +1,142 @@
-# ERP Sentanu Jaya — Odoo 17
+# Sentanu Jaya ERP
 
-Implementasi ERP untuk **PT. Sentanu Jaya** (workshop car accessories painting) di atas
-**Odoo 17 Community**, berjalan via Docker.
+Custom ERP web application untuk operasional **Sentanu Jaya**, usaha jasa pengecatan, finishing, polishing, dan pengerjaan body kit/aksesori otomotif.
 
-Sistem mengelola alur kerja workshop dari penerimaan barang customer, proses produksi
-(raw → paint → polish), QC, pengiriman, invoice/pajak, hingga penanganan klaim.
+Repository ini berisi aplikasi aktif, dokumentasi bisnis/teknis, automated tests, dan workflow CI. Aplikasi dibangun khusus untuk proses Sentanu Jaya — **bukan implementasi Odoo**.
 
-## Alur Bisnis
+## Tujuan
 
+Mengelola proses bisnis dari penerimaan barang milik customer sampai penagihan dan pembayaran, dengan pemisahan antara:
+- **Barang customer** yang dititipkan/dikerjakan (custody, bukan stok perusahaan).
+- **Material perusahaan** yang digunakan dalam proses produksi.
+- **Barang selesai, dikirim, dan diterima customer** sebagai dasar penagihan dan pengakuan pendapatan sesuai aturan bisnis.
+
+## Alur bisnis
+
+1. Customer konsultasi dan menerima penawaran.
+2. Customer menyetujui pekerjaan dan menyerahkan barang beserta Customer PO.
+3. Admin mencatat penerimaan barang customer (STB / Goods Receipt).
+4. Barang diproses melalui produksi dan quality control internal.
+5. Barang selesai dibuatkan Surat Jalan (Delivery Order).
+6. Customer memeriksa barang dan menyatakan penerimaan/acceptance.
+7. Invoice dibuat berdasarkan Surat Jalan yang memenuhi aturan penerimaan.
+8. Pembayaran dicatat dan dialokasikan ke invoice.
+9. Dashboard dan laporan menyajikan kondisi operasional, custody, material, piutang, dan keuangan.
+
+**Aturan penting:** custody barang customer tidak boleh tercampur dengan inventory material perusahaan. Revenue mengikuti barang yang benar-benar diserahkan dan diterima customer sesuai aturan bisnis; kuantitas accepted menjadi dasar perhitungan.
+
+## Modul ERP
+
+| Modul | Cakupan |
+|---|---|
+| Authentication & Access | Session authentication, roles ADMIN/OWNER/STAFF, access control |
+| Master Data | Customer, contact, item, supplier, material, UOM, color, treatment, price list, worker, warehouse, dan konfigurasi |
+| Customer PO | Pencatatan dan lifecycle PO customer |
+| Customer Goods Receipt / Custody | STB, custody balance, ledger, lokasi, lifecycle penerimaan |
+| Material Inventory | Warehouse, material receipt/usage, stock, low stock, stock movement |
+| Work Order / Production | Work order, stage movement, QC inspection |
+| Delivery & Acceptance | Surat Jalan, delivery, customer acceptance |
+| Invoicing | Invoice dan delivery orders yang memenuhi syarat |
+| Payments | Pembayaran, outstanding, allocation |
+| Dashboard & Reports | Summary, financial, receivables, operational, custody |
+| Document Templates | Pengelolaan template dokumen; cek source dan branch aktif untuk status implementasi |
+
+Daftar route API aktif ada di [`backend/routes/api.php`](backend/routes/api.php). UI, routing, dan E2E berada di `frontend/`.
+
+## Teknologi
+
+### Backend
+- PHP 8.3
+- Laravel 13 (lihat `backend/composer.json`)
+- Eloquent ORM
+- PostgreSQL sebagai database target
+- Laravel session-based authentication
+- PHPUnit / Laravel test runner
+
+### Frontend
+- React 19
+- TypeScript 6
+- Vite 8
+- React Router 7
+- Tailwind CSS 4
+- Axios, Lucide React
+- Playwright untuk browser E2E
+
+Versi dependency yang berlaku adalah yang ada di `backend/composer.json` dan `frontend/package.json`. Dokumen fase lama tidak menjadi sumber versi.
+
+## Struktur repository
+
+```text
+SentanuJaya/
+├── .github/workflows/     # CI dan browser E2E
+├── backend/              # Laravel API, domain logic, migrations, seeders, tests
+├── frontend/             # React/TypeScript SPA, UI, API client, E2E
+├── docs/                 # Dokumentasi bisnis, arsitektur, modul, testing, panduan
+├── phase3_design/        # Dokumen desain fase; cek status sebelum digunakan
+└── README.md             # Entry point proyek
 ```
-Surat Jalan Masuk → Incoming QC → Production Batch
-   → WO Raw → WO Paint → WO Polish → Final QC
-   → Surat Jalan Keluar → Invoice & Payment
-   → (jika ada keluhan) Customer Claim → Claim Rework → Redelivery
-```
 
-## Modul Custom (folder `extra-addons/`)
+Root README menjelaskan proyek saat ini. Dokumen phase/step lama adalah rekam jejak dan tidak otomatis menjadi instruksi implementasi.
 
-| Modul | Fungsi |
-|-------|--------|
-| `sj_security` | Security group bertingkat (User, QC Inspector, Manager, Administrator) |
-| `sj_tax` | Tax Profile customer (Non, PPN 11%, PPh 23, PPN+PPh) |
-| `sj_workshop_master` | Master data: warna, jasa, defect, alasan klaim, pricelist customer |
-| `sj_receiving` | Surat Jalan Masuk + Incoming QC |
-| `sj_production` | Production Batch, Work Order, Material Consumption, Final QC, Internal Rework |
-| `sj_delivery` | Surat Jalan Keluar, Redelivery, Invoice otomatis + multi-template, Kwitansi |
-| `sj_claim` | Customer Claim, Claim Rework |
-| `custom_contact_fields` | Field tambahan di contact (NPWP, PPN/PPh) |
+## Menjalankan aplikasi lokal
 
-Modul lain di `extra-addons/` (om_account_*, accounting_pdf_reports, dms, mrp_*, stock_*)
-adalah modul pihak ketiga pendukung akuntansi/manufaktur — bukan dependency langsung
-modul Sentanu Jaya.
-
-## Menjalankan (Docker)
+### Backend
 
 ```bash
-# Start container
-docker compose up -d
-
-# Install / upgrade modul Sentanu Jaya
-docker compose exec web odoo -d SentanuJaya \
-  --db_host=db --db_user=odoo --db_password=odoo \
-  --stop-after-init --no-http \
-  -i custom_contact_fields,sj_security,sj_tax,sj_workshop_master,sj_receiving,sj_production,sj_delivery,sj_claim
-
-# Restart agar service jalan normal
-docker compose restart web
+cd backend
+composer install
 ```
 
-Odoo dapat diakses di `http://localhost:8069`.
+Siapkan `.env` dari `.env.example`, lalu konfigurasi PostgreSQL lokal. Setelah database dipastikan benar:
 
-## Urutan Install Modul
+```bash
+php artisan key:generate
+php artisan migrate
+php artisan test
+```
 
-1. `custom_contact_fields`
-2. `sj_security`
-3. `sj_tax`
-4. `sj_workshop_master`
-5. `sj_receiving`
-6. `sj_production`
-7. `sj_delivery`
-8. `sj_claim`
+Jangan menjalankan `migrate:fresh` terhadap database berisi data penting. Test concurrency PostgreSQL harus menggunakan database test khusus yang sudah dipastikan aman.
 
-## Security Groups
+### Frontend
 
-Hierarki: **User → QC Inspector → Manager → Administrator**
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-| Group | Hak |
-|-------|-----|
-| User | Read / Write / Create (tanpa Delete) |
-| QC Inspector | + operasi QC (Incoming/Final QC) |
-| Manager | + Delete, Create Invoice, Reset Draft |
-| Administrator | Full access + konfigurasi |
+Validasi frontend:
 
-Catatan: akses model memakai group `sj_security.*` (bukan `base.group_user`).
-User harus jadi anggota salah satu group agar menu Sentanu Jaya muncul.
+```bash
+npm run build
+npm run lint
+npm run test:e2e
+```
 
-## Invoice & Pajak
+E2E memerlukan backend/test environment sesuai konfigurasi Playwright. Build atau unit test saja tidak membuktikan seluruh alur browser lulus.
 
-- Tombol **Create Invoice** di Surat Jalan Keluar membuat `account.move` otomatis.
-- Report **Invoice** memilih template otomatis berdasarkan Tax Profile customer:
-  PPN+PPh, PPN Only, PPh Only, atau Non Tax.
-- Split harga: **Bahan 90% / Jasa 10%**. PPN 11% dari harga jual, PPh dari porsi jasa.
-- Tersedia juga report **Kwitansi** dan dokumen Surat Jalan.
-- Template invoice dikelola di: Sentanu Jaya → Configuration → Invoice Templates.
+## Dokumentasi dan referensi
 
-## Dokumentasi Lengkap
+- **Indeks dokumentasi:** [`docs/00_README_INDEX.md`](docs/00_README_INDEX.md)
+- Dokumentasi bisnis, keputusan, arsitektur, dan modul: `docs/`
+- Dokumentasi backend: [`backend/README.md`](backend/README.md)
+- API routes: [`backend/routes/api.php`](backend/routes/api.php)
+- Frontend: `frontend/`
+- CI workflows: `.github/workflows/`
 
-Detail teknis, changelog, dan catatan handoff ada di
-[`SENTANU_JAYA_HANDOFF.md`](SENTANU_JAYA_HANDOFF.md).
+Gunakan keputusan bisnis owner yang disahkan sebagai aturan domain. Untuk implementasi, utamakan source code, migration, routes, tests, dan status CI terbaru. Laporan `STEP*_...` dan dokumen fase lama adalah histori, bukan status proyek saat ini.
 
-Blueprint bisnis: `PROJECT Aplikasi SENTANU JAYA.docx`,
-diagram alur: `workflow sentanu jaya.drawio`,
-panduan operasional: `Panduan Operasional ERP Sentanu Jaya.docx`.
+## Konvensi kerja
 
-## Tools
+1. Jangan mengubah aturan bisnis atau schema database tanpa memeriksa baseline dan test terkait.
+2. Jangan menganggap dokumen lama masih aktif; cek tanggal, status, dan kesesuaian dengan source.
+3. Jangan mencampur customer custody dengan company material inventory.
+4. Jangan menyatakan test PASS kecuali command/CI relevan benar-benar selesai PASS.
+5. Jangan commit credential, `.env`, database dump, build output, atau cache generated.
+6. Perubahan struktur harus menjaga import, route, CI, dan E2E tetap berfungsi.
 
-Folder `tools/` berisi script bantu (dijalankan via Odoo shell):
-- `smoke_test_shell.py` — verifikasi modul, group, report, dan field.
-- `generate_invoice_samples.py` — generate PDF contoh invoice untuk semua skenario pajak.
-- `build_sentanu_user_manual.py` — generator panduan user.
+## Status proyek
 
-## Catatan
+Status modul dan testing bersifat dinamis. Periksa GitHub Actions dan test suite pada commit/branch yang sedang digunakan sebelum menyatakan release readiness.
 
-`docker-compose.yml` memakai kredensial DB default (`odoo/odoo`) untuk environment dev.
-Untuk produksi, pindahkan kredensial ke file `.env` (sudah masuk `.gitignore`) dan ganti
-password default.
+Repository: https://github.com/galiiih/SentanuJaya

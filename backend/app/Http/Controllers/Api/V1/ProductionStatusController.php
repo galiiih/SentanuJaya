@@ -1,0 +1,109 @@
+<?php
+
+namespace App\Http\Controllers\Api\V1;
+
+use App\Http\Controllers\Api\BaseApiController;
+use App\Models\ProductionStatus;
+use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Validator;
+
+class ProductionStatusController extends BaseApiController
+{
+    /**
+     * Display a listing of the resource.
+     */
+    public function index(Request $request): JsonResponse
+    {
+        $perPage = (int) $request->input('per_page', 20);
+        $query = ProductionStatus::query();
+
+        if ($search = $request->input('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('code', 'LIKE', '%' . $search . '%') ->orwhere('name', 'LIKE', '%' . $search . '%');
+            });
+        }
+
+        $items = $query->paginate($perPage);
+        return $this->sendResponse($items, 'ProductionStatus list retrieved successfully.');
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(Request $request): JsonResponse
+    {
+        abort_unless($request->user()?->hasPermission('master.manage'), 403, 'Forbidden');
+        $validator = Validator::make($request->all(), [
+            'code' => 'required|string|max:50|unique:production_statuses,code',
+            'name' => 'required|string|max:255',
+            'sequence' => 'required|integer|min:1',
+            'is_active' => 'boolean',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendError('Validation Error.', $validator->errors(), 422);
+        }
+
+        $item = ProductionStatus::create($validator->validated());
+        return $this->sendResponse($item, 'ProductionStatus created successfully.', 201);
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(string $id): JsonResponse
+    {
+        $item = ProductionStatus::find($id);
+
+        if (!$item) {
+            return $this->sendError('ProductionStatus not found.', [], 404);
+        }
+
+        return $this->sendResponse($item, 'ProductionStatus retrieved successfully.');
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, string $id): JsonResponse
+    {
+        abort_unless($request->user()?->hasPermission('master.manage'), 403, 'Forbidden');
+        $item = ProductionStatus::find($id);
+
+        if (!$item) {
+            return $this->sendError('ProductionStatus not found.', [], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'code' => 'sometimes|required|string|max:50|unique:production_statuses,code,' . $id,
+            'name' => 'sometimes|required|string|max:255',
+            'sequence' => 'sometimes|required|integer|min:1',
+            'is_active' => 'boolean',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendError('Validation Error.', $validator->errors(), 422);
+        }
+
+        $item->update($validator->validated());
+        return $this->sendResponse($item, 'ProductionStatus updated successfully.');
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(string $id): JsonResponse
+    {
+        abort_unless(request()->user()?->hasPermission('master.manage'), 403, 'Forbidden');
+        $item = ProductionStatus::find($id);
+
+        if (!$item) {
+            return $this->sendError('ProductionStatus not found.', [], 404);
+        }
+
+
+        $item->delete();
+        return $this->sendResponse(null, 'ProductionStatus deleted successfully.');
+    }
+}

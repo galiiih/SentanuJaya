@@ -1,0 +1,529 @@
+PHASE 3 — PRE-IMPLEMENTATION DESIGN & BUSINESS RULE GATE
+
+STATUS PROJECT
+===============
+
+Phase 2B Final Verification telah selesai dengan:
+
+VERIFIED PASS
+
+Current status:
+
+Phase 0 — UI Foundation        PASS
+Phase 1 — Frontend/RBAC        PASS
+Phase 2A — Backend Foundation  PASS WITH REVIEW
+Phase 2B — Master Data API      VERIFIED PASS
+Phase 3                        LOCKED
+
+Sekarang lakukan PHASE 3 PRE-IMPLEMENTATION DESIGN & BUSINESS RULE GATE.
+
+IMPORTANT:
+JANGAN membuat production code.
+JANGAN membuat controller.
+JANGAN membuat API endpoint.
+JANGAN membuat migration.
+JANGAN membuat frontend.
+JANGAN mengubah database.
+JANGAN mengubah TaxEngine.
+JANGAN mengaktifkan transaction tables.
+
+Tujuan phase ini hanya:
+- memahami business workflow Phase 3
+- audit schema transaction existing
+- menemukan gap
+- membuat design proposal
+- memastikan business rules tidak ambigu
+- meminta approval sebelum implementation.
+
+==================================================
+1. PHASE 3 SCOPE
+==================================================
+
+Phase 3 fokus pada:
+
+A. Customer-Owned Goods
+B. Goods Receipt
+C. Custody / Physical Custody Ledger
+D. Customer-owned inventory tracking
+E. Initial production preparation jika memang diperlukan oleh blueprint
+
+JANGAN masuk ke:
+
+- Surat Jalan
+- Customer Acceptance
+- Invoice
+- Payment
+- Accounting
+- Tax execution
+- Production full workflow
+- QC final workflow
+
+kecuali hanya diperlukan sebagai dependency analysis.
+
+==================================================
+2. EXISTING TRANSACTION SCHEMA AUDIT
+==================================================
+
+Audit schema yang sudah tersedia:
+
+- custody_locations
+- goods_receipts
+- goods_receipt_lines
+- custody_ledger
+- custody_balances
+
+Jangan mengubah schema.
+
+Untuk setiap table laporkan:
+
+- columns
+- datatype
+- PK
+- FK
+- unique constraint
+- indexes
+- nullable
+- default
+- cascade behavior
+- relationship
+- intended purpose
+
+Kemudian tentukan apakah schema existing sudah cukup untuk Phase 3.
+
+Jika belum cukup:
+
+JANGAN langsung mengubah migration.
+
+Buat daftar GAP terlebih dahulu.
+
+==================================================
+3. CUSTOMER-OWNED GOODS RULE
+==================================================
+
+Pastikan secara konseptual:
+
+Customer Item / Customer-Owned Goods
+≠
+Sentanu Material Inventory
+
+Barang customer tidak boleh masuk:
+
+- material stock
+- material inventory valuation
+- company asset inventory
+- material consumption accounting
+
+Custody hanya mencatat keberadaan dan quantity fisik barang milik customer.
+
+Audit apakah existing schema mampu menjaga pemisahan tersebut.
+
+==================================================
+4. GOODS RECEIPT WORKFLOW
+==================================================
+
+Design workflow:
+
+Customer membawa barang
+↓
+Admin membuat Surat Terima Barang / Goods Receipt
+↓
+Customer
+↓
+PO customer dicatat sebagai reference
+↓
+Item customer dicatat
+↓
+Quantity diterima
+↓
+Condition diperiksa
+↓
+Photo/document attachment bila diperlukan
+↓
+Barang masuk custody
+↓
+Custody ledger bertambah
+
+Condition minimal harus mempertimbangkan:
+
+- GOOD
+- DENT
+- CRACK
+- OLD_PAINT
+- OTHER
+
+Jangan menambah status baru tanpa alasan.
+
+Audit apakah schema saat ini mendukung condition tersebut.
+
+==================================================
+5. GOODS RECEIPT DATA
+==================================================
+
+Tentukan field minimum yang diperlukan untuk Goods Receipt.
+
+Minimal evaluasi:
+
+Header:
+- receipt number
+- receipt date
+- customer
+- customer PO
+- branch/workshop
+- received by
+- notes
+- status
+
+Line:
+- customer item
+- quantity
+- condition
+- condition notes
+- photo/evidence
+- PO reference jika diperlukan
+
+Jangan langsung menambah field.
+
+Pisahkan:
+
+EXISTING
+REQUIRED
+OPTIONAL
+GAP
+
+==================================================
+6. CUSTODY LEDGER
+==================================================
+
+Design immutable physical movement concept.
+
+Minimal movement:
+
+RECEIVE
+TRANSFER
+ISSUE
+ADJUSTMENT
+RETURN
+
+Tetapi jangan mengaktifkan semua movement jika belum dibutuhkan Phase 3.
+
+Tentukan:
+
+- movement type
+- quantity in
+- quantity out
+- running balance atau balance calculation
+- location
+- customer
+- customer item
+- reference document
+- created_by
+- timestamp
+
+Pastikan:
+
+materialInventoryImpact = 0
+
+Customer custody tidak boleh mempengaruhi Sentanu inventory.
+
+==================================================
+7. SHORTAGE / OVERPRODUCTION RULE
+==================================================
+
+Gunakan business rule yang sudah disepakati:
+
+Jika customer merasa quantity kurang:
+
+1. Check customer custody balance.
+2. Check production/delivery status.
+3. Check apakah ada overproduction item/color.
+4. Contoh:
+   Customer order black = 3
+   Production menghasilkan black = 4
+
+Extra 1 black dapat menjelaskan apparent shortage.
+
+Jika benar-benar tidak ditemukan:
+
+→ shortage/loss harus dapat dicatat.
+
+Jika benar-benar hilang:
+
+→ kompensasi berdasarkan item price sesuai business rule.
+
+Jangan membuat compensation workflow pada Phase 3 jika belum diperlukan.
+
+Tetapi schema harus memungkinkan shortage/loss dicatat di masa depan.
+
+==================================================
+8. CUSTOMER QC / ACCEPTANCE BOUNDARY
+==================================================
+
+Phase 3 harus membedakan:
+
+Custody Receipt
+vs
+Customer Acceptance.
+
+Customer QC belum menjadi transaction workflow Phase 3.
+
+Catat dependency:
+
+Goods Receipt ≠ Acceptance.
+
+Acceptance akan menjadi Phase berikutnya.
+
+==================================================
+9. ATTACHMENT / PHOTO
+==================================================
+
+Audit kebutuhan evidence:
+
+- condition photo
+- goods receipt attachment
+- shortage evidence
+
+Jangan memilih storage architecture baru tanpa approval.
+
+Jika existing project belum mempunyai attachment infrastructure:
+
+laporkan GAP.
+
+Jangan install dependency atau membuat storage implementation.
+
+==================================================
+10. NUMBERING
+==================================================
+
+Audit apakah Goods Receipt membutuhkan nomor dokumen seperti:
+
+GR-YYYYMM-XXXX
+
+Jika numbering convention belum disepakati:
+
+jangan mengarang final convention.
+
+Berikan proposal saja.
+
+==================================================
+11. STATUS MODEL
+==================================================
+
+Audit status Goods Receipt.
+
+Pertimbangkan apakah diperlukan:
+
+DRAFT
+CONFIRMED
+CANCELLED
+
+Tetapi jangan langsung menetapkan status final jika belum ada business approval.
+
+Jelaskan lifecycle proposal.
+
+==================================================
+12. AUDIT TRAIL
+==================================================
+
+Custody movement adalah data sensitif secara operasional.
+
+Pastikan design mendukung:
+
+- created_by
+- timestamp
+- reference document
+- immutable ledger concept
+
+Jangan mengizinkan perubahan historical ledger secara bebas.
+
+Jika correction diperlukan:
+gunakan reversal/adjustment concept, bukan overwrite history.
+
+==================================================
+13. ROLE / AUTHORIZATION
+==================================================
+
+Gunakan existing roles:
+
+ADMIN
+OWNER
+STAFF
+
+Jangan membuat permission system baru.
+
+Namun design harus menjelaskan:
+
+siapa boleh:
+
+- create goods receipt
+- confirm receipt
+- edit draft
+- cancel
+- view custody
+- adjust custody
+
+Jika business rule belum ditentukan:
+mark sebagai OPEN DECISION.
+
+==================================================
+14. DATA INTEGRITY
+==================================================
+
+Pastikan design mempertahankan:
+
+Customer
+↓
+Customer Item
+↓
+Goods Receipt Line
+↓
+Custody Ledger
+↓
+Custody Balance
+
+Pastikan tidak ada kemungkinan:
+
+Customer A
+menggunakan Customer Item milik Customer B.
+
+Pastikan customer_item_id selalu konsisten dengan customer_id.
+
+==================================================
+15. TRANSACTION BOUNDARY
+==================================================
+
+Jelaskan transaction boundary untuk:
+
+Goods Receipt confirmation.
+
+Contoh konsep:
+
+BEGIN TRANSACTION
+→ validate GR
+→ validate lines
+→ create custody ledger movement
+→ update/recalculate custody balance
+→ audit log
+COMMIT
+
+Jika error:
+
+ROLLBACK
+
+Ini hanya DESIGN.
+Jangan implementasikan.
+
+==================================================
+16. CONCURRENCY
+==================================================
+
+Audit risiko dua admin menerima/mengubah custody yang sama secara bersamaan.
+
+Berikan design recommendation untuk:
+
+- row locking
+- transaction isolation
+- duplicate document prevention
+- idempotency jika diperlukan
+
+Jangan implementasikan dahulu.
+
+==================================================
+17. EXISTING SERVICE AUDIT
+==================================================
+
+Audit existing:
+
+CustodyService
+SecurityAuditLogger
+
+Pastikan tidak ada conflict dengan proposed Phase 3 architecture.
+
+Jangan mengubah service.
+
+Laporkan:
+
+- existing capability
+- reusable logic
+- missing capability
+- risk
+
+==================================================
+18. TEST PLAN
+==================================================
+
+Buat TEST PLAN untuk Phase 3 sebelum coding.
+
+Minimal:
+
+1. Goods Receipt create
+2. Goods Receipt validation
+3. Customer/item mismatch
+4. Quantity validation
+5. Custody ledger RECEIVE
+6. Custody balance
+7. Customer-owned inventory separation
+8. Duplicate receipt
+9. Concurrent receipt
+10. Audit log
+11. Cancellation/reversal
+12. shortage detection foundation
+
+==================================================
+19. OUTPUT FORMAT
+==================================================
+
+Berikan laporan:
+
+1. Executive Summary
+2. Existing Schema Audit
+3. Business Workflow
+4. Goods Receipt Design
+5. Custody Ledger Design
+6. Data Integrity Rules
+7. Role/Authorization Proposal
+8. Attachment/Evidence Gap
+9. Numbering Proposal
+10. Status Lifecycle Proposal
+11. Transaction Boundary
+12. Concurrency Strategy
+13. Existing Service Audit
+14. Identified Gaps
+15. Open Business Decisions
+16. Phase 3 Test Plan
+17. Proposed Implementation Order
+18. Risk Register
+19. FINAL VERDICT
+
+Verdict hanya:
+
+READY FOR IMPLEMENTATION
+atau
+READY WITH OPEN DECISIONS
+atau
+NOT READY
+
+==================================================
+IMPORTANT FINAL RULE
+==================================================
+
+JANGAN CODING.
+
+JANGAN MIGRATION.
+
+JANGAN API.
+
+JANGAN FRONTEND.
+
+JANGAN DATABASE CHANGE.
+
+Jangan menyelesaikan ambiguity dengan asumsi.
+
+Jika ada business rule yang belum jelas, tandai sebagai:
+
+OPEN BUSINESS DECISION
+
+dan jelaskan keputusan yang dibutuhkan dari owner.
+
+STOP setelah laporan selesai.
+
+Menunggu approval sebelum Phase 3 implementation dimulai.
