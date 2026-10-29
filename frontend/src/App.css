@@ -456,3 +456,9 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   .sidebar--mobile .sidebar__collapse,
   .sidebar--mobile .nav-item::after { display: none; }
 }
+
+/* Let the collapsed rail's visual tooltips escape the navigation container. */
+@media (min-width: 821px) {
+  .sidebar--collapsed { overflow: visible; }
+  .sidebar--collapsed .sidebar__nav { overflow: visible; }
+}
