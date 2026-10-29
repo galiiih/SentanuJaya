@@ -1,6 +1,8 @@
 # BUILD PLAN — DARI 0 SAMPAI SIAP PAKAI
 ## Sentanu ERP — V1
 
+> **Status dokumen: roadmap historis.** Repository sudah memiliki implementasi aktif; larangan lama “tidak boleh ada satu baris kode” dan daftar open decision pada dokumen ini bukan gate proyek saat ini. Gunakan MVP_ROADMAP.md untuk arah produk, keputusan Owner terbaru untuk aturan bisnis, dan source/tests/CI untuk status implementasi. Jangan mengikuti sprint ini secara mekanis tanpa audit ulang.
+
 Rencana ini disusun per sprint 2 minggu. Total **17 sprint ≈ 8 bulan** untuk tim 3–4 orang.
 
 ---
@@ -9,7 +11,7 @@ Rencana ini disusun per sprint 2 minggu. Total **17 sprint ≈ 8 bulan** untuk t
 
 **Tidak boleh ada satu baris kode ditulis sebelum tahap ini selesai.**
 
-### 0.1 Tutup 15 Open Decision
+### 0.1 Catatan historis: daftar open decision lama (jangan dianggap masih terbuka)
 Prioritas berdasarkan dampak jika salah:
 
 | Urutan | Open Decision | Kenapa mendesak |
