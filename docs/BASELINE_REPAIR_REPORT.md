@@ -1,5 +1,7 @@
 # BASELINE REPAIR REPORT — SENTANU JAYA ERP V1
 
+> **Snapshot historis** dari audit pada commit dan branch yang tercantum di bawah. Branch aktif saat ini adalah main; angka test, status Git, dan temuan di sini tidak otomatis berlaku untuk commit terbaru. Gunakan source, manifest, migrations, tests, dan CI terbaru untuk menilai kondisi sekarang.
+
 ## 1. Commit & Branch Baseline
 - **Repository**: https://github.com/galiiih/SentanuJaya
 - **Active Branch**: `master` (Custom React + Laravel ERP)
