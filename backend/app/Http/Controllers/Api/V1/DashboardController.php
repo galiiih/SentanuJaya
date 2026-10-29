@@ -78,7 +78,9 @@ class DashboardController extends BaseApiController
             return max(0, round($totalBilled - $totalPaid, 2));
         });
 
-        return $this->sendResponse([
+        $canViewFinancial = $user->hasPermission('invoice.view');
+
+        $data = [
             'operational' => [
                 'active_customer_pos' => $activePos,
                 'ready_to_ship' => $readyToShip,
@@ -96,7 +98,7 @@ class DashboardController extends BaseApiController
                 'top_outstanding_customers' => $topCustomers,
             ],
             'financial_trend' => $this->financialTrend(),
-            'recent_activity' => $this->recentActivity(),
+            'recent_activity' => $this->recentActivity($canViewFinancial),
             'custody' => [
                 'total_items' => (int) $custodyItemsCount,
             ],
@@ -116,7 +118,13 @@ class DashboardController extends BaseApiController
                     });
                 })
                 ->count(),
-        ], 'Dashboard summary retrieved successfully');
+        ];
+
+        if (!$canViewFinancial) {
+            unset($data['financial'], $data['financial_trend']);
+        }
+
+        return $this->sendResponse($data, 'Dashboard summary retrieved successfully');
     }
 
     /**
@@ -150,12 +158,13 @@ class DashboardController extends BaseApiController
     /**
      * Recent transaction activity from actual database records.
      */
-    private function recentActivity(): array
+    private function recentActivity(bool $includeFinancial): array
     {
         $activities = collect();
 
-        // Recent invoices
-        Invoice::with('customer')->latest('created_at')->take(3)->get()->each(function ($inv) use ($activities) {
+        // Financial activity is visible only to roles with invoice.view.
+        if ($includeFinancial) {
+            Invoice::with('customer')->latest('created_at')->take(3)->get()->each(function ($inv) use ($activities) {
             $activities->push([
                 'type' => 'invoice',
                 'description' => "Invoice {$inv->invoice_number} — " . ($inv->customer->name ?? 'Unknown'),
@@ -173,6 +182,8 @@ class DashboardController extends BaseApiController
                 'timestamp' => $pmt->created_at->toISOString(),
             ]);
         });
+
+        }
 
         // Recent delivery orders
         DeliveryOrder::with('customerPo.customer')->latest('created_at')->take(2)->get()->each(function ($do) use ($activities) {
