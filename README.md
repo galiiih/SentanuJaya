@@ -72,11 +72,10 @@ SentanuJaya/
 ├── backend/              # Laravel API, domain logic, migrations, seeders, tests
 ├── frontend/             # React/TypeScript SPA, UI, API client, E2E
 ├── docs/                 # Dokumentasi bisnis, arsitektur, modul, testing, panduan
-├── phase3_design/        # Dokumen desain fase; cek status sebelum digunakan
 └── README.md             # Entry point proyek
 ```
 
-Root README menjelaskan proyek saat ini. Dokumen phase/step lama adalah rekam jejak dan tidak otomatis menjadi instruksi implementasi.
+Root README menjelaskan proyek saat ini. Dokumen fase/step lama disimpan di docs/archive/ dan tidak otomatis menjadi instruksi implementasi.
 
 ## Menjalankan aplikasi lokal
 
@@ -127,7 +126,7 @@ E2E memerlukan backend/test environment sesuai konfigurasi Playwright. Build ata
 
 Artefak Graphify/cache tidak disertakan sebagai file aplikasi; hasil generated diabaikan melalui `.gitignore`. Laporan fase, UAT, dan rancangan lama disimpan di `docs/archive/` agar root tetap fokus pada aplikasi aktif.
 
-Gunakan keputusan bisnis owner yang disahkan sebagai aturan domain. Untuk implementasi, utamakan source code, migration, routes, tests, dan status CI terbaru. Laporan `STEP*_...` dan dokumen fase lama adalah histori, bukan status proyek saat ini.
+Gunakan keputusan bisnis owner yang disahkan sebagai aturan domain. Untuk implementasi, utamakan source code, migration, routes, tests, dan status CI terbaru. Laporan `STEP*_...` dan dokumen fase lama berada di `docs/archive/`; isinya histori, bukan status proyek saat ini.
 
 ## Konvensi kerja
 
