@@ -11,6 +11,8 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  PanelLeftClose,
+  PanelLeftOpen,
   Moon,
   Package,
   Plus,
@@ -100,6 +102,7 @@ function RequirePermission({ permission, children }: { permission: Permission; c
 function Sidebar({ mobile, onClose, closeButtonRef }: { mobile?: boolean; onClose?: () => void; closeButtonRef?: React.RefObject<HTMLButtonElement | null> }) {
   const { hasPermission } = useAuth();
   const { t } = useLanguage();
+  const [collapsed, setCollapsed] = useState(false);
 
   const navSections = [
     {
@@ -130,24 +133,27 @@ function Sidebar({ mobile, onClose, closeButtonRef }: { mobile?: boolean; onClos
     },
   ];
 
+  const isCollapsed = !mobile && collapsed;
   return (
-    <aside id={mobile ? 'mobile-navigation' : undefined} className={`sidebar${mobile ? ' sidebar--mobile' : ''}`} role={mobile ? 'dialog' : undefined} aria-modal={mobile || undefined} aria-label={mobile ? 'Navigasi utama' : undefined} onMouseDown={(event) => event.stopPropagation()}>
+    <aside id={mobile ? 'mobile-navigation' : undefined} className={`sidebar${mobile ? ' sidebar--mobile' : ''}${isCollapsed ? ' sidebar--collapsed' : ''}`} role={mobile ? 'dialog' : undefined} aria-modal={mobile || undefined} aria-label={mobile ? 'Navigasi utama' : undefined} onMouseDown={(event) => event.stopPropagation()}>
       <div className="sidebar__brand">
         <div data-sentanu-logo data-loop="true" style={{ width: '36px', height: '36px', flexShrink: 0 }} />
-        <div><strong>SENTANU JAYA</strong><span>ERP WORKSHOP</span></div>
-        {mobile && <button ref={closeButtonRef} className="icon-button sidebar__close" onClick={onClose} aria-label="Tutup navigasi"><X size={20} /></button>}
+        <div className="sidebar__brand-copy"><strong>SENTANU JAYA</strong><span>ERP WORKSHOP</span></div>
+        {mobile
+          ? <button ref={closeButtonRef} className="icon-button sidebar__close" onClick={onClose} aria-label="Tutup navigasi"><X size={20} /></button>
+          : <button type="button" className="icon-button sidebar__collapse" onClick={() => setCollapsed((value) => !value)} aria-label={collapsed ? 'Perlebar sidebar' : 'Ciutkan sidebar'} aria-expanded={!collapsed} title={collapsed ? 'Perlebar sidebar' : 'Ciutkan sidebar'}>{collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}</button>}
       </div>
       <nav className="sidebar__nav" aria-label="Navigasi utama">
         {navSections.map((section) => {
           const visibleItems = section.items.filter((item) => hasPermission(item.permission));
           if (!visibleItems.length) return null;
-          return <div key={section.label}><p className="nav-section-label">{section.label}</p>{visibleItems.map((item) => {
+          return <div className="sidebar__section" key={section.label}><p className="nav-section-label">{section.label}</p>{visibleItems.map((item) => {
             const Icon = item.icon;
-            return <NavLink key={item.path} to={item.path} className={({ isActive }) => `nav-item${isActive ? ' nav-item--active' : ''}`} onClick={onClose}><Icon size={18} /><span>{item.label}</span></NavLink>;
+            return <NavLink key={item.path} to={item.path} data-tooltip={item.label} title={isCollapsed ? item.label : undefined} aria-label={isCollapsed ? item.label : undefined} className={({ isActive }) => `nav-item${isActive ? ' nav-item--active' : ''}`} onClick={onClose}><Icon size={18} aria-hidden="true" /><span>{item.label}</span></NavLink>;
           })}</div>;
         })}
       </nav>
-      <div className="sidebar__foot"><ShieldCheck size={18} /><div><strong>{t.nav.isolatedCustody}</strong><span>{t.nav.offBalanceSheet}</span></div></div>
+      <div className="sidebar__foot"><ShieldCheck size={18} /><div className="sidebar__foot-copy"><strong>{t.nav.isolatedCustody}</strong><span>{t.nav.offBalanceSheet}</span></div></div>
     </aside>
   );
 }
