@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Plus, Edit, Trash2, Users, Layers, Package, Tag, Building2, BookOpen, Wrench, FileSpreadsheet } from 'lucide-react';
 import { apiError, type Customer, type CustomerItem } from '../services/api';
+import { useAuth } from '../auth';
 import axios from 'axios';
 import {
   Alert,
@@ -95,6 +96,8 @@ const masterApi = {
 type MasterKey = keyof typeof masterApi;
 
 export function MasterDataPage() {
+  const { user } = useAuth();
+  const isAdminOrOwner = user?.role === 'ADMIN' || user?.role === 'OWNER';
   const [tab, setTab] = useState<MasterKey>('customers');
   const [data, setData] = useState<any[]>([]);
   const [, setLoading] = useState(true);
@@ -244,6 +247,18 @@ export function MasterDataPage() {
   };
 
   const getColumnsForTab = () => {
+    const isAdminOrOwner = user?.role === 'ADMIN' || user?.role === 'OWNER';
+    const actionColumn = isAdminOrOwner ? [{
+      id: 'actions',
+      header: 'Aksi',
+      cell: (row: any) => (
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <Button variant="ghost" onClick={() => openEdit(row)} title="Edit"><Edit size={16} /></Button>
+          <Button variant="ghost" onClick={() => handleDelete(row)} title="Hapus" style={{ color: 'var(--color-danger)' }}><Trash2 size={16} /></Button>
+        </div>
+      )
+    }] : [];
+
     switch (tab) {
       case 'companies':
         return [
@@ -251,16 +266,7 @@ export function MasterDataPage() {
           { id: 'name', header: 'Nama Perusahaan', cell: (row: any) => row.name || '-' },
           { id: 'phone', header: 'Telepon', cell: (row: any) => row.phone || '-' },
           { id: 'email', header: 'Email', cell: (row: any) => row.email || '-' },
-          {
-            id: 'actions',
-            header: 'Aksi',
-            cell: (row: any) => (
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <Button variant="ghost" onClick={() => openEdit(row)} title="Edit"><Edit size={16} /></Button>
-                <Button variant="ghost" onClick={() => handleDelete(row)} title="Hapus" style={{ color: 'var(--color-danger)' }}><Trash2 size={16} /></Button>
-              </div>
-            )
-          }
+          ...actionColumn
         ];
       case 'customers':
         return [
@@ -268,16 +274,7 @@ export function MasterDataPage() {
           { id: 'name', header: 'Nama Customer', cell: (row: any) => row.name || '-' },
           { id: 'phone', header: 'Telepon', cell: (row: any) => row.phone || '-' },
           { id: 'email', header: 'Email', cell: (row: any) => row.email || '-' },
-          {
-            id: 'actions',
-            header: 'Aksi',
-            cell: (row: any) => (
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <Button variant="ghost" onClick={() => openEdit(row)} title="Edit"><Edit size={16} /></Button>
-                <Button variant="ghost" onClick={() => handleDelete(row)} title="Hapus" style={{ color: 'var(--color-danger)' }}><Trash2 size={16} /></Button>
-              </div>
-            )
-          }
+          ...actionColumn
         ];
       case 'customer_contacts':
         return [
@@ -285,16 +282,7 @@ export function MasterDataPage() {
           { id: 'name', header: 'Nama Kontak', cell: (row: any) => row.name || '-' },
           { id: 'title', header: 'Jabatan', cell: (row: any) => row.title || '-' },
           { id: 'phone', header: 'Telepon', cell: (row: any) => row.phone || '-' },
-          {
-            id: 'actions',
-            header: 'Aksi',
-            cell: (row: any) => (
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <Button variant="ghost" onClick={() => openEdit(row)} title="Edit"><Edit size={16} /></Button>
-                <Button variant="ghost" onClick={() => handleDelete(row)} title="Hapus" style={{ color: 'var(--color-danger)' }}><Trash2 size={16} /></Button>
-              </div>
-            )
-          }
+          ...actionColumn
         ];
       case 'customer_items':
         return [
@@ -302,16 +290,7 @@ export function MasterDataPage() {
           { id: 'name', header: 'Nama Barang / Part', cell: (row: any) => row.name || '-' },
           { id: 'vehicle', header: 'Model Kendaraan', cell: (row: any) => row.vehicle_model || '-' },
           { id: 'type', header: 'Tipe Part', cell: (row: any) => row.part_type || '-' },
-          {
-            id: 'actions',
-            header: 'Aksi',
-            cell: (row: any) => (
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <Button variant="ghost" onClick={() => openEdit(row)} title="Edit"><Edit size={16} /></Button>
-                <Button variant="ghost" onClick={() => handleDelete(row)} title="Hapus" style={{ color: 'var(--color-danger)' }}><Trash2 size={16} /></Button>
-              </div>
-            )
-          }
+          ...actionColumn
         ];
       case 'price_lists':
         return [
@@ -319,47 +298,20 @@ export function MasterDataPage() {
           { id: 'name', header: 'Nama Price List', cell: (row: any) => row.name || '-' },
           { id: 'customer', header: 'Customer', cell: (row: any) => row.customer?.name || 'Umum' },
           { id: 'date', header: 'Tanggal Efektif', cell: (row: any) => row.effective_date || '-' },
-          {
-            id: 'actions',
-            header: 'Aksi',
-            cell: (row: any) => (
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <Button variant="ghost" onClick={() => openEdit(row)} title="Edit"><Edit size={16} /></Button>
-                <Button variant="ghost" onClick={() => handleDelete(row)} title="Hapus" style={{ color: 'var(--color-danger)' }}><Trash2 size={16} /></Button>
-              </div>
-            )
-          }
+          ...actionColumn
         ];
       case 'price_list_lines':
         return [
           { id: 'price_list', header: 'Price List', cell: (row: any) => row.price_list?.name || '-' },
           { id: 'item', header: 'Customer Item', cell: (row: any) => row.customer_item?.name || '-' },
           { id: 'price', header: 'Harga Satuan (IDR)', cell: (row: any) => row.unit_price ? `Rp ${Number(row.unit_price).toLocaleString('id-ID')}` : '-' },
-          {
-            id: 'actions',
-            header: 'Aksi',
-            cell: (row: any) => (
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <Button variant="ghost" onClick={() => openEdit(row)} title="Edit"><Edit size={16} /></Button>
-                <Button variant="ghost" onClick={() => handleDelete(row)} title="Hapus" style={{ color: 'var(--color-danger)' }}><Trash2 size={16} /></Button>
-              </div>
-            )
-          }
+          ...actionColumn
         ];
       case 'uoms':
         return [
           { id: 'code', header: 'Kode Satuan', cell: (row: any) => row.code || '-' },
           { id: 'name', header: 'Nama Satuan', cell: (row: any) => row.name || '-' },
-          {
-            id: 'actions',
-            header: 'Aksi',
-            cell: (row: any) => (
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <Button variant="ghost" onClick={() => openEdit(row)} title="Edit"><Edit size={16} /></Button>
-                <Button variant="ghost" onClick={() => handleDelete(row)} title="Hapus" style={{ color: 'var(--color-danger)' }}><Trash2 size={16} /></Button>
-              </div>
-            )
-          }
+          ...actionColumn
         ];
       case 'materials':
         return [
@@ -367,16 +319,7 @@ export function MasterDataPage() {
           { id: 'name', header: 'Nama Material / Cat', cell: (row: any) => row.name || '-' },
           { id: 'unit', header: 'Satuan', cell: (row: any) => row.unit || '-' },
           { id: 'min_stock', header: 'Minimum Stok', cell: (row: any) => row.min_stock ?? '-' },
-          {
-            id: 'actions',
-            header: 'Aksi',
-            cell: (row: any) => (
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <Button variant="ghost" onClick={() => openEdit(row)} title="Edit"><Edit size={16} /></Button>
-                <Button variant="ghost" onClick={() => handleDelete(row)} title="Hapus" style={{ color: 'var(--color-danger)' }}><Trash2 size={16} /></Button>
-              </div>
-            )
-          }
+          ...actionColumn
         ];
       case 'suppliers':
         return [
@@ -384,16 +327,7 @@ export function MasterDataPage() {
           { id: 'name', header: 'Nama Supplier', cell: (row: any) => row.name || '-' },
           { id: 'phone', header: 'Telepon', cell: (row: any) => row.phone || '-' },
           { id: 'email', header: 'Email', cell: (row: any) => row.email || '-' },
-          {
-            id: 'actions',
-            header: 'Aksi',
-            cell: (row: any) => (
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <Button variant="ghost" onClick={() => openEdit(row)} title="Edit"><Edit size={16} /></Button>
-                <Button variant="ghost" onClick={() => handleDelete(row)} title="Hapus" style={{ color: 'var(--color-danger)' }}><Trash2 size={16} /></Button>
-              </div>
-            )
-          }
+          ...actionColumn
         ];
       default:
         return [];
@@ -406,9 +340,11 @@ export function MasterDataPage() {
         title="Master Data & Referensi"
         description="Kelola referensi sistem, pelanggan, item barang, kontak, price list, satuan, material, dan supplier secara terpusat."
         action={
-          <Button onClick={openCreate} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-            <Plus size={16} /> Tambah {masterApi[tab].label}
-          </Button>
+          isAdminOrOwner ? (
+            <Button onClick={openCreate} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <Plus size={16} /> Tambah {masterApi[tab].label}
+            </Button>
+          ) : undefined
         }
       />
 
