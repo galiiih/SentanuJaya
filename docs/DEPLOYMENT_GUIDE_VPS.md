@@ -1,4 +1,6 @@
-# PANDUAN DEPLOYMENT SENTANU ERP KE VPS LINUX (UBUNTU 22.04 / 24.04 LTS)
+# PANDUAN RANCANGAN DEPLOYMENT SENTANU ERP KE VPS LINUX (UBUNTU 22.04 / 24.04 LTS)
+
+> **Status:** panduan rancangan, bukan bukti bahwa deployment pernah dijalankan atau tervalidasi. Stack backend saat ini Laravel 13 / PHP 8.3. Sebelum production, cocokkan semua environment key, queue/cache/session driver, migration, health check, storage, backup/restore, permission filesystem, dan konfigurasi Nginx dengan source serta workflow aktif. Jangan gunakan konfigurasi contoh ini tanpa staging test dan persetujuan Owner.
 
 ## 📌 Target Spesifikasi VPS
 - **Provider**: Hostinger KVM / BiznetGio / IDCloudHost
@@ -36,7 +38,7 @@ sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE sentanu_erp TO sentan
 
 ---
 
-## ⚙️ Langkah 3: Deployment Backend Laravel 11
+## ⚙️ Langkah 3: Deployment Backend Laravel 13
 
 ```bash
 cd /var/www
