@@ -1,6 +1,6 @@
 # Pemetaan Form Fisik ke Modul Digital Web App (Update Lengkap V2.0)
 
-Dokumen ini mencatat analisis pencatatan manual berbasis berkas fisik asli (PDF & foto) di bengkel pengecatan Sentanu Jaya dan bagaimana sistem ERP melakukankan otomatisasi.
+Dokumen ini mencatat analisis pencatatan manual berbasis berkas fisik asli (PDF & foto) di bengkel pengecatan Sentanu Jaya dan bagaimana sistem ERP mengotomatisasi pencatatan.
 
 ---
 
@@ -36,14 +36,12 @@ Dokumen ini mencatat analisis pencatatan manual berbasis berkas fisik asli (PDF 
 ## 📄 4. DAFTAR TAGIHAN CUSTOMER (`DAFTAR TAGIHAN CUSTOMER.pdf`)
 - **Form Fisik**: Tabel rekap Tagihan, Kwitansi, & e-Faktur Pajak.
 - **Kolom Fisik**: `NO.`, `TANGGAL`, `NAMA CUSTOMER`, `NO. KWITANSI / INVOICE`, `NOMOR FAKTUR PAJAK`, `JUMLAH`, `KETERANGAN`.
-- **Validasi Aturan Pajak Aktual**:
-  1. **Kondisi 3 (Hanya PPh 2.5%) — Customer PRIMA INOVASINDO SUKSES**:
-     - Subtotal: `Rp 5.336.100`
-     - Minus PPh 2.5%: `Rp 13.340` $\rightarrow$ **Net Received**: `Rp 5.322.760`
-  2. **Kondisi 2 (Kena PPN 11% + PPh 2%) — Customer VARIA BARU**:
-     - Subtotal: `Rp 22.396.000`
-     - PPN 11%: `+ Rp 2.463.560` $\rightarrow$ Total + PPN: `Rp 24.859.560`
-     - Minus PPh 2%: `- Rp 44.792` $\rightarrow$ **Net AR**: `Rp 24.814.768`
+- **Aturan pajak customer (mengikuti keputusan bisnis terbaru)**:
+  - **Kondisi 1**: tanpa PPN dan tanpa PPh.
+  - **Kondisi 2**: tanpa PPN, PPh jasa 2,5% dari DPP.
+  - **Kondisi 3**: PPN dan PPh jasa 2% dari DPP.
+  - Tarif PPN dan PPh harus berasal dari konfigurasi aturan pajak yang berlaku, bukan angka yang di-hardcode. Periksa effective date dan regulasi terkini sebelum transaksi production.
+  - Contoh angka customer yang tercatat pada form lama adalah referensi historis, bukan dasar untuk menetapkan kondisi pajak. Cocokkan kondisi customer dan bukti potong asli sebelum menggunakannya.
 - **Modul Digital**: `Invoice`, `NsfpRegister`, `WithholdingTaxCertificate`.
 
 ---
