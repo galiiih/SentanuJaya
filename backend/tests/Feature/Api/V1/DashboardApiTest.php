@@ -73,6 +73,26 @@ class DashboardApiTest extends TestCase
 
 
     /** @test */
+    public function test_staff_dashboard_does_not_expose_financial_totals_trends_or_transactions()
+    {
+        $staff = User::factory()->create([
+            'email' => 'staff.dashboard@sentanu.local',
+            'role' => 'STAFF',
+        ]);
+
+        $response = $this->actingAs($staff)->getJson('/api/v1/dashboard/summary');
+
+        $response->assertOk()
+            ->assertJsonStructure(['data' => ['operational', 'custody', 'recent_activity']])
+            ->assertJsonMissingPath('data.financial')
+            ->assertJsonMissingPath('data.financial_trend');
+
+        foreach ($response->json('data.recent_activity') as $activity) {
+            $this->assertNotContains($activity['type'], ['invoice', 'payment']);
+        }
+    }
+
+    /** @test */
     public function test_dashboard_counts_only_remaining_posted_acceptance_ok_quantity_as_invoiceable()
     {
         $admin = User::factory()->create(['role' => 'ADMIN']);
