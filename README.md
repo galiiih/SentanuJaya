@@ -1,102 +1,142 @@
 # Sentanu Jaya ERP
 
-Sentanu ERP adalah custom web app untuk bisnis jasa automotive finishing, painting, polishing, coating, body kit, dan aksesoris.
+Custom ERP web application untuk operasional **Sentanu Jaya**, usaha jasa pengecatan, finishing, polishing, dan pengerjaan body kit/aksesori otomotif.
 
-> **AI-agent workflow:** ChatGPT berperan sebagai Main Orchestrator untuk merencanakan, mendelegasikan, dan memverifikasi pekerjaan dari agent spesialis. E2E testing adalah salah satu task QA, bukan tujuan utama orchestration. Lihat [AI Agent Orchestration](docs/AI_AGENT_ORCHESTRATION.md).
+Repository ini berisi aplikasi aktif, dokumentasi bisnis/teknis, automated tests, dan workflow CI. Aplikasi dibangun khusus untuk proses Sentanu Jaya — **bukan implementasi Odoo**.
 
----
+## Tujuan
 
-## 📌 Lokasi File Proyek & Arsitektur
+Mengelola proses bisnis dari penerimaan barang milik customer sampai penagihan dan pembayaran, dengan pemisahan antara:
+- **Barang customer** yang dititipkan/dikerjakan (custody, bukan stok perusahaan).
+- **Material perusahaan** yang digunakan dalam proses produksi.
+- **Barang selesai, dikirim, dan diterima customer** sebagai dasar penagihan dan pengakuan pendapatan sesuai aturan bisnis.
 
-- **Dokumentasi & Blueprint**: `docs/` (Indeks lengkap: `docs/00_README_INDEX.md`)
-- **Frontend App (React + TypeScript)**: `frontend/`
-- **Backend App & Migrations (Laravel 11)**: `backend/`
+## Alur bisnis
 
----
+1. Customer konsultasi dan menerima penawaran.
+2. Customer menyetujui pekerjaan dan menyerahkan barang beserta Customer PO.
+3. Admin mencatat penerimaan barang customer (STB / Goods Receipt).
+4. Barang diproses melalui produksi dan quality control internal.
+5. Barang selesai dibuatkan Surat Jalan (Delivery Order).
+6. Customer memeriksa barang dan menyatakan penerimaan/acceptance.
+7. Invoice dibuat berdasarkan Surat Jalan yang memenuhi aturan penerimaan.
+8. Pembayaran dicatat dan dialokasikan ke invoice.
+9. Dashboard dan laporan menyajikan kondisi operasional, custody, material, piutang, dan keuangan.
 
-## 🚀 Fokus Utama MVP-1
+**Aturan penting:** custody barang customer tidak boleh tercampur dengan inventory material perusahaan. Revenue mengikuti barang yang benar-benar diserahkan dan diterima customer sesuai aturan bisnis; kuantitas accepted menjadi dasar perhitungan.
 
-1. **Custody Separation**: Pelacakan barang customer terpisah total dari persediaan material perusahaan (*off-balance sheet*).
-2. **Revenue Recognition**: Revenue diakui hanya jika *Customer Acceptance* berstatus `OK`.
-3. **Multi-Surat Jalan Invoicing**: N Surat Jalan `ACCEPTED` dapat digabungkan menjadi 1 Invoice.
-4. **Kalkulasi 3 Skema Pajak**: Otomatisasi Kondisi 1 (Bebas Pajak), Kondisi 2 (PPh 2.5%), dan Kondisi 3 (PPN 11% + PPh 2%).
+## Modul ERP
 
----
+| Modul | Cakupan |
+|---|---|
+| Authentication & Access | Session authentication, roles ADMIN/OWNER/STAFF, access control |
+| Master Data | Customer, contact, item, supplier, material, UOM, color, treatment, price list, worker, warehouse, dan konfigurasi |
+| Customer PO | Pencatatan dan lifecycle PO customer |
+| Customer Goods Receipt / Custody | STB, custody balance, ledger, lokasi, lifecycle penerimaan |
+| Material Inventory | Warehouse, material receipt/usage, stock, low stock, stock movement |
+| Work Order / Production | Work order, stage movement, QC inspection |
+| Delivery & Acceptance | Surat Jalan, delivery, customer acceptance |
+| Invoicing | Invoice dan delivery orders yang memenuhi syarat |
+| Payments | Pembayaran, outstanding, allocation |
+| Dashboard & Reports | Summary, financial, receivables, operational, custody |
+| Document Templates | Pengelolaan template dokumen; cek source dan branch aktif untuk status implementasi |
 
-## 💻 Tech Stack Choice
+Daftar route API aktif ada di [`backend/routes/api.php`](backend/routes/api.php). UI, routing, dan E2E berada di `frontend/`.
 
-- **Backend**: Laravel 11 (PHP 8.3) + Eloquent ORM
-- **Frontend**: React + TypeScript + Vite + Tailwind CSS + Lucide React
-- **Database**: PostgreSQL 16 + Redis Queue
-- **Security & Logging**: Segregation of Duties (SoD) + Immutable Audit Logs + Clean Error Handling
-- **Deployment**: VPS Linux (Hostinger / BiznetGio / IDCloudHost)
+## Teknologi
 
----
+### Backend
+- PHP 8.3
+- Laravel 13 (lihat `backend/composer.json`)
+- Eloquent ORM
+- PostgreSQL sebagai database target
+- Laravel session-based authentication
+- PHPUnit / Laravel test runner
 
-## ✅ Status Eksekusi Pentahapan Development (7 Steps Standard)
+### Frontend
+- React 19
+- TypeScript 6
+- Vite 8
+- React Router 7
+- Tailwind CSS 4
+- Axios, Lucide React
+- Playwright untuk browser E2E
 
-| Langkah | Deskripsi | Status | Hasil & Verifikasi |
-| :--- | :--- | :--- | :--- |
-| **Step 1** | Perencanaan & Tech Stack | **SELESAI (100%)** | Tech Stack & Blueprint terkunci di `docs/` |
-| **Step 2** | Persiapan Lingkungan & Arsitektur | **SELESAI (100%)** | Folder `docs/`, `frontend/`, `backend/` ditata rapi |
-| **Step 3** | Backend Logic & Schema Migrations | **SELESAI (100%)** | 4 Migration PostgreSQL & `TaxEngine.php` selesai |
-| **Step 4** | Integrasi Frontend UI & Component Verification | **SELESAI (100%)** | SPA Dashboard & Invoicing Engine Lulus `npm run build` |
-| **Step 5** | Audit Keamanan & Segregation of Duties (SoD) | **SELESAI (100%)** | `SecurityAuditLogger.php` & aturan SoD terimplementasi |
-| **Step 6** | Automated Testing & Protocol Debugging | **SELESAI (100%)** | Unit test `SecurityAndTaxEngineTest.php` dibuat & teruji |
-| **Step 7** | Production Readiness & VPS Deploy | **TERTUNDA** | Panduan Deploy VPS `docs/DEPLOYMENT_GUIDE_VPS.md` tersedia; Phase 1 frontend masih NEEDS REVIEW |
+Versi dependency yang berlaku adalah yang ada di `backend/composer.json` dan `frontend/package.json`. Dokumen fase lama tidak menjadi sumber versi.
 
----
-
-## Status Frontend — 2026-09-27 malam
-
-### Phase 0 — Design System & App Shell
-
-**SELESAI secara teknis.** Light ERP shell, reusable UI primitives, responsive baseline, Toast, ConfirmationDialog, dan form primitives tersedia.
-
-Verifikasi:
-
-```text
-npm run build      PASS — TypeScript/Vite, 1890 modules
-npx oxlint src     PASS — exit 0
-```
-
-Business logic, invoice/tax calculation, custody behavior, API, database, dan mock data tidak diubah.
-
-### Phase 1 — Authentication & RBAC
-
-**NEEDS REVIEW.** Implementasi teknis tersedia:
-
-- `react-router-dom` URL routing.
-- `AuthProvider`, `useAuth`, mock session, login/logout.
-- Roles `ADMIN`, `OWNER`, `STAFF`.
-- `RequireAuth` dan `RequirePermission`.
-- Permission-aware sidebar.
-- `/login`, `/dashboard`, `/403`, `/404`.
-- DEV-only role selector untuk QA (`ADMIN`, `OWNER`, `STAFF`).
-
-Build/lint terbaru:
+## Struktur repository
 
 ```text
-npm run build      PASS — 1890 modules, 274ms
-npx oxlint src     PASS — exit 0
+SentanuJaya/
+├── .github/workflows/     # CI dan browser E2E
+├── backend/              # Laravel API, domain logic, migrations, seeders, tests
+├── frontend/             # React/TypeScript SPA, UI, API client, E2E
+├── docs/                 # Dokumentasi bisnis, arsitektur, modul, testing, panduan
+├── phase3_design/        # Dokumen desain fase; cek status sebelum digunakan
+└── README.md             # Entry point proyek
 ```
 
-Manual QA yang belum selesai:
+Root README menjelaskan proyek saat ini. Dokumen phase/step lama adalah rekam jejak dan tidak otomatis menjadi instruksi implementasi.
 
-- Runtime OWNER dan STAFF.
-- Unauthorized route → `/403`.
-- Unknown route → 404.
-- Logout dan post-logout redirect.
-- Browser back/forward.
-- Mobile drawer pada 390px.
-- Keyboard/focus/Escape.
-- Runtime console errors.
-- Screenshots Login, Dashboard, OWNER, STAFF, 403, 404, dan Mobile.
+## Menjalankan aplikasi lokal
 
-**Phase 2 sedang berjalan terbatas pada audit dan fondasi schema/model master data.** Transaction modules belum dimulai. Detail: `docs/PHASE_2_MASTER_DATA_AUDIT.md`.
+### Backend
 
-### Next bounded step
+```bash
+cd backend
+composer install
+```
 
-Sediakan PHP 8.3, Composer, dan PostgreSQL 16 untuk validasi migration/schema. Setelah itu baru lanjut backend validation/API master data. Jangan mulai Customer PO, Custody transaction, Production, Invoice, atau Payment.
+Siapkan `.env` dari `.env.example`, lalu konfigurasi PostgreSQL lokal. Setelah database dipastikan benar:
 
-Terakhir diperbarui: 2026-09-28 pagi.
+```bash
+php artisan key:generate
+php artisan migrate
+php artisan test
+```
+
+Jangan menjalankan `migrate:fresh` terhadap database berisi data penting. Test concurrency PostgreSQL harus menggunakan database test khusus yang sudah dipastikan aman.
+
+### Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Validasi frontend:
+
+```bash
+npm run build
+npm run lint
+npm run test:e2e
+```
+
+E2E memerlukan backend/test environment sesuai konfigurasi Playwright. Build atau unit test saja tidak membuktikan seluruh alur browser lulus.
+
+## Dokumentasi dan referensi
+
+- **Indeks dokumentasi:** [`docs/00_README_INDEX.md`](docs/00_README_INDEX.md)
+- Dokumentasi bisnis, keputusan, arsitektur, dan modul: `docs/`
+- Dokumentasi backend: [`backend/README.md`](backend/README.md)
+- API routes: [`backend/routes/api.php`](backend/routes/api.php)
+- Frontend: `frontend/`
+- CI workflows: `.github/workflows/`
+
+Gunakan keputusan bisnis owner yang disahkan sebagai aturan domain. Untuk implementasi, utamakan source code, migration, routes, tests, dan status CI terbaru. Laporan `STEP*_...` dan dokumen fase lama adalah histori, bukan status proyek saat ini.
+
+## Konvensi kerja
+
+1. Jangan mengubah aturan bisnis atau schema database tanpa memeriksa baseline dan test terkait.
+2. Jangan menganggap dokumen lama masih aktif; cek tanggal, status, dan kesesuaian dengan source.
+3. Jangan mencampur customer custody dengan company material inventory.
+4. Jangan menyatakan test PASS kecuali command/CI relevan benar-benar selesai PASS.
+5. Jangan commit credential, `.env`, database dump, build output, atau cache generated.
+6. Perubahan struktur harus menjaga import, route, CI, dan E2E tetap berfungsi.
+
+## Status proyek
+
+Status modul dan testing bersifat dinamis. Periksa GitHub Actions dan test suite pada commit/branch yang sedang digunakan sebelum menyatakan release readiness.
+
+Repository: https://github.com/galiiih/SentanuJaya
