@@ -133,15 +133,16 @@ function Sidebar({ mobile, onClose, closeButtonRef }: { mobile?: boolean; onClos
     },
   ];
 
-  const isCollapsed = !mobile && collapsed;
+  const isCollapsed = collapsed;
   return (
     <aside id={mobile ? 'mobile-navigation' : undefined} className={`sidebar${mobile ? ' sidebar--mobile' : ''}${isCollapsed ? ' sidebar--collapsed' : ''}`} role={mobile ? 'dialog' : undefined} aria-modal={mobile || undefined} aria-label={mobile ? 'Navigasi utama' : undefined} onMouseDown={(event) => event.stopPropagation()}>
       <div className="sidebar__brand">
         <div data-sentanu-logo data-loop="true" style={{ width: '36px', height: '36px', flexShrink: 0 }} />
         <div className="sidebar__brand-copy"><strong>SENTANU JAYA</strong><span>ERP WORKSHOP</span></div>
-        {mobile
-          ? <button ref={closeButtonRef} className="icon-button sidebar__close" onClick={onClose} aria-label="Tutup navigasi"><X size={20} /></button>
-          : <button type="button" className="icon-button sidebar__collapse" onClick={() => setCollapsed((value) => !value)} aria-label={collapsed ? 'Perlebar sidebar' : 'Ciutkan sidebar'} aria-expanded={!collapsed} title={collapsed ? 'Perlebar sidebar' : 'Ciutkan sidebar'}>{collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}</button>}
+        <div className="sidebar__controls">
+          <button type="button" className="icon-button sidebar__collapse" onClick={() => setCollapsed((value) => !value)} aria-label={collapsed ? 'Perlebar sidebar' : 'Ciutkan sidebar'} aria-expanded={!collapsed} title={collapsed ? 'Perlebar sidebar' : 'Ciutkan sidebar'}>{collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}</button>
+          {mobile && <button ref={closeButtonRef} className="icon-button sidebar__close" onClick={onClose} aria-label="Tutup navigasi"><X size={20} /></button>}
+        </div>
       </div>
       <nav className="sidebar__nav" aria-label="Navigasi utama">
         {navSections.map((section) => {
