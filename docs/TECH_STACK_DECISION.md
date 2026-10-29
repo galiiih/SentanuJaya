@@ -1,62 +1,46 @@
-# Keputusan Tech Stack — Sentanu ERP
+# Keputusan Tech Stack — Sentanu Jaya ERP
 
-## Rekomendasi final
+Dokumen ini menggabungkan catatan keputusan arsitektur awal dan kondisi stack yang terverifikasi dari manifest repository. Jika berbeda, manifest, konfigurasi aktif, migrations, source code, dan CI pada branch/commit yang diperiksa adalah acuan implementasi.
 
-| Lapisan | Pilihan |
+## Stack aplikasi saat ini (berdasarkan manifest)
+
+| Lapisan | Kondisi yang tercatat |
 |---|---|
-| Backend + API | Laravel 11, PHP 8.3 |
-| Frontend | React + TypeScript + Vite |
-| UI | Tailwind CSS, shadcn/ui, Lucide React |
-| Database | PostgreSQL 16 |
-| ORM | Laravel Eloquent |
-| Migration | Laravel Migrations |
-| Queue/cache | Redis + Laravel Queue |
-| File storage | S3-compatible object storage |
-| PDF | Laravel-compatible PDF renderer |
-| Chart | Recharts |
-| Testing | Pest/PHPUnit, Laravel HTTP tests, Playwright |
-| Deployment | Cloud VPS/container yang mendukung Laravel + managed PostgreSQL |
+| Backend + API | Laravel Framework ^13.17, PHP ^8.3 — backend/composer.json |
+| Frontend | React ^19.2.8, TypeScript ~6.0.2, Vite ^8.3.0 — frontend/package.json |
+| Routing UI | React Router DOM ^7.18.4 |
+| Styling | Tailwind CSS ^4.3.3 |
+| Charts | Recharts ^3.10.1 |
+| HTTP client | Axios ^1.20.0 |
+| Browser testing | Playwright ^1.64.1 |
+| Database target | PostgreSQL; konfigurasi koneksi juga menyediakan SQLite untuk development/test tertentu |
+| ORM / migrations | Laravel Eloquent dan Laravel Migrations |
 
-## Kenapa bukan Prisma + Next.js
+Versi di atas adalah rentang dependency dari manifest, bukan klaim bahwa semua versi tersebut telah terpasang pada environment produksi.
 
-Prisma + Next.js tetap layak, tetapi bukan pilihan utama untuk Sentanu ERP:
+## Rekomendasi arsitektur awal (historis)
 
-- ERP membutuhkan transaksi, policy, approval, queue, PDF, scheduler, dan authorization backend yang kuat.
-- Laravel menyediakan Eloquent, Form Request, Policy, Queue, Scheduler, Events, Notifications, dan filesystem dalam satu ekosistem.
-- Tim Indonesia lebih mudah mencari developer Laravel.
-- React tetap dipakai untuk UI interaktif tanpa memaksa backend ikut Node.js.
-- PostgreSQL tetap menjadi sumber kebenaran transaksi.
-
-Prisma tidak dipakai agar tidak ada dua ORM atau dua backend. Database schema harus ditulis sebagai Laravel migration, bukan schema Prisma.
-
-## Arsitektur final
+Pilihan Laravel + React SPA dipertahankan karena memisahkan aturan bisnis/API dari UI dan mendukung validasi server, otorisasi, transaksi database, serta testing terstruktur. Dokumen awal pernah menyebut Laravel 11; versi tersebut sudah tidak sesuai dengan manifest saat ini yang mensyaratkan Laravel 13.
 
 ```text
 React/Vite SPA
-    ↓ HTTPS JSON
-Laravel 11 API
-    ↓ service/domain layer
-Eloquent + PostgreSQL
-    ├── Redis Queue
-    ├── Object Storage
-    └── Scheduler
+    ↓ authenticated HTTP API
+Laravel 13 API
+    ↓ application/domain logic
+Eloquent + configured database
 ```
 
-## Aturan implementasi
+Redis Queue, object storage S3-compatible, PDF renderer tertentu, dan deployment container adalah opsi rancangan awal, bukan bukti bahwa service tersebut sudah dikonfigurasi atau digunakan. Periksa backend/config/, backend/composer.json, environment, dan workflow sebelum mengaktifkannya.
 
-- Controller hanya menerima request dan mengembalikan response.
-- Business rule berada di Action/Service/Domain layer.
-- Semua posting stock, custody, revenue, dan journal memakai satu `DB::transaction()`.
-- Semua uang memakai PostgreSQL `NUMERIC`, ditampilkan sebagai string di API.
-- Semua transaksi POST memakai `Idempotency-Key`.
-- Draft boleh diubah; posted hanya reversal/correction.
-- `branch_id` wajib pada transaksi operasional.
-- Customer-owned goods hanya berada di custody tables.
+## Prinsip implementasi domain
 
-## Ditunda
+- Aturan bisnis harus ditegakkan di backend, bukan hanya di browser.
+- Perubahan stok material dan custody barang customer harus atomik dan tidak boleh mencampur kedua ledger.
+- Barang milik customer bukan inventory perusahaan.
+- Invoice/revenue mengikuti barang yang dikirim dan diterima customer dengan status acceptance OK, sesuai keputusan bisnis terbaru.
+- Perubahan schema harus melalui Laravel migrations dan diuji terhadap database yang didukung.
+- Jangan mengklaim fitur idempotency, journal, Redis, object storage, atau accounting lengkap sebelum source dan test membuktikannya.
 
-Microservice, GraphQL, mobile native, Kubernetes, dan event bus tidak diperlukan untuk 10–20 user dan sekitar 50.000 transaksi/tahun. Tambahkan hanya jika beban nyata menuntutnya.
+## Yang belum dianggap keputusan deployment final
 
-## Keputusan yang masih perlu persetujuan
-
-Stack ini rekomendasi teknis, tetapi `OPEN DECISION #10` belum final sampai Owner menyetujui hosting dan bentuk deployment.
+Hosting, domain, backup/restore, monitoring, mail delivery, queue worker, object storage, dan strategi release perlu diverifikasi serta disetujui sebelum production. Gunakan docs/DEPLOYMENT_GUIDE_VPS.md sebagai checklist rancangan, bukan instruksi yang telah terbukti di production.
