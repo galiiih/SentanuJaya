@@ -1,6 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { apiError } from '../services/api';
+import {
+  Button,
+  Card,
+  FormField,
+  Input,
+  Select,
+  Modal,
+  PageHeader,
+} from '../components/ui';
 
 export type UserRecord = {
   id: string;
@@ -105,167 +114,142 @@ export default function UsersManagementPage() {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-[var(--color-text)]">Manajemen Pengguna & Hak Akses</h1>
-          <p className="text-sm text-[var(--color-text-secondary)]">Kelola akun login sistem: ADMIN, OWNER, dan STAFF beserta status aktifnya.</p>
-        </div>
-        <button
-          onClick={handleOpenCreate}
-          className="px-4 py-2 bg-indigo-600 text-white rounded-lg shadow hover:bg-indigo-700 font-medium text-sm transition"
-        >
-          + Tambah Pengguna Baru
-        </button>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Manajemen Pengguna & Hak Akses"
+        description="Kelola akun login sistem: ADMIN, OWNER, dan STAFF beserta status aktifnya."
+        action={
+          <Button variant="primary" onClick={handleOpenCreate}>
+            + Tambah Pengguna Baru
+          </Button>
+        }
+      />
 
       {error && <div className="p-4 bg-red-50 text-red-700 rounded-lg text-sm border border-red-200">{error}</div>}
       {success && <div className="p-4 bg-emerald-50 text-emerald-700 rounded-lg text-sm border border-emerald-200">{success}</div>}
 
-      <div className="bg-[var(--color-surface)] shadow rounded-lg overflow-hidden border border-[var(--color-border)]">
+      <Card>
         {loading ? (
           <div className="p-8 text-center text-[var(--color-text-muted)]">Memuat daftar pengguna...</div>
         ) : users.length === 0 ? (
           <div className="p-8 text-center text-[var(--color-text-muted)]">Belum ada pengguna terdaftar.</div>
         ) : (
-          <table className="min-w-full divide-y divide-[var(--color-border)] text-sm">
-            <thead className="bg-[var(--color-surface-raised)] text-[var(--color-text-secondary)] font-semibold">
-              <tr>
-                <th className="px-6 py-3 text-left">Nama Lengkap</th>
-                <th className="px-6 py-3 text-left">Email / Username</th>
-                <th className="px-6 py-3 text-left">Role / Hak Akses</th>
-                <th className="px-6 py-3 text-left">Status</th>
-                <th className="px-6 py-3 text-right">Aksi</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[var(--color-border)]">
-              {users.map((u) => (
-                <tr key={u.id} className="hover:bg-[var(--color-surface-raised)] transition">
-                  <td className="px-6 py-4 font-medium text-[var(--color-text)]">{u.name}</td>
-                  <td className="px-6 py-4 text-[var(--color-text-secondary)]">{u.email}</td>
-                  <td className="px-6 py-4">
-                    <span className={`inline-flex px-2 py-1 text-xs rounded font-bold ${
-                      u.role === 'OWNER' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300' :
-                      u.role === 'ADMIN' ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300' : 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300'
-                    }`}>
-                      {u.role}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`inline-flex px-2 py-0.5 text-xs rounded font-semibold ${
-                      u.is_active ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300' : 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300'
-                    }`}>
-                      {u.is_active ? 'Aktif' : 'Nonaktif'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right space-x-2">
-                    <button
-                      onClick={() => handleOpenEdit(u)}
-                      className="px-3 py-1 bg-[var(--color-surface-raised)] text-[var(--color-text)] border border-[var(--color-border)] rounded hover:bg-[var(--color-border)] transition font-medium text-xs"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(u.id)}
-                      className="px-3 py-1 bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400 rounded hover:bg-red-100 transition font-medium text-xs"
-                    >
-                      Hapus
-                    </button>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-[var(--color-border)] text-sm">
+              <thead>
+                <tr>
+                  <th className="px-6 py-3 text-left font-semibold">Nama Lengkap</th>
+                  <th className="px-6 py-3 text-left font-semibold">Email / Username</th>
+                  <th className="px-6 py-3 text-left font-semibold">Role / Hak Akses</th>
+                  <th className="px-6 py-3 text-left font-semibold">Status</th>
+                  <th className="px-6 py-3 text-right font-semibold">Aksi</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-
-      {showModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-none flex items-center justify-center p-4 z-50">
-          <div className="bg-[var(--color-surface)] text-[var(--color-text)] border border-[var(--color-border)] rounded-xl shadow-2xl max-w-md w-full p-6 space-y-4">
-            <h2 className="text-lg font-bold text-[var(--color-text)]">
-              {editingUser ? 'Edit Pengguna Sistem' : 'Tambah Pengguna Baru'}
-            </h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-[var(--color-text-secondary)] mb-1">Nama Lengkap</label>
-                <input
-                  type="text"
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-[var(--color-bg)] text-[var(--color-text)] border border-[var(--color-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
-                  placeholder="Nama Pengguna"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-[var(--color-text-secondary)] mb-1">Email / Login</label>
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-[var(--color-bg)] text-[var(--color-text)] border border-[var(--color-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
-                  placeholder="admin@sentanu.local"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-[var(--color-text-secondary)] mb-1">
-                  Password {editingUser && '(Kosongkan jika tidak diubah)'}
-                </label>
-                <input
-                  type="password"
-                  {...(!editingUser ? { required: true } : {})}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-[var(--color-bg)] text-[var(--color-text)] border border-[var(--color-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
-                  placeholder="••••••••"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-[var(--color-text-secondary)] mb-1">Role / Hak Akses</label>
-                  <select
-                    value={role}
-                    onChange={(e) => setRole(e.target.value as 'ADMIN' | 'OWNER' | 'STAFF')}
-                    className="w-full bg-[var(--color-bg)] text-[var(--color-text)] border border-[var(--color-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
-                  >
-                    <option value="STAFF" className="bg-[var(--color-surface)] text-[var(--color-text)]">STAFF</option>
-                    <option value="ADMIN" className="bg-[var(--color-surface)] text-[var(--color-text)]">ADMIN</option>
-                    <option value="OWNER" className="bg-[var(--color-surface)] text-[var(--color-text)]">OWNER</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-[var(--color-text-secondary)] mb-1">Status Akun</label>
-                  <select
-                    value={isActive ? '1' : '0'}
-                    onChange={(e) => setIsActive(e.target.value === '1')}
-                    className="w-full bg-[var(--color-bg)] text-[var(--color-text)] border border-[var(--color-border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]"
-                  >
-                    <option value="1" className="bg-[var(--color-surface)] text-[var(--color-text)]">Aktif</option>
-                    <option value="0" className="bg-[var(--color-surface)] text-[var(--color-text)]">Nonaktif</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="flex justify-end space-x-3 pt-4 border-t border-[var(--color-border)]">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="px-4 py-2 border border-[var(--color-border)] rounded-lg text-sm text-[var(--color-text)] hover:bg-[var(--color-surface-raised)] font-medium transition"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 shadow transition"
-                >
-                  Simpan
-                </button>
-              </div>
-            </form>
+              </thead>
+              <tbody className="divide-y divide-[var(--color-border)]">
+                {users.map((u) => (
+                  <tr key={u.id} className="hover:bg-[var(--color-surface-raised)] transition">
+                    <td className="px-6 py-4 font-medium">{u.name}</td>
+                    <td className="px-6 py-4 text-[var(--color-text-secondary)]">{u.email}</td>
+                    <td className="px-6 py-4">
+                      <span className={`inline-flex px-2 py-1 text-xs rounded font-bold ${
+                        u.role === 'OWNER' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300' :
+                        u.role === 'ADMIN' ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300' : 'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300'
+                      }`}>
+                        {u.role}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`inline-flex px-2 py-0.5 text-xs rounded font-semibold ${
+                        u.is_active ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300' : 'bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-400'
+                      }`}>
+                        {u.is_active ? 'Aktif' : 'Nonaktif'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right space-x-2">
+                      <Button variant="secondary" onClick={() => handleOpenEdit(u)} style={{ padding: '4px 10px', fontSize: '12px' }}>
+                        Edit
+                      </Button>
+                      <Button variant="danger" onClick={() => handleDelete(u.id)} style={{ padding: '4px 10px', fontSize: '12px' }}>
+                        Hapus
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        </div>
-      )}
+        )}
+      </Card>
+
+      <Modal
+        open={showModal}
+        title={editingUser ? 'Edit Pengguna Sistem' : 'Tambah Pengguna Baru'}
+        onClose={() => setShowModal(false)}
+      >
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <FormField label="Nama Lengkap" required>
+            <Input
+              type="text"
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Nama Pengguna"
+            />
+          </FormField>
+
+          <FormField label="Email / Login" required>
+            <Input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="admin@sentanu.local"
+            />
+          </FormField>
+
+          <FormField label={`Password ${editingUser ? '(Kosongkan jika tidak diubah)' : ''}`} required={!editingUser}>
+            <Input
+              type="password"
+              {...(!editingUser ? { required: true } : {})}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+            />
+          </FormField>
+
+          <div className="grid grid-cols-2 gap-4">
+            <FormField label="Role / Hak Akses" required>
+              <Select
+                value={role}
+                onChange={(e) => setRole(e.target.value as 'ADMIN' | 'OWNER' | 'STAFF')}
+              >
+                <option value="STAFF">STAFF</option>
+                <option value="ADMIN">ADMIN</option>
+                <option value="OWNER">OWNER</option>
+              </Select>
+            </FormField>
+
+            <FormField label="Status Akun" required>
+              <Select
+                value={isActive ? '1' : '0'}
+                onChange={(e) => setIsActive(e.target.value === '1')}
+              >
+                <option value="1">Aktif</option>
+                <option value="0">Nonaktif</option>
+              </Select>
+            </FormField>
+          </div>
+
+          <div className="flex justify-end space-x-3 pt-4 border-t border-[var(--color-border)]">
+            <Button type="button" variant="secondary" onClick={() => setShowModal(false)}>
+              Batal
+            </Button>
+            <Button type="submit" variant="primary">
+              Simpan
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }
