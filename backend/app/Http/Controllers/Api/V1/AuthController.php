@@ -23,7 +23,10 @@ class AuthController extends BaseApiController
             return $this->sendError(__('auth.throttle', ['seconds' => RateLimiter::availableIn($key)]), [], 429);
         }
 
-        if (!Auth::attempt($credentials, $request->boolean('remember'))) {
+        // Inactive accounts must never establish a new authenticated session.
+        $loginCredentials = $credentials + ['is_active' => true];
+
+        if (!Auth::attempt($loginCredentials, $request->boolean('remember'))) {
             RateLimiter::hit($key, 60);
             throw ValidationException::withMessages(['email' => [__('auth.failed')]]);
         }

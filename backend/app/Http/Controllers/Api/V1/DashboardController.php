@@ -32,53 +32,65 @@ class DashboardController extends BaseApiController
         $pendingQc = GoodsReceipt::where('status', 'SUBMITTED')->count();
         $custodyItemsCount = CustodyBalance::sum('balance_quantity');
 
+        $canViewFinancial = $user->hasPermission('invoice.view');
+
         // 2. Financial Summary
         $startDate = $request->input('start_date', now()->startOfMonth()->toDateString());
         $endDate = $request->input('end_date', now()->endOfMonth()->toDateString());
 
-        $totalInvoicePeriod = Invoice::whereBetween('invoice_date', [$startDate, $endDate])
-            ->where('status', 'POSTED')
-            ->sum('total_amount');
+        $totalInvoicePeriod = 0;
+        $totalPaymentPosted = 0;
+        $unpaidInvoicesCount = 0;
+        $topCustomers = collect();
+        $totalOutstanding = 0;
 
-        $totalPaymentPosted = Payment::whereBetween('payment_date', [$startDate, $endDate])
-            ->where('status', 'POSTED')
-            ->sum('amount');
+        if ($canViewFinancial) {
+            $totalInvoicePeriod = Invoice::whereBetween('invoice_date', [$startDate, $endDate])
+                ->where('status', 'POSTED')
+                ->sum('total_amount');
+    
+            $totalPaymentPosted = Payment::whereBetween('payment_date', [$startDate, $endDate])
+                ->where('status', 'POSTED')
+                ->sum('amount');
+    
+            $unpaidInvoicesCount = Invoice::whereIn('status', [Invoice::STATUS_POSTED, Invoice::STATUS_PARTIALLY_PAID])->count();
+    
+            // Outstanding & Top Customers by Outstanding
+            $topCustomers = Customer::query()->get()->map(function ($customer) {
+                $invoices = $customer->invoices()->where('status', 'POSTED')->get();
+                $totalBilled = $invoices->sum('total_amount');
+                $invoiceIds = $invoices->pluck('id');
+                $totalPaid = DB::table('payment_allocations')
+                    ->join('payments', 'payments.id', '=', 'payment_allocations.payment_id')
+                    ->whereIn('payment_allocations.invoice_id', $invoiceIds)
+                    ->where('payments.status', 'POSTED')
+                    ->sum('payment_allocations.allocated_amount');
+                $outstanding = max(0, round($totalBilled - $totalPaid, 2));
+    
+                return [
+                    'id' => $customer->id,
+                    'name' => $customer->name,
+                    'code' => $customer->code,
+                    'outstanding' => $outstanding,
+                ];
+            })->sortByDesc('outstanding')->take(5)->values();
+    
+            $totalOutstanding = Customer::get()->sum(function ($customer) {
+                $invoices = $customer->invoices()->where('status', 'POSTED')->get();
+                $totalBilled = $invoices->sum('total_amount');
+                $invoiceIds = $invoices->pluck('id');
+                $totalPaid = DB::table('payment_allocations')
+                    ->join('payments', 'payments.id', '=', 'payment_allocations.payment_id')
+                    ->whereIn('payment_allocations.invoice_id', $invoiceIds)
+                    ->where('payments.status', 'POSTED')
+                    ->sum('payment_allocations.allocated_amount');
+                return max(0, round($totalBilled - $totalPaid, 2));
+            });
+    
+    
+        }
 
-        $unpaidInvoicesCount = Invoice::whereIn('status', [Invoice::STATUS_POSTED, Invoice::STATUS_PARTIALLY_PAID])->count();
-
-        // Outstanding & Top Customers by Outstanding
-        $topCustomers = Customer::with('invoices')->get()->map(function ($customer) {
-            $invoices = $customer->invoices()->where('status', 'POSTED')->get();
-            $totalBilled = $invoices->sum('total_amount');
-            $invoiceIds = $invoices->pluck('id');
-            $totalPaid = DB::table('payment_allocations')
-                ->join('payments', 'payments.id', '=', 'payment_allocations.payment_id')
-                ->whereIn('payment_allocations.invoice_id', $invoiceIds)
-                ->where('payments.status', 'POSTED')
-                ->sum('payment_allocations.allocated_amount');
-            $outstanding = max(0, round($totalBilled - $totalPaid, 2));
-
-            return [
-                'id' => $customer->id,
-                'name' => $customer->name,
-                'code' => $customer->code,
-                'outstanding' => $outstanding,
-            ];
-        })->sortByDesc('outstanding')->take(5)->values();
-
-        $totalOutstanding = Customer::get()->sum(function ($customer) {
-            $invoices = $customer->invoices()->where('status', 'POSTED')->get();
-            $totalBilled = $invoices->sum('total_amount');
-            $invoiceIds = $invoices->pluck('id');
-            $totalPaid = DB::table('payment_allocations')
-                ->join('payments', 'payments.id', '=', 'payment_allocations.payment_id')
-                ->whereIn('payment_allocations.invoice_id', $invoiceIds)
-                ->where('payments.status', 'POSTED')
-                ->sum('payment_allocations.allocated_amount');
-            return max(0, round($totalBilled - $totalPaid, 2));
-        });
-
-        return $this->sendResponse([
+        $data = [
             'operational' => [
                 'active_customer_pos' => $activePos,
                 'ready_to_ship' => $readyToShip,
@@ -95,8 +107,8 @@ class DashboardController extends BaseApiController
                 'unpaid_invoices_count' => $unpaidInvoicesCount,
                 'top_outstanding_customers' => $topCustomers,
             ],
-            'financial_trend' => $this->financialTrend(),
-            'recent_activity' => $this->recentActivity(),
+            'financial_trend' => $canViewFinancial ? $this->financialTrend() : [],
+            'recent_activity' => $this->recentActivity($canViewFinancial),
             'custody' => [
                 'total_items' => (int) $custodyItemsCount,
             ],
@@ -116,7 +128,13 @@ class DashboardController extends BaseApiController
                     });
                 })
                 ->count(),
-        ], 'Dashboard summary retrieved successfully');
+        ];
+
+        if (!$canViewFinancial) {
+            unset($data['financial'], $data['financial_trend']);
+        }
+
+        return $this->sendResponse($data, 'Dashboard summary retrieved successfully');
     }
 
     /**
@@ -150,12 +168,13 @@ class DashboardController extends BaseApiController
     /**
      * Recent transaction activity from actual database records.
      */
-    private function recentActivity(): array
+    private function recentActivity(bool $includeFinancial): array
     {
         $activities = collect();
 
-        // Recent invoices
-        Invoice::with('customer')->latest('created_at')->take(3)->get()->each(function ($inv) use ($activities) {
+        // Financial activity is visible only to roles with invoice.view.
+        if ($includeFinancial) {
+            Invoice::with('customer')->latest('created_at')->take(3)->get()->each(function ($inv) use ($activities) {
             $activities->push([
                 'type' => 'invoice',
                 'description' => "Invoice {$inv->invoice_number} — " . ($inv->customer->name ?? 'Unknown'),
@@ -173,6 +192,8 @@ class DashboardController extends BaseApiController
                 'timestamp' => $pmt->created_at->toISOString(),
             ]);
         });
+
+        }
 
         // Recent delivery orders
         DeliveryOrder::with('customerPo.customer')->latest('created_at')->take(2)->get()->each(function ($do) use ($activities) {

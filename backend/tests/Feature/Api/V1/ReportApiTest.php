@@ -73,4 +73,22 @@ class ReportApiTest extends TestCase
         $this->assertEquals(4000.00, $found['total_paid']);
         $this->assertEquals(6000.00, $found['outstanding']);
     }
+    /** @test */
+    public function test_staff_is_forbidden_from_all_report_endpoints_and_owner_can_access_them()
+    {
+        $staff = User::factory()->create([
+            'email' => 'staff.reports@sentanu.local',
+            'role' => 'STAFF',
+        ]);
+        $owner = User::factory()->create([
+            'email' => 'owner.reports@sentanu.local',
+            'role' => 'OWNER',
+        ]);
+
+        foreach (['financial', 'receivables', 'operational', 'custody'] as $report) {
+            $this->actingAs($staff)->getJson('/api/v1/reports/' . $report)->assertForbidden();
+            $this->actingAs($owner)->getJson('/api/v1/reports/' . $report)->assertOk();
+        }
+    }
+
 }
