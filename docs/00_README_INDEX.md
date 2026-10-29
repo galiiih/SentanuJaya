@@ -66,6 +66,7 @@ Repository sudah mencakup backend/API dan frontend untuk area Master Data, Custo
 - `archive/implementation-reports/` — laporan STEP historis. Isi laporan tidak otomatis menggambarkan status saat ini.
 - `archive/uat/` — dokumen hasil UAT historis; perlu dikaitkan dengan commit dan skenario yang diuji sebelum dijadikan bukti release.
 - `archive/phase3-design/` — spesifikasi desain fase terdahulu; gunakan hanya sebagai referensi setelah dibandingkan dengan source dan keputusan terbaru.
+- `archive/implementation-notes/phase4-chat-notes.txt` — catatan prompt/implementasi terdahulu, dipertahankan untuk histori dan bukan instruksi aktif.
 
 ## Perubahan dokumentasi
 
