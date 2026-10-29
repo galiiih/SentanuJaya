@@ -133,7 +133,7 @@ function Sidebar({ mobile, onClose, closeButtonRef }: { mobile?: boolean; onClos
   return (
     <aside id={mobile ? 'mobile-navigation' : undefined} className={`sidebar${mobile ? ' sidebar--mobile' : ''}`} role={mobile ? 'dialog' : undefined} aria-modal={mobile || undefined} aria-label={mobile ? 'Navigasi utama' : undefined} onMouseDown={(event) => event.stopPropagation()}>
       <div className="sidebar__brand">
-        <div className="brand-mark">SJ</div>
+        <div data-sentanu-logo style={{ width: '36px', height: '36px', flexShrink: 0 }} />
         <div><strong>SENTANU JAYA</strong><span>ERP WORKSHOP</span></div>
         {mobile && <button ref={closeButtonRef} className="icon-button sidebar__close" onClick={onClose} aria-label="Tutup navigasi"><X size={20} /></button>}
       </div>
@@ -462,7 +462,7 @@ function LoginPage() {
     event.preventDefault(); setError(''); setLoading(true);
     try { await login(email, password); navigate(destination, { replace: true }); } catch (reason) { setError(reason instanceof Error ? reason.message : 'Login gagal.'); } finally { setLoading(false); }
   };
-  return <main className="auth-page"><Card className="auth-card"><div className="auth-brand"><div className="brand-mark">SJ</div><div><strong>SENTANU JAYA</strong><span>ERP WORKSHOP</span></div></div><div className="auth-copy"><h1>Masuk ke Sentanu Jaya ERP</h1><p>Gunakan akun yang terdaftar untuk mengakses lingkungan pengembangan.</p></div>{error && <Alert tone="danger">{error}</Alert>}<form className="auth-form" onSubmit={submit}><FormField label="Email" htmlFor="login-email" required><Input id="login-email" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} required /></FormField><FormField label="Password" htmlFor="login-password" required><Input id="login-password" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></FormField><Button type="submit" loading={loading}>Login</Button></form><p className="auth-note">Forgot password belum tersedia.</p></Card></main>;
+  return <main className="auth-page"><Card className="auth-card"><div className="auth-brand"><div data-sentanu-logo style={{ width: '36px', height: '36px', flexShrink: 0 }} /><div><strong>SENTANU JAYA</strong><span>ERP WORKSHOP</span></div></div><div className="auth-copy"><h1>Masuk ke Sentanu Jaya ERP</h1><p>Gunakan akun yang terdaftar untuk mengakses lingkungan pengembangan.</p></div>{error && <Alert tone="danger">{error}</Alert>}<form className="auth-form" onSubmit={submit}><FormField label="Email" htmlFor="login-email" required><Input id="login-email" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} required /></FormField><FormField label="Password" htmlFor="login-password" required><Input id="login-password" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></FormField><Button type="submit" loading={loading}>Login</Button></form><p className="auth-note">Forgot password belum tersedia.</p></Card></main>;
 }
 
 function ErrorPage({ code, title, description }: { code: '403' | '404'; title: string; description: string }) { const navigate = useNavigate(); return <main className="error-page"><Card className="error-card"><span>{code}</span><h1>{title}</h1><p>{description}</p><Button onClick={() => navigate('/dashboard')}>Kembali ke Dashboard</Button></Card></main>; }
