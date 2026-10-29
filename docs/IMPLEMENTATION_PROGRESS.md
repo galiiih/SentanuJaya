@@ -1,13 +1,19 @@
-# Implementation Progress — Sentanu Jaya ERP
-Date: October 23, 2026
-Branch: master
+# Catatan Progress Implementasi — Arsip Status Historis
 
-## Core Modules Status
-1. **Authentication & Authorization**: PASS — Role-based access (ADMIN, OWNER, STAFF), session token handling, and API guards verified.
-2. **Master Data**: PASS — Customers, suppliers, items, colors, treatments, pricing rules, and tax conditions (1, 2, 3) fully operational.
-3. **Customer PO & Custody Inbound**: PASS — STB tracking, inbound goods, and custody balance.
-4. **Material & Inventory**: PASS — Company material stock, usage tracking, non-negative stock validation.
-5. **Production & QC**: PASS — Work order status flow, internal QC, reject handling.
-6. **Delivery & Customer Acceptance**: PASS — Partial deliveries, 1 SJ = 1 PO, customer acceptance OK/reject validation (only OK billable).
-7. **Invoicing, Payments & Reporting**: PASS — Sidebar navigation updated with Invoicing, Payments, and Reports under Finance & Billing; duplicate Master Data removed. Authoritative tax conditions and 1-DO-per-invoice enforced.
-8. **Dashboard & KPI**: PASS — Live summary KPIs and reporting active.
+Dokumen ini merupakan snapshot laporan yang dibuat pada 23 Oktober 2026 dan merujuk ke branch master pada saat itu. Dokumen ini bukan status terkini dan tidak boleh digunakan sendiri sebagai bukti release readiness.
+
+## Modul yang dilaporkan pada snapshot saat itu
+
+Laporan lama menyatakan bahwa authentication/authorization, master data, Customer PO dan custody, material inventory, production/QC, delivery/acceptance, invoicing/payments/reporting, serta dashboard telah diimplementasikan.
+
+Klaim tersebut perlu diperiksa ulang terhadap:
+1. Source code pada branch dan commit yang sedang dinilai.
+2. Test backend/frontend yang benar-benar dijalankan pada commit tersebut.
+3. GitHub Actions terbaru, termasuk job dan log yang relevan.
+4. Browser E2E untuk alur pengguna yang memerlukan interaksi UI.
+
+## Cara memperbarui status
+
+Jangan mengubah daftar di atas menjadi PASS terkini hanya karena laporan historis menyebut PASS. Catat commit SHA, branch, waktu, command, jumlah test, skipped/failed test, dan tautan CI setiap kali status diperbarui.
+
+Untuk aturan bisnis, gunakan keputusan Owner terbaru dan baseline bisnis. Untuk implementasi aktual, source code, migrations, routes, test, dan CI pada commit yang diperiksa lebih otoritatif daripada laporan ini.
