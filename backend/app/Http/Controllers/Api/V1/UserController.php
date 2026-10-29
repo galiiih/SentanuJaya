@@ -16,9 +16,11 @@ class UserController extends BaseApiController
         $user = $request->user();
         abort_unless($user && in_array($user->role, ['ADMIN', 'OWNER'], true), 403, 'Forbidden: Admin or Owner required to view users');
 
+        $users = User::select('id', 'full_name as name', 'email', 'role', 'is_active', 'created_at')->latest()->get();
+
         return response()->json([
             'status' => 'success',
-            'data' => User::select('id', 'name', 'email', 'role', 'is_active', 'created_at')->latest()->get(),
+            'data' => $users,
         ]);
     }
 
@@ -43,9 +45,18 @@ class UserController extends BaseApiController
             ], 422);
         }
 
+        $email = $request->input('email');
+        $username = explode('@', $email)[0];
+        $baseUsername = $username;
+        $counter = 1;
+        while (User::where('username', $username)->exists()) {
+            $username = $baseUsername . $counter++;
+        }
+
         $newUser = User::create([
-            'name' => $request->input('name'),
-            'email' => $request->input('email'),
+            'username' => $username,
+            'full_name' => $request->input('name'),
+            'email' => $email,
             'password' => Hash::make($request->input('password')),
             'role' => $request->input('role'),
             'is_active' => $request->input('is_active', true),
@@ -54,7 +65,14 @@ class UserController extends BaseApiController
         return response()->json([
             'status' => 'success',
             'message' => 'User created successfully',
-            'data' => $newUser,
+            'data' => [
+                'id' => $newUser->id,
+                'name' => $newUser->full_name,
+                'email' => $newUser->email,
+                'role' => $newUser->role,
+                'is_active' => $newUser->is_active,
+                'created_at' => $newUser->created_at,
+            ],
         ], 201);
     }
 
@@ -80,7 +98,7 @@ class UserController extends BaseApiController
         }
 
         $data = [
-            'name' => $request->input('name', $user->name),
+            'full_name' => $request->input('name', $user->full_name),
             'email' => $request->input('email', $user->email),
             'role' => $request->input('role', $user->role),
             'is_active' => $request->input('is_active', $user->is_active),
@@ -95,7 +113,14 @@ class UserController extends BaseApiController
         return response()->json([
             'status' => 'success',
             'message' => 'User updated successfully',
-            'data' => $user,
+            'data' => [
+                'id' => $user->id,
+                'name' => $user->full_name,
+                'email' => $user->email,
+                'role' => $user->role,
+                'is_active' => $user->is_active,
+                'created_at' => $user->created_at,
+            ],
         ]);
     }
 
