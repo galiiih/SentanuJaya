@@ -4,7 +4,9 @@ namespace Tests\Feature\Api\V1;
 
 use App\Models\DeliveryOrder;
 use App\Models\User;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class DashboardApiTest extends TestCase
@@ -80,12 +82,21 @@ class DashboardApiTest extends TestCase
             'role' => 'STAFF',
         ]);
 
+        $financialQueries = [];
+        DB::listen(function (QueryExecuted $query) use (&$financialQueries) {
+            if (preg_match('/\\b(invoices|payments|payment_allocations)\\b/i', $query->sql)) {
+                $financialQueries[] = $query->sql;
+            }
+        });
+
         $response = $this->actingAs($staff)->getJson('/api/v1/dashboard/summary');
 
         $response->assertOk()
             ->assertJsonStructure(['data' => ['operational', 'custody', 'recent_activity']])
             ->assertJsonMissingPath('data.financial')
             ->assertJsonMissingPath('data.financial_trend');
+
+        $this->assertSame([], $financialQueries, 'STAFF dashboard must not execute financial database queries.');
 
         foreach ($response->json('data.recent_activity') as $activity) {
             $this->assertNotContains($activity['type'], ['invoice', 'payment']);
