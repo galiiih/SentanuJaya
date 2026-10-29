@@ -15,3 +15,6 @@
 *.zip
 .DS_Store
 Thumbs.db
+
+# Generated code graph/cache output
+/graphify-out/

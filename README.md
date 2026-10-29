@@ -119,10 +119,13 @@ E2E memerlukan backend/test environment sesuai konfigurasi Playwright. Build ata
 
 - **Indeks dokumentasi:** [`docs/00_README_INDEX.md`](docs/00_README_INDEX.md)
 - Dokumentasi bisnis, keputusan, arsitektur, dan modul: `docs/`
+- Arsip laporan fase/UAT dan referensi legacy: `docs/archive/` (bukan sumber status terkini).
 - Dokumentasi backend: [`backend/README.md`](backend/README.md)
 - API routes: [`backend/routes/api.php`](backend/routes/api.php)
 - Frontend: `frontend/`
 - CI workflows: `.github/workflows/`
+
+Artefak Graphify/cache tidak disertakan sebagai file aplikasi; hasil generated diabaikan melalui `.gitignore`. Laporan fase, UAT, dan rancangan lama disimpan di `docs/archive/` agar root tetap fokus pada aplikasi aktif.
 
 Gunakan keputusan bisnis owner yang disahkan sebagai aturan domain. Untuk implementasi, utamakan source code, migration, routes, tests, dan status CI terbaru. Laporan `STEP*_...` dan dokumen fase lama adalah histori, bukan status proyek saat ini.
 

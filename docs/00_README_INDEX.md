@@ -60,6 +60,13 @@ Dokumen sumber ini dipertahankan sebagai referensi. Aturan yang berlaku tetap me
 
 Repository sudah mencakup backend/API dan frontend untuk area Master Data, Customer PO, Goods Receipt/Custody, material inventory, Work Order/Production, Delivery/Acceptance, Invoice, Payments, Dashboard, dan Reports. Rincian route backend dapat diperiksa di `backend/routes/api.php`; status tiap alur harus dibuktikan dengan test/CI terbaru.
 
+## Arsip dan dokumen historis
+
+- `archive/legacy-odoo/` — dokumen dan konfigurasi dari pendekatan Odoo terdahulu; bukan implementasi aktif.
+- `archive/implementation-reports/` — laporan STEP historis. Isi laporan tidak otomatis menggambarkan status saat ini.
+- `archive/uat/` — dokumen hasil UAT historis; perlu dikaitkan dengan commit dan skenario yang diuji sebelum dijadikan bukti release.
+- `archive/phase3-design/` — spesifikasi desain fase terdahulu; gunakan hanya sebagai referensi setelah dibandingkan dengan source dan keputusan terbaru.
+
 ## Perubahan dokumentasi
 
 Dokumentasi root dan indeks harus tetap menjawab: apa aplikasi ini, bagaimana struktur repository, cara menjalankan backend/frontend, dan di mana menemukan keputusan bisnis serta bukti test. Hindari memasukkan status fase yang kedaluwarsa ke dokumen entry point.
