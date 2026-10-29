@@ -101,7 +101,8 @@ class InvoiceController extends BaseApiController
 
     public function post(Request $request, Invoice $invoice): JsonResponse
     {
-        abort_unless($request->user()?->hasPermission('invoice.create'), 403, __('invoice.errors.forbidden'));
+        // Posting finalizes the invoice; the role matrix reserves approval for OWNER.
+        abort_unless($request->user()?->hasPermission('invoice.approve'), 403, __('invoice.errors.forbidden'));
 
         $this->invoiceService->postInvoice($invoice, $request->user()->id);
 
