@@ -1,4 +1,4 @@
-/* HOTFIX: ULTRA-TRANSLUCENT GLASSMORPHISM MODAL PANEL */
+/* HOTFIX: ULTRA-TRANSLUCENT GLASSMORPHISM MODAL PANEL & FORM INPUTS */
 .glass-modal-overlay {
   position: fixed !important;
   inset: 0 !important;
@@ -7,73 +7,83 @@
   align-items: center !important;
   justify-content: center !important;
   padding: 1rem !important;
-  background: rgba(15, 23, 42, 0.25) !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
+  background: rgba(15, 23, 42, 0.45) !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
 }
 
 .glass-modal {
   position: relative !important;
   width: 100% !important;
-  max-width: 38rem !important;
+  max-width: 42rem !important;
   max-height: 85vh !important;
   overflow-y: auto !important;
-  background: rgba(30, 41, 59, 0.14) !important;
-  -webkit-backdrop-filter: blur(18px) saturate(145%) !important;
-  backdrop-filter: blur(18px) saturate(145%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.42) !important;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.20) !important;
+  background: var(--color-surface) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(160%) !important;
+  backdrop-filter: blur(20px) saturate(160%) !important;
+  border: 1px solid var(--color-border-strong) !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
   border-radius: 1rem !important;
-  padding: 1.5rem !important;
-  color: #F8FAFC !important;
+  padding: 1.75rem !important;
+  color: var(--color-text) !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  .glass-modal {
+    background: rgba(30, 41, 59, 0.85) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    color: #F8FAFC !important;
+  }
 }
 
 .glass-modal .modal__header {
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-  padding-bottom: 0.75rem !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.25) !important;
-  margin-bottom: 1rem !important;
+  padding-bottom: 0.85rem !important;
+  border-bottom: 1px solid var(--color-border) !important;
+  margin-bottom: 1.25rem !important;
 }
 
 .glass-modal .modal__header h2, 
 .glass-modal .modal__header h3 {
   margin: 0 !important;
   font-size: 1.15rem !important;
-  color: #F8FAFC !important;
+  color: var(--color-text) !important;
   font-weight: 700 !important;
 }
 
-/* Modal Form Inputs - Translucent Frosted with Contrast */
 .glass-modal input, 
 .glass-modal select, 
 .glass-modal textarea {
-  background: rgba(15, 23, 42, 0.55) !important;
-  border: 1px solid rgba(255, 255, 255, 0.3) !important;
-  color: #F8FAFC !important;
-  border-radius: 0.375rem !important;
-  padding: 0.5rem 0.75rem !important;
+  background: var(--color-surface-raised) !important;
+  border: 1px solid var(--color-border-strong) !important;
+  color: var(--color-text) !important;
+  border-radius: 0.5rem !important;
+  padding: 0.6rem 0.8rem !important;
   width: 100% !important;
+  font-size: 0.82rem !important;
+  transition: all 150ms ease !important;
 }
 
 .glass-modal input::placeholder, 
 .glass-modal textarea::placeholder {
-  color: #94A3B8 !important;
+  color: var(--color-text-muted) !important;
 }
 
 .glass-modal input:focus, 
 .glass-modal select:focus, 
 .glass-modal textarea:focus {
-  border-color: #38BDF8 !important;
-  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.35) !important;
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 3px rgb(2 132 199 / 20%) !important;
   outline: none !important;
 }
 
 .glass-modal label, 
 .glass-modal .form-field__label {
-  color: #F1F5F9 !important;
-  font-weight: 600 !important;
+  color: var(--color-text) !important;
+  font-weight: 700 !important;
+  font-size: 0.78rem !important;
 }
 
 @import "tailwindcss";
