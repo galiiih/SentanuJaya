@@ -273,13 +273,13 @@ function AuthenticatedLayout() {
                     <span>{user?.email || 'owner@sentanujaya.id'}</span>
                   </div>
                   <div className="user-menu__divider" />
-                  <button type="button" className="user-menu__item" onClick={() => { setMenuOpen(false); }}>
+                  <button type="button" className="user-menu__item" onClick={() => { setMenuOpen(false); navigate('/master'); }}>
                     <Building2 size={15} /> My Organization
                   </button>
-                  <button type="button" className="user-menu__item" onClick={() => { setMenuOpen(false); }}>
+                  <button type="button" className="user-menu__item" onClick={() => { setMenuOpen(false); navigate('/users'); }}>
                     <User size={15} /> My Profile
                   </button>
-                  <button type="button" className="user-menu__item" onClick={() => { setMenuOpen(false); }}>
+                  <button type="button" className="user-menu__item" onClick={() => { setMenuOpen(false); navigate('/master'); }}>
                     <Settings size={15} /> Settings
                   </button>
                   <div className="user-menu__divider" />
