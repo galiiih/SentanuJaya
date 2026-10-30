@@ -31,6 +31,8 @@ type Translations = {
     custodyDesc: string;
     poTitle: string;
     poDesc: string;
+    customerPoTitle: string;
+    customerPoDesc: string;
     deliveryTitle: string;
     deliveryDesc: string;
     materialsTitle: string;
@@ -272,6 +274,8 @@ const idTranslations: Translations = {
     custodyDesc: 'Pencatatan fisik dan lokasi barang customer di workshop.',
     poTitle: 'Customer Purchase Order',
     poDesc: 'Kelola Purchase Order (PO) resmi dari customer dan alokasi pesanan.',
+    customerPoTitle: 'Customer Purchase Order',
+    customerPoDesc: 'Kelola Purchase Order (PO) resmi dari customer dan alokasi pesanan.',
     deliveryTitle: 'Surat Jalan & Acceptance',
     deliveryDesc: 'Pengiriman dan bukti penerimaan dari customer.',
     materialsTitle: 'Gudang Material',
@@ -510,6 +514,8 @@ const enTranslations: Translations = {
     custodyDesc: 'Physical recording and customer goods location in workshop.',
     poTitle: 'Customer Purchase Order',
     poDesc: 'Manage customer POs and order fulfillment tracking.',
+    customerPoTitle: 'Customer Purchase Order',
+    customerPoDesc: 'Manage customer POs and order fulfillment tracking.',
     deliveryTitle: 'Delivery Order & Acceptance',
     deliveryDesc: 'Deliveries and customer proof of acceptance.',
     materialsTitle: 'Material Warehouse',

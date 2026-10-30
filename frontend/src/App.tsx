@@ -142,10 +142,10 @@ function Sidebar({ mobile, onClose, closeButtonRef }: { mobile?: boolean; onClos
       <div className="sidebar__brand">
         <div data-sentanu-logo data-loop="true" style={{ width: '36px', height: '36px', flexShrink: 0 }} />
         <div className="sidebar__brand-copy"><strong>SENTANU JAYA</strong><span>ERP WORKSHOP</span></div>
-        <div className="sidebar__controls" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', marginLeft: 'auto' }}>
-          <button type="button" className="icon-button sidebar__collapse" onClick={() => setCollapsed((value) => !value)} aria-label={collapsed ? 'Perlebar sidebar' : 'Ciutkan sidebar'} aria-expanded={!collapsed} title={collapsed ? 'Perlebar sidebar' : 'Ciutkan sidebar'}>{collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}</button>
-          {mobile && <button ref={closeButtonRef} className="icon-button sidebar__close" onClick={onClose} aria-label="Tutup navigasi"><X size={20} /></button>}
-        </div>
+      </div>
+      <div className="sidebar__toggle-row">
+        <button type="button" className="icon-button sidebar__collapse" onClick={() => setCollapsed((value) => !value)} aria-label={collapsed ? 'Perlebar sidebar' : 'Ciutkan sidebar'} aria-expanded={!collapsed} title={collapsed ? 'Perlebar sidebar' : 'Ciutkan sidebar'}>{collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}</button>
+        {mobile && <button ref={closeButtonRef} className="icon-button sidebar__close" onClick={onClose} aria-label="Tutup navigasi"><X size={20} /></button>}
       </div>
       <nav className="sidebar__nav" aria-label="Navigasi utama">
         {navSections.map((section) => {

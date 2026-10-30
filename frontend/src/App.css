@@ -343,7 +343,18 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   transition: opacity 140ms ease, max-width 180ms ease, transform 180ms ease;
 }
 .sidebar__brand-copy { min-width: 0; overflow: hidden; white-space: nowrap; }
-.sidebar__collapse { flex: 0 0 auto; margin-left: auto; color: #b5c2d3; }
+.sidebar__toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgb(255 255 255 / 10%);
+  margin-bottom: 0.75rem;
+}
+.sidebar--collapsed .sidebar__toggle-row {
+  justify-content: center;
+}
+.sidebar__collapse { flex: 0 0 auto; color: #b5c2d3; }
 .sidebar__collapse:hover { color: #fff; }
 .sidebar__section + .sidebar__section { margin-top: var(--space-lg); }
 .nav-item { position: relative; }
