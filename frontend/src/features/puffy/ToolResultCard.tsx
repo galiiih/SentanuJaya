@@ -38,12 +38,14 @@ export function ToolResultCard({ result, s, actionState, onAction }: CardProps) 
             </div>
           )}
 
-          {table && table.rows.length > 0 && (
+          {table && table.rows && table.rows.length > 0 && (
             <div className="puffy-table-wrap">
               <table className="puffy-table">
-                <thead>
-                  <tr>{table.columns.map((c) => <th key={c}>{c}</th>)}</tr>
-                </thead>
+                {table.columns && table.columns.length > 0 && (
+                  <thead>
+                    <tr>{table.columns.map((c) => <th key={c}>{c}</th>)}</tr>
+                  </thead>
+                )}
                 <tbody>
                   {table.rows.map((row, i) => (
                     <tr key={i}>{row.map((cell, j) => <td key={j}>{cell}</td>)}</tr>

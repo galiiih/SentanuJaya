@@ -56,7 +56,7 @@ class PuffyAiService
                             ['label' => 'PO Open', 'value' => (string)$openCount],
                         ],
                         'table' => [
-                            'headers' => ['No. PO', 'Pelanggan', 'Tanggal', 'Status'],
+                            'columns' => ['No. PO', 'Pelanggan', 'Tanggal', 'Status'],
                             'rows' => $recent->map(fn($po) => [
                                 $po->po_number,
                                 $po->customer?->name ?? '-',
@@ -80,7 +80,7 @@ class PuffyAiService
                             ['label' => 'Total Surat Jalan', 'value' => (string)$count],
                         ],
                         'table' => [
-                            'headers' => ['No. Surat Jalan', 'Pelanggan', 'Tanggal', 'Status'],
+                            'columns' => ['No. Surat Jalan', 'Pelanggan', 'Tanggal', 'Status'],
                             'rows' => $recent->map(fn($d) => [
                                 $d->do_number ?? $d->id,
                                 $d->customer?->name ?? '-',
@@ -136,7 +136,7 @@ class PuffyAiService
                             ['label' => 'Jenis Material', 'value' => (string)$count],
                         ],
                         'table' => [
-                            'headers' => ['Kode', 'Nama Material', 'Stok Min'],
+                            'columns' => ['Kode', 'Nama Material', 'Stok Min'],
                             'rows' => $recent->map(fn($m) => [
                                 $m->code,
                                 $m->name,
