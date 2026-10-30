@@ -296,9 +296,18 @@ class PuffyAiService
             $iteration++;
             $onStatus("Memproses analisis agen AI (Iterasi {$iteration})…", ['route' => $route]);
 
-            $responsePayload = $this->callProviderWithToolsAndStream($messages, $tools, $onToken);
+            // Buffer tokens during intermediate tool-seeking iterations to avoid double streaming
+            $iterationTokens = '';
+            $proxyOnToken = function($token) use (&$iterationTokens) {
+                $iterationTokens .= $token;
+            };
 
-            if (isset($responsePayload['tool_calls']) && !empty($responsePayload['tool_calls'])) {
+            $responsePayload = $this->callProviderWithToolsAndStream($messages, $tools, $proxyOnToken);
+
+            $hasToolCalls = isset($responsePayload['tool_calls']) && !empty($responsePayload['tool_calls']);
+            $detected = !$hasToolCalls && !$executedToolResult ? $this->detectTool($userMessage) : null;
+
+            if ($hasToolCalls) {
                 $toolCall = $responsePayload['tool_calls'][0];
                 $toolName = $toolCall['function']['name'] ?? null;
                 $toolArgs = json_decode($toolCall['function']['arguments'] ?? '{}', true) ?? [];
@@ -310,7 +319,7 @@ class PuffyAiService
 
                     $messages[] = [
                         'role' => 'assistant',
-                        'content' => null,
+                        'content' => $responsePayload['content'] ?? $iterationTokens,
                         'tool_calls' => [$toolCall],
                     ];
                     $messages[] = [
@@ -322,29 +331,34 @@ class PuffyAiService
                 }
             }
 
-            // Fallback deterministic tool detection if LLM didn't call tool natively
-            if (!$executedToolResult) {
-                $detected = $this->detectTool($userMessage);
-                if ($detected) {
-                    $onStatus("Menjalankan tool ERP (fallback): {$detected}…", ['route' => $route, 'target' => 'table']);
-                    $executedToolResult = $this->executeTool($detected);
-                    $onToolResult($executedToolResult);
-                    $messages[] = [
-                        'role' => 'system',
-                        'content' => "System injected ERP Tool Result for {$detected}:\n" . json_encode($executedToolResult),
-                    ];
-                    continue;
-                }
+            if ($detected && !$executedToolResult) {
+                $onStatus("Menjalankan tool ERP (fallback): {$detected}…", ['route' => $route, 'target' => 'table']);
+                $executedToolResult = $this->executeTool($detected);
+                $onToolResult($executedToolResult);
+                $messages[] = [
+                    'role' => 'assistant',
+                    'content' => $iterationTokens,
+                ];
+                $messages[] = [
+                    'role' => 'system',
+                    'content' => "System injected ERP Tool Result for {$detected}:\n" . json_encode($executedToolResult),
+                ];
+                continue;
             }
 
-            $content = $responsePayload['content'] ?? '';
+            $content = $responsePayload['content'] !== '' ? $responsePayload['content'] : $iterationTokens;
             if ($content !== '') {
                 $finalReply = $content;
+                // Stream final content once to client
+                foreach (explode(' ', $finalReply) as $word) {
+                    $onToken($word . ' ');
+                    usleep(15000);
+                }
             } else if ($executedToolResult) {
                 $finalReply = $executedToolResult['summary'] ?? "Berdasarkan data operasional Sentanu Jaya ERP, permintaan Anda telah diproses.";
                 foreach (explode(' ', $finalReply) as $word) {
                     $onToken($word . ' ');
-                    usleep(20000);
+                    usleep(15000);
                 }
             }
             break;
