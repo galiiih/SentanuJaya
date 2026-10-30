@@ -66,6 +66,7 @@ class PuffyAiService
                         ],
                         'source' => 'ERP Database',
                         'asOf' => now()->toIso8601String(),
+                        'ui' => ['route' => '/customer-po', 'target' => 'table'],
                     ];
 
                 case 'get_delivery_summary':
@@ -90,6 +91,7 @@ class PuffyAiService
                         ],
                         'source' => 'ERP Database',
                         'asOf' => now()->toIso8601String(),
+                        'ui' => ['route' => '/delivery', 'target' => 'table'],
                     ];
 
                 case 'get_invoice_summary':
@@ -106,6 +108,7 @@ class PuffyAiService
                         ],
                         'source' => 'ERP Database',
                         'asOf' => now()->toIso8601String(),
+                        'ui' => ['route' => '/invoicing', 'target' => 'summary'],
                     ];
 
                 case 'get_payment_summary':
@@ -122,6 +125,7 @@ class PuffyAiService
                         ],
                         'source' => 'ERP Database',
                         'asOf' => now()->toIso8601String(),
+                        'ui' => ['route' => '/payments', 'target' => 'table'],
                     ];
 
                 case 'get_inventory_summary':
@@ -145,6 +149,7 @@ class PuffyAiService
                         ],
                         'source' => 'ERP Database',
                         'asOf' => now()->toIso8601String(),
+                        'ui' => ['route' => '/materials', 'target' => 'table'],
                     ];
 
                 default:
