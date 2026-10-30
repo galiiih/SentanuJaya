@@ -20,16 +20,18 @@ class PuffyAiService
     protected ?string $openAiApiKey;
     protected ?string $openAiModel;
     protected int $timeout;
+    protected PuffyStreamParser $parser;
 
-    public function __construct()
+    public function __construct(PuffyStreamParser $parser)
     {
         $this->provider = config('services.puffy.provider', 'ollama');
         $this->ollamaUrl = config('services.puffy.ollama_url', 'http://127.0.0.1:11434');
-        $this->ollamaModel = config('services.puffy.ollama_model', 'llama3');
-        $this->openAiBaseUrl = config('services.puffy.openai_base_url');
+        $this->ollamaModel = config('services.puffy.ollama_model', 'qwen3.5:9b');
+        $this->openAiBaseUrl = config('services.puffy.openai_base_url', 'https://api.openai.com/v1');
         $this->openAiApiKey = config('services.puffy.openai_api_key');
         $this->openAiModel = config('services.puffy.openai_model', 'gpt-4o-mini');
         $this->timeout = (int) config('services.puffy.timeout', 30);
+        $this->parser = $parser;
     }
 
     /**
@@ -168,8 +170,68 @@ class PuffyAiService
     }
 
     /**
-     * Determine which tool to call based on user message.
+     * Get available ERP tool definitions for native LLM function calling.
      */
+    public function getToolDefinitions(): array
+    {
+        return [
+            [
+                'type' => 'function',
+                'function' => [
+                    'name' => 'get_customer_po_summary',
+                    'description' => 'Mendapatkan ringkasan dan statistik Customer PO (Pesanan Pelanggan) dari database ERP Sentanu Jaya.',
+                    'parameters' => [
+                        'type' => 'object',
+                        'properties' => [],
+                    ],
+                ],
+            ],
+            [
+                'type' => 'function',
+                'function' => [
+                    'name' => 'get_delivery_summary',
+                    'description' => 'Mendapatkan ringkasan Surat Jalan (Delivery Orders) pengiriman barang dari gudang.',
+                    'parameters' => [
+                        'type' => 'object',
+                        'properties' => [],
+                    ],
+                ],
+            ],
+            [
+                'type' => 'function',
+                'function' => [
+                    'name' => 'get_invoice_summary',
+                    'description' => 'Mendapatkan ringkasan Tagihan / Invoice dan total nilai finansial penagihan.',
+                    'parameters' => [
+                        'type' => 'object',
+                        'properties' => [],
+                    ],
+                ],
+            ],
+            [
+                'type' => 'function',
+                'function' => [
+                    'name' => 'get_payment_summary',
+                    'description' => 'Mendapatkan ringkasan transaksi Pembayaran (Payments) dari pelanggan.',
+                    'parameters' => [
+                        'type' => 'object',
+                        'properties' => [],
+                    ],
+                ],
+            ],
+            [
+                'type' => 'function',
+                'function' => [
+                    'name' => 'get_inventory_summary',
+                    'description' => 'Mendapatkan ringkasan inventaris material / barang di gudang.',
+                    'parameters' => [
+                        'type' => 'object',
+                        'properties' => [],
+                    ],
+                ],
+            ],
+        ];
+    }
     public function detectTool(string $message): ?string
     {
         $lower = strtolower($message);
@@ -192,113 +254,204 @@ class PuffyAiService
     }
 
     /**
-     * Stream response from LLM (Ollama or OpenAI/9router) with callback for each token chunk.
+     * Agentic chat execution supporting history, native tool calling loop (max 5 iterations), and robust parsing.
      */
-    public function streamChat(string $prompt, array $pageContext, callable $onToken): void
+    public function agenticChat(string $userMessage, ?string $conversationId, array $pageContext, callable $onStatus, callable $onToolResult, callable $onToken): array
     {
         $userName = $pageContext['user_name'] ?? 'User';
         $role = $pageContext['role'] ?? 'STAFF';
         $title = $pageContext['title'] ?? 'Dashboard';
         $route = $pageContext['route'] ?? '/dashboard';
 
-        $systemPrompt = "Anda adalah Puffy, asisten AI operasional untuk Sentanu Jaya ERP. Pengguna aktif adalah {$userName} dengan role {$role}. Halaman saat ini: {$title} ({$route}). Berikan jawaban yang profesional, akurat, ringkas, dan langsung pada inti operasional.";
+        $systemPrompt = "Anda adalah Puffy, asisten AI operasional untuk Sentanu Jaya ERP. Pengguna aktif adalah {$userName} dengan role {$role}. Halaman saat ini: {$title} ({$route}). Gunakan tool ERP yang tersedia jika diperlukan untuk menjawab pertanyaan berbasis data aktual database. Jangan menebak angka atau data.";
 
-        $provider = config('services.puffy.provider', 'ollama');
-        if ($provider === 'openai' || $provider === '9router') {
-            $this->streamOpenAi($systemPrompt, $prompt, $onToken);
-        } else {
-            $this->streamOllama($systemPrompt, $prompt, $onToken);
+        $messages = [
+            ['role' => 'system', 'content' => $systemPrompt]
+        ];
+
+        if ($conversationId) {
+            $pastMessages = PuffyMessage::where('conversation_id', $conversationId)
+                ->orderBy('created_at', 'asc')
+                ->take(10)
+                ->get();
+
+            foreach ($pastMessages as $msg) {
+                $messages[] = [
+                    'role' => $msg->role,
+                    'content' => $msg->content,
+                ];
+            }
         }
+
+        $messages[] = ['role' => 'user', 'content' => $userMessage];
+        $tools = $this->getToolDefinitions();
+
+        $iteration = 0;
+        $maxIterations = 5;
+        $finalReply = '';
+        $executedToolResult = null;
+
+        while ($iteration < $maxIterations) {
+            $iteration++;
+            $onStatus("Memproses analisis agen AI (Iterasi {$iteration})…", ['route' => $route]);
+
+            $responsePayload = $this->callProviderWithToolsAndStream($messages, $tools, $onToken);
+
+            if (isset($responsePayload['tool_calls']) && !empty($responsePayload['tool_calls'])) {
+                $toolCall = $responsePayload['tool_calls'][0];
+                $toolName = $toolCall['function']['name'] ?? null;
+                $toolArgs = json_decode($toolCall['function']['arguments'] ?? '{}', true) ?? [];
+
+                if ($toolName) {
+                    $onStatus("Menjalankan tool ERP: {$toolName}…", ['route' => $route, 'target' => 'table']);
+                    $executedToolResult = $this->executeTool($toolName, $toolArgs);
+                    $onToolResult($executedToolResult);
+
+                    $messages[] = [
+                        'role' => 'assistant',
+                        'content' => null,
+                        'tool_calls' => [$toolCall],
+                    ];
+                    $messages[] = [
+                        'role' => 'tool',
+                        'name' => $toolName,
+                        'content' => json_encode($executedToolResult),
+                    ];
+                    continue;
+                }
+            }
+
+            // Fallback deterministic tool detection if LLM didn't call tool natively
+            if (!$executedToolResult) {
+                $detected = $this->detectTool($userMessage);
+                if ($detected) {
+                    $onStatus("Menjalankan tool ERP (fallback): {$detected}…", ['route' => $route, 'target' => 'table']);
+                    $executedToolResult = $this->executeTool($detected);
+                    $onToolResult($executedToolResult);
+                    $messages[] = [
+                        'role' => 'system',
+                        'content' => "System injected ERP Tool Result for {$detected}:\n" . json_encode($executedToolResult),
+                    ];
+                    continue;
+                }
+            }
+
+            $content = $responsePayload['content'] ?? '';
+            if ($content !== '') {
+                $finalReply = $content;
+            } else if ($executedToolResult) {
+                $finalReply = $executedToolResult['summary'] ?? "Berdasarkan data operasional Sentanu Jaya ERP, permintaan Anda telah diproses.";
+                foreach (explode(' ', $finalReply) as $word) {
+                    $onToken($word . ' ');
+                    usleep(20000);
+                }
+            }
+            break;
+        }
+
+        return [
+            'reply' => trim($finalReply),
+            'tool_result' => $executedToolResult,
+        ];
     }
 
-    protected function streamOllama(string $systemPrompt, string $userPrompt, callable $onToken): void
+    protected function callProviderWithToolsAndStream(array $messages, array $tools, callable $onToken): array
     {
-        $ollamaUrl = config('services.puffy.ollama_url', 'http://127.0.0.1:11434');
-        $ollamaModel = config('services.puffy.ollama_model', 'llama3');
-        $timeout = (int) config('services.puffy.timeout', 30);
-
         try {
-            $response = Http::timeout($timeout)
-                ->withOptions(['stream' => true])
-                ->post("{$ollamaUrl}/api/chat", [
-                    'model' => $ollamaModel,
-                    'messages' => [
-                        ['role' => 'system', 'content' => $systemPrompt],
-                        ['role' => 'user', 'content' => $userPrompt],
-                    ],
-                    'stream' => true,
-                ]);
+            if ($this->provider === 'openai' || $this->provider === '9router') {
+                $response = Http::timeout($this->timeout)
+                    ->withToken($this->openAiApiKey)
+                    ->withOptions(['stream' => true])
+                    ->post("{$this->openAiBaseUrl}/chat/completions", [
+                        'model' => $this->openAiModel,
+                        'messages' => $messages,
+                        'tools' => $tools,
+                        'tool_choice' => 'auto',
+                        'stream' => true,
+                    ]);
 
-            if ($response->successful()) {
-                $body = $response->getBody();
-                while (!$body->eof()) {
-                    $line = trim($body->read(1024));
-                    if ($line === '') continue;
-                    $data = json_decode($line, true);
-                    if (isset($data['message']['content'])) {
-                        $onToken($data['message']['content']);
+                if ($response->successful()) {
+                    $body = $response->getBody();
+                    $fullContent = '';
+                    $toolCalls = null;
+                    while (!$body->eof()) {
+                        $chunk = $body->read(1024);
+                        $parsedLines = $this->parser->feedOpenAiChunk($chunk);
+                        foreach ($parsedLines as $item) {
+                            if ($item === '[DONE]') break;
+                            if (is_array($item)) {
+                                $delta = $item['choices'][0]['delta'] ?? [];
+                                $content = $delta['content'] ?? null;
+                                if ($content) {
+                                    $fullContent .= $content;
+                                    $onToken($content);
+                                }
+                                if (isset($delta['tool_calls'])) {
+                                    $toolCalls = $delta['tool_calls'];
+                                }
+                            }
+                        }
                     }
-                    if (isset($data['done']) && $data['done'] === true) {
-                        break;
-                    }
+                    return ['content' => $fullContent, 'tool_calls' => $toolCalls];
                 }
-                return;
+            } else {
+                // Ollama
+                $response = Http::timeout($this->timeout)
+                    ->withOptions(['stream' => true])
+                    ->post("{$this->ollamaUrl}/api/chat", [
+                        'model' => $this->ollamaModel,
+                        'messages' => $messages,
+                        'tools' => $tools,
+                        'stream' => true,
+                    ]);
+
+                if ($response->successful()) {
+                    $body = $response->getBody();
+                    $fullContent = '';
+                    $toolCalls = null;
+                    while (!$body->eof()) {
+                        $chunk = $body->read(1024);
+                        $parsedObjects = $this->parser->feedOllamaChunk($chunk);
+                        foreach ($parsedObjects as $data) {
+                            $msg = $data['message'] ?? [];
+                            $content = $msg['content'] ?? null;
+                            if ($content) {
+                                $fullContent .= $content;
+                                $onToken($content);
+                            }
+                            if (isset($msg['tool_calls'])) {
+                                $toolCalls = $msg['tool_calls'];
+                            }
+                            if (isset($data['done']) && $data['done'] === true) {
+                                break 2;
+                            }
+                        }
+                    }
+                    // Flush remaining buffer
+                    foreach ($this->parser->flushOllama() as $data) {
+                        $msg = $data['message'] ?? [];
+                        if (isset($msg['content'])) {
+                            $fullContent += $msg['content'];
+                            $onToken($msg['content']);
+                        }
+                        if (isset($msg['tool_calls'])) {
+                            $toolCalls = $msg['tool_calls'];
+                        }
+                    }
+                    return ['content' => $fullContent, 'tool_calls' => $toolCalls];
+                }
             }
         } catch (\Exception $e) {
-            Log::warning("Ollama stream error or unreachable: " . $e->getMessage() . ". Falling back to simulated stream.");
+            Log::warning("AI Provider stream with tools failed: " . $e->getMessage());
         }
 
+        // Fallback simulation if Ollama offline / unreachable
         $fallbackText = "Halo, saya Puffy asisten Sentanu Jaya ERP. Berdasarkan data operasional database, berikut informasi yang Anda perlukan.";
         foreach (explode(' ', $fallbackText) as $word) {
             $onToken($word . ' ');
-            usleep(30000);
-        }
-    }
-
-    protected function streamOpenAi(string $systemPrompt, string $userPrompt, callable $onToken): void
-    {
-        $baseUrl = config('services.puffy.openai_base_url', 'https://api.openai.com/v1');
-        $apiKey = config('services.puffy.openai_api_key');
-        $model = config('services.puffy.openai_model', 'gpt-4o-mini');
-        $timeout = (int) config('services.puffy.timeout', 30);
-
-        try {
-            $response = Http::timeout($timeout)
-                ->withToken($apiKey)
-                ->withOptions(['stream' => true])
-                ->post("{$baseUrl}/chat/completions", [
-                    'model' => $model,
-                    'messages' => [
-                        ['role' => 'system', 'content' => $systemPrompt],
-                        ['role' => 'user', 'content' => $userPrompt],
-                    ],
-                    'stream' => true,
-                ]);
-
-            if ($response->successful()) {
-                $body = $response->getBody();
-                while (!$body->eof()) {
-                    $line = trim($body->read(1024));
-                    if (str_starts_with($line, 'data: ')) {
-                        $jsonStr = substr($line, 6);
-                        if ($jsonStr === '[DONE]') break;
-                        $data = json_decode($jsonStr, true);
-                        $content = $data['choices'][0]['delta']['content'] ?? null;
-                        if ($content) {
-                            $onToken($content);
-                        }
-                    }
-                }
-                return;
-            }
-        } catch (\Exception $e) {
-            Log::warning("OpenAI/9router stream error: " . $e->getMessage() . ". Falling back to simulated stream.");
+            usleep(20000);
         }
 
-        $fallbackText = "Halo, saya Puffy asisten Sentanu Jaya ERP.";
-        foreach (explode(' ', $fallbackText) as $word) {
-            $onToken($word . ' ');
-            usleep(30000);
-        }
+        return ['content' => $fallbackText, 'tool_calls' => null];
     }
 }
