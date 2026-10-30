@@ -9,6 +9,7 @@ use App\Models\PuffyFeedback;
 use App\Models\PuffyPendingAction;
 use App\Models\PuffyAuditLog;
 use App\Services\PuffyAiService;
+use App\Services\PuffyKnowledgeService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -16,10 +17,12 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class PuffyController extends BaseApiController
 {
     protected PuffyAiService $aiService;
+    protected PuffyKnowledgeService $knowledgeService;
 
-    public function __construct(PuffyAiService $aiService)
+    public function __construct(PuffyAiService $aiService, PuffyKnowledgeService $knowledgeService)
     {
         $this->aiService = $aiService;
+        $this->knowledgeService = $knowledgeService;
     }
 
     /**
@@ -221,5 +224,23 @@ class PuffyController extends BaseApiController
         ]);
 
         return $this->sendResponse($action, 'Aksi dibatalkan.');
+    }
+
+    /**
+     * Get quick questions for UI recommendations.
+     */
+    public function quickQuestions()
+    {
+        return $this->sendResponse($this->knowledgeService->getQuickQuestions(), 'Daftar pertanyaan cepat berhasil dimuat.');
+    }
+
+    /**
+     * Get knowledge templates metadata.
+     */
+    public function knowledgeTemplates(Request $request)
+    {
+        $category = $request->input('category');
+        $templates = $this->knowledgeService->getTemplates($category);
+        return $this->sendResponse($templates, 'Knowledge templates berhasil dimuat.');
     }
 }

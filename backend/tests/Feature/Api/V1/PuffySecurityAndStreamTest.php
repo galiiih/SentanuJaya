@@ -119,4 +119,44 @@ class PuffySecurityAndStreamTest extends TestCase
         $this->assertFalse($unknown['hasData']);
         $this->assertEquals('Informasi Operasional Sentanu Jaya', $unknown['title']);
     }
+
+    public function test_quick_questions_endpoint(): void
+    {
+        $response = $this->actingAs($this->user1)->getJson('/api/v1/puffy/quick-questions');
+        $response->assertStatus(200);
+        $response->assertJsonStructure([
+            'success',
+            'message',
+            'data' => [
+                'dashboard',
+                'customer-po',
+                'materials',
+                'delivery',
+                'invoicing',
+                'payments',
+            ]
+        ]);
+    }
+
+    public function test_knowledge_templates_endpoint_and_filter(): void
+    {
+        $response = $this->actingAs($this->user1)->getJson('/api/v1/puffy/knowledge/templates?category=customer-po');
+        $response->assertStatus(200);
+        $response->assertJsonStructure([
+            'success',
+            'message',
+            'data' => [
+                '*' => ['id', 'category', 'title', 'sample_questions', 'intent']
+            ]
+        ]);
+        $data = $response->json('data');
+        $this->assertCount(1, $data);
+        $this->assertEquals('customer-po', $data[0]['category']);
+    }
+
+    public function test_puffy_endpoints_require_auth(): void
+    {
+        $this->getJson('/api/v1/puffy/quick-questions')->assertStatus(401);
+        $this->getJson('/api/v1/puffy/knowledge/templates')->assertStatus(401);
+    }
 }

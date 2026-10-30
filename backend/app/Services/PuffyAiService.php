@@ -22,8 +22,9 @@ class PuffyAiService
     protected ?string $openAiModel;
     protected int $timeout;
     protected PuffyStreamParser $parser;
+    protected PuffyKnowledgeService $knowledgeService;
 
-    public function __construct(PuffyStreamParser $parser)
+    public function __construct(PuffyStreamParser $parser, PuffyKnowledgeService $knowledgeService)
     {
         $this->provider = config('services.puffy.provider', 'ollama');
         $this->ollamaUrl = config('services.puffy.ollama_url', 'http://127.0.0.1:11434');
@@ -33,6 +34,7 @@ class PuffyAiService
         $this->openAiModel = config('services.puffy.openai_model', 'gpt-4o-mini');
         $this->timeout = (int) config('services.puffy.timeout', 30);
         $this->parser = $parser;
+        $this->knowledgeService = $knowledgeService;
     }
 
     /**
@@ -292,6 +294,11 @@ class PuffyAiService
         $route = $pageContext['route'] ?? '/dashboard';
 
         $systemPrompt = "Anda adalah Puffy, asisten operasional Sentanu Jaya ERP. Pengguna aktif: {$userName} (Role: {$role}). Halaman: {$title} ({$route}). Berbicaralah dengan ramah, profesional, dan natural seperti Customer Service atau Asisten Operasional yang berpengalaman (jangan menggunakan template kaku berulang, jangan selalu memperkenalkan diri atau mengulang salam). Langsung jawab inti pertanyaan, gunakan data aktual dari tool ERP, dan pertahankan konteks percakapan sebelumnya.";
+
+        $knowledgeGuidance = $this->knowledgeService->findRelevantGuidance($userMessage);
+        if ($knowledgeGuidance) {
+            $systemPrompt .= "\n\n[Panduan Knowledge & Intent]: {$knowledgeGuidance}";
+        }
 
         $messages = [
             ['role' => 'system', 'content' => $systemPrompt]

@@ -139,6 +139,8 @@ Route::prefix('v1')->group(function () {
 
                 // Puffy AI Assistant Routes
                 Route::post('puffy/chat', [PuffyController::class, 'chat']);
+                Route::get('puffy/quick-questions', [PuffyController::class, 'quickQuestions']);
+                Route::get('puffy/knowledge/templates', [PuffyController::class, 'knowledgeTemplates']);
                 Route::post('puffy/feedback', [PuffyController::class, 'feedback']);
                 Route::post('puffy/actions/{id}/confirm', [PuffyController::class, 'confirmAction']);
                 Route::post('puffy/actions/{id}/cancel', [PuffyController::class, 'cancelAction']);
