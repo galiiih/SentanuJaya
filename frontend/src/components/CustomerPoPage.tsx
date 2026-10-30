@@ -511,7 +511,7 @@ export function CustomerPoPage() {
 
       {error && <Alert tone="danger">{error}</Alert>}
 
-      <Card>
+      <Card data-puffy="customer-po-summary">
         <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
           <FormField label={t.common.status} htmlFor="status-filter">
             <Select

@@ -189,7 +189,7 @@ export function PaymentPage() {
       <Toast open={Boolean(toastMsg)} message={toastMsg} tone={toastTone} onClose={() => setToastMsg('')} />
       {error && <Alert tone="danger">{error}</Alert>}
 
-      <Card>
+      <Card data-puffy="payment-summary">
         <DataTable
           columns={columns}
           rows={payments}

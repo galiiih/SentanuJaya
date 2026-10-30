@@ -207,7 +207,7 @@ export function InvoicingPage() {
       <Toast open={Boolean(toastMsg)} message={toastMsg} tone={toastTone === 'info' ? 'info' : toastTone} onClose={() => setToastMsg('')} />
       {error && <Alert tone="danger">{error}</Alert>}
 
-      <Card>
+      <Card data-puffy="invoice-summary">
         <DataTable
           columns={columns}
           rows={invoices}

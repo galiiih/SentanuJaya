@@ -27,6 +27,11 @@ export const TARGETS: Record<string, string> = {
   summary: ".app-content .invoice-summary",
   header: ".app-content .page-header",
   card: ".app-content .card",
+  "material-stock-summary": "[data-puffy=\"material-stock-summary\"]",
+  "customer-po-summary": "[data-puffy=\"customer-po-summary\"]",
+  "delivery-summary": "[data-puffy=\"delivery-summary\"]",
+  "invoice-summary": "[data-puffy=\"invoice-summary\"]",
+  "payment-summary": "[data-puffy=\"payment-summary\"]",
 };
 
 /** "table" -> elemen pertama, "table:1" -> elemen kedua, atau [data-puffy="nama"]. */

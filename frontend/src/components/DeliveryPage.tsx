@@ -458,7 +458,7 @@ export function DeliveryPage() {
       <Toast open={Boolean(notice)} message={notice} tone="success" onClose={() => setNotice('')} />
       {error && <Alert tone="danger">{error}</Alert>}
 
-      <Card>
+      <Card data-puffy="delivery-summary">
         <DataTable
           columns={columns}
           rows={deliveryOrders}

@@ -66,7 +66,7 @@ class PuffyAiService
                         ],
                         'source' => 'ERP Database',
                         'asOf' => now()->toIso8601String(),
-                        'ui' => ['route' => '/customer-po', 'target' => 'table'],
+                        'ui' => ['route' => '/customer-po', 'target' => 'customer-po-summary'],
                     ];
 
                 case 'get_delivery_summary':
@@ -91,7 +91,7 @@ class PuffyAiService
                         ],
                         'source' => 'ERP Database',
                         'asOf' => now()->toIso8601String(),
-                        'ui' => ['route' => '/delivery', 'target' => 'table'],
+                        'ui' => ['route' => '/delivery', 'target' => 'delivery-summary'],
                     ];
 
                 case 'get_invoice_summary':
@@ -119,7 +119,7 @@ class PuffyAiService
                         ],
                         'source' => 'ERP Database',
                         'asOf' => now()->toIso8601String(),
-                        'ui' => ['route' => '/invoicing', 'target' => 'summary'],
+                        'ui' => ['route' => '/invoicing', 'target' => 'invoice-summary'],
                     ];
 
                 case 'get_payment_summary':
@@ -147,7 +147,7 @@ class PuffyAiService
                         ],
                         'source' => 'ERP Database',
                         'asOf' => now()->toIso8601String(),
-                        'ui' => ['route' => '/payments', 'target' => 'table'],
+                        'ui' => ['route' => '/payments', 'target' => 'payment-summary'],
                     ];
 
                 case 'get_inventory_summary':
@@ -171,7 +171,7 @@ class PuffyAiService
                         ],
                         'source' => 'ERP Database',
                         'asOf' => now()->toIso8601String(),
-                        'ui' => ['route' => '/materials', 'target' => 'table'],
+                        'ui' => ['route' => '/materials', 'target' => 'material-stock-summary'],
                     ];
 
                 default:

@@ -469,7 +469,7 @@ function MaterialsPage() {
       .catch((err: any) => console.error('Failed to load materials', err));
   }, []);
 
-  return <><PageHeader title={t.pages.materialsTitle} description={t.pages.materialsDesc} /><Card><DataTable columns={materialColumns} rows={materials} searchText={(item) => `${item.sku} ${item.name} ${item.category}`} emptyTitle="Belum ada material" emptyDescription="Data material akan muncul setelah master material tersedia." /></Card></>;
+  return <><PageHeader title={t.pages.materialsTitle} description={t.pages.materialsDesc} /><Card data-puffy="material-stock-summary"><DataTable columns={materialColumns} rows={materials} searchText={(item) => `${item.sku} ${item.name} ${item.category}`} emptyTitle="Belum ada material" emptyDescription="Data material akan muncul setelah master material tersedia." /></Card></>;
 }
 
 function LoginPage() {
