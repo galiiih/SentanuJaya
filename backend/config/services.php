@@ -36,7 +36,7 @@ return [
     ],
 
     'puffy' => [
-        'provider' => env('PUFFY_AI_PROVIDER', '9router'),
+        'provider' => env('PUFFY_AI_PROVIDER', 'ollama'),
         'ollama_url' => env('PUFFY_OLLAMA_URL', 'http://127.0.0.1:11434'),
         'ollama_model' => env('PUFFY_OLLAMA_MODEL', 'qwen3.5:9b'),
         'openai_base_url' => env('PUFFY_OPENAI_BASE_URL', 'http://localhost:20128/v1'),
