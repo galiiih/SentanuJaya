@@ -3,7 +3,6 @@ import axios from 'axios';
 import {
   Bell,
   Boxes,
-  Building2,
   CheckCircle2,
   ChevronDown,
   ChevronUp,
@@ -19,11 +18,9 @@ import {
   Package,
   Plus,
   Receipt,
-  Settings,
   ShieldCheck,
   Sun,
   Truck,
-  User,
   Users,
 } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
@@ -272,16 +269,6 @@ function AuthenticatedLayout() {
                     <strong>{user?.name}</strong>
                     <span>{user?.email || 'owner@sentanujaya.id'}</span>
                   </div>
-                  <div className="user-menu__divider" />
-                  <button type="button" className="user-menu__item" onClick={() => { setMenuOpen(false); navigate('/master'); }}>
-                    <Building2 size={15} /> My Organization
-                  </button>
-                  <button type="button" className="user-menu__item" onClick={() => { setMenuOpen(false); navigate('/users'); }}>
-                    <User size={15} /> My Profile
-                  </button>
-                  <button type="button" className="user-menu__item" onClick={() => { setMenuOpen(false); navigate('/master'); }}>
-                    <Settings size={15} /> Settings
-                  </button>
                   <div className="user-menu__divider" />
                   <Button variant="ghost" onClick={signOut}><LogOut size={15} /> {t.nav.logout}</Button>
                 </div>
