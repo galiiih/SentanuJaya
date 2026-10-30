@@ -380,6 +380,15 @@ class PuffyAiService
                 continue;
             }
 
+            if (!empty($responsePayload['provider_error']) && !$executedToolResult) {
+                $finalReply = "Maaf, aku belum bisa terhubung ke model AI saat ini. Coba lagi sebentar ya.";
+                foreach (explode(' ', $finalReply) as $word) {
+                    $onToken($word . ' ');
+                    usleep(15000);
+                }
+                break;
+            }
+
             $content = $responsePayload['content'] !== '' ? $responsePayload['content'] : $iterationTokens;
             if ($content !== '') {
                 $finalReply = $content;
@@ -418,6 +427,22 @@ class PuffyAiService
                         'tool_choice' => 'auto',
                         'stream' => true,
                     ]);
+
+                if (!$response->successful()) {
+                    Log::warning('Nanu 9Router-compatible provider returned HTTP error.', [
+                        'provider' => $this->provider,
+                        'model' => $this->openAiModel,
+                        'http_status' => $response->status(),
+                    ]);
+                }
+
+                if (!$response->successful()) {
+                    Log::warning('Nanu Ollama provider returned HTTP error.', [
+                        'provider' => $this->provider,
+                        'model' => $this->ollamaModel,
+                        'http_status' => $response->status(),
+                    ]);
+                }
 
                 if ($response->successful()) {
                     $body = $response->getBody();
