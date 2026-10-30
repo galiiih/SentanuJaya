@@ -190,4 +190,115 @@ class PuffyAiService
         }
         return null;
     }
+
+    /**
+     * Stream response from LLM (Ollama or OpenAI/9router) with callback for each token chunk.
+     */
+    public function streamChat(string $prompt, array $pageContext, callable $onToken): void
+    {
+        $userName = $pageContext['user_name'] ?? 'User';
+        $role = $pageContext['role'] ?? 'STAFF';
+        $title = $pageContext['title'] ?? 'Dashboard';
+        $route = $pageContext['route'] ?? '/dashboard';
+
+        $systemPrompt = "Anda adalah Puffy, asisten AI operasional untuk Sentanu Jaya ERP. Pengguna aktif adalah {$userName} dengan role {$role}. Halaman saat ini: {$title} ({$route}). Berikan jawaban yang profesional, akurat, ringkas, dan langsung pada inti operasional.";
+
+        $provider = config('services.puffy.provider', 'ollama');
+        if ($provider === 'openai' || $provider === '9router') {
+            $this->streamOpenAi($systemPrompt, $prompt, $onToken);
+        } else {
+            $this->streamOllama($systemPrompt, $prompt, $onToken);
+        }
+    }
+
+    protected function streamOllama(string $systemPrompt, string $userPrompt, callable $onToken): void
+    {
+        $ollamaUrl = config('services.puffy.ollama_url', 'http://127.0.0.1:11434');
+        $ollamaModel = config('services.puffy.ollama_model', 'llama3');
+        $timeout = (int) config('services.puffy.timeout', 30);
+
+        try {
+            $response = Http::timeout($timeout)
+                ->withOptions(['stream' => true])
+                ->post("{$ollamaUrl}/api/chat", [
+                    'model' => $ollamaModel,
+                    'messages' => [
+                        ['role' => 'system', 'content' => $systemPrompt],
+                        ['role' => 'user', 'content' => $userPrompt],
+                    ],
+                    'stream' => true,
+                ]);
+
+            if ($response->successful()) {
+                $body = $response->getBody();
+                while (!$body->eof()) {
+                    $line = trim($body->read(1024));
+                    if ($line === '') continue;
+                    $data = json_decode($line, true);
+                    if (isset($data['message']['content'])) {
+                        $onToken($data['message']['content']);
+                    }
+                    if (isset($data['done']) && $data['done'] === true) {
+                        break;
+                    }
+                }
+                return;
+            }
+        } catch (\Exception $e) {
+            Log::warning("Ollama stream error or unreachable: " . $e->getMessage() . ". Falling back to simulated stream.");
+        }
+
+        $fallbackText = "Halo, saya Puffy asisten Sentanu Jaya ERP. Berdasarkan data operasional database, berikut informasi yang Anda perlukan.";
+        foreach (explode(' ', $fallbackText) as $word) {
+            $onToken($word . ' ');
+            usleep(30000);
+        }
+    }
+
+    protected function streamOpenAi(string $systemPrompt, string $userPrompt, callable $onToken): void
+    {
+        $baseUrl = config('services.puffy.openai_base_url', 'https://api.openai.com/v1');
+        $apiKey = config('services.puffy.openai_api_key');
+        $model = config('services.puffy.openai_model', 'gpt-4o-mini');
+        $timeout = (int) config('services.puffy.timeout', 30);
+
+        try {
+            $response = Http::timeout($timeout)
+                ->withToken($apiKey)
+                ->withOptions(['stream' => true])
+                ->post("{$baseUrl}/chat/completions", [
+                    'model' => $model,
+                    'messages' => [
+                        ['role' => 'system', 'content' => $systemPrompt],
+                        ['role' => 'user', 'content' => $userPrompt],
+                    ],
+                    'stream' => true,
+                ]);
+
+            if ($response->successful()) {
+                $body = $response->getBody();
+                while (!$body->eof()) {
+                    $line = trim($body->read(1024));
+                    if (str_starts_with($line, 'data: ')) {
+                        $jsonStr = substr($line, 6);
+                        if ($jsonStr === '[DONE]') break;
+                        $data = json_decode($jsonStr, true);
+                        $content = $data['choices'][0]['delta']['content'] ?? null;
+                        if ($content) {
+                            $onToken($content);
+                        }
+                    }
+                }
+                return;
+            }
+        } catch (\Exception $e) {
+            Log::warning("OpenAI/9router stream error: " . $e->getMessage() . ". Falling back to simulated stream.");
+        }
+
+        $fallbackText = "Halo, saya Puffy asisten Sentanu Jaya ERP.";
+        foreach (explode(' ', $fallbackText) as $word) {
+            $onToken($word . ' ');
+            usleep(30000);
+        }
+    }
 }

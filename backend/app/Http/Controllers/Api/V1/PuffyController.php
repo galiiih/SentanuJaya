@@ -113,18 +113,26 @@ class PuffyController extends BaseApiController
                 $sendEvent('tool_result', $toolResultData);
             }
 
-            // Stream response tokens
-            $replyText = $toolResultData['summary'] ?? "Halo {$user->name}, saya Puffy asisten operasional Sentanu Jaya. Berdasarkan query Anda, sistem mencatat data terkini dari database ERP.";
-            
-            $words = explode(' ', $replyText);
-            $chunk = '';
-            foreach ($words as $index => $word) {
-                $chunk .= ($index === 0 ? '' : ' ') . $word;
-                if ($index % 3 === 2 || $index === count($words) - 1) {
-                    $sendEvent('token', ['text' => $chunk]);
-                    $chunk = '';
-                    usleep(50000);
-                }
+            // Stream response tokens via LLM (Ollama or 9router) or fallback
+            $replyText = '';
+            $fullContext = array_merge($pageContext, [
+                'user_name' => $user->name,
+                'role' => $user->role ?? 'STAFF',
+            ]);
+
+            $prompt = $messageText;
+            if ($toolResultData) {
+                $prompt .= "\n\n[Context Data from ERP Tool {$toolResultData['tool']}]:\n" . json_encode($toolResultData);
+            }
+
+            $this->aiService->streamChat($prompt, $fullContext, function ($token) use ($sendEvent, &$replyText) {
+                $replyText .= $token;
+                $sendEvent('token', ['text' => $token]);
+            });
+
+            if (trim($replyText) === '' && $toolResultData) {
+                $replyText = $toolResultData['summary'] ?? 'Data ERP berhasil diambil.';
+                $sendEvent('token', ['text' => $replyText]);
             }
 
             // Save assistant message
