@@ -35,6 +35,8 @@ import { PaymentPage } from './components/PaymentPage';
 import { InvoicingPage } from './components/InvoicingPage';
 import TemplateManagementPage from './pages/TemplateManagementPage';
 import UsersManagementPage from './pages/UsersManagementPage';
+import { PuffyAssistant } from './features/puffy';
+import './features/puffy/puffy.css';
 import {
   type Material,
 } from './services/api';
@@ -278,6 +280,7 @@ function AuthenticatedLayout() {
         </header>
         <main className="app-content"><Breadcrumb items={breadcrumbItems} /><Outlet /></main>
       </div>
+      <PuffyAssistant />
     </div>
   );
 }
