@@ -293,7 +293,7 @@ class PuffyAiService
         $title = $pageContext['title'] ?? 'Dashboard';
         $route = $pageContext['route'] ?? '/dashboard';
 
-        $systemPrompt = "Anda adalah Puffy, asisten operasional Sentanu Jaya ERP. Pengguna aktif: {$userName} (Role: {$role}). Halaman: {$title} ({$route}).\n\nATURAN UTAMA KOMUNIKASI:\n1. Berbicaralah dengan bahasa Indonesia yang sangat natural, ramah, ringkas, dan profesional seperti rekan kerja yang membantu (misal: 'Aku cek dulu ya', 'Pembayaran bulan ini totalnya...', 'Mau aku bantu rinciannya?').\n2. JANGAN PERNAH mengawali jawaban dengan kalimat robotik kaku seperti 'Halo, saya Puffy asisten Sentanu Jaya ERP. Berdasarkan data operasional database...' atau perkenalan diri yang berulang.\n3. Langsung jawab inti pertanyaan menggunakan data aktual dari tool ERP.\n4. Jangan mengarang data atau nominal transaksi. Jika data kosong, katakan dengan jujur (misal: 'Belum ada data...').\n5. Pertahankan konteks percakapan sebelumnya secara natural.";
+        $systemPrompt = "Anda adalah Nanu, asisten operasional Sentanu Jaya ERP. Pengguna aktif: {$userName} (Role: {$role}). Halaman: {$title} ({$route}).\n\nATURAN UTAMA KOMUNIKASI:\n1. Berbicaralah dengan bahasa Indonesia yang sangat natural, ramah, ringkas, dan profesional seperti rekan kerja yang membantu (misal: 'Aku cek dulu ya', 'Pembayaran bulan ini totalnya...', 'Mau aku bantu rinciannya?').\n2. JANGAN PERNAH mengawali jawaban dengan kalimat robotik kaku seperti 'Halo, saya Puffy asisten Sentanu Jaya ERP. Berdasarkan data operasional database...' atau perkenalan diri yang berulang.\n3. Langsung jawab inti pertanyaan menggunakan data aktual dari tool ERP.\n4. Jangan mengarang data atau nominal transaksi. Jika data kosong, katakan dengan jujur (misal: 'Belum ada data...').\n5. Pertahankan konteks percakapan sebelumnya secara natural.";
 
         $knowledgeGuidance = $this->knowledgeService->findRelevantGuidance($userMessage);
         if ($knowledgeGuidance) {
@@ -480,7 +480,7 @@ class PuffyAiService
                     foreach ($this->parser->flushOllama() as $data) {
                         $msg = $data['message'] ?? [];
                         if (isset($msg['content'])) {
-                            $fullContent += $msg['content'];
+                            $fullContent .= $msg['content'];
                             $onToken($msg['content']);
                         }
                         if (isset($msg['tool_calls'])) {
@@ -490,17 +490,31 @@ class PuffyAiService
                     return ['content' => $fullContent, 'tool_calls' => $toolCalls];
                 }
             }
-        } catch (\Exception $e) {
-            Log::warning("AI Provider stream with tools failed: " . $e->getMessage());
+        } catch (\Throwable $e) {
+            Log::warning('Nanu LLM provider request failed.', [
+                'provider' => $this->provider,
+                'model' => $this->provider === 'ollama' ? $this->ollamaModel : $this->openAiModel,
+                'exception' => $e::class,
+                'message' => $e->getMessage(),
+            ]);
+
+            return [
+                'content' => '',
+                'tool_calls' => null,
+                'provider_error' => 'provider_exception',
+            ];
         }
 
-        // Fallback simulation if Ollama offline / unreachable
-        $fallbackText = "Halo! Ada yang bisa aku bantu untuk operasional hari ini?";
-        foreach (explode(' ', $fallbackText) as $word) {
-            $onToken($word . ' ');
-            usleep(20000);
-        }
+        // Do not disguise an unsuccessful provider response as a successful generic greeting.
+        Log::warning('Nanu LLM provider returned an unsuccessful HTTP response.', [
+            'provider' => $this->provider,
+            'model' => $this->provider === 'ollama' ? $this->ollamaModel : $this->openAiModel,
+        ]);
 
-        return ['content' => $fallbackText, 'tool_calls' => null];
+        return [
+            'content' => '',
+            'tool_calls' => null,
+            'provider_error' => 'provider_http_error',
+        ];
     }
 }
