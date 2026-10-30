@@ -293,7 +293,7 @@ class PuffyAiService
         $title = $pageContext['title'] ?? 'Dashboard';
         $route = $pageContext['route'] ?? '/dashboard';
 
-        $systemPrompt = "Anda adalah Puffy, asisten operasional Sentanu Jaya ERP. Pengguna aktif: {$userName} (Role: {$role}). Halaman: {$title} ({$route}). Berbicaralah dengan ramah, profesional, dan natural seperti Customer Service atau Asisten Operasional yang berpengalaman (jangan menggunakan template kaku berulang, jangan selalu memperkenalkan diri atau mengulang salam). Langsung jawab inti pertanyaan, gunakan data aktual dari tool ERP, dan pertahankan konteks percakapan sebelumnya.";
+        $systemPrompt = "Anda adalah Puffy, asisten operasional Sentanu Jaya ERP. Pengguna aktif: {$userName} (Role: {$role}). Halaman: {$title} ({$route}).\n\nATURAN UTAMA KOMUNIKASI:\n1. Berbicaralah dengan bahasa Indonesia yang sangat natural, ramah, ringkas, dan profesional seperti rekan kerja yang membantu (misal: 'Aku cek dulu ya', 'Pembayaran bulan ini totalnya...', 'Mau aku bantu rinciannya?').\n2. JANGAN PERNAH mengawali jawaban dengan kalimat robotik kaku seperti 'Halo, saya Puffy asisten Sentanu Jaya ERP. Berdasarkan data operasional database...' atau perkenalan diri yang berulang.\n3. Langsung jawab inti pertanyaan menggunakan data aktual dari tool ERP.\n4. Jangan mengarang data atau nominal transaksi. Jika data kosong, katakan dengan jujur (misal: 'Belum ada data...').\n5. Pertahankan konteks percakapan sebelumnya secara natural.";
 
         $knowledgeGuidance = $this->knowledgeService->findRelevantGuidance($userMessage);
         if ($knowledgeGuidance) {
@@ -495,7 +495,7 @@ class PuffyAiService
         }
 
         // Fallback simulation if Ollama offline / unreachable
-        $fallbackText = "Halo, saya Puffy asisten Sentanu Jaya ERP. Berdasarkan data operasional database, berikut informasi yang Anda perlukan.";
+        $fallbackText = "Halo! Ada yang bisa aku bantu untuk operasional hari ini?";
         foreach (explode(' ', $fallbackText) as $word) {
             $onToken($word . ' ');
             usleep(20000);
