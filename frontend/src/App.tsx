@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
   Bell,
@@ -21,7 +21,6 @@ import {
   Sun,
   Truck,
   Users,
-  X,
 } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import { NavLink, Navigate, Outlet, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
@@ -102,7 +101,7 @@ function RequirePermission({ permission, children }: { permission: Permission; c
   return hasPermission(permission) ? <>{children}</> : <Navigate to="/403" replace />;
 }
 
-function Sidebar({ mobile, onClose, closeButtonRef }: { mobile?: boolean; onClose?: () => void; closeButtonRef?: React.RefObject<HTMLButtonElement | null> }) {
+function Sidebar() {
   const { hasPermission } = useAuth();
   const { t } = useLanguage();
   const [collapsed, setCollapsed] = useState(false);
@@ -138,14 +137,13 @@ function Sidebar({ mobile, onClose, closeButtonRef }: { mobile?: boolean; onClos
 
   const isCollapsed = collapsed;
   return (
-    <aside id={mobile ? 'mobile-navigation' : undefined} className={`sidebar${mobile ? ' sidebar--mobile' : ''}${isCollapsed ? ' sidebar--collapsed' : ''}`} role={mobile ? 'dialog' : undefined} aria-modal={mobile || undefined} aria-label={mobile ? 'Navigasi utama' : undefined} onMouseDown={(event) => event.stopPropagation()}>
+    <aside className={`sidebar${isCollapsed ? ' sidebar--collapsed' : ''}`} aria-label="Navigasi utama" onMouseDown={(event) => event.stopPropagation()}>
       <div className="sidebar__brand">
         <div data-sentanu-logo data-loop="true" style={{ width: '36px', height: '36px', flexShrink: 0 }} />
         <div className="sidebar__brand-copy"><strong>SENTANU JAYA</strong><span>ERP WORKSHOP</span></div>
       </div>
       <div className="sidebar__toggle-row">
         <button type="button" className="icon-button sidebar__collapse" onClick={() => setCollapsed((value) => !value)} aria-label={collapsed ? 'Perlebar sidebar' : 'Ciutkan sidebar'} aria-expanded={!collapsed} title={collapsed ? 'Perlebar sidebar' : 'Ciutkan sidebar'}>{collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}</button>
-        {mobile && <button ref={closeButtonRef} className="icon-button sidebar__close" onClick={onClose} aria-label="Tutup navigasi"><X size={20} /></button>}
       </div>
       <nav className="sidebar__nav" aria-label="Navigasi utama">
         {navSections.map((section) => {
@@ -153,7 +151,7 @@ function Sidebar({ mobile, onClose, closeButtonRef }: { mobile?: boolean; onClos
           if (!visibleItems.length) return null;
           return <div className="sidebar__section" key={section.label}><p className="nav-section-label">{section.label}</p>{visibleItems.map((item) => {
             const Icon = item.icon;
-            return <NavLink key={item.path} to={item.path} data-tooltip={item.label} title={isCollapsed ? item.label : undefined} aria-label={isCollapsed ? item.label : undefined} className={({ isActive }) => `nav-item${isActive ? ' nav-item--active' : ''}`} onClick={mobile ? onClose : undefined}><Icon size={18} aria-hidden="true" /><span>{item.label}</span></NavLink>;
+            return <NavLink key={item.path} to={item.path} data-tooltip={item.label} title={isCollapsed ? item.label : undefined} aria-label={isCollapsed ? item.label : undefined} className={({ isActive }) => `nav-item${isActive ? ' nav-item--active' : ''}`}><Icon size={18} aria-hidden="true" /><span>{item.label}</span></NavLink>;
           })}</div>;
         })}
       </nav>
@@ -208,10 +206,7 @@ function LanguageSwitcher() {
 }
 
 function AuthenticatedLayout() {
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const menuButton = useRef<HTMLButtonElement>(null);
-  const drawerCloseButton = useRef<HTMLButtonElement>(null);
   const location = useLocation();
   const { user, logout } = useAuth();
   const { t } = useLanguage();
@@ -235,24 +230,16 @@ function AuthenticatedLayout() {
   };
   const breadcrumbItems = breadcrumbMap[location.pathname] || ['Workspace', pageTitle];
 
-  useEffect(() => {
-    if (!drawerOpen) return;
-    drawerCloseButton.current?.focus();
-    const onKeyDown = (event: KeyboardEvent) => { if (event.key === 'Escape') setDrawerOpen(false); };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [drawerOpen]);
-
-  const closeDrawer = () => { setDrawerOpen(false); requestAnimationFrame(() => menuButton.current?.focus()); };
   const signOut = () => { logout(); navigate('/login', { replace: true }); };
 
   return (
     <div className="app-shell">
       <Sidebar />
-      {drawerOpen && <div className="drawer-overlay" onMouseDown={closeDrawer}><Sidebar mobile onClose={closeDrawer} closeButtonRef={drawerCloseButton} /></div>}
       <div className="app-shell__main">
         <header className="app-header">
-          <div className="app-header__context"><button ref={menuButton} className="icon-button menu-button" onClick={() => setDrawerOpen(true)} aria-label="Buka navigasi" aria-expanded={drawerOpen} aria-controls="mobile-navigation"><Menu size={21} /></button><div><span className="app-header__eyebrow">SENTANU JAYA ERP</span><strong>{pageTitle}</strong></div></div>
+          <div className="app-header__context">
+            <div><span className="app-header__eyebrow">SENTANU JAYA ERP</span><strong>{pageTitle}</strong></div>
+          </div>
           <div className="app-header__account">
             <ThemeSwitcher />
             <span className="header-divider" />
