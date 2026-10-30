@@ -85,55 +85,29 @@ class PuffyController extends BaseApiController
                 flush();
             };
 
-            // 1. Status event
-            $sendEvent('status', [
-                'label' => 'Menyiapkan analisis ERP Sentanu Jaya…',
-                'ui' => [
-                    'route' => $pageContext['route'] ?? '/dashboard',
-                    'target' => null,
-                ]
-            ]);
-            usleep(300000);
-
-            // Detect tool if applicable
-            $toolName = $this->aiService->detectTool($messageText);
-            $toolResultData = null;
-
-            if ($toolName) {
-                $sendEvent('status', [
-                    'label' => 'Mengambil data operasional dari database…',
-                    'ui' => [
-                        'route' => $pageContext['route'] ?? '/dashboard',
-                        'target' => 'table',
-                    ]
-                ]);
-                usleep(400000);
-                $toolResultData = $this->aiService->executeTool($toolName);
-                
-                $sendEvent('tool_result', $toolResultData);
-            }
-
-            // Stream response tokens via LLM (Ollama or 9router) or fallback
-            $replyText = '';
+            // Agentic chat execution with history, native tool calling, and robust stream parsing
             $fullContext = array_merge($pageContext, [
                 'user_name' => $user->name,
                 'role' => $user->role ?? 'STAFF',
             ]);
 
-            $prompt = $messageText;
-            if ($toolResultData) {
-                $prompt .= "\n\n[Context Data from ERP Tool {$toolResultData['tool']}]:\n" . json_encode($toolResultData);
-            }
+            $result = $this->aiService->agenticChat(
+                $messageText,
+                $conversation->id,
+                $fullContext,
+                function (string $label, array $ui) use ($sendEvent) {
+                    $sendEvent('status', ['label' => $label, 'ui' => $ui]);
+                },
+                function (array $toolResult) use ($sendEvent) {
+                    $sendEvent('tool_result', $toolResult);
+                },
+                function (string $token) use ($sendEvent) {
+                    $sendEvent('token', ['text' => $token]);
+                }
+            );
 
-            $this->aiService->streamChat($prompt, $fullContext, function ($token) use ($sendEvent, &$replyText) {
-                $replyText .= $token;
-                $sendEvent('token', ['text' => $token]);
-            });
-
-            if (trim($replyText) === '' && $toolResultData) {
-                $replyText = $toolResultData['summary'] ?? 'Data ERP berhasil diambil.';
-                $sendEvent('token', ['text' => $replyText]);
-            }
+            $replyText = $result['reply'] ?? '';
+            $toolResultData = $result['tool_result'] ?? null;
 
             // Save assistant message
             PuffyMessage::create([
