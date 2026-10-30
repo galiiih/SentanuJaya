@@ -70,7 +70,7 @@ import {
 } from './components/ui';
 import './App.css';
 
-type PageKey = 'dashboard' | 'custody' | 'customerPo' | 'materials' | 'delivery' | 'invoicing' | 'reports' | 'master';
+type PageKey = 'dashboard' | 'custody' | 'customerPo' | 'materials' | 'delivery' | 'invoicing' | 'payments' | 'reports' | 'templates' | 'master' | 'users';
 
 const routePages: Record<string, PageKey> = {
   '/dashboard': 'dashboard',
@@ -79,8 +79,11 @@ const routePages: Record<string, PageKey> = {
   '/materials': 'materials',
   '/delivery': 'delivery',
   '/invoicing': 'invoicing',
+  '/payments': 'payments',
   '/reports': 'reports',
+  '/templates': 'templates',
   '/master': 'master',
+  '/users': 'users',
 };
 
 const currency = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 });

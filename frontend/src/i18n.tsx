@@ -15,8 +15,10 @@ type Translations = {
   materials: string;
   invoicing: string;
   payments: string;
-  reports?: string;
-  master?: string;
+  reports: string;
+  templates: string;
+  master: string;
+  users: string;
   logout: string;
   isolatedCustody: string;
   offBalanceSheet: string;
@@ -35,6 +37,16 @@ type Translations = {
     materialsDesc: string;
     invoicingTitle: string;
     invoicingDesc: string;
+    paymentsTitle: string;
+    paymentsDesc: string;
+    reportsTitle: string;
+    reportsDesc: string;
+    templatesTitle: string;
+    templatesDesc: string;
+    masterTitle: string;
+    masterDesc: string;
+    usersTitle: string;
+    usersDesc: string;
   };
   // Common Buttons & Labels
   common: {
@@ -245,7 +257,10 @@ const idTranslations: Translations = {
     materials: 'Gudang Material',
     invoicing: 'Invoicing & Pajak',
     payments: 'Pembayaran',
+    reports: 'Laporan',
+    templates: 'Template Dokumen',
     master: 'Master Data',
+    users: 'Manajemen Pengguna',
     logout: 'Keluar',
     isolatedCustody: 'Custody terisolasi',
     offBalanceSheet: 'Off-balance sheet active',
@@ -263,6 +278,16 @@ const idTranslations: Translations = {
     materialsDesc: 'Pantau persediaan bahan baku dan minimum stock.',
     invoicingTitle: 'Invoicing & Pajak',
     invoicingDesc: 'Gabungkan surat jalan accepted ke draft invoice.',
+    paymentsTitle: 'Pembayaran',
+    paymentsDesc: 'Kelola riwayat pembayaran dan pelunasan invoice.',
+    reportsTitle: 'Laporan & Analitik',
+    reportsDesc: 'Laporan keuangan, operasional, dan rekapitulasi workshop.',
+    templatesTitle: 'Template Dokumen',
+    templatesDesc: 'Kelola template dokumen cetak dan surat jalan.',
+    masterTitle: 'Master Data',
+    masterDesc: 'Kelola data referensi perusahaan, cabang, dan master item.',
+    usersTitle: 'Manajemen Pengguna',
+    usersDesc: 'Kelola akun pengguna, peran, dan hak akses sistem.',
   },
   common: {
     search: 'Cari data...',
@@ -470,7 +495,10 @@ const enTranslations: Translations = {
     materials: 'Material Warehouse',
     invoicing: 'Invoicing & Tax',
     payments: 'Payments',
-    reports: 'Reports & Analytics',
+    reports: 'Reports',
+    templates: 'Document Templates',
+    master: 'Master Data',
+    users: 'User Management',
     logout: 'Logout',
     isolatedCustody: 'Isolated Custody',
     offBalanceSheet: 'Off-balance sheet active',
@@ -488,6 +516,16 @@ const enTranslations: Translations = {
     materialsDesc: 'Monitor raw material stock and minimum reorder levels.',
     invoicingTitle: 'Invoicing & Tax',
     invoicingDesc: 'Combine accepted delivery orders into draft invoices.',
+    paymentsTitle: 'Payments',
+    paymentsDesc: 'Manage payment records and invoice settlements.',
+    reportsTitle: 'Reports & Analytics',
+    reportsDesc: 'Financial, operational, and workshop summary reports.',
+    templatesTitle: 'Document Templates',
+    templatesDesc: 'Manage printable document templates and delivery slips.',
+    masterTitle: 'Master Data',
+    masterDesc: 'Manage company, branch, and item reference data.',
+    usersTitle: 'User Management',
+    usersDesc: 'Manage user accounts, roles, and system permissions.',
   },
   common: {
     search: 'Search data...',
