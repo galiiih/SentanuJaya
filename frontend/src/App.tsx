@@ -3,23 +3,27 @@ import axios from 'axios';
 import {
   Bell,
   Boxes,
+  Building2,
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
   CircleDollarSign,
   FileCheck,
   FileText,
   Globe,
   LayoutDashboard,
   LogOut,
-  Menu,
   PanelLeftClose,
   PanelLeftOpen,
   Moon,
   Package,
   Plus,
   Receipt,
+  Settings,
   ShieldCheck,
   Sun,
   Truck,
+  User,
   Users,
 } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
@@ -247,9 +251,42 @@ function AuthenticatedLayout() {
             <span className="header-divider" />
             <button className="icon-button" aria-label="Notifikasi" disabled title="Fitur notifikasi belum tersedia"><Bell size={19} /></button>
             <span className="header-divider" />
-            <div className="user-avatar">{user?.name.slice(0, 2).toUpperCase()}</div>
-            <div className="user-copy"><strong>{user?.name}</strong><span>{user?.role === 'ADMIN' ? 'Administrator' : user?.role}</span></div>
-            <div className="user-menu"><button className="icon-button" aria-label="Menu pengguna" aria-expanded={menuOpen} onClick={() => setMenuOpen((value) => !value)}><Menu size={18} /></button>{menuOpen && <div className="user-menu__popover"><strong>{user?.name}</strong><span>{user?.email}</span><Button variant="ghost" onClick={signOut}><LogOut size={15} /> {t.nav.logout}</Button></div>}</div>
+            <div className="user-menu">
+              <button 
+                type="button" 
+                className="user-profile-pill" 
+                aria-label="Menu pengguna" 
+                aria-expanded={menuOpen} 
+                onClick={() => setMenuOpen((value) => !value)}
+              >
+                <div className="user-profile-info">
+                  <span className="user-profile-name">{user?.name}</span>
+                  <span className="user-profile-role">{user?.role === 'ADMIN' ? 'Administrator' : user?.role}</span>
+                </div>
+                {menuOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                <div className="user-avatar">{user?.name.slice(0, 2).toUpperCase()}</div>
+              </button>
+              {menuOpen && (
+                <div className="user-menu__popover">
+                  <div className="user-menu__header">
+                    <strong>{user?.name}</strong>
+                    <span>{user?.email || 'owner@sentanujaya.id'}</span>
+                  </div>
+                  <div className="user-menu__divider" />
+                  <button type="button" className="user-menu__item" onClick={() => { setMenuOpen(false); }}>
+                    <Building2 size={15} /> My Organization
+                  </button>
+                  <button type="button" className="user-menu__item" onClick={() => { setMenuOpen(false); }}>
+                    <User size={15} /> My Profile
+                  </button>
+                  <button type="button" className="user-menu__item" onClick={() => { setMenuOpen(false); }}>
+                    <Settings size={15} /> Settings
+                  </button>
+                  <div className="user-menu__divider" />
+                  <Button variant="ghost" onClick={signOut}><LogOut size={15} /> {t.nav.logout}</Button>
+                </div>
+              )}
+            </div>
           </div>
         </header>
         <main className="app-content"><Breadcrumb items={breadcrumbItems} /><Outlet /></main>
