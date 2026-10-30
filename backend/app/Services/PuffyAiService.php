@@ -83,7 +83,7 @@ class PuffyAiService
                         'table' => [
                             'columns' => ['No. Surat Jalan', 'Pelanggan', 'Tanggal', 'Status'],
                             'rows' => $recent->map(fn($d) => [
-                                $d->do_number ?? $d->id,
+                                $d->sj_number ?? $d->do_number ?? $d->id,
                                 $d->customer?->name ?? '-',
                                 $d->created_date ?? $d->created_at?->toDateString(),
                                 $d->status ?? 'DRAFT',
@@ -97,6 +97,7 @@ class PuffyAiService
                 case 'get_invoice_summary':
                     $count = Invoice::count();
                     $totalAmount = Invoice::sum('total_amount');
+                    $recent = Invoice::with('customer')->latest()->take(5)->get();
                     return [
                         'tool' => $toolName,
                         'title' => 'Ringkasan Invoice',
@@ -106,6 +107,16 @@ class PuffyAiService
                             ['label' => 'Total Invoice', 'value' => (string)$count],
                             ['label' => 'Nilai Kumulatif', 'value' => 'Rp ' . number_format($totalAmount, 0, ',', '.')],
                         ],
+                        'table' => [
+                            'columns' => ['No. Invoice', 'Pelanggan', 'Tanggal', 'Total', 'Status'],
+                            'rows' => $recent->map(fn($inv) => [
+                                $inv->invoice_number,
+                                $inv->customer?->name ?? '-',
+                                $inv->invoice_date ?? $inv->created_at?->toDateString(),
+                                'Rp ' . number_format($inv->total_amount ?? 0, 0, ',', '.'),
+                                $inv->status ?? 'DRAFT',
+                            ])->toArray()
+                        ],
                         'source' => 'ERP Database',
                         'asOf' => now()->toIso8601String(),
                         'ui' => ['route' => '/invoicing', 'target' => 'summary'],
@@ -114,14 +125,25 @@ class PuffyAiService
                 case 'get_payment_summary':
                     $count = Payment::count();
                     $totalPaid = Payment::sum('amount');
+                    $recent = Payment::with('customer')->latest()->take(5)->get();
                     return [
                         'tool' => $toolName,
                         'title' => 'Ringkasan Pembayaran',
-                        'summary' => "Total {$count} transaksi pembayaran tercatat.",
+                        'summary' => "Total {$count} transaksi pembayaran tercatat senilai Rp " . number_format($totalPaid, 0, ',', '.'),
                         'hasData' => true,
                         'metrics' => [
                             ['label' => 'Total Transaksi', 'value' => (string)$count],
                             ['label' => 'Total Pembayaran', 'value' => 'Rp ' . number_format($totalPaid, 0, ',', '.')],
+                        ],
+                        'table' => [
+                            'columns' => ['No. Pembayaran', 'Pelanggan', 'Tanggal', 'Jumlah', 'Metode'],
+                            'rows' => $recent->map(fn($p) => [
+                                $p->payment_number,
+                                $p->customer?->name ?? '-',
+                                $p->payment_date ?? $p->created_at?->toDateString(),
+                                'Rp ' . number_format($p->amount ?? 0, 0, ',', '.'),
+                                $p->payment_method ?? 'TRANSFER',
+                            ])->toArray()
                         ],
                         'source' => 'ERP Database',
                         'asOf' => now()->toIso8601String(),
@@ -269,7 +291,7 @@ class PuffyAiService
         $title = $pageContext['title'] ?? 'Dashboard';
         $route = $pageContext['route'] ?? '/dashboard';
 
-        $systemPrompt = "Anda adalah Puffy, asisten AI operasional untuk Sentanu Jaya ERP. Pengguna aktif adalah {$userName} dengan role {$role}. Halaman saat ini: {$title} ({$route}). Gunakan tool ERP yang tersedia jika diperlukan untuk menjawab pertanyaan berbasis data aktual database. Jangan menebak angka atau data.";
+        $systemPrompt = "Anda adalah Puffy, asisten operasional Sentanu Jaya ERP. Pengguna aktif: {$userName} (Role: {$role}). Halaman: {$title} ({$route}). Berbicaralah dengan ramah, profesional, dan natural seperti Customer Service atau Asisten Operasional yang berpengalaman (jangan menggunakan template kaku berulang, jangan selalu memperkenalkan diri atau mengulang salam). Langsung jawab inti pertanyaan, gunakan data aktual dari tool ERP, dan pertahankan konteks percakapan sebelumnya.";
 
         $messages = [
             ['role' => 'system', 'content' => $systemPrompt]
