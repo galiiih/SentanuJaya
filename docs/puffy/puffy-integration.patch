@@ -1,0 +1,1626 @@
+diff --git a/frontend/src/App.tsx b/frontend/src/App.tsx
+index 7fba821..92329d1 100644
+--- a/frontend/src/App.tsx
++++ b/frontend/src/App.tsx
+@@ -63,6 +63,7 @@ import {
+   Select,
+   StatusBadge,
+ } from './components/ui';
++import { PuffyAssistant } from './features/puffy';
+ import './App.css';
+ 
+ type PageKey = 'dashboard' | 'custody' | 'customerPo' | 'materials' | 'delivery' | 'invoicing' | 'reports' | 'master';
+@@ -237,6 +238,7 @@ function AuthenticatedLayout() {
+         </header>
+         <main className="app-content"><Breadcrumb items={['Workspace', pageTitle]} /><Outlet /></main>
+       </div>
++      <PuffyAssistant />
+     </div>
+   );
+ }
+diff --git a/frontend/src/features/puffy/PuffyAssistant.tsx b/frontend/src/features/puffy/PuffyAssistant.tsx
+new file mode 100644
+index 0000000..c88dcce
+--- /dev/null
++++ b/frontend/src/features/puffy/PuffyAssistant.tsx
+@@ -0,0 +1,400 @@
++import { useCallback, useEffect, useRef, useState } from "react";
++import { useLocation, useNavigate } from "react-router-dom";
++import { Copy, Mic, Minus, Send, Square, ThumbsDown, ThumbsUp } from "lucide-react";
++import { useAuth } from "../../auth";
++import { useLanguage } from "../../i18n";
++import { PUFFY_BASE_URL, PUFFY_MOCK, ROUTES, resolveTarget } from "./config";
++import { getPuffyEntity } from "./pageContext";
++import { PuffyMascot } from "./PuffyMascot";
++import { getStrings, type PuffyStrings } from "./strings";
++import { ToolResultCard } from "./ToolResultCard";
++import type { AssistantMessage, PageContext, PendingAction, UiHint } from "./types";
++import { usePuffy } from "./usePuffy";
++import { useSpeechInput, useSpeechOutput } from "./useSpeech";
++import { waitFor } from "./utils";
++import "./puffy.css";
++
++const SIZE = { open: 64, point: 56, closed: 60 } as const;
++const MARGIN = 20;
++const PANEL = { width: 360, maxHeight: 560, mobileHeight: 416, bottom: 88, mobileBreak: 820, headerHeight: 64 } as const;
++
++export interface PuffyAssistantProps {
++  /** Default "/api/v1/puffy". */
++  baseUrl?: string;
++  /** Panel mengecil menjadi balon setelah sekian ms tanpa aktivitas. Default 9000. */
++  idleAfterMs?: number;
++  voice?: boolean;
++  /** Mulai dalam keadaan terbuka. Default false: Puffy mulai sebagai balon "Ask me" agar tidak mengubah tata letak halaman. */
++  defaultOpen?: boolean;
++}
++
++export function PuffyAssistant({ baseUrl = PUFFY_BASE_URL, idleAfterMs = 9000, voice = true, defaultOpen = false }: PuffyAssistantProps) {
++  const navigate = useNavigate();
++  const { pathname } = useLocation();
++  const { user, hasPermission } = useAuth();
++  const { language, t } = useLanguage();
++  const s = getStrings(language);
++
++  const [open, setOpen] = useState(defaultOpen);
++  const [input, setInput] = useState("");
++  const [say, setSay] = useState<string | null>(defaultOpen ? s.greet : null);
++  const [pointer, setPointer] = useState<{ x: number; y: number } | null>(null);
++  const [vp, setVp] = useState({ w: window.innerWidth, h: window.innerHeight });
++
++  const panelRef = useRef<HTMLElement>(null);
++  const logRef = useRef<HTMLDivElement>(null);
++  const inputRef = useRef<HTMLInputElement>(null);
++  const targetRef = useRef<HTMLElement | null>(null);
++  const lastActive = useRef(0);
++  const hoverRef = useRef(false);
++  const sayTimer = useRef(0);
++  const lastUiKey = useRef("");
++  const viaVoice = useRef(false);
++  const pathRef = useRef(pathname);
++  const permRef = useRef(hasPermission);
++  const sRef = useRef<PuffyStrings>(s);
++  const uiRef = useRef<(ui: UiHint) => void>(() => {});
++  const submitRef = useRef<(text: string) => void>(() => {});
++  const busyRef = useRef(false);
++  const voiceBusyRef = useRef(false);
++  useEffect(() => { pathRef.current = pathname; permRef.current = hasPermission; sRef.current = s; });
++
++  const ping = useCallback(() => { lastActive.current = Date.now(); }, []);
++  useEffect(() => { lastActive.current = Date.now(); }, []);
++
++  const showSay = useCallback((text: string, ms = 3200) => {
++    setSay(text);
++    window.clearTimeout(sayTimer.current);
++    sayTimer.current = window.setTimeout(() => setSay(null), ms);
++  }, []);
++  useEffect(() => {
++    sayTimer.current = window.setTimeout(() => setSay(null), 4200);
++    return () => window.clearTimeout(sayTimer.current);
++  }, []);
++
++  /* ---------- Chat + suara ---------- */
++  const { messages, busy, mood, fx, setMood, send, stop, retry, feedback, runAction } = usePuffy({
++    baseUrl,
++    onUi: (ui) => uiRef.current(ui),
++  });
++
++  const speechOut = useSpeechOutput(language === "en" ? "en-US" : "id-ID");
++  const speechIn = useSpeechInput({
++    lang: language === "en" ? "en-US" : "id-ID",
++    onInterim: setInput,
++    onFinal: (text) => { viaVoice.current = true; submitRef.current(text); },
++    onError: (code) => showSay(code === "denied" ? s.micDenied : s.micNoSpeech, 4500),
++  });
++
++  const closePanel = useCallback(() => {
++    setOpen(false);
++    setPointer(null);
++    targetRef.current = null;
++    lastUiKey.current = "";
++  }, []);
++
++  const openPanel = useCallback(() => {
++    setOpen(true);
++    ping();
++  }, [ping]);
++
++  /* ---------- Menunjuk elemen: pindah halaman, scroll, sorot, Puffy duduk di pojok kanan atas ---------- */
++  const track = useCallback(() => {
++    const el = targetRef.current;
++    if (!el) return;
++    if (!el.isConnected) { targetRef.current = null; setPointer(null); return; }
++    const r = el.getBoundingClientRect();
++    const size = SIZE.point;
++    setPointer({
++      x: Math.min(window.innerWidth - size - 4, Math.max(4, r.right - size + 12)),
++      y: Math.min(window.innerHeight - size - 8, Math.max(PANEL.headerHeight + 8, r.top - size + 8)),
++    });
++  }, []);
++
++  const pointAt = useCallback(async (ui: UiHint) => {
++    const key = `${ui.route ?? ""}|${ui.target ?? ""}`;
++    if (key === lastUiKey.current) return;
++    lastUiKey.current = key;
++
++    if (ui.route) {
++      const needed = ROUTES[ui.route];
++      if (!needed) return; // rute di luar daftar diabaikan
++      if (!permRef.current(needed)) {
++        showSay(sRef.current.noAccess, 4000);
++        setMood("confused");
++        return;
++      }
++      if (ui.route !== pathRef.current) {
++        navigate(ui.route);
++        await waitFor(() => (pathRef.current === ui.route ? true : null));
++      }
++    }
++    if (!ui.target) return;
++    const found = await waitFor(() => resolveTarget(ui.target!));
++    if (!found || lastUiKey.current !== key) return;
++
++    const el = found.closest<HTMLElement>(".card") ?? found;
++    targetRef.current = el;
++    el.scrollIntoView({ behavior: "smooth", block: "center" });
++    el.classList.add("puffy-hl");
++    window.setTimeout(() => el.classList.remove("puffy-hl"), 3600);
++    track();
++    window.setTimeout(track, 600);
++  }, [navigate, setMood, showSay, track]);
++  useEffect(() => { uiRef.current = (ui) => { void pointAt(ui); }; }, [pointAt]);
++
++  useEffect(() => {
++    let raf = 0;
++    const onChange = () => {
++      setVp({ w: window.innerWidth, h: window.innerHeight });
++      cancelAnimationFrame(raf);
++      raf = requestAnimationFrame(track);
++    };
++    window.addEventListener("scroll", onChange, true); // .app-content adalah kontainer scroll
++    window.addEventListener("resize", onChange);
++    return () => {
++      cancelAnimationFrame(raf);
++      window.removeEventListener("scroll", onChange, true);
++      window.removeEventListener("resize", onChange);
++    };
++  }, [track]);
++
++  /* ---------- Kirim pertanyaan ---------- */
++  const submit = useCallback((text: string) => {
++    const q = text.trim();
++    if (!q) return;
++    ping();
++    setOpen(true);
++    setInput("");
++    lastUiKey.current = "";
++    targetRef.current = null;
++    setPointer(null);
++    speechOut.cancel();
++    const ctx: PageContext = {
++      route: pathRef.current,
++      title: document.title,
++      language,
++      role: user?.role ?? "",
++      entity: getPuffyEntity(),
++    };
++    void send(q, ctx);
++  }, [language, ping, send, speechOut, user?.role]);
++  useEffect(() => { submitRef.current = submit; }, [submit]);
++
++  // Bacakan jawaban bila pertanyaannya lewat suara.
++  const wasBusy = useRef(false);
++  useEffect(() => {
++    if (wasBusy.current && !busy && viaVoice.current) {
++      viaVoice.current = false;
++      const last = messages[messages.length - 1];
++      if (last?.role === "assistant") speechOut.speak(last.text || last.results[0]?.summary || "");
++    }
++    wasBusy.current = busy;
++  }, [busy, messages, speechOut]);
++
++  const last = messages[messages.length - 1];
++  const talking = (last?.role === "assistant" && last.streaming && last.text.length > 0) || speechOut.speaking;
++
++  /* ---------- Idle: mengecil menjadi balon, kecuali panel sedang dibaca atau dipakai ---------- */
++  useEffect(() => { busyRef.current = busy; }, [busy]);
++  useEffect(() => { voiceBusyRef.current = speechIn.listening || speechOut.speaking; }, [speechIn.listening, speechOut.speaking]);
++
++  useEffect(() => {
++    const timer = window.setInterval(() => {
++      if (!open) return;
++      const drafting = !!inputRef.current?.value && !!panelRef.current?.contains(document.activeElement);
++      if (busyRef.current || voiceBusyRef.current || hoverRef.current || drafting) { ping(); return; }
++      if (Date.now() - lastActive.current > idleAfterMs) closePanel();
++    }, 1000);
++    return () => window.clearInterval(timer);
++  }, [open, idleAfterMs, ping, closePanel]);
++
++  // Ctrl+K membuka/memfokuskan Puffy. Esc hanya diproses di dalam panel (lihat onKeyDown) agar tidak bentrok dengan modal.
++  useEffect(() => {
++    const onKey = (e: KeyboardEvent) => {
++      if (!((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k")) return;
++      e.preventDefault();
++      if (open) inputRef.current?.focus();
++      else { openPanel(); window.setTimeout(() => inputRef.current?.focus(), 650); }
++    };
++    window.addEventListener("keydown", onKey);
++    return () => window.removeEventListener("keydown", onKey);
++  }, [open, openPanel]);
++
++  // Beri ruang di layout: konten utama menyempit saat panel terbuka dan melebar saat Puffy mengecil (CSS di puffy.css).
++  const mobile = vp.w <= PANEL.mobileBreak;
++  useEffect(() => {
++    const root = document.documentElement;
++    root.classList.add("puffy-ready");
++    root.classList.toggle("puffy-open", open && !mobile);
++    return () => root.classList.remove("puffy-ready", "puffy-open");
++  }, [open, mobile]);
++
++  useEffect(() => {
++    logRef.current?.scrollTo({ top: logRef.current.scrollHeight, behavior: "smooth" });
++  }, [messages]);
++
++  /* ---------- Posisi maskot (diturunkan dari ukuran viewport, sama dengan CSS panel) ---------- */
++  const panelW = mobile ? vp.w - 24 : Math.min(PANEL.width, vp.w - 24);
++  const panelH = mobile ? Math.min(PANEL.mobileHeight, vp.h * 0.55) : Math.min(PANEL.maxHeight, vp.h - 168);
++  const panelLeft = vp.w - (mobile ? 12 : MARGIN) - panelW;
++  const panelTop = vp.h - PANEL.bottom - panelH;
++  const home = { x: Math.max(4, panelLeft - 22), y: Math.max(PANEL.headerHeight + 4, panelTop - 46) };
++
++  const size = !open ? SIZE.closed : pointer ? SIZE.point : SIZE.open;
++  const pos = !open ? { x: vp.w - MARGIN - SIZE.closed, y: vp.h - MARGIN - SIZE.closed } : (pointer ?? home);
++  const sayText = !open ? s.askMe : say;
++  const sayPlace = !open ? "puffy-say--closed" : pointer ? "puffy-say--left" : "puffy-say--home";
++
++  const onMascot = () => {
++    ping();
++    if (!open) { openPanel(); setMood("happy"); showSay(s.greet); return; }
++    setMood("happy");
++    showSay(s.quips[Math.floor(Math.random() * s.quips.length)]);
++  };
++
++  const copy = (text: string, done: () => void, fail: () => void) => {
++    const clip = navigator.clipboard;
++    if (!clip) return fail();
++    clip.writeText(text).then(done, fail);
++  };
++
++  const pageLabel = ((): string => {
++    const nav = t.nav;
++    const labels: Record<string, string | undefined> = {
++      "/dashboard": nav.dashboard, "/custody": nav.custody, "/customer-po": nav.customerPo, "/delivery": nav.delivery,
++      "/materials": nav.materials, "/invoicing": nav.invoicing, "/payments": nav.payments, "/reports": nav.reports, "/master": nav.master,
++    };
++    return labels[pathname] ?? pathname;
++  })();
++
++  const suggestions = s.suggestions.filter((x) => hasPermission(x.permission));
++  const firstName = user?.name.split(" ")[0] ?? "";
++
++  return (
++    <>
++      <section
++        ref={panelRef}
++        className="puffy-panel"
++        data-open={open}
++        role="region"
++        aria-label={s.title}
++        aria-hidden={!open}
++        inert={!open}
++        onPointerEnter={() => { hoverRef.current = true; ping(); }}
++        onPointerLeave={() => { hoverRef.current = false; ping(); }}
++        onPointerMove={ping}
++        onKeyDown={(e) => { if (e.key === "Escape") { e.stopPropagation(); closePanel(); } }}
++      >
++        <header className="puffy-panel__header">
++          <span className="puffy-dot" aria-hidden="true" />
++          <h2>{s.title}</h2>
++          {PUFFY_MOCK && <small className="puffy-badge">{s.mockBadge}</small>}
++          <button type="button" className="icon-button puffy-minimize" onClick={closePanel} aria-label={s.minimize} title={s.minimize}>
++            <Minus size={16} />
++          </button>
++        </header>
++        <p className="puffy-panel__context">{s.page}: <b>{pageLabel}</b> · {s.shortcutHint}</p>
++
++        <div ref={logRef} className="puffy-log" role="log" aria-live="polite">
++          {messages.length === 0 && <p className="puffy-msg puffy-msg--ai">{s.welcome(firstName)}</p>}
++          {messages.map((m, i) =>
++            m.role === "user" ? (
++              <p key={m.id} className="puffy-msg puffy-msg--me">{m.text}</p>
++            ) : (
++              <AssistantBubble key={m.id} m={m} s={s} canRetry={i === messages.length - 1}
++                onRetry={retry} onFeedback={feedback} onAction={runAction} onCopy={copy} />
++            ),
++          )}
++        </div>
++
++        <div className="puffy-chips">
++          {suggestions.map((x) => (
++            <button key={x.text} type="button" disabled={busy} onClick={() => submit(x.text)}>{x.text}</button>
++          ))}
++        </div>
++
++        <form className="puffy-form" onSubmit={(e) => { e.preventDefault(); submit(input); }}>
++          <input ref={inputRef} className="input" value={input} onChange={(e) => { setInput(e.target.value); ping(); }}
++            placeholder={s.placeholder} autoComplete="off" aria-label={s.placeholder} />
++          {voice && speechIn.supported && (
++            <button type="button" className={`icon-button puffy-mic${speechIn.listening ? " is-listening" : ""}`}
++              onClick={speechIn.toggle} aria-pressed={speechIn.listening} aria-label={s.mic} title={s.mic}>
++              <Mic size={16} />
++            </button>
++          )}
++          {busy ? (
++            <button type="button" className="button button--secondary puffy-send" onClick={stop} aria-label={s.stop} title={s.stop}>
++              <Square size={14} />
++            </button>
++          ) : (
++            <button type="submit" className="button button--primary puffy-send" disabled={!input.trim()} aria-label={s.send} title={s.send}>
++              <Send size={14} />
++            </button>
++          )}
++        </form>
++      </section>
++
++      <div className="puffy-mascot" style={{ width: size, height: size, transform: `translate(${pos.x}px, ${pos.y}px)` }}>
++        <button type="button" className="puffy-mascot__button" onClick={onMascot} aria-label={open ? "Puffy" : s.openChat}>
++          <PuffyMascot mood={mood} talking={talking} bubble={!open} />
++          <span className="puffy-tail" data-visible={!open} aria-hidden="true" />
++          {fx.map((f) => <span key={f.id} className="puffy-fx" aria-hidden="true">{f.emoji}</span>)}
++          <span role="status" className={`puffy-say ${sayPlace}`} data-visible={Boolean(sayText)}>{sayText}</span>
++        </button>
++      </div>
++    </>
++  );
++}
++
++interface BubbleProps {
++  m: AssistantMessage;
++  s: PuffyStrings;
++  canRetry: boolean;
++  onRetry: () => void;
++  onFeedback: (m: AssistantMessage, v: "up" | "down") => void;
++  onAction: (m: AssistantMessage, a: PendingAction, d: "confirm" | "cancel") => void;
++  onCopy: (text: string, done: () => void, fail: () => void) => void;
++}
++
++function AssistantBubble({ m, s, canRetry, onRetry, onFeedback, onAction, onCopy }: BubbleProps) {
++  const [copyLabel, setCopyLabel] = useState<string | null>(null);
++  const finished = !m.streaming && !m.error && (m.text || m.results.length > 0);
++  const flash = (label: string) => { setCopyLabel(label); window.setTimeout(() => setCopyLabel(null), 1600); };
++
++  return (
++    <div className="puffy-ai">
++      {m.status && (
++        <div className="puffy-status">
++          <i /><i /><i />
++          <span>{m.status === "…" ? "" : m.status}</span>
++        </div>
++      )}
++      {m.text && <p className="puffy-msg puffy-msg--ai">{m.text}</p>}
++      {m.results.map((r, i) => (
++        <ToolResultCard key={`${r.tool}-${i}`} result={r} s={s}
++          actionState={r.action ? (m.actions[r.action.id] ?? "pending") : undefined}
++          onAction={(a, d) => onAction(m, a, d)} />
++      ))}
++      {m.error && (
++        <div role="alert" className="alert alert--danger puffy-error">
++          <span>{m.error}</span>
++          {canRetry && <button type="button" onClick={onRetry}>{s.retry}</button>}
++        </div>
++      )}
++      {finished && (
++        <div className="puffy-feedback">
++          <button type="button" aria-pressed={m.feedback === "up"} onClick={() => onFeedback(m, "up")} title={s.helpful}>
++            <ThumbsUp size={13} /><span className="sr-only">{s.helpful}</span>
++          </button>
++          <button type="button" aria-pressed={m.feedback === "down"} onClick={() => onFeedback(m, "down")} title={s.notHelpful}>
++            <ThumbsDown size={13} /><span className="sr-only">{s.notHelpful}</span>
++          </button>
++          <button type="button" onClick={() => onCopy(m.text || m.results.map((r) => r.summary).join("\n"), () => flash(s.copied), () => flash(s.copyFailed))}>
++            <Copy size={13} /> {copyLabel ?? s.copy}
++          </button>
++        </div>
++      )}
++    </div>
++  );
++}
+diff --git a/frontend/src/features/puffy/PuffyMascot.tsx b/frontend/src/features/puffy/PuffyMascot.tsx
+new file mode 100644
+index 0000000..3e8545c
+--- /dev/null
++++ b/frontend/src/features/puffy/PuffyMascot.tsx
+@@ -0,0 +1,75 @@
++import { useEffect, useRef } from "react";
++import type { Mood } from "./types";
++
++const MOUTH: Record<Mood, string> = {
++  neutral: "M45 63 Q50 69 55 63",
++  happy: "M42 62 Q50 72 58 62",
++  love: "M42 62 Q50 72 58 62",
++  excited: "M45 63 Q50 69 55 63",
++  think: "M45 66 L55 66",
++  confused: "M44 66 Q47 62 50 66 T56 66",
++  sad: "M45 68 Q50 62 55 68",
++};
++
++interface Props {
++  mood: Mood;
++  /** Mulut membuka-menutup (saat jawaban diketik atau dibacakan). */
++  talking: boolean;
++  /** Mode balon chat (idle): tangan dan kaki memudar. */
++  bubble: boolean;
++}
++
++export function PuffyMascot({ mood, talking, bubble }: Props) {
++  const svgRef = useRef<SVGSVGElement>(null);
++  const eyesRef = useRef<SVGGElement>(null);
++
++  // Pupil mengikuti pointer tanpa re-render React.
++  useEffect(() => {
++    const onMove = (e: PointerEvent) => {
++      const svg = svgRef.current;
++      const eyes = eyesRef.current;
++      if (!svg || !eyes) return;
++      const r = svg.getBoundingClientRect();
++      const dx = e.clientX - (r.left + r.width / 2);
++      const dy = e.clientY - (r.top + r.height / 2);
++      const d = Math.hypot(dx, dy) || 1;
++      const k = Math.min(3.2, d / 60);
++      eyes.setAttribute("transform", `translate(${((dx / d) * k).toFixed(2)} ${((dy / d) * k * 0.7).toFixed(2)})`);
++    };
++    window.addEventListener("pointermove", onMove, { passive: true });
++    return () => window.removeEventListener("pointermove", onMove);
++  }, []);
++
++  return (
++    <svg ref={svgRef} className="puffy-svg" viewBox="0 0 100 100" aria-hidden="true"
++      data-mood={mood} data-talking={talking} data-bubble={bubble}>
++      <g className="puffy-limbs">
++        <ellipse className="puffy-foot" cx="30" cy="92" rx="15" ry="8" />
++        <ellipse className="puffy-foot" cx="70" cy="92" rx="15" ry="8" />
++        <ellipse className="puffy-arm" cx="14" cy="58" rx="9" ry="12" transform="rotate(25 14 58)" />
++        <ellipse className="puffy-arm" cx="86" cy="58" rx="9" ry="12" transform="rotate(-25 86 58)" />
++      </g>
++      <circle className="puffy-body" cx="50" cy="52" r="40" />
++      <ellipse className="puffy-shine" cx="34" cy="32" rx="12" ry="7" transform="rotate(-30 34 32)" />
++
++      <g className="puffy-blink">
++        <g ref={eyesRef} className="puffy-eyes">
++          <ellipse className="puffy-ink" cx="38" cy="48" rx="5.5" ry="9" />
++          <ellipse className="puffy-ink" cx="62" cy="48" rx="5.5" ry="9" />
++          <ellipse className="puffy-white" cx="39" cy="44" rx="2.4" ry="3.6" />
++          <ellipse className="puffy-white" cx="63" cy="44" rx="2.4" ry="3.6" />
++        </g>
++        <g className="puffy-eyes-happy">
++          <path d="M31 50 Q38 41 45 50" />
++          <path d="M55 50 Q62 41 69 50" />
++        </g>
++      </g>
++
++      <ellipse className="puffy-cheek" cx="27" cy="62" rx="7" ry="4" />
++      <ellipse className="puffy-cheek" cx="73" cy="62" rx="7" ry="4" />
++
++      <path className="puffy-mouth" d={MOUTH[mood]} />
++      <ellipse className="puffy-mouth-open" cx="50" cy="66" rx="5.5" ry="4.5" />
++    </svg>
++  );
++}
+diff --git a/frontend/src/features/puffy/README.md b/frontend/src/features/puffy/README.md
+new file mode 100644
+index 0000000..4879c20
+--- /dev/null
++++ b/frontend/src/features/puffy/README.md
+@@ -0,0 +1,75 @@
++# Puffy — asisten admin Sentanu Jaya
++
++Asisten chat yang bertengger di pojok kanan bawah layout terautentikasi. Ia menjawab lewat **SSE**,
++menampilkan hasil tool sebagai kartu (angka dan tabel dari backend, bukan dari teks model),
++lalu memindahkan halaman dan menunjuk tabel atau grafik yang relevan.
++
++## Titik sentuh ke kode yang sudah ada
++
++Hanya dua baris di `src/App.tsx`:
++
++```tsx
++import { PuffyAssistant } from './features/puffy';   // di blok import
++...
++<PuffyAssistant />                                   // di dalam <div className="app-shell">, setelah .app-shell__main
++```
++
++Tidak ada file lain yang diubah. Gaya memakai token di `App.css` (`--color-*`, `--radius-*`, `[data-theme="dark"]`),
++komponen `.button`, `.input`, `.icon-button`, dan `.alert` yang sudah ada. Auth, izin, bahasa (ID/EN), dan router
++diambil dari `useAuth`, `useLanguage`, dan `react-router-dom`.
++
++Untuk menghapus: hapus folder ini dan dua baris di atas. Sisanya tidak berubah.
++
++## Perilaku
++
++- Mulai sebagai balon **"Ask me 💬"**. Klik balon atau tekan `Ctrl+K` untuk membuka (`defaultOpen` untuk mulai terbuka).
++- Saat terbuka, `.app-content` diberi `padding-right` (hanya di layar > 820 px) lalu melebar lagi saat Puffy mengecil. Efeknya murni CSS di `puffy.css`.
++- Mengecil sendiri setelah 9 detik tanpa aktivitas, **kecuali** kursor ada di atas panel, ada draf di kolom ketik, Puffy sedang menjawab, atau mikrofon aktif.
++- Pindah menu saat Puffy mengecil tidak membukanya lagi. `Esc` hanya berlaku bila fokus ada di dalam panel, jadi tidak bentrok dengan modal.
++- Panel memakai `role="region"` (bukan `dialog`) agar tidak bentrok dengan `getByRole('dialog')` di `e2e/functional.spec.ts`.
++- Selama Puffy tertutup (bawaan), tidak ada pencarian di `e2e/*.spec.ts` yang mengenai elemen Puffy (210 pencarian diperiksa dengan mesin locator Playwright). Bila Puffy dibuka saat tes berjalan (mis. `defaultOpen`), `page.getByRole('button', { name: /Hapus|Konfirmasi|Ya/i }).last()` bisa mengenai chip "Piutang dan pembayaran".
++- Chip saran disaring menurut izin pengguna. Rute di luar `ROUTES` (`config.ts`) atau tanpa izin diabaikan.
++
++## Mencoba tanpa backend
++
++```bash
++VITE_PUFFY_MOCK=true npm run dev
++```
++
++Memakai respons SSE palsu (`mock.ts`) dengan **data contoh** yang melewati parser yang sama dengan backend asli.
++Tanpa variabel itu dan tanpa endpoint di server, Puffy menampilkan pesan error dengan tombol "Coba lagi".
++
++## Kontrak backend (belum ada di repo ini)
++
++Autentikasi memakai cookie sesi yang sama dengan Axios (`credentials: "include"`), jadi rute Puffy cukup berada di
++grup `Route::middleware([StartSession::class, 'auth'])` yang sudah ada.
++
++| Method dan path | Fungsi |
++|---|---|
++| `POST /api/v1/puffy/chat` | Streaming SSE. Body: `{message, conversation_id, page_context}` |
++| `POST /api/v1/puffy/feedback` | `{message_id, value: "up" \| "down"}` |
++| `POST /api/v1/puffy/actions/{id}/confirm` · `/cancel` | Eksekusi aksi tulis setelah admin menekan tombol |
++
++`page_context` = `{route, title, language, role, entity?}`.
++
++Event dari `/chat` (tipe lengkap ada di `types.ts`):
++
++```
++event: status       data: {"label":"Memeriksa Surat Jalan…","ui":{"route":"/delivery","target":"table"}}
++event: tool_result  data: {tool,title,summary,hasData,metrics?,table?,chart?,source,asOf,ui?,action?}
++event: token        data: {"text":"…"}
++event: done         data: {"message_id":"…","conversation_id":"…"}
++event: error        data: {"message":"…"}
++```
++
++- `ui.route` harus salah satu rute di `ROUTES`. `ui.target` adalah `kpi`, `table`, `chart`, `summary`, `header`, `card`
++  (opsional `table:1` untuk elemen kedua) atau nilai atribut `data-puffy` bila halaman perlu target khusus.
++- `status.ui` membuat Puffy pindah halaman selagi data masih diambil.
++- `action` hanyalah **proposal**. Data baru berubah saat backend menerima `/confirm`, dan backend wajib memeriksa
++  izin dan Segregation of Duties seperti endpoint biasa.
++- Kirim komentar `: ping` tiap sekitar 15 detik dan nonaktifkan buffering proxy (`X-Accel-Buffering: no`).
++
++## Catatan
++
++- Mikrofon memakai Web Speech API bawaan browser. Di Chrome audio diproses server browser, jadi **tidak lokal**.
++- Ollama jangan diakses dari browser. Hanya Laravel yang boleh memanggilnya.
+diff --git a/frontend/src/features/puffy/ToolResultCard.tsx b/frontend/src/features/puffy/ToolResultCard.tsx
+new file mode 100644
+index 0000000..61ac36e
+--- /dev/null
++++ b/frontend/src/features/puffy/ToolResultCard.tsx
+@@ -0,0 +1,104 @@
++import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis } from "recharts";
++import type { PuffyStrings } from "./strings";
++import type { ActionState, PendingAction, ToolResult } from "./types";
++
++const dateFmt = new Intl.DateTimeFormat("id-ID", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Jakarta" });
++
++function formatAsOf(iso: string): string {
++  const d = new Date(iso);
++  return Number.isNaN(d.getTime()) ? iso : dateFmt.format(d).replace(/(\d{2})\.(\d{2})$/, "$1:$2");
++}
++
++interface CardProps {
++  result: ToolResult;
++  s: PuffyStrings;
++  actionState?: ActionState;
++  onAction?: (action: PendingAction, decision: "confirm" | "cancel") => void;
++}
++
++/** Kartu hasil tool: angka dan tabel dirender dari data backend, bukan dari teks model. */
++export function ToolResultCard({ result, s, actionState, onAction }: CardProps) {
++  const { metrics, table, chart } = result;
++  return (
++    <div className="puffy-result">
++      <h4 className="puffy-result__title">{result.title}</h4>
++
++      {!result.hasData ? (
++        <p className="puffy-result__empty">{s.noData}</p>
++      ) : (
++        <>
++          {metrics && metrics.length > 0 && (
++            <div className="puffy-metrics">
++              {metrics.map((m) => (
++                <div key={m.label} className="puffy-metric">
++                  <strong>{m.value}</strong>
++                  <span>{m.label}</span>
++                </div>
++              ))}
++            </div>
++          )}
++
++          {table && table.rows.length > 0 && (
++            <div className="puffy-table-wrap">
++              <table className="puffy-table">
++                <thead>
++                  <tr>{table.columns.map((c) => <th key={c}>{c}</th>)}</tr>
++                </thead>
++                <tbody>
++                  {table.rows.map((row, i) => (
++                    <tr key={i}>{row.map((cell, j) => <td key={j}>{cell}</td>)}</tr>
++                  ))}
++                </tbody>
++              </table>
++            </div>
++          )}
++
++          {chart && chart.points.length > 0 && (
++            <div className="puffy-chart">
++              <p>{chart.title}</p>
++              <div className="puffy-chart__box">
++                <ResponsiveContainer width="100%" height="100%">
++                  <BarChart data={chart.points} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
++                    <XAxis dataKey="label" tick={{ fontSize: 10, fill: "var(--color-text-muted)" }} axisLine={false} tickLine={false} />
++                    <Tooltip cursor={{ fill: "var(--color-primary-soft)" }}
++                      contentStyle={{ background: "var(--color-surface)", border: "1px solid var(--color-border)", borderRadius: "var(--radius-sm)", fontSize: 12 }} />
++                    <Bar dataKey="value" fill="var(--color-primary)" radius={[6, 6, 2, 2]} />
++                  </BarChart>
++                </ResponsiveContainer>
++              </div>
++            </div>
++          )}
++        </>
++      )}
++
++      <p className="puffy-result__source">{s.asOf} {formatAsOf(result.asOf)} · {result.source}</p>
++
++      {result.action && onAction && (
++        <ActionConfirm action={result.action} state={actionState ?? "pending"} s={s} onDecision={(d) => onAction(result.action!, d)} />
++      )}
++    </div>
++  );
++}
++
++function ActionConfirm({ action, state, s, onDecision }: {
++  action: PendingAction;
++  state: ActionState;
++  s: PuffyStrings;
++  onDecision: (d: "confirm" | "cancel") => void;
++}) {
++  if (state === "done") return <p role="status" className="alert alert--success puffy-action">✓ {action.label} — {s.done}</p>;
++  if (state === "cancelled") return <p className="puffy-action puffy-action--muted">{s.cancelled}</p>;
++  const busy = state === "confirming";
++  return (
++    <div className="alert alert--info puffy-action puffy-action--ask">
++      <p><b>{s.willDo}</b> {action.description}. {s.confirmQ}</p>
++      {state === "failed" && <p role="alert" className="puffy-action__error">{s.failed}</p>}
++      <div className="puffy-action__buttons">
++        <button type="button" className="button button--secondary" disabled={busy} onClick={() => onDecision("cancel")}>{s.cancel}</button>
++        <button type="button" className="button button--primary" disabled={busy} onClick={() => onDecision("confirm")}>
++          {busy ? s.processing : s.proceed}
++        </button>
++      </div>
++    </div>
++  );
++}
+diff --git a/frontend/src/features/puffy/config.ts b/frontend/src/features/puffy/config.ts
+new file mode 100644
+index 0000000..15af49f
+--- /dev/null
++++ b/frontend/src/features/puffy/config.ts
+@@ -0,0 +1,41 @@
++import { permissions, type Permission } from "../../auth";
++
++/**
++ * Rute yang boleh dituju Puffy, lengkap dengan izin yang dibutuhkan.
++ * Disamakan dengan <Route> di App.tsx dan Sidebar. Rute di luar daftar ini diabaikan.
++ */
++export const ROUTES: Record<string, Permission> = {
++  "/dashboard": permissions.dashboardView,
++  "/custody": permissions.custodyView,
++  "/customer-po": permissions.poView,
++  "/delivery": permissions.deliveryView,
++  "/materials": permissions.materialView,
++  "/invoicing": permissions.invoiceView,
++  "/reports": permissions.invoiceView,
++  "/master": permissions.dashboardView,
++  "/payments": permissions.paymentView,
++};
++
++/**
++ * Kunci elemen yang boleh ditunjuk Puffy, memakai class yang SUDAH ada di halaman
++ * (tanpa perlu mengubah halaman). Tambahkan atribut data-puffy="nama" bila perlu target khusus.
++ */
++export const TARGETS: Record<string, string> = {
++  kpi: ".app-content .kpi-grid",
++  table: ".app-content .data-table",
++  chart: ".app-content .chart-container",
++  summary: ".app-content .invoice-summary",
++  header: ".app-content .page-header",
++  card: ".app-content .card",
++};
++
++/** "table" -> elemen pertama, "table:1" -> elemen kedua, atau [data-puffy="nama"]. */
++export function resolveTarget(key: string): HTMLElement | null {
++  const [name, index] = key.split(":");
++  const selector = TARGETS[name] ?? `[data-puffy="${CSS.escape(name)}"]`;
++  const list = document.querySelectorAll<HTMLElement>(selector);
++  return list[Number(index ?? 0)] ?? null;
++}
++
++export const PUFFY_BASE_URL = "/api/v1/puffy";
++export const PUFFY_MOCK = import.meta.env.VITE_PUFFY_MOCK === "true";
+diff --git a/frontend/src/features/puffy/index.ts b/frontend/src/features/puffy/index.ts
+new file mode 100644
+index 0000000..d49608a
+--- /dev/null
++++ b/frontend/src/features/puffy/index.ts
+@@ -0,0 +1,4 @@
++export { PuffyAssistant } from "./PuffyAssistant";
++export type { PuffyAssistantProps } from "./PuffyAssistant";
++export { usePuffyEntity } from "./pageContext";
++export type * from "./types";
+diff --git a/frontend/src/features/puffy/mock.ts b/frontend/src/features/puffy/mock.ts
+new file mode 100644
+index 0000000..7788fcc
+--- /dev/null
++++ b/frontend/src/features/puffy/mock.ts
+@@ -0,0 +1,132 @@
++import type { ToolResult, UiHint } from "./types";
++
++/**
++ * MODE CONTOH (opsional). Aktif hanya bila VITE_PUFFY_MOCK=true.
++ * Menghasilkan Response text/event-stream palsu yang melewati jalur parser SSE yang sama
++ * dengan backend asli, sehingga UI Puffy bisa ditinjau sebelum endpoint Laravel tersedia.
++ * Semua angka di bawah adalah DATA CONTOH, bukan data Sentanu Jaya.
++ */
++
++interface Scenario {
++  match: RegExp;
++  status: string;
++  ui?: UiHint;
++  result: Omit<ToolResult, "asOf" | "tool">;
++  reply: string;
++}
++
++const SCENARIOS: Scenario[] = [
++  {
++    match: /piutang|invoice|tagihan|bayar|payment|receivable/i,
++    status: "Memeriksa invoice dan pembayaran…",
++    ui: { route: "/payments", target: "table" },
++    result: {
++      title: "Piutang pelanggan",
++      summary: "Piutang belum dibayar Rp 486 jt, 4 invoice jatuh tempo.",
++      hasData: true,
++      metrics: [{ label: "Belum dibayar", value: "Rp 486 jt" }, { label: "Jatuh tempo", value: "4 invoice" }, { label: "Masuk hari ini", value: "Rp 38 jt" }],
++      table: { columns: ["Pelanggan", "Piutang", "Jatuh tempo"], rows: [["PT Karya Prima", "Rp 172 jt", "2 invoice"], ["PT Maju Jaya", "Rp 140 jt", "1 invoice"], ["CV Mitra Furnitur", "Rp 96 jt", "1 invoice"]] },
++      source: "Invoice & Pembayaran · data contoh",
++    },
++    reply: "Piutang belum dibayar Rp 486 jt dan 4 invoice sudah jatuh tempo. Pembayaran masuk hari ini Rp 38 jt.",
++  },
++  {
++    match: /produksi|proses|work ?order|production|polish|cat\b/i,
++    status: "Memeriksa progres produksi…",
++    result: {
++      title: "Progres produksi",
++      summary: "412 item di lini produksi, 2 pesanan terlambat.",
++      hasData: true,
++      metrics: [{ label: "Dalam proses", value: "412" }, { label: "Terlambat", value: "2 pesanan" }, { label: "Siap kirim", value: "96" }],
++      table: { columns: ["Tahap", "Item"], rows: [["Pengecatan", "188"], ["Polishing", "74"], ["QC", "54"], ["Selesai", "96"]] },
++      chart: { title: "Item per tahap", points: [{ label: "Cat", value: 188 }, { label: "Polish", value: 74 }, { label: "QC", value: 54 }, { label: "Selesai", value: 96 }] },
++      source: "Work Order · data contoh",
++    },
++    reply: "Ada 412 item di lini produksi. 2 pesanan melewati jadwal dan 96 item sudah siap kirim.",
++  },
++  {
++    match: /stok|material|habis|stock|bahan/i,
++    status: "Memeriksa stok material…",
++    ui: { route: "/materials", target: "table" },
++    result: {
++      title: "Stok material",
++      summary: "2 material habis, 3 di bawah minimum.",
++      hasData: true,
++      metrics: [{ label: "Habis", value: "2" }, { label: "Di bawah min.", value: "3" }, { label: "Perlu dibeli", value: "5" }],
++      table: { columns: ["SKU", "Material", "Stok", "Minimum"], rows: [["CT-HTM-01", "Cat hitam doff", "0 kg", "50 kg"], ["TH-001", "Thinner", "0 L", "30 L"], ["CT-PTH-02", "Cat putih gloss", "18 kg", "40 kg"], ["PW-ABU-01", "Powder abu metalik", "22 kg", "35 kg"]] },
++      source: "Stok material · data contoh",
++    },
++    reply: "2 material stoknya nol dan 3 di bawah batas minimum. Paling mendesak dibeli: cat hitam doff dan thinner.",
++  },
++  {
++    match: /masuk|diterima|terima|receiv|incoming|custody|stb/i,
++    status: "Memeriksa penerimaan barang…",
++    ui: { route: "/custody", target: "table" },
++    result: {
++      title: "Barang masuk hari ini",
++      summary: "3 penerimaan, total 210 pcs.",
++      hasData: true,
++      metrics: [{ label: "Penerimaan", value: "3" }, { label: "Total qty", value: "210 pcs" }, { label: "Rusak", value: "1 item" }],
++      table: { columns: ["No. STB", "Pelanggan", "Item · Warna", "Qty"], rows: [["STB-202610-0031", "PT Maju Jaya", "Rangka kursi · Hitam", "80"], ["STB-202610-0032", "CV Mitra Furnitur", "Meja besi · Putih", "70"], ["STB-202610-0033", "PT Karya Prima", "Rak display · Abu", "60"]] },
++      source: "Penerimaan barang (STB) · data contoh",
++    },
++    reply: "Hari ini diterima 3 kiriman pelanggan dengan total 210 pcs. Satu item tercatat rusak saat diterima.",
++  },
++  {
++    match: /kirim|surat jalan|deliver|terkirim|sj\b/i,
++    status: "Memeriksa Surat Jalan…",
++    ui: { route: "/delivery", target: "table" },
++    result: {
++      title: "Surat Jalan hari ini",
++      summary: "6 Surat Jalan, 148 item.",
++      hasData: true,
++      metrics: [{ label: "Surat Jalan", value: "6" }, { label: "Item terkirim", value: "148" }, { label: "Menunggu", value: "2 SJ" }],
++      table: { columns: ["No. SJ", "Pelanggan", "Item · Warna", "Qty"], rows: [["SJ-202610-0411", "PT Maju Jaya", "Rangka kursi · Hitam doff", "60"], ["SJ-202610-0412", "CV Mitra Furnitur", "Meja besi · Putih", "36"], ["SJ-202610-0413", "PT Karya Prima", "Rak display · Abu metalik", "52"]] },
++      source: "Surat Jalan · data contoh",
++      action: { id: "contoh-aksi-1", label: "Tandai SJ-202610-0412 terkirim", description: "menandai Surat Jalan SJ-202610-0412 sebagai DELIVERED" },
++    },
++    reply: "Hari ini terbit 6 Surat Jalan dengan 148 item terkirim. 2 Surat Jalan dari jadwal masih menunggu.",
++  },
++];
++
++const FALLBACK = "Aku belum paham itu. Coba tanya soal pengiriman, barang masuk, stok material, produksi, atau piutang.";
++
++const wait = (ms: number, signal?: AbortSignal) =>
++  new Promise<void>((resolve, reject) => {
++    if (signal?.aborted) return reject(new DOMException("Aborted", "AbortError"));
++    const t = window.setTimeout(resolve, ms);
++    signal?.addEventListener("abort", () => { window.clearTimeout(t); reject(new DOMException("Aborted", "AbortError")); }, { once: true });
++  });
++
++export function mockPuffyResponse(path: string, body: unknown, signal?: AbortSignal): Response {
++  if (path !== "/chat") return new Response("{}", { status: 200, headers: { "Content-Type": "application/json" } });
++
++  const message = String((body as { message?: string }).message ?? "");
++  const scenario = SCENARIOS.find((s) => s.match.test(message));
++  const enc = new TextEncoder();
++
++  const stream = new ReadableStream<Uint8Array>({
++    async start(ctl) {
++      const send = (event: string, data: unknown) => ctl.enqueue(enc.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
++      try {
++        if (scenario) {
++          send("status", { label: scenario.status, ui: scenario.ui });
++          await wait(1100, signal);
++          send("tool_result", { ...scenario.result, tool: "contoh", asOf: new Date().toISOString(), ui: scenario.ui });
++          await wait(250, signal);
++        } else {
++          await wait(500, signal);
++        }
++        for (const word of (scenario?.reply ?? FALLBACK).split(/(?<= )/)) {
++          send("token", { text: word });
++          await wait(40, signal);
++        }
++        send("done", { message_id: `contoh-${Date.now()}`, conversation_id: "contoh" });
++        ctl.close();
++      } catch {
++        ctl.error(new DOMException("Aborted", "AbortError"));
++      }
++    },
++  });
++  return new Response(stream, { status: 200, headers: { "Content-Type": "text/event-stream" } });
++}
+diff --git a/frontend/src/features/puffy/pageContext.ts b/frontend/src/features/puffy/pageContext.ts
+new file mode 100644
+index 0000000..d1b6bc7
+--- /dev/null
++++ b/frontend/src/features/puffy/pageContext.ts
+@@ -0,0 +1,19 @@
++import { useEffect } from "react";
++import type { PageContext } from "./types";
++
++let current: PageContext["entity"];
++
++export const getPuffyEntity = () => current;
++
++/**
++ * Opsional: panggil di halaman detail agar Puffy tahu record yang sedang dibuka.
++ * Contoh: usePuffyEntity({ type: "delivery_order", id: order.id })
++ */
++export function usePuffyEntity(entity?: PageContext["entity"]) {
++  const type = entity?.type;
++  const id = entity?.id;
++  useEffect(() => {
++    current = type !== undefined && id !== undefined ? { type, id } : undefined;
++    return () => { current = undefined; };
++  }, [type, id]);
++}
+diff --git a/frontend/src/features/puffy/puffy.css b/frontend/src/features/puffy/puffy.css
+new file mode 100644
+index 0000000..d7cf35e
+--- /dev/null
++++ b/frontend/src/features/puffy/puffy.css
+@@ -0,0 +1,161 @@
++/*
++ * Gaya Puffy. Semua warna, radius, bayangan, dan tema (terang/gelap lewat [data-theme="dark"])
++ * memakai token dari App.css, jadi mengikuti tampilan Sentanu Jaya tanpa JavaScript tambahan.
++ * Semua selector diawali "puffy-" agar tidak menabrak class yang sudah ada.
++ */
++:root {
++  --puffy-body: #ffb6d0;
++  --puffy-arm: #ff86b0;
++  --puffy-foot: #e8527f;
++  --puffy-ink: #2b1633;
++  --puffy-cheek: #ff6f9f;
++  --puffy-mouth: #7a1f3d;
++  --puffy-ease: cubic-bezier(.5, 0, .2, 1);
++}
++
++/* ---------- Ruang di layout: konten menyempit saat panel terbuka, melebar saat Puffy mengecil ---------- */
++html.puffy-ready .app-content { transition: padding-right .6s var(--puffy-ease); }
++@media (min-width: 821px) {
++  html.puffy-open .app-content { padding-right: calc(22.5rem + 1.25rem + var(--space-lg)); }
++}
++
++/* ---------- Panel chat ---------- */
++.puffy-panel {
++  position: fixed; z-index: 80; right: 1.25rem; bottom: 5.5rem;
++  display: flex; flex-direction: column;
++  width: 22.5rem; max-width: calc(100vw - 1.5rem); height: min(35rem, calc(100dvh - 10.5rem));
++  border: 1px solid var(--color-border); border-radius: var(--radius-lg);
++  background: var(--color-surface); color: var(--color-text); box-shadow: var(--shadow-md);
++  transform-origin: calc(100% - 30px) calc(100% + 38px); /* menyusut ke arah balon di pojok kanan bawah */
++  transition: transform .6s var(--puffy-ease), opacity .45s ease, visibility 0s;
++}
++.puffy-panel[data-open="false"] {
++  transform: scale(.04); opacity: 0; visibility: hidden; pointer-events: none;
++  transition: transform .6s var(--puffy-ease), opacity .45s ease, visibility 0s .6s;
++}
++@media (max-width: 820px) {
++  .puffy-panel { left: .75rem; right: .75rem; width: auto; max-width: none; bottom: 5.5rem; height: min(26rem, 55dvh); }
++}
++
++.puffy-panel__header { display: flex; align-items: center; gap: var(--space-sm); padding: .7rem var(--space-md) .7rem var(--space-lg); border-bottom: 1px solid var(--color-border); }
++.puffy-panel__header h2 { margin: 0; font-size: .85rem; letter-spacing: -.01em; }
++.puffy-dot { width: .5rem; height: .5rem; border-radius: 50%; background: var(--color-success); }
++.puffy-badge { padding: .12rem .45rem; border-radius: 99px; background: var(--color-warning-soft); color: var(--color-warning); font-size: .62rem; font-weight: 700; }
++.puffy-minimize { margin-left: auto; width: 1.8rem; height: 1.8rem; }
++.puffy-panel__context { margin: 0; overflow: hidden; padding: .4rem var(--space-lg); text-overflow: ellipsis; white-space: nowrap; border-bottom: 1px solid var(--color-border); color: var(--color-text-muted); font-size: .68rem; }
++.puffy-panel__context b { color: var(--color-text-secondary); }
++
++/* ---------- Percakapan ---------- */
++.puffy-log { flex: 1; display: flex; flex-direction: column; gap: var(--space-sm); overflow-y: auto; padding: var(--space-md); }
++.puffy-msg { margin: 0; max-width: 88%; padding: .5rem .7rem; border-radius: var(--radius-md); font-size: .78rem; line-height: 1.45; white-space: pre-wrap; }
++.puffy-msg--me { align-self: flex-end; border-bottom-right-radius: .2rem; background: var(--color-primary); color: #fff; }
++.puffy-msg--ai { border-bottom-left-radius: .2rem; background: var(--color-surface-raised); color: var(--color-text); }
++.puffy-ai { max-width: 100%; }
++.puffy-status { display: flex; align-items: center; gap: .25rem; margin-bottom: .3rem; color: var(--color-text-secondary); font-size: .72rem; }
++.puffy-status i { width: .35rem; height: .35rem; border-radius: 50%; background: var(--color-primary); animation: puffy-dot 1s infinite; }
++.puffy-status i:nth-child(2) { animation-delay: .15s; }
++.puffy-status i:nth-child(3) { animation-delay: .3s; }
++.puffy-status span { margin-left: .3rem; }
++@keyframes puffy-dot { 50% { transform: translateY(-4px); opacity: .4; } }
++
++.puffy-error { justify-content: space-between; align-items: center; margin-top: .3rem; }
++.puffy-error button { border: 0; background: transparent; color: inherit; font-weight: 700; text-decoration: underline; }
++.puffy-feedback { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .4rem; }
++.puffy-feedback button { display: inline-flex; align-items: center; gap: .25rem; min-height: 1.7rem; padding: 0 .5rem; border: 1px solid var(--color-border-strong); border-radius: var(--radius-sm); background: var(--color-surface); color: var(--color-text-secondary); font-size: .68rem; font-weight: 600; }
++.puffy-feedback button:hover { background: var(--color-surface-raised); color: var(--color-text); }
++.puffy-feedback button[aria-pressed="true"] { border-color: var(--color-primary); background: var(--color-primary); color: #fff; }
++.puffy-feedback .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
++
++/* ---------- Kartu hasil tool ---------- */
++.puffy-result { margin-top: .4rem; padding: var(--space-md); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); }
++.puffy-result__title { margin: 0 0 var(--space-sm); color: var(--color-text-secondary); font-size: .64rem; font-weight: 750; letter-spacing: .055em; text-transform: uppercase; }
++.puffy-result__empty { margin: 0; padding: var(--space-lg); border-radius: var(--radius-sm); background: var(--color-surface-raised); color: var(--color-text-secondary); font-size: .74rem; text-align: center; }
++.puffy-result__source { margin: var(--space-sm) 0 0; color: var(--color-text-muted); font-size: .64rem; }
++.puffy-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(5.4rem, 1fr)); gap: .4rem; margin-bottom: var(--space-sm); }
++.puffy-metric { padding: .4rem .55rem; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-surface-raised); }
++.puffy-metric strong { display: block; font-size: .88rem; letter-spacing: -.02em; }
++.puffy-metric span { color: var(--color-text-muted); font-size: .62rem; }
++.puffy-table-wrap { overflow-x: auto; }
++.puffy-table { width: 100%; border-collapse: collapse; font-size: .7rem; }
++.puffy-table th { padding: .35rem .5rem .35rem 0; border-bottom: 1px solid var(--color-border); color: var(--color-text-muted); font-size: .6rem; font-weight: 750; letter-spacing: .05em; text-align: left; text-transform: uppercase; white-space: nowrap; }
++.puffy-table td { padding: .45rem .5rem .45rem 0; border-bottom: 1px solid var(--color-border); color: var(--color-text); vertical-align: top; }
++.puffy-table tbody tr:last-child td { border-bottom: 0; }
++.puffy-table td:first-child { white-space: nowrap; }
++.puffy-chart { margin-top: var(--space-sm); }
++.puffy-chart p { margin: 0 0 .2rem; color: var(--color-text-muted); font-size: .64rem; }
++.puffy-chart__box { height: 7rem; }
++
++.puffy-action { margin: var(--space-sm) 0 0; }
++.puffy-action--ask { flex-direction: column; gap: .3rem; align-items: stretch; }
++.puffy-action--ask p { margin: 0; }
++.puffy-action--muted { color: var(--color-text-muted); font-size: .72rem; }
++.puffy-action__error { color: var(--color-danger); font-weight: 600; }
++.puffy-action__buttons { display: flex; gap: var(--space-sm); margin-top: .2rem; }
++
++/* ---------- Saran & input ---------- */
++.puffy-chips { display: flex; flex-wrap: wrap; gap: .35rem; padding: 0 var(--space-md) var(--space-sm); }
++.puffy-chips button { flex: 0 0 auto; padding: .28rem .6rem; border: 1px solid var(--color-border-strong); border-radius: 99px; background: var(--color-surface); color: var(--color-text-secondary); font-size: .68rem; font-weight: 600; }
++.puffy-chips button:hover:not(:disabled) { border-color: var(--color-primary); color: var(--color-primary); }
++.puffy-form { display: flex; gap: .4rem; padding: var(--space-sm) var(--space-md) var(--space-md); border-top: 1px solid var(--color-border); }
++.puffy-form .input { min-width: 0; flex: 1; }
++.puffy-form .icon-button { border-color: var(--color-border-strong); width: 2.3rem; height: 2.3rem; }
++.puffy-send { width: 2.3rem; padding: 0; }
++.puffy-mic.is-listening { border-color: transparent; background: var(--color-danger); color: #fff; animation: puffy-rec 1.2s infinite; }
++@keyframes puffy-rec { 0% { box-shadow: 0 0 0 0 rgb(239 68 68 / 50%); } 100% { box-shadow: 0 0 0 10px rgb(239 68 68 / 0%); } }
++
++/* ---------- Maskot ---------- */
++.puffy-mascot {
++  position: fixed; z-index: 81; top: 0; left: 0; pointer-events: none;
++  transition: transform .9s cubic-bezier(.34, 1.45, .5, 1), width .6s ease, height .6s ease;
++}
++.puffy-mascot__button {
++  position: relative; display: block; width: 100%; height: 100%; padding: 0; border: 0; border-radius: 50%;
++  background: transparent; pointer-events: auto; filter: drop-shadow(0 8px 10px rgb(255 100 160 / 35%));
++}
++.puffy-svg { width: 100%; height: 100%; overflow: visible; animation: puffy-bob 2.4s ease-in-out infinite; }
++@keyframes puffy-bob { 50% { transform: translateY(-6px) scale(1.02, .98); } }
++
++.puffy-limbs { opacity: 1; transition: opacity .4s; }
++.puffy-svg[data-bubble="true"] .puffy-limbs { opacity: 0; }
++.puffy-foot { fill: var(--puffy-foot); }
++.puffy-arm { fill: var(--puffy-arm); }
++.puffy-body { fill: var(--puffy-body); }
++.puffy-shine { fill: #fff; opacity: .45; }
++.puffy-ink { fill: var(--puffy-ink); }
++.puffy-white { fill: #fff; }
++.puffy-cheek { fill: var(--puffy-cheek); opacity: .7; transition: opacity .3s; }
++.puffy-blink { transform-box: fill-box; transform-origin: center; animation: puffy-blink 4.5s infinite; }
++@keyframes puffy-blink { 0%, 94%, 100% { transform: scaleY(1); } 97% { transform: scaleY(.1); } }
++.puffy-eyes { transition: opacity .2s; }
++.puffy-eyes-happy { fill: none; stroke: var(--puffy-ink); stroke-width: 3.4; stroke-linecap: round; opacity: 0; transition: opacity .2s; }
++.puffy-svg[data-mood="happy"] .puffy-eyes, .puffy-svg[data-mood="love"] .puffy-eyes, .puffy-svg[data-mood="excited"] .puffy-eyes { opacity: 0; }
++.puffy-svg[data-mood="happy"] .puffy-eyes-happy, .puffy-svg[data-mood="love"] .puffy-eyes-happy, .puffy-svg[data-mood="excited"] .puffy-eyes-happy { opacity: 1; }
++.puffy-svg[data-mood="happy"] .puffy-cheek, .puffy-svg[data-mood="love"] .puffy-cheek, .puffy-svg[data-mood="excited"] .puffy-cheek { opacity: 1; }
++.puffy-mouth { fill: none; stroke: var(--puffy-ink); stroke-width: 2.4; stroke-linecap: round; transition: opacity .15s; }
++.puffy-mouth-open { fill: var(--puffy-mouth); opacity: 0; transform-box: fill-box; transform-origin: center; transition: opacity .15s; }
++.puffy-svg[data-talking="true"] .puffy-mouth, .puffy-svg[data-mood="excited"] .puffy-mouth { opacity: 0; }
++.puffy-svg[data-talking="true"] .puffy-mouth-open, .puffy-svg[data-mood="excited"] .puffy-mouth-open { opacity: 1; }
++.puffy-svg[data-talking="true"] .puffy-mouth-open { animation: puffy-yap .2s ease-in-out infinite alternate; }
++@keyframes puffy-yap { from { transform: scaleY(.3); } to { transform: scaleY(1.15); } }
++
++/* Ekor balon chat saat Puffy mengecil */
++.puffy-tail { position: absolute; left: 34px; top: 34px; width: 20px; height: 20px; background: var(--puffy-body); clip-path: polygon(0 0, 100% 100%, 0 100%); opacity: 0; transition: opacity .3s; }
++.puffy-tail[data-visible="true"] { opacity: 1; }
++
++.puffy-fx { position: absolute; left: 50%; top: 0; font-size: 1.3rem; pointer-events: none; animation: puffy-fx 1.6s ease-out forwards; }
++@keyframes puffy-fx { from { transform: translate(-50%, 0) scale(.6); opacity: 0; } 20% { opacity: 1; } to { transform: translate(-50%, -34px) scale(1.1); opacity: 0; } }
++
++/* Bubble ucapan: "Ask me" saat idle, komentar singkat saat aktif */
++.puffy-say { position: absolute; width: max-content; max-width: 14rem; padding: .45rem .7rem; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); color: var(--color-text); box-shadow: var(--shadow-md); font-size: .76rem; font-weight: 700; line-height: 1.35; text-align: left; opacity: 0; transition: opacity .2s; pointer-events: none; }
++.puffy-say[data-visible="true"] { opacity: 1; }
++.puffy-say--home { bottom: 100%; left: 0; margin-bottom: .2rem; }
++.puffy-say--left { top: 50%; right: 100%; margin-right: .45rem; transform: translateY(-50%); }
++.puffy-say--closed { top: 50%; right: 100%; margin-right: .5rem; transform: translateY(-50%); border-color: transparent; background: var(--color-primary); color: #fff; pointer-events: auto; }
++
++/* Elemen yang sedang ditunjuk Puffy */
++.puffy-hl { outline: 3px solid var(--puffy-arm); outline-offset: 3px; box-shadow: 0 0 0 9px rgb(255 134 176 / 18%); transition: outline-color .3s, box-shadow .3s; }
++
++@media (prefers-reduced-motion: reduce) {
++  .puffy-svg, .puffy-blink, .puffy-fx, .puffy-status i, .puffy-mic.is-listening, .puffy-svg[data-talking="true"] .puffy-mouth-open { animation: none; }
++  .puffy-mascot, .puffy-panel, html.puffy-ready .app-content { transition: none; }
++}
+diff --git a/frontend/src/features/puffy/sse.ts b/frontend/src/features/puffy/sse.ts
+new file mode 100644
+index 0000000..2ef4c56
+--- /dev/null
++++ b/frontend/src/features/puffy/sse.ts
+@@ -0,0 +1,42 @@
++import type { StreamEvent } from "./types";
++
++/** Membaca respons text/event-stream dari fetch() dan menghasilkan event bertipe. */
++export async function* readSSE(res: Response): AsyncGenerator<StreamEvent> {
++  if (!res.body) throw new Error("Respons server tidak berisi stream.");
++  const reader = res.body.getReader();
++  const decoder = new TextDecoder();
++  let buf = "";
++  try {
++    for (;;) {
++      const { value, done } = await reader.read();
++      if (done) break;
++      buf = (buf + decoder.decode(value, { stream: true })).replace(/\r\n/g, "\n");
++      let i: number;
++      while ((i = buf.indexOf("\n\n")) >= 0) {
++        const ev = parseBlock(buf.slice(0, i));
++        buf = buf.slice(i + 2);
++        if (ev) yield ev;
++      }
++    }
++    const tail = parseBlock(buf.trim());
++    if (tail) yield tail;
++  } finally {
++    reader.releaseLock();
++  }
++}
++
++function parseBlock(block: string): StreamEvent | null {
++  let event = "message";
++  const data: string[] = [];
++  for (const line of block.split("\n")) {
++    if (!line || line.startsWith(":")) continue; // komentar / heartbeat
++    if (line.startsWith("event:")) event = line.slice(6).trim();
++    else if (line.startsWith("data:")) data.push(line.slice(5).replace(/^ /, ""));
++  }
++  if (!data.length) return null;
++  try {
++    return { event, data: JSON.parse(data.join("\n")) } as unknown as StreamEvent;
++  } catch {
++    return null;
++  }
++}
+diff --git a/frontend/src/features/puffy/strings.ts b/frontend/src/features/puffy/strings.ts
+new file mode 100644
+index 0000000..7276c7a
+--- /dev/null
++++ b/frontend/src/features/puffy/strings.ts
+@@ -0,0 +1,127 @@
++import { permissions, type Permission } from "../../auth";
++import type { Language } from "../../i18n";
++
++export interface PuffyStrings {
++  title: string;
++  page: string;
++  shortcutHint: string;
++  welcome: (name: string) => string;
++  greet: string;
++  placeholder: string;
++  send: string;
++  stop: string;
++  minimize: string;
++  openChat: string;
++  askMe: string;
++  noData: string;
++  retry: string;
++  copy: string;
++  copied: string;
++  copyFailed: string;
++  mic: string;
++  helpful: string;
++  notHelpful: string;
++  willDo: string;
++  confirmQ: string;
++  cancel: string;
++  proceed: string;
++  processing: string;
++  done: string;
++  cancelled: string;
++  failed: string;
++  mockBadge: string;
++  noAccess: string;
++  micDenied: string;
++  micNoSpeech: string;
++  asOf: string;
++  quips: string[];
++  suggestions: { text: string; permission: Permission }[];
++}
++
++const id: PuffyStrings = {
++  title: "Puffy · asisten admin",
++  page: "Halaman",
++  shortcutHint: "Ctrl+K untuk bertanya",
++  welcome: (name) => `Halo ${name}! Aku Puffy. Tanya soal pengiriman, barang masuk, stok material, produksi, atau piutang.`,
++  greet: "Hai! Aku Puffy 💗 Tanya aku soal data Sentanu Jaya.",
++  placeholder: "Tanya Puffy…",
++  send: "Kirim",
++  stop: "Hentikan",
++  minimize: "Kecilkan (Esc)",
++  openChat: "Buka chat Puffy",
++  askMe: "Ask me 💬",
++  noData: "Belum ada data untuk ditampilkan.",
++  retry: "Coba lagi",
++  copy: "Salin",
++  copied: "Tersalin",
++  copyFailed: "Gagal menyalin",
++  mic: "Bicara dengan Puffy",
++  helpful: "Jawaban membantu",
++  notHelpful: "Jawaban kurang tepat",
++  willDo: "Puffy akan:",
++  confirmQ: "Lanjutkan?",
++  cancel: "Batal",
++  proceed: "Lanjutkan",
++  processing: "Memproses…",
++  done: "tercatat di audit log.",
++  cancelled: "Dibatalkan.",
++  failed: "Gagal diproses. Coba lagi.",
++  mockBadge: "Data contoh",
++  noAccess: "Kamu belum punya akses ke halaman itu.",
++  micDenied: "Izin mikrofon ditolak atau diblokir.",
++  micNoSpeech: "Aku tidak mendengar suara. Coba lagi ya.",
++  asOf: "per",
++  quips: ["Hehe, geli!", "Mau lihat data apa hari ini?", "Aku lagi jaga angka-angkamu 💗", "Coba tanya: stok material menipis?"],
++  suggestions: [
++    { text: "Hari ini kirim berapa?", permission: permissions.deliveryView },
++    { text: "Barang masuk hari ini", permission: permissions.custodyView },
++    { text: "Stok material menipis", permission: permissions.materialView },
++    { text: "Progres produksi", permission: permissions.dashboardView },
++    { text: "Piutang dan pembayaran", permission: permissions.paymentView },
++  ],
++};
++
++const en: PuffyStrings = {
++  title: "Puffy · admin assistant",
++  page: "Page",
++  shortcutHint: "Ctrl+K to ask",
++  welcome: (name) => `Hi ${name}! I am Puffy. Ask about deliveries, incoming goods, material stock, production, or receivables.`,
++  greet: "Hi! I am Puffy 💗 Ask me about Sentanu Jaya data.",
++  placeholder: "Ask Puffy…",
++  send: "Send",
++  stop: "Stop",
++  minimize: "Minimize (Esc)",
++  openChat: "Open Puffy chat",
++  askMe: "Ask me 💬",
++  noData: "No data to show yet.",
++  retry: "Try again",
++  copy: "Copy",
++  copied: "Copied",
++  copyFailed: "Copy failed",
++  mic: "Talk to Puffy",
++  helpful: "Helpful answer",
++  notHelpful: "Not accurate",
++  willDo: "Puffy will:",
++  confirmQ: "Proceed?",
++  cancel: "Cancel",
++  proceed: "Proceed",
++  processing: "Processing…",
++  done: "recorded in the audit log.",
++  cancelled: "Cancelled.",
++  failed: "Could not be processed. Try again.",
++  mockBadge: "Sample data",
++  noAccess: "You do not have access to that page yet.",
++  micDenied: "Microphone permission was denied or blocked.",
++  micNoSpeech: "I could not hear anything. Please try again.",
++  asOf: "as of",
++  quips: ["Hehe, that tickles!", "What data shall we look at today?", "I am keeping your numbers safe 💗", "Try asking: low material stock?"],
++  suggestions: [
++    { text: "How many deliveries today?", permission: permissions.deliveryView },
++    { text: "Goods received today", permission: permissions.custodyView },
++    { text: "Low material stock", permission: permissions.materialView },
++    { text: "Production progress", permission: permissions.dashboardView },
++    { text: "Receivables and payments", permission: permissions.paymentView },
++  ],
++};
++
++export const getStrings = (language: Language): PuffyStrings => (language === "en" ? en : id);
+diff --git a/frontend/src/features/puffy/types.ts b/frontend/src/features/puffy/types.ts
+new file mode 100644
+index 0000000..cb6704f
+--- /dev/null
++++ b/frontend/src/features/puffy/types.ts
+@@ -0,0 +1,63 @@
++import type { Language } from "../../i18n";
++
++export type Mood = "neutral" | "happy" | "think" | "confused" | "sad" | "love" | "excited";
++
++export interface Metric { label: string; value: string }
++export interface ChartPoint { label: string; value: number }
++
++/**
++ * Petunjuk untuk Puffy. `route` harus salah satu rute di config.ts.
++ * `target` = kunci elemen (mis. "table", "kpi", "chart", "table:1") atau nilai atribut [data-puffy].
++ */
++export interface UiHint { route?: string; target?: string }
++
++/** Aksi tulis yang menunggu konfirmasi admin. Backend hanya mengeksekusinya setelah /confirm. */
++export interface PendingAction { id: string; label: string; description: string }
++export type ActionState = "pending" | "confirming" | "done" | "cancelled" | "failed";
++
++/** Hasil satu tool dari backend. Angka SELALU berasal dari sini, bukan dari teks model. */
++export interface ToolResult {
++  tool: string;
++  title: string;
++  summary: string;
++  hasData: boolean;
++  metrics?: Metric[];
++  table?: { columns: string[]; rows: string[][] };
++  chart?: { title: string; points: ChartPoint[] };
++  source: string;
++  /** ISO 8601, mis. "2026-10-28T14:05:00+07:00" */
++  asOf: string;
++  ui?: UiHint;
++  action?: PendingAction;
++}
++
++export interface UserMessage { id: string; role: "user"; text: string }
++export interface AssistantMessage {
++  id: string;
++  role: "assistant";
++  text: string;
++  status?: string;
++  streaming: boolean;
++  results: ToolResult[];
++  actions: Record<string, ActionState>;
++  error?: string;
++  feedback?: "up" | "down";
++  /** ID pesan di database (dari event `done`), dipakai untuk feedback. */
++  serverId?: string;
++}
++export type ChatMessage = UserMessage | AssistantMessage;
++
++export type StreamEvent =
++  | { event: "status"; data: { label: string; ui?: UiHint } }
++  | { event: "tool_result"; data: ToolResult }
++  | { event: "token"; data: { text: string } }
++  | { event: "done"; data: { message_id: string; conversation_id: string } }
++  | { event: "error"; data: { message: string } };
++
++export interface PageContext {
++  route: string;
++  title: string;
++  language: Language;
++  role: string;
++  entity?: { type: string; id: string | number };
++}
+diff --git a/frontend/src/features/puffy/usePuffy.ts b/frontend/src/features/puffy/usePuffy.ts
+new file mode 100644
+index 0000000..856124d
+--- /dev/null
++++ b/frontend/src/features/puffy/usePuffy.ts
+@@ -0,0 +1,163 @@
++import { useCallback, useEffect, useRef, useState } from "react";
++import { PUFFY_BASE_URL, PUFFY_MOCK } from "./config";
++import { mockPuffyResponse } from "./mock";
++import { readSSE } from "./sse";
++import type { ActionState, AssistantMessage, ChatMessage, Mood, PageContext, PendingAction, UiHint } from "./types";
++import { uid } from "./utils";
++
++const MOOD_EMOJI: Partial<Record<Mood, string>> = { think: "💭", confused: "❓", sad: "💧", love: "💗", excited: "✨" };
++
++export interface PuffyApi {
++  baseUrl?: string;
++  /** Dipanggil saat backend mengirim petunjuk halaman/elemen yang harus ditunjuk. */
++  onUi?: (ui: UiHint) => void;
++}
++
++const httpMessage = (s: number) =>
++  s === 401 ? "Sesi berakhir. Silakan login ulang."
++  : s === 403 ? "Kamu tidak punya izin untuk data ini."
++  : s === 404 ? "Layanan Puffy belum tersedia di server (endpoint /puffy/chat belum ada)."
++  : s === 429 ? "Terlalu banyak permintaan. Coba lagi sebentar lagi."
++  : `Server bermasalah (${s}). Coba lagi.`;
++
++export function usePuffy(api: PuffyApi) {
++  const [messages, setMessages] = useState<ChatMessage[]>([]);
++  const [busy, setBusy] = useState(false);
++  const [mood, setMoodState] = useState<Mood>("neutral");
++  const [fx, setFx] = useState<{ id: number; emoji: string }[]>([]);
++
++  const apiRef = useRef(api);
++  useEffect(() => { apiRef.current = api; });
++  const convRef = useRef<string | null>(null);
++  const abortRef = useRef<AbortController | null>(null);
++  const moodTimer = useRef(0);
++  const fxId = useRef(0);
++  const lastRef = useRef<{ text: string; ctx: PageContext } | null>(null);
++
++  const setMood = useCallback((m: Mood, ms = 2800) => {
++    window.clearTimeout(moodTimer.current);
++    setMoodState(m);
++    const emoji = MOOD_EMOJI[m];
++    if (emoji) {
++      const id = ++fxId.current;
++      setFx((f) => [...f, { id, emoji }]);
++      window.setTimeout(() => setFx((f) => f.filter((x) => x.id !== id)), 1700);
++    }
++    if (m !== "neutral") moodTimer.current = window.setTimeout(() => setMoodState("neutral"), ms);
++  }, []);
++
++  useEffect(() => () => {
++    window.clearTimeout(moodTimer.current);
++    abortRef.current?.abort();
++  }, []);
++
++  const patch = useCallback((id: string, fn: (m: AssistantMessage) => AssistantMessage) => {
++    setMessages((list) => list.map((m) => (m.id === id && m.role === "assistant" ? fn(m) : m)));
++  }, []);
++
++  const post = useCallback(async (path: string, body: unknown, signal?: AbortSignal): Promise<Response> => {
++    if (PUFFY_MOCK) return mockPuffyResponse(path, body, signal);
++    // Sesi Laravel memakai cookie (sama seperti Axios di services/api.ts: withCredentials).
++    return fetch(`${apiRef.current.baseUrl ?? PUFFY_BASE_URL}${path}`, {
++      method: "POST",
++      credentials: "include",
++      signal,
++      headers: { "Content-Type": "application/json", Accept: path === "/chat" ? "text/event-stream" : "application/json" },
++      body: JSON.stringify(body),
++    });
++  }, []);
++
++  const send = useCallback(async (text: string, ctx: PageContext) => {
++    const clean = text.trim();
++    if (!clean) return;
++    abortRef.current?.abort();
++    lastRef.current = { text: clean, ctx };
++
++    const aId = uid();
++    setMessages((l) => [
++      ...l,
++      { id: uid(), role: "user", text: clean },
++      { id: aId, role: "assistant", text: "", status: "…", streaming: true, results: [], actions: {} },
++    ]);
++    setBusy(true);
++    setMood("think", 60_000);
++
++    const ac = new AbortController();
++    abortRef.current = ac;
++    try {
++      const res = await post("/chat", { message: clean, conversation_id: convRef.current, page_context: ctx }, ac.signal);
++      if (!res.ok) throw new Error(httpMessage(res.status));
++
++      let gotResult = false;
++      for await (const ev of readSSE(res)) {
++        switch (ev.event) {
++          case "status":
++            patch(aId, (m) => ({ ...m, status: ev.data.label }));
++            if (ev.data.ui) apiRef.current.onUi?.(ev.data.ui);
++            break;
++          case "tool_result":
++            gotResult = true;
++            patch(aId, (m) => ({ ...m, results: [...m.results, ev.data] }));
++            setMood(ev.data.hasData ? "happy" : "confused", 3200);
++            if (ev.data.ui) apiRef.current.onUi?.(ev.data.ui);
++            break;
++          case "token":
++            patch(aId, (m) => ({ ...m, status: undefined, text: m.text + ev.data.text }));
++            break;
++          case "done":
++            convRef.current = ev.data.conversation_id;
++            patch(aId, (m) => ({ ...m, serverId: ev.data.message_id }));
++            break;
++          case "error":
++            throw new Error(ev.data.message);
++        }
++      }
++      if (!gotResult) setMood("happy", 2000);
++    } catch (e) {
++      if (e instanceof DOMException && e.name === "AbortError") {
++        if (abortRef.current === ac) setMood("neutral"); // dihentikan manual
++        return;
++      }
++      patch(aId, (m) => ({ ...m, error: e instanceof Error ? e.message : "Terjadi kesalahan." }));
++      setMood("sad", 3200);
++    } finally {
++      patch(aId, (m) => ({ ...m, streaming: false, status: undefined }));
++      if (abortRef.current === ac) {
++        abortRef.current = null;
++        setBusy(false);
++      }
++    }
++  }, [patch, post, setMood]);
++
++  const stop = useCallback(() => abortRef.current?.abort(), []);
++
++  const retry = useCallback(() => {
++    const last = lastRef.current;
++    if (!last) return;
++    setMessages((l) => l.slice(0, -2)); // buang pertanyaan + jawaban gagal
++    void send(last.text, last.ctx);
++  }, [send]);
++
++  const feedback = useCallback(async (msg: AssistantMessage, value: "up" | "down") => {
++    patch(msg.id, (m) => ({ ...m, feedback: value }));
++    setMood(value === "up" ? "love" : "sad");
++    if (!msg.serverId) return;
++    try { await post("/feedback", { message_id: msg.serverId, value }); } catch { /* best-effort */ }
++  }, [patch, post, setMood]);
++
++  const runAction = useCallback(async (msg: AssistantMessage, action: PendingAction, decision: "confirm" | "cancel") => {
++    const set = (s: ActionState) => patch(msg.id, (m) => ({ ...m, actions: { ...m.actions, [action.id]: s } }));
++    set("confirming");
++    try {
++      const res = await post(`/actions/${encodeURIComponent(action.id)}/${decision}`, {});
++      if (!res.ok) throw new Error(String(res.status));
++      set(decision === "confirm" ? "done" : "cancelled");
++      if (decision === "confirm") setMood("excited");
++    } catch {
++      set("failed");
++      setMood("sad");
++    }
++  }, [patch, post, setMood]);
++
++  return { messages, busy, mood, fx, setMood, send, stop, retry, feedback, runAction };
++}
+diff --git a/frontend/src/features/puffy/useSpeech.ts b/frontend/src/features/puffy/useSpeech.ts
+new file mode 100644
+index 0000000..ce594e4
+--- /dev/null
++++ b/frontend/src/features/puffy/useSpeech.ts
+@@ -0,0 +1,95 @@
++import { useCallback, useEffect, useRef, useState } from "react";
++
++// Tipe minimal Web Speech API (belum ada di lib.dom semua versi TypeScript).
++interface SRAlt { transcript: string }
++interface SRResult { readonly isFinal: boolean; readonly length: number; [i: number]: SRAlt }
++interface SREvent extends Event { readonly resultIndex: number; readonly results: { readonly length: number; [i: number]: SRResult } }
++interface SRErrorEvent extends Event { readonly error: string }
++interface SRInstance {
++  lang: string; interimResults: boolean; continuous: boolean;
++  onstart: (() => void) | null; onresult: ((e: SREvent) => void) | null;
++  onerror: ((e: SRErrorEvent) => void) | null; onend: (() => void) | null;
++  start(): void; stop(): void; abort(): void;
++}
++type SRCtor = new () => SRInstance;
++
++function getCtor(): SRCtor | undefined {
++  const w = window as unknown as { SpeechRecognition?: SRCtor; webkitSpeechRecognition?: SRCtor };
++  return w.SpeechRecognition ?? w.webkitSpeechRecognition;
++}
++
++export type SpeechErrorCode = "denied" | "no-speech";
++
++interface InputOpts {
++  lang: string;
++  onInterim: (t: string) => void;
++  onFinal: (t: string) => void;
++  onError: (code: SpeechErrorCode) => void;
++}
++
++/**
++ * Speech-to-text bawaan browser. Catatan privasi: di Chrome audio diproses server browser,
++ * jadi TIDAK lokal. Ganti dengan Whisper lokal bila data harus tetap on-premise.
++ */
++export function useSpeechInput(opts: InputOpts) {
++  const optsRef = useRef(opts);
++  useEffect(() => { optsRef.current = opts; });
++  const recRef = useRef<SRInstance | null>(null);
++  const [listening, setListening] = useState(false);
++  const [supported] = useState(() => getCtor() !== undefined);
++
++  const toggle = useCallback(() => {
++    if (recRef.current) { recRef.current.stop(); return; }
++    const Ctor = getCtor();
++    if (!Ctor) return;
++    const rec = new Ctor();
++    rec.lang = optsRef.current.lang;
++    rec.interimResults = true;
++    rec.continuous = false;
++    let text = "";
++    rec.onstart = () => setListening(true);
++    rec.onresult = (e) => {
++      let t = "";
++      for (let i = 0; i < e.results.length; i++) t += e.results[i][0].transcript;
++      text = t;
++      optsRef.current.onInterim(t);
++    };
++    rec.onerror = (e) => {
++      if (e.error === "not-allowed" || e.error === "service-not-allowed") optsRef.current.onError("denied");
++      else if (e.error === "no-speech") optsRef.current.onError("no-speech");
++    };
++    rec.onend = () => {
++      recRef.current = null;
++      setListening(false);
++      if (text.trim()) optsRef.current.onFinal(text.trim());
++    };
++    recRef.current = rec;
++    try { rec.start(); } catch { recRef.current = null; }
++  }, []);
++
++  useEffect(() => () => recRef.current?.abort(), []);
++  return { supported, listening, toggle };
++}
++
++export function useSpeechOutput(lang: string) {
++  const [speaking, setSpeaking] = useState(false);
++
++  const speak = useCallback((text: string) => {
++    if (!("speechSynthesis" in window)) return;
++    window.speechSynthesis.cancel();
++    const clean = text.replace(/[\p{Extended_Pictographic}\uFE0F]/gu, "").trim();
++    if (!clean) return;
++    const u = new SpeechSynthesisUtterance(clean);
++    u.lang = lang; u.pitch = 1.5; u.rate = 1.05;
++    u.onstart = () => setSpeaking(true);
++    u.onend = u.onerror = () => setSpeaking(false);
++    window.speechSynthesis.speak(u);
++  }, [lang]);
++
++  const cancel = useCallback(() => {
++    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
++    setSpeaking(false);
++  }, []);
++
++  return { speaking, speak, cancel };
++}
+diff --git a/frontend/src/features/puffy/utils.ts b/frontend/src/features/puffy/utils.ts
+new file mode 100644
+index 0000000..2813365
+--- /dev/null
++++ b/frontend/src/features/puffy/utils.ts
+@@ -0,0 +1,15 @@
++export const uid = (): string =>
++  globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2) + Date.now().toString(36);
++
++export function waitFor<T>(find: () => T | null, timeout = 2500): Promise<T | null> {
++  return new Promise((resolve) => {
++    const t0 = performance.now();
++    const tick = () => {
++      const found = find();
++      if (found) return resolve(found);
++      if (performance.now() - t0 > timeout) return resolve(null);
++      requestAnimationFrame(tick);
++    };
++    tick();
++  });
++}
