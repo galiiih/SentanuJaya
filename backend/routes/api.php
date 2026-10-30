@@ -36,6 +36,7 @@ use App\Http\Controllers\Api\V1\{
     StockController,
     WorkOrderController,
     UserController,
+    PuffyController,
 };
 
 Route::prefix('v1')->group(function () {
@@ -135,5 +136,11 @@ Route::prefix('v1')->group(function () {
 
                 // User Management
                 Route::apiResource('users', UserController::class);
+
+                // Puffy AI Assistant Routes
+                Route::post('puffy/chat', [PuffyController::class, 'chat']);
+                Route::post('puffy/feedback', [PuffyController::class, 'feedback']);
+                Route::post('puffy/actions/{id}/confirm', [PuffyController::class, 'confirmAction']);
+                Route::post('puffy/actions/{id}/cancel', [PuffyController::class, 'cancelAction']);
             });
         });
