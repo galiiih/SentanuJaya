@@ -110,7 +110,7 @@ html.puffy-ready .app-content { transition: padding-right .6s var(--puffy-ease);
 }
 .puffy-mascot__button {
   position: relative; display: block; width: 100%; height: 100%; padding: 0; border: 0; border-radius: 50%;
-  background: transparent; pointer-events: auto; filter: drop-shadow(0 8px 10px rgb(255 100 160 / 35%));
+  background: transparent; pointer-events: auto;
 }
 .puffy-character { width: 100%; height: 100%; position: relative; animation: puffy-bob 2.4s ease-in-out infinite; }
 .puffy-svg { width: 100%; height: 100%; overflow: visible; }
@@ -139,9 +139,6 @@ html.puffy-ready .app-content { transition: padding-right .6s var(--puffy-ease);
 .puffy-svg[data-talking="true"] .puffy-mouth-open { animation: puffy-yap .2s ease-in-out infinite alternate; }
 @keyframes puffy-yap { from { transform: scaleY(.3); } to { transform: scaleY(1.15); } }
 
-/* Ekor balon chat saat Puffy mengecil */
-.puffy-tail { position: absolute; right: 2px; bottom: 2px; width: 14px; height: 14px; background: var(--puffy-body, #2f6fed); clip-path: polygon(0 0, 100% 100%, 0 100%); opacity: 0; transition: opacity .3s; z-index: 3; pointer-events: none; }
-.puffy-tail[data-visible="true"] { opacity: 1; }
 
 .puffy-fx { position: absolute; left: 50%; top: 0; font-size: 1.3rem; pointer-events: none; animation: puffy-fx 1.6s ease-out forwards; }
 @keyframes puffy-fx { from { transform: translate(-50%, 0) scale(.6); opacity: 0; } 20% { opacity: 1; } to { transform: translate(-50%, -34px) scale(1.1); opacity: 0; } }
