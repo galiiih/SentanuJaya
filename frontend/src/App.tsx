@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
   Bell,
+  BookOpen,
   Boxes,
   CheckCircle2,
   ChevronDown,
@@ -35,6 +36,7 @@ import { PaymentPage } from './components/PaymentPage';
 import { InvoicingPage } from './components/InvoicingPage';
 import TemplateManagementPage from './pages/TemplateManagementPage';
 import UsersManagementPage from './pages/UsersManagementPage';
+import { KnowledgeManagementPage } from './components/KnowledgeManagementPage';
 import { PuffyAssistant } from './features/puffy';
 import './features/puffy/puffy.css';
 import {
@@ -133,6 +135,7 @@ function Sidebar() {
       items: [
         { path: '/materials', label: t.nav.materials, icon: Boxes, permission: permissions.materialView },
         { path: '/master', label: 'Master Data', icon: Package, permission: permissions.dashboardView },
+        { path: '/knowledge', label: 'Nanu Knowledge', icon: BookOpen, permission: permissions.dashboardView },
         { path: '/users', label: 'Manajemen Pengguna', icon: Users, permission: permissions.userManage },
       ],
     },
@@ -229,6 +232,7 @@ function AuthenticatedLayout() {
     '/templates': ['Workspace', 'Finance & Billing', 'Template Dokumen'],
     '/materials': ['Workspace', 'Inventaris', 'Material'],
     '/master': ['Workspace', 'Inventaris', 'Master Data'],
+    '/knowledge': ['Workspace', 'Inventaris', 'Nanu Knowledge'],
     '/users': ['Workspace', 'Inventaris', 'Manajemen Pengguna'],
   };
   const breadcrumbItems = breadcrumbMap[location.pathname] || ['Workspace', pageTitle];
@@ -506,6 +510,7 @@ export function App() {
           <Route path="/templates" element={<RequirePermission permission={permissions.invoiceView}><TemplateManagementPage /></RequirePermission>} />
           <Route path="/reports" element={<RequirePermission permission={permissions.invoiceView}><ReportsPage /></RequirePermission>} />
           <Route path="/master" element={<RequirePermission permission={permissions.dashboardView}><MasterDataPage /></RequirePermission>} />
+          <Route path="/knowledge" element={<RequirePermission permission={permissions.dashboardView}><KnowledgeManagementPage /></RequirePermission>} />
           <Route path="/users" element={<RequirePermission permission={permissions.userManage}><UsersManagementPage /></RequirePermission>} />
           <Route path="/payments" element={<RequirePermission permission={permissions.paymentView}><PaymentPage /></RequirePermission>} />
           <Route path="/403" element={<ErrorPage code="403" title="Access Denied" description="Anda tidak memiliki izin untuk membuka halaman ini." />} />

@@ -1,18 +1,22 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Copy, Mic, Minus, Send, Square, ThumbsDown, ThumbsUp } from "lucide-react";
+import { Copy, Mic, Minus, Send, Settings, Square, ThumbsDown, ThumbsUp } from "lucide-react";
 import { useAuth } from "../../auth";
 import { useLanguage } from "../../i18n";
 import { PUFFY_BASE_URL, PUFFY_MOCK, ROUTES, resolveTarget } from "./config";
+import { getMenuStrings } from "./menuStrings";
+import { MascotView } from "./MascotView";
 import { getPuffyEntity } from "./pageContext";
-import { PuffyMascot } from "./PuffyMascot";
+import { PuffySettings as PuffySettingsPanel } from "./PuffySettings";
 import { getStrings, type PuffyStrings } from "./strings";
 import { ToolResultCard } from "./ToolResultCard";
 import type { AssistantMessage, PageContext, PendingAction, UiHint } from "./types";
 import { usePuffy } from "./usePuffy";
+import { usePuffySettings } from "./usePuffySettings";
 import { useSpeechInput, useSpeechOutput } from "./useSpeech";
 import { waitFor } from "./utils";
 import "./puffy.css";
+import "./puffy-menu.css";
 
 const SIZE = { open: 64, point: 56, closed: 60 } as const;
 const MARGIN = 20;
@@ -34,8 +38,12 @@ export function PuffyAssistant({ baseUrl = PUFFY_BASE_URL, idleAfterMs = 9000, v
   const { user, hasPermission } = useAuth();
   const { language, t } = useLanguage();
   const s = getStrings(language);
+  const ms = getMenuStrings(language);
+
+  const { settings: puffySettings, update: updateSettings, reset: resetSettings } = usePuffySettings(user?.id);
 
   const [open, setOpen] = useState(defaultOpen);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [input, setInput] = useState("");
   const [say, setSay] = useState<string | null>(defaultOpen ? s.greet : null);
   const [pointer, setPointer] = useState<{ x: number; y: number } | null>(null);
@@ -241,12 +249,55 @@ export function PuffyAssistant({ baseUrl = PUFFY_BASE_URL, idleAfterMs = 9000, v
   const panelTop = vp.h - PANEL.bottom - panelH;
   const home = { x: Math.max(4, panelLeft - 22), y: Math.max(PANEL.headerHeight + 4, panelTop - 46) };
 
+  const [dragOffset, setDragOffset] = useState<{ x: number; y: number } | null>(null);
+  const [dragStart, setDragStart] = useState<{ x: number; y: number; posX: number; posY: number } | null>(null);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+
+  const defaultPosX = vp.w - MARGIN - SIZE.closed;
+  const defaultPosY = vp.h - MARGIN - SIZE.closed;
+  const currentPosX = dragOffset ? dragOffset.x : defaultPosX;
+  const currentPosY = dragOffset ? dragOffset.y : defaultPosY;
+
   const size = !open ? SIZE.closed : pointer ? SIZE.point : SIZE.open;
-  const pos = !open ? { x: vp.w - MARGIN - SIZE.closed, y: vp.h - MARGIN - SIZE.closed } : (pointer ?? home);
+  const pos = !open ? { x: currentPosX, y: currentPosY } : (pointer ?? home);
   const sayText = !open ? s.askMe : say;
   const sayPlace = !open ? "puffy-say--closed" : pointer ? "puffy-say--left" : "puffy-say--home";
 
+  const onPointerDownDrag = (e: React.PointerEvent) => {
+    if (open) return;
+    e.stopPropagation();
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    setIsDragging(false);
+    setDragStart({ x: e.clientX, y: e.clientY, posX: currentPosX, posY: currentPosY });
+  };
+
+  const onPointerMoveDrag = (e: React.PointerEvent) => {
+    if (!dragStart) return;
+    e.stopPropagation();
+    const dx = e.clientX - dragStart.x;
+    const dy = e.clientY - dragStart.y;
+    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
+      setIsDragging(true);
+    }
+    const newX = Math.max(10, Math.min(vp.w - SIZE.closed - 10, dragStart.posX + dx));
+    const newY = Math.max(10, Math.min(vp.h - SIZE.closed - 10, dragStart.posY + dy));
+    setDragOffset({ x: newX, y: newY });
+  };
+
+  const onPointerUpDrag = (e: React.PointerEvent) => {
+    if (!dragStart) return;
+    e.stopPropagation();
+    try {
+      (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {}
+    setDragStart(null);
+  };
+
   const onMascot = () => {
+    if (isDragging) {
+      setIsDragging(false);
+      return;
+    }
     ping();
     if (!open) { openPanel(); setMood("happy"); showSay(s.greet); return; }
     setMood("happy");
@@ -290,10 +341,18 @@ export function PuffyAssistant({ baseUrl = PUFFY_BASE_URL, idleAfterMs = 9000, v
           <span className="puffy-dot" aria-hidden="true" />
           <h2>{s.title}</h2>
           {PUFFY_MOCK && <small className="puffy-badge">{s.mockBadge}</small>}
+          <button type="button" className="icon-button puffy-settings-btn" onClick={() => setSettingsOpen(!settingsOpen)}
+            aria-label={ms.settings} title={ms.settings}>
+            <Settings size={16} />
+          </button>
           <button type="button" className="icon-button puffy-minimize" onClick={closePanel} aria-label={s.minimize} title={s.minimize}>
             <Minus size={16} />
           </button>
         </header>
+        {settingsOpen ? (
+          <PuffySettingsPanel m={ms} settings={puffySettings} onChange={updateSettings} onReset={resetSettings} />
+        ) : (
+        <>
         <p className="puffy-panel__context">{s.page}: <b>{pageLabel}</b> · {s.shortcutHint}</p>
 
         <div ref={logRef} className="puffy-log" role="log" aria-live="polite">
@@ -333,12 +392,20 @@ export function PuffyAssistant({ baseUrl = PUFFY_BASE_URL, idleAfterMs = 9000, v
             </button>
           )}
         </form>
+        </>
+        )}
       </section>
 
-      <div className="puffy-mascot" style={{ width: size, height: size, transform: `translate(${pos.x}px, ${pos.y}px)` }}>
+      <div className="puffy-mascot" style={{ width: size, height: size, transform: `translate(${pos.x}px, ${pos.y}px)` }}
+        onPointerDown={onPointerDownDrag}
+        onPointerMove={onPointerMoveDrag}
+        onPointerUp={onPointerUpDrag}
+      >
         <button type="button" className="puffy-mascot__button" onClick={onMascot} aria-label={open ? "Puffy" : s.openChat}>
-          <PuffyMascot mood={mood} talking={talking} bubble={!open} />
-          <span className="puffy-tail" data-visible={!open} aria-hidden="true" />
+          <div className="puffy-character">
+            <MascotView choice={{ mascotId: puffySettings.mascotId, palette: puffySettings.palette, customImage: puffySettings.customImage ?? undefined }} mood={mood} talking={talking} bubble={!open} />
+            {(puffySettings.mascotId === 'catdrop' || puffySettings.mascotId === 'puffy') && <span className="puffy-tail" data-visible={!open} aria-hidden="true" />}
+          </div>
           {fx.map((f) => <span key={f.id} className="puffy-fx" aria-hidden="true">{f.emoji}</span>)}
           <span role="status" className={`puffy-say ${sayPlace}`} data-visible={Boolean(sayText)}>{sayText}</span>
         </button>

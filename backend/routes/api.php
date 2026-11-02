@@ -18,6 +18,7 @@ use App\Http\Controllers\Api\V1\{
     CustomerController,
     CustomerContactController,
     CustomerItemController,
+    NanuKnowledgeController,
     PriceListController,
     PriceListLineController,
     GoodsReceiptController,
@@ -142,6 +143,10 @@ Route::prefix('v1')->group(function () {
                 Route::get('puffy/quick-questions', [PuffyController::class, 'quickQuestions']);
                 Route::get('puffy/knowledge/templates', [PuffyController::class, 'knowledgeTemplates']);
                 Route::post('puffy/feedback', [PuffyController::class, 'feedback']);
+                Route::get('nanu/candidates', [NanuKnowledgeController::class, 'indexCandidates']);
+                Route::post('nanu/candidates', [NanuKnowledgeController::class, 'storeCandidate']);
+                Route::post('nanu/candidates/{id}/review', [NanuKnowledgeController::class, 'reviewCandidate']);
+                Route::get('nanu/official', [NanuKnowledgeController::class, 'indexOfficial']);
                 Route::post('puffy/actions/{id}/confirm', [PuffyController::class, 'confirmAction']);
                 Route::post('puffy/actions/{id}/cancel', [PuffyController::class, 'cancelAction']);
             });

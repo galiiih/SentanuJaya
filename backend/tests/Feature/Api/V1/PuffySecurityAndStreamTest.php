@@ -120,6 +120,21 @@ class PuffySecurityAndStreamTest extends TestCase
         $this->assertEquals('Informasi Operasional Sentanu Jaya', $unknown['title']);
     }
 
+    public function test_puffy_detect_tool_intent_mapping(): void
+    {
+        $aiService = app(PuffyAiService::class);
+
+        $this->assertEquals('get_production_progress_summary', $aiService->detectTool('Production progress'));
+        $this->assertEquals('get_production_progress_summary', $aiService->detectTool('Status produksi saat ini'));
+        $this->assertEquals('get_invoice_summary', $aiService->detectTool('Berapa total invoice bulan ini?'));
+        $this->assertEquals('get_goods_received_summary', $aiService->detectTool('Goods received today'));
+        $this->assertEquals('get_goods_received_summary', $aiService->detectTool('Penerimaan barang hari ini'));
+        $this->assertEquals('get_inventory_summary', $aiService->detectTool('What materials are currently in stock?'));
+        $this->assertNull($aiService->detectTool('Bagaimana cara membuat invoice?'));
+        $this->assertNull($aiService->detectTool('Bagaimana proses penerimaan barang?'));
+        $this->assertNull($aiService->detectTool('Siapa presiden Indonesia?'));
+    }
+
     public function test_quick_questions_endpoint(): void
     {
         $response = $this->actingAs($this->user1)->getJson('/api/v1/puffy/quick-questions');

@@ -39,7 +39,7 @@ export interface PuffyStrings {
 }
 
 const id: PuffyStrings = {
-  title: "Puffy · asisten admin",
+  title: "Nanu · asisten admin",
   page: "Halaman",
   shortcutHint: "Ctrl+K untuk bertanya",
   welcome: (name) => `Halo ${name}! Aku Puffy. Tanya soal pengiriman, barang masuk, stok material, produksi, atau piutang.`,
@@ -49,7 +49,7 @@ const id: PuffyStrings = {
   stop: "Hentikan",
   minimize: "Kecilkan (Esc)",
   openChat: "Buka chat Puffy",
-  askMe: "Ask me 💬",
+  askMe: "Tanya aku 💬",
   noData: "Belum ada data untuk ditampilkan.",
   retry: "Coba lagi",
   copy: "Salin",
@@ -82,7 +82,7 @@ const id: PuffyStrings = {
 };
 
 const en: PuffyStrings = {
-  title: "Puffy · admin assistant",
+  title: "Nanu · admin assistant",
   page: "Page",
   shortcutHint: "Ctrl+K to ask",
   welcome: (name) => `Hi ${name}! I am Puffy. Ask about deliveries, incoming goods, material stock, production, or receivables.`,

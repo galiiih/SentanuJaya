@@ -429,3 +429,40 @@ export const documentTemplateApi = {
   versions: (id: number) => api.get<ApiResponse<DocumentTemplateVersionRecord[]>>(`/document-templates/${id}/versions`).then((r) => r.data.data),
   restore: (id: number, version: number) => api.post<ApiResponse<DocumentTemplateRecord>>(`/document-templates/${id}/restore/${version}`).then((r) => r.data.data),
 };
+
+export type NanuKnowledgeCandidateRecord = {
+  id: string;
+  user_id: string;
+  question: string;
+  answer: string;
+  module?: string;
+  title?: string;
+  status: 'pending_review' | 'approved' | 'rejected';
+  reviewer_id?: string;
+  reviewer_notes?: string;
+  reviewed_at?: string;
+  created_at: string;
+  updated_at: string;
+  submitter?: { id: string; name: string; email?: string };
+  reviewer?: { id: string; name: string };
+};
+
+export type NanuKnowledgeBaseRecord = {
+  id: string;
+  candidate_id?: string;
+  title: string;
+  question_pattern: string;
+  content: string;
+  module?: string;
+  audience_role: string;
+  status: 'published' | 'archived';
+  created_at: string;
+  updated_at: string;
+};
+
+export const nanuKnowledgeApi = {
+  listCandidates: (params?: Record<string, string | number>) => list<NanuKnowledgeCandidateRecord>('/nanu/candidates', params),
+  storeCandidate: (payload: { question: string; answer: string; module?: string; title?: string }) => data<NanuKnowledgeCandidateRecord>('/nanu/candidates', payload),
+  reviewCandidate: (id: string, payload: { status: 'approved' | 'rejected'; reviewer_notes?: string }) => data<NanuKnowledgeCandidateRecord>(`/nanu/candidates/${id}/review`, payload),
+  listOfficial: (params?: Record<string, string | number>) => list<NanuKnowledgeBaseRecord>('/nanu/official', params),
+};

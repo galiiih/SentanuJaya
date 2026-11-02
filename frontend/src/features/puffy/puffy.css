@@ -112,7 +112,8 @@ html.puffy-ready .app-content { transition: padding-right .6s var(--puffy-ease);
   position: relative; display: block; width: 100%; height: 100%; padding: 0; border: 0; border-radius: 50%;
   background: transparent; pointer-events: auto; filter: drop-shadow(0 8px 10px rgb(255 100 160 / 35%));
 }
-.puffy-svg { width: 100%; height: 100%; overflow: visible; animation: puffy-bob 2.4s ease-in-out infinite; }
+.puffy-character { width: 100%; height: 100%; position: relative; animation: puffy-bob 2.4s ease-in-out infinite; }
+.puffy-svg { width: 100%; height: 100%; overflow: visible; }
 @keyframes puffy-bob { 50% { transform: translateY(-6px) scale(1.02, .98); } }
 
 .puffy-limbs { opacity: 1; transition: opacity .4s; }
@@ -139,7 +140,7 @@ html.puffy-ready .app-content { transition: padding-right .6s var(--puffy-ease);
 @keyframes puffy-yap { from { transform: scaleY(.3); } to { transform: scaleY(1.15); } }
 
 /* Ekor balon chat saat Puffy mengecil */
-.puffy-tail { position: absolute; left: 34px; top: 34px; width: 20px; height: 20px; background: var(--puffy-body); clip-path: polygon(0 0, 100% 100%, 0 100%); opacity: 0; transition: opacity .3s; }
+.puffy-tail { position: absolute; right: 2px; bottom: 2px; width: 14px; height: 14px; background: var(--puffy-body, #2f6fed); clip-path: polygon(0 0, 100% 100%, 0 100%); opacity: 0; transition: opacity .3s; z-index: 3; pointer-events: none; }
 .puffy-tail[data-visible="true"] { opacity: 1; }
 
 .puffy-fx { position: absolute; left: 50%; top: 0; font-size: 1.3rem; pointer-events: none; animation: puffy-fx 1.6s ease-out forwards; }
@@ -150,7 +151,7 @@ html.puffy-ready .app-content { transition: padding-right .6s var(--puffy-ease);
 .puffy-say[data-visible="true"] { opacity: 1; }
 .puffy-say--home { bottom: 100%; left: 0; margin-bottom: .2rem; }
 .puffy-say--left { top: 50%; right: 100%; margin-right: .45rem; transform: translateY(-50%); }
-.puffy-say--closed { top: 50%; right: 100%; margin-right: .5rem; transform: translateY(-50%); border-color: transparent; background: var(--color-primary); color: #fff; pointer-events: auto; }
+.puffy-say--closed { top: 50%; right: 100%; margin-right: .5rem; transform: translateY(-50%); border-color: transparent; background: var(--color-surface-raised); color: var(--color-text); border: 1px solid var(--color-border); box-shadow: var(--shadow-md); pointer-events: auto; }
 
 /* Elemen yang sedang ditunjuk Puffy */
 .puffy-hl { outline: 3px solid var(--puffy-arm); outline-offset: 3px; box-shadow: 0 0 0 9px rgb(255 134 176 / 18%); transition: outline-color .3s, box-shadow .3s; }

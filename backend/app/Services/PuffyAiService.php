@@ -23,8 +23,9 @@ class PuffyAiService
     protected int $timeout;
     protected PuffyStreamParser $parser;
     protected PuffyKnowledgeService $knowledgeService;
+    protected NanuKnowledgeLearningService $learningService;
 
-    public function __construct(PuffyStreamParser $parser, PuffyKnowledgeService $knowledgeService)
+    public function __construct(PuffyStreamParser $parser, PuffyKnowledgeService $knowledgeService, NanuKnowledgeLearningService $learningService)
     {
         $this->provider = config('services.puffy.provider', 'ollama');
         $this->ollamaUrl = config('services.puffy.ollama_url', 'http://127.0.0.1:11434');
@@ -35,6 +36,7 @@ class PuffyAiService
         $this->timeout = (int) config('services.puffy.timeout', 30);
         $this->parser = $parser;
         $this->knowledgeService = $knowledgeService;
+        $this->learningService = $learningService;
     }
 
     /**
@@ -69,6 +71,36 @@ class PuffyAiService
                         'source' => 'ERP Database',
                         'asOf' => now()->toIso8601String(),
                         'ui' => ['route' => '/customer-po', 'target' => 'customer-po-summary'],
+                    ];
+
+                case 'get_production_progress_summary':
+                    $woCount = \App\Models\WorkOrder::count();
+                    $openWoCount = \App\Models\WorkOrder::where('status', 'OPEN')->orWhere('status', 'IN_PROGRESS')->count();
+                    $qcCount = \App\Models\InternalQcInspection::count();
+                    $qcPassed = \App\Models\InternalQcInspection::where('result', 'PASS')->count();
+                    $recentWo = \App\Models\WorkOrder::with(['customer', 'lines'])->latest()->take(5)->get();
+                    return [
+                        'tool' => $toolName,
+                        'title' => 'Ringkasan Progres Produksi',
+                        'summary' => "Total terdapat {$woCount} Work Order ({$openWoCount} sedang berjalan) dan {$qcCount} inspeksi QC ({$qcPassed} lolos).",
+                        'hasData' => true,
+                        'metrics' => [
+                            ['label' => 'Total Work Order', 'value' => (string)$woCount],
+                            ['label' => 'WO Berjalan', 'value' => (string)$openWoCount],
+                            ['label' => 'Inspeksi QC Lolos', 'value' => "{$qcPassed}/{$qcCount}"],
+                        ],
+                        'table' => [
+                            'columns' => ['No. WO', 'Pelanggan', 'Target Selesai', 'Status'],
+                            'rows' => $recentWo->map(fn($wo) => [
+                                $wo->wo_number,
+                                $wo->customer?->name ?? '-',
+                                $wo->target_date?->toDateString() ?? '-',
+                                $wo->status,
+                            ])->toArray()
+                        ],
+                        'source' => 'ERP Database',
+                        'asOf' => now()->toIso8601String(),
+                        'ui' => ['route' => '/production', 'target' => 'production-progress-summary'],
                     ];
 
                 case 'get_delivery_summary':
@@ -152,8 +184,33 @@ class PuffyAiService
                         'ui' => ['route' => '/payments', 'target' => 'payment-summary'],
                     ];
 
-                case 'get_inventory_summary':
-                    $count = Material::count();
+                case 'get_goods_received_summary':
+                    $today = now('Asia/Jakarta')->toDateString();
+                    $count = \App\Models\GoodsReceipt::count();
+                    $todayCount = \App\Models\GoodsReceipt::whereDate('received_date', $today)->count();
+                    $recent = \App\Models\GoodsReceipt::with(['customer', 'lines'])->latest()->take(5)->get();
+                    return [
+                        'tool' => $toolName,
+                        'title' => 'Ringkasan Penerimaan Barang (Goods Received)',
+                        'summary' => "Total terdapat {$count} Surat Tanda Barang (STB) / Goods Receipt ({$todayCount} diterima hari ini).",
+                        'hasData' => true,
+                        'metrics' => [
+                            ['label' => 'Total Goods Receipt', 'value' => (string)$count],
+                            ['label' => 'Diterima Hari Ini', 'value' => (string)$todayCount],
+                        ],
+                        'table' => [
+                            'columns' => ['No. STB', 'Pelanggan', 'Tanggal Diterima', 'Status'],
+                            'rows' => $recent->map(fn($gr) => [
+                                $gr->stb_number,
+                                $gr->customer?->name ?? '-',
+                                $gr->received_date,
+                                $gr->status,
+                            ])->toArray()
+                        ],
+                        'source' => 'ERP Database',
+                        'asOf' => now('Asia/Jakarta')->toIso8601String(),
+                        'ui' => ['route' => '/goods-receipts', 'target' => 'goods-receipt-summary'],
+                    ];
                     $recent = Material::latest()->take(5)->get();
                     return [
                         'tool' => $toolName,
@@ -219,6 +276,17 @@ class PuffyAiService
             [
                 'type' => 'function',
                 'function' => [
+                    'name' => 'get_production_progress_summary',
+                    'description' => 'Mendapatkan ringkasan progress produksi, Work Order (WO) yang berjalan, status pengerjaan, dan inspeksi QC di Sentanu Jaya.',
+                    'parameters' => [
+                        'type' => 'object',
+                        'properties' => [],
+                    ],
+                ],
+            ],
+            [
+                'type' => 'function',
+                'function' => [
                     'name' => 'get_delivery_summary',
                     'description' => 'Mendapatkan ringkasan Surat Jalan (Delivery Orders) pengiriman barang dari gudang.',
                     'parameters' => [
@@ -252,8 +320,8 @@ class PuffyAiService
             [
                 'type' => 'function',
                 'function' => [
-                    'name' => 'get_inventory_summary',
-                    'description' => 'Mendapatkan ringkasan inventaris material / barang di gudang.',
+                    'name' => 'get_goods_received_summary',
+                    'description' => 'Mendapatkan ringkasan penerimaan barang (Goods Received / Surat Tanda Barang / STB).',
                     'parameters' => [
                         'type' => 'object',
                         'properties' => [],
@@ -265,11 +333,20 @@ class PuffyAiService
     public function detectTool(string $message): ?string
     {
         $lower = strtolower($message);
+        if (str_contains($lower, 'bagaimana') || str_contains($lower, 'cara') || str_contains($lower, 'panduan') || str_contains($lower, 'langkah') || str_contains($lower, 'how to')) {
+            return null;
+        }
+        if (str_contains($lower, 'produksi') || str_contains($lower, 'production') || str_contains($lower, 'progress') || str_contains($lower, 'progres') || str_contains($lower, 'work order') || str_contains($lower, 'wo')) {
+            return 'get_production_progress_summary';
+        }
         if (str_contains($lower, 'po') || str_contains($lower, 'customer po') || str_contains($lower, 'pesanan')) {
             return 'get_customer_po_summary';
         }
         if (str_contains($lower, 'delivery') || str_contains($lower, 'surat jalan') || str_contains($lower, 'pengiriman')) {
             return 'get_delivery_summary';
+        }
+        if (str_contains($lower, 'goods received') || str_contains($lower, 'goods receipt') || str_contains($lower, 'penerimaan barang') || str_contains($lower, 'surat tanda barang') || str_contains($lower, 'stb')) {
+            return 'get_goods_received_summary';
         }
         if (str_contains($lower, 'invoice') || str_contains($lower, 'tagihan')) {
             return 'get_invoice_summary';
@@ -277,7 +354,7 @@ class PuffyAiService
         if (str_contains($lower, 'payment') || str_contains($lower, 'pembayaran') || str_contains($lower, 'bayar')) {
             return 'get_payment_summary';
         }
-        if (str_contains($lower, 'inventory') || str_contains($lower, 'material') || str_contains($lower, 'barang') || str_contains($lower, 'stok')) {
+        if (str_contains($lower, 'inventory') || str_contains($lower, 'material') || str_contains($lower, 'stok') || str_contains($lower, 'stock')) {
             return 'get_inventory_summary';
         }
         return null;
@@ -293,11 +370,20 @@ class PuffyAiService
         $title = $pageContext['title'] ?? 'Dashboard';
         $route = $pageContext['route'] ?? '/dashboard';
 
-        $systemPrompt = "Anda adalah Nanu, asisten operasional Sentanu Jaya ERP. Pengguna aktif: {$userName} (Role: {$role}). Halaman: {$title} ({$route}).\n\nATURAN UTAMA KOMUNIKASI:\n1. Berbicaralah dengan bahasa Indonesia yang sangat natural, ramah, ringkas, dan profesional seperti rekan kerja yang membantu (misal: 'Aku cek dulu ya', 'Pembayaran bulan ini totalnya...', 'Mau aku bantu rinciannya?').\n2. JANGAN PERNAH mengawali jawaban dengan kalimat robotik kaku seperti 'Halo, saya Puffy asisten Sentanu Jaya ERP. Berdasarkan data operasional database...' atau perkenalan diri yang berulang.\n3. Langsung jawab inti pertanyaan menggunakan data aktual dari tool ERP.\n4. Jangan mengarang data atau nominal transaksi. Jika data kosong, katakan dengan jujur (misal: 'Belum ada data...').\n5. Pertahankan konteks percakapan sebelumnya secara natural.";
+        $systemPrompt = "Anda adalah Nanu, asisten operasional Sentanu Jaya ERP. Pengguna aktif: {$userName} (Role: {$role}). Halaman: {$title} ({$route}).\n\n"
+            . "ATURAN UTAMA & GUIDERAIL KETAT:\n"
+            . "1. Nanu HANYA dan KHUSUS dirancang untuk membantu operasional, data ERP (Customer PO, Delivery/Surat Jalan, Invoice, Pembayaran/Payment, Inventaris/Material), proses bisnis, serta panduan fitur Sentanu Jaya Web App.\n"
+            . "2. GUIDERAIL OUT-OF-SCOPE: Jika pengguna bertanya tentang topik di luar ERP Sentanu Jaya (seperti politik, cuaca, tokoh publik, pengetahuan umum, hiburan, pemrograman umum di luar project ini, atau hal lain yang tidak terkait Sentanu Jaya), TOLAK secara singkat dan tegas, contoh: 'Maaf, aku hanya dapat membantu pertanyaan seputar operasional, data, dan panduan ERP Sentanu Jaya ya.'\n"
+            . "3. Berbicaralah dengan bahasa Indonesia yang sangat natural, ramah, ringkas, dan profesional seperti rekan kerja (misal: 'Aku cek dulu ya', 'Total tagihan bulan ini...').\n"
+            . "4. JANGAN PERNAH mengawali jawaban dengan kalimat robotik kaku seperti perkenalan diri berulang.\n"
+            . "5. Langsung jawab inti pertanyaan menggunakan data aktual dari tool ERP, dan jangan pernah mengarang nominal atau data.\n"
+            . "6. Pertahankan konteks percakapan sebelumnya secara natural.";
 
         $knowledgeGuidance = $this->knowledgeService->findRelevantGuidance($userMessage);
-        if ($knowledgeGuidance) {
-            $systemPrompt .= "\n\n[Panduan Knowledge & Intent]: {$knowledgeGuidance}";
+        $learnedGuidance = $this->learningService->findRelevantGuidance($userMessage, $role);
+        $combinedGuidance = implode("\n\n", array_filter([$knowledgeGuidance, $learnedGuidance]));
+        if ($combinedGuidance) {
+            $systemPrompt .= "\n\n[Panduan Knowledge & Intent]: {$combinedGuidance}";
         }
 
         $messages = [
@@ -319,12 +405,35 @@ class PuffyAiService
         }
 
         $messages[] = ['role' => 'user', 'content' => $userMessage];
-        $tools = $this->getToolDefinitions();
+        $lowerUserMsg = strtolower($userMessage);
+        $isHowTo = str_contains($lowerUserMsg, 'bagaimana') || str_contains($lowerUserMsg, 'cara') || str_contains($lowerUserMsg, 'panduan') || str_contains($lowerUserMsg, 'langkah') || str_contains($lowerUserMsg, 'how to');
+        $tools = $isHowTo ? [] : $this->getToolDefinitions();
 
         $iteration = 0;
         $maxIterations = 5;
         $finalReply = '';
         $executedToolResult = null;
+
+        if ($isHowTo) {
+            $onStatus("Menyusun panduan operasional…", ['route' => $route]);
+            $guideText = $this->knowledgeService->findRelevantGuidance($userMessage);
+            $learnedGuide = $this->learningService->findRelevantGuidance($userMessage, $role);
+            if ($learnedGuide) {
+                $guideText = $guideText ? ($guideText . "\n\n" . $learnedGuide) : $learnedGuide;
+            }
+            if (!$guideText) {
+                $guideText = "Berikut adalah panduan umum untuk '{$userMessage}' di Sentanu Jaya ERP:\n1. Pastikan Anda memiliki hak akses (RBAC) yang sesuai dengan menu terkait.\n2. Navigasikan ke menu yang relevan melalui sidebar aplikasi.\n3. Ikuti form atau tombol aksi yang tersedia sesuai alur dokumen standar.";
+            }
+            $finalReply = $guideText;
+            foreach (explode(' ', $finalReply) as $word) {
+                $onToken($word . ' ');
+                usleep(15000);
+            }
+            return [
+                'reply' => trim($finalReply),
+                'tool_result' => null,
+            ];
+        }
 
         while ($iteration < $maxIterations) {
             $iteration++;
@@ -381,7 +490,8 @@ class PuffyAiService
             }
 
             if (!empty($responsePayload['provider_error']) && !$executedToolResult) {
-                $finalReply = "Maaf, aku belum bisa terhubung ke model AI saat ini. Coba lagi sebentar ya.";
+                $specificMsg = $responsePayload['error_message'] ?? "Maaf, aku belum bisa terhubung ke model AI saat ini. Coba lagi sebentar ya.";
+                $finalReply = "Maaf, {$specificMsg}";
                 foreach (explode(' ', $finalReply) as $word) {
                     $onToken($word . ' ');
                     usleep(15000);
@@ -429,19 +539,32 @@ class PuffyAiService
                     ]);
 
                 if (!$response->successful()) {
-                    Log::warning('Nanu 9Router-compatible provider returned HTTP error.', [
+                    $status = $response->status();
+                    $errorType = match(true) {
+                        in_array($status, [401, 403]) => 'unauthorized',
+                        $status === 404 => 'not_found',
+                        $status === 429 => 'rate_limit',
+                        $status >= 500 => 'server_error',
+                        default => 'http_error',
+                    };
+                    Log::warning('Nanu AI provider returned unsuccessful HTTP response.', [
                         'provider' => $this->provider,
-                        'model' => $this->openAiModel,
-                        'http_status' => $response->status(),
+                        'model' => $this->provider === 'ollama' ? $this->ollamaModel : $this->openAiModel,
+                        'http_status' => $status,
+                        'body' => substr($response->body(), 0, 300),
                     ]);
-                }
-
-                if (!$response->successful()) {
-                    Log::warning('Nanu Ollama provider returned HTTP error.', [
-                        'provider' => $this->provider,
-                        'model' => $this->ollamaModel,
-                        'http_status' => $response->status(),
-                    ]);
+                    return [
+                        'content' => '',
+                        'tool_calls' => null,
+                        'provider_error' => $errorType,
+                        'error_message' => match($errorType) {
+                            'unauthorized' => 'Autentikasi ke provider AI gagal (API key tidak valid).',
+                            'not_found' => "Endpoint atau model AI tidak ditemukan (404). Periksa konfigurasi model.",
+                            'rate_limit' => 'Batas permintaan (rate limit) provider AI terlampaui.',
+                            'server_error' => "Server provider AI mengalami gangguan internal (HTTP {$status}).",
+                            default => "Provider AI mengembalikan error HTTP {$status}.",
+                        },
+                    ];
                 }
 
                 if ($response->successful()) {
@@ -470,53 +593,94 @@ class PuffyAiService
                 }
             } else {
                 // Ollama
+                $payload = [
+                    'model' => $this->ollamaModel,
+                    'messages' => $messages,
+                    'stream' => true,
+                ];
+                if (!empty($tools)) {
+                    $payload['tools'] = $tools;
+                }
                 $response = Http::timeout($this->timeout)
                     ->withOptions(['stream' => true])
-                    ->post("{$this->ollamaUrl}/api/chat", [
-                        'model' => $this->ollamaModel,
-                        'messages' => $messages,
-                        'tools' => $tools,
-                        'stream' => true,
-                    ]);
+                    ->post("{$this->ollamaUrl}/api/chat", $payload);
 
-                if ($response->successful()) {
-                    $body = $response->getBody();
-                    $fullContent = '';
-                    $toolCalls = null;
-                    while (!$body->eof()) {
-                        $chunk = $body->read(1024);
-                        $parsedObjects = $this->parser->feedOllamaChunk($chunk);
-                        foreach ($parsedObjects as $data) {
-                            $msg = $data['message'] ?? [];
-                            $content = $msg['content'] ?? null;
-                            if ($content) {
-                                $fullContent .= $content;
-                                $onToken($content);
-                            }
-                            if (isset($msg['tool_calls'])) {
-                                $toolCalls = $msg['tool_calls'];
-                            }
-                            if (isset($data['done']) && $data['done'] === true) {
-                                break 2;
-                            }
-                        }
-                    }
-                    // Flush remaining buffer
-                    foreach ($this->parser->flushOllama() as $data) {
+                if (!$response->successful()) {
+                    $status = $response->status();
+                    $errorType = match(true) {
+                        in_array($status, [401, 403]) => 'unauthorized',
+                        $status === 404 => 'not_found',
+                        $status === 429 => 'rate_limit',
+                        $status >= 500 => 'server_error',
+                        default => 'http_error',
+                    };
+                    Log::warning('Nanu Ollama provider returned unsuccessful HTTP response.', [
+                        'provider' => $this->provider,
+                        'model' => $this->ollamaModel,
+                        'http_status' => $status,
+                        'body' => substr($response->body(), 0, 300),
+                    ]);
+                    return [
+                        'content' => '',
+                        'tool_calls' => null,
+                        'provider_error' => $errorType,
+                        'error_message' => match($errorType) {
+                            'unauthorized' => 'Autentikasi ke Ollama gagal.',
+                            'not_found' => "Model Ollama '{$this->ollamaModel}' tidak ditemukan (404). Periksa apakah model sudah di-pull.",
+                            'rate_limit' => 'Batas permintaan Ollama terlampaui.',
+                            'server_error' => "Server Ollama mengalami gangguan internal (HTTP {$status}).",
+                            default => "Ollama mengembalikan error HTTP {$status}.",
+                        },
+                    ];
+                }
+
+                $body = $response->getBody();
+                $fullContent = '';
+                $toolCalls = null;
+                while (!$body->eof()) {
+                    $chunk = $body->read(1024);
+                    $parsedObjects = $this->parser->feedOllamaChunk($chunk);
+                    foreach ($parsedObjects as $data) {
                         $msg = $data['message'] ?? [];
-                        if (isset($msg['content'])) {
-                            $fullContent .= $msg['content'];
-                            $onToken($msg['content']);
+                        $content = $msg['content'] ?? null;
+                        if ($content) {
+                            $fullContent .= $content;
+                            $onToken($content);
                         }
                         if (isset($msg['tool_calls'])) {
                             $toolCalls = $msg['tool_calls'];
                         }
+                        if (isset($data['done']) && $data['done'] === true) {
+                            break 2;
+                        }
                     }
-                    return ['content' => $fullContent, 'tool_calls' => $toolCalls];
                 }
+                // Flush remaining buffer
+                foreach ($this->parser->flushOllama() as $data) {
+                    $msg = $data['message'] ?? [];
+                    if (isset($msg['content'])) {
+                        $fullContent .= $msg['content'];
+                        $onToken($msg['content']);
+                    }
+                    if (isset($msg['tool_calls'])) {
+                        $toolCalls = $msg['tool_calls'];
+                    }
+                }
+                return ['content' => $fullContent, 'tool_calls' => $toolCalls];
             }
         } catch (\Throwable $e) {
-            Log::warning('Nanu LLM provider request failed.', [
+            $msg = strtolower($e->getMessage());
+            $errorType = 'provider_exception';
+            $errorDesc = 'Terjadi kesalahan pada sistem AI.';
+            if (str_contains($msg, 'timeout') || str_contains($msg, 'timed out')) {
+                $errorType = 'timeout';
+                $errorDesc = 'Permintaan ke model AI melebihi batas waktu (timeout).';
+            } elseif (str_contains($msg, 'connection') || str_contains($msg, 'refused') || str_contains($msg, 'could not resolve')) {
+                $errorType = 'connection_refused';
+                $errorDesc = 'Tidak dapat terhubung ke server LLM (Ollama/9Router offline).';
+            }
+
+            Log::warning('Nanu LLM provider request failed with exception.', [
                 'provider' => $this->provider,
                 'model' => $this->provider === 'ollama' ? $this->ollamaModel : $this->openAiModel,
                 'exception' => $e::class,
@@ -526,7 +690,8 @@ class PuffyAiService
             return [
                 'content' => '',
                 'tool_calls' => null,
-                'provider_error' => 'provider_exception',
+                'provider_error' => $errorType,
+                'error_message' => $errorDesc,
             ];
         }
 
