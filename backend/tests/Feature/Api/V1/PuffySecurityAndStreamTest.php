@@ -135,6 +135,28 @@ class PuffySecurityAndStreamTest extends TestCase
         $this->assertNull($aiService->detectTool('Siapa presiden Indonesia?'));
     }
 
+    public function test_today_delivery_question_uses_daily_delivery_tool(): void
+    {
+        $aiService = app(PuffyAiService::class);
+
+        $this->assertEquals('get_today_delivery_summary', $aiService->detectTool('Hari ini kirim berapa?'));
+        $this->assertEquals('get_today_delivery_summary', $aiService->detectTool('How many deliveries today?'));
+    }
+
+    public function test_today_delivery_chat_returns_sse_success_without_calling_llm(): void
+    {
+        $response = $this->actingAs($this->user1)->postJson('/api/v1/puffy/chat', [
+            'message' => 'Hari ini kirim berapa?',
+            'page_context' => [
+                'title' => 'Dashboard',
+                'route' => '/dashboard',
+            ],
+        ]);
+
+        $response->assertStatus(200);
+        $this->assertStringStartsWith('text/event-stream', $response->headers->get('Content-Type'));
+    }
+
     public function test_quick_questions_endpoint(): void
     {
         $response = $this->actingAs($this->user1)->getJson('/api/v1/puffy/quick-questions');

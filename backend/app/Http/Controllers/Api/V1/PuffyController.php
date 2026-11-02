@@ -74,6 +74,12 @@ class PuffyController extends BaseApiController
         $responseId = (string) Str::uuid();
 
         return response()->stream(function () use ($messageText, $conversation, $user, $responseId, $pageContext) {
+            // Streaming AI requests may legitimately outlive PHP's default 30-second
+            // execution limit while Ollama loads a cold model into memory.
+            if (function_exists('set_time_limit')) {
+                set_time_limit(0);
+            }
+
             // Disable output buffering
             if (ob_get_level()) {
                 ob_end_flush();

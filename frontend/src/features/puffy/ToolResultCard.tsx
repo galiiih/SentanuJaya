@@ -43,19 +43,19 @@ export function ToolResultCard({ result, s, actionState, onAction }: CardProps) 
               <table className="puffy-table">
                 {table.columns && table.columns.length > 0 && (
                   <thead>
-                    <tr>{table.columns.map((c) => <th key={c}>{c}</th>)}</tr>
+                    <tr>{table.columns?.map((c) => <th key={c}>{c}</th>)}</tr>
                   </thead>
                 )}
                 <tbody>
-                  {table.rows.map((row, i) => (
-                    <tr key={i}>{row.map((cell, j) => <td key={j}>{cell}</td>)}</tr>
+                  {table.rows?.map((row, i) => (
+                    <tr key={i}>{row?.map((cell, j) => <td key={j}>{cell}</td>)}</tr>
                   ))}
                 </tbody>
               </table>
             </div>
           )}
 
-          {chart && chart.points.length > 0 && (
+          {chart && chart.points && chart.points.length > 0 && (
             <div className="puffy-chart">
               <p>{chart.title}</p>
               <div className="puffy-chart__box">

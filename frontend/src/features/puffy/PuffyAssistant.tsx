@@ -438,9 +438,9 @@ function AssistantBubble({ m, s, canRetry, onRetry, onFeedback, onAction, onCopy
         </div>
       )}
       {m.text && <p className="puffy-msg puffy-msg--ai">{m.text}</p>}
-      {m.results.map((r, i) => (
+      {m.results?.map((r, i) => (
         <ToolResultCard key={`${r.tool}-${i}`} result={r} s={s}
-          actionState={r.action ? (m.actions[r.action.id] ?? "pending") : undefined}
+          actionState={r.action ? (m.actions?.[r.action.id] ?? "pending") : undefined}
           onAction={(a, d) => onAction(m, a, d)} />
       ))}
       {m.error && (

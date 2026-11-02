@@ -119,12 +119,47 @@ class PuffyAiService
                             'rows' => $recent->map(fn($d) => [
                                 $d->sj_number ?? $d->do_number ?? $d->id,
                                 $d->customer?->name ?? '-',
-                                $d->created_date ?? $d->created_at?->toDateString(),
+                                $d->delivery_date?->toDateString() ?? '-',
                                 $d->status ?? 'DRAFT',
                             ])->toArray()
                         ],
                         'source' => 'ERP Database',
                         'asOf' => now()->toIso8601String(),
+                        'ui' => ['route' => '/delivery', 'target' => 'delivery-summary'],
+                    ];
+
+                case 'get_today_delivery_summary':
+                    $today = now('Asia/Jakarta')->toDateString();
+                    $todayDeliveries = DeliveryOrder::with('customer')
+                        ->whereDate('delivery_date', $today)
+                        ->where('status', '!=', DeliveryOrder::STATUS_CANCELLED)
+                        ->latest('delivery_date')
+                        ->latest('created_at')
+                        ->take(5)
+                        ->get();
+                    $todayCount = DeliveryOrder::whereDate('delivery_date', $today)
+                        ->where('status', '!=', DeliveryOrder::STATUS_CANCELLED)
+                        ->count();
+
+                    return [
+                        'tool' => $toolName,
+                        'title' => 'Surat Jalan Hari Ini',
+                        'summary' => "Hari ini ({$today}) terdapat {$todayCount} Surat Jalan pengiriman.",
+                        'hasData' => $todayCount > 0,
+                        'metrics' => [
+                            ['label' => 'Pengiriman Hari Ini', 'value' => (string) $todayCount],
+                        ],
+                        'table' => [
+                            'columns' => ['No. Surat Jalan', 'Pelanggan', 'Tanggal Kirim', 'Status'],
+                            'rows' => $todayDeliveries->map(fn ($d) => [
+                                $d->sj_number ?? $d->do_number ?? $d->id,
+                                $d->customer?->name ?? '-',
+                                $d->delivery_date?->toDateString() ?? $today,
+                                $d->status ?? 'DRAFT',
+                            ])->toArray(),
+                        ],
+                        'source' => 'ERP Database',
+                        'asOf' => now('Asia/Jakarta')->toIso8601String(),
                         'ui' => ['route' => '/delivery', 'target' => 'delivery-summary'],
                     ];
 
@@ -298,6 +333,17 @@ class PuffyAiService
             [
                 'type' => 'function',
                 'function' => [
+                    'name' => 'get_today_delivery_summary',
+                    'description' => 'Menghitung jumlah Surat Jalan pengiriman hari ini berdasarkan delivery_date, tidak termasuk pengiriman yang dibatalkan.',
+                    'parameters' => [
+                        'type' => 'object',
+                        'properties' => [],
+                    ],
+                ],
+            ],
+            [
+                'type' => 'function',
+                'function' => [
                     'name' => 'get_invoice_summary',
                     'description' => 'Mendapatkan ringkasan Tagihan / Invoice dan total nilai finansial penagihan.',
                     'parameters' => [
@@ -341,6 +387,10 @@ class PuffyAiService
         }
         if (str_contains($lower, 'po') || str_contains($lower, 'customer po') || str_contains($lower, 'pesanan')) {
             return 'get_customer_po_summary';
+        }
+        $asksToday = str_contains($lower, 'hari ini') || str_contains($lower, 'today');
+        if ($asksToday && (str_contains($lower, 'kirim') || str_contains($lower, 'pengiriman') || str_contains($lower, 'surat jalan') || str_contains($lower, 'delivery') || str_contains($lower, 'deliveries'))) {
+            return 'get_today_delivery_summary';
         }
         if (str_contains($lower, 'delivery') || str_contains($lower, 'surat jalan') || str_contains($lower, 'pengiriman')) {
             return 'get_delivery_summary';
@@ -408,6 +458,26 @@ class PuffyAiService
         $lowerUserMsg = strtolower($userMessage);
         $isHowTo = str_contains($lowerUserMsg, 'bagaimana') || str_contains($lowerUserMsg, 'cara') || str_contains($lowerUserMsg, 'panduan') || str_contains($lowerUserMsg, 'langkah') || str_contains($lowerUserMsg, 'how to');
         $tools = $isHowTo ? [] : $this->getToolDefinitions();
+
+        // Pertanyaan harian yang sudah memiliki definisi bisnis yang pasti tidak perlu
+        // melewati proses berpikir/tool-calling model. Selain lebih cepat, ini mencegah
+        // request sederhana gagal karena batas waktu PHP saat model sedang cold start.
+        $detectedBeforeProvider = $this->detectTool($userMessage);
+        if ($detectedBeforeProvider === 'get_today_delivery_summary') {
+            $onStatus('Memeriksa pengiriman hari ini…', ['route' => '/delivery', 'target' => 'delivery-summary']);
+            $executedToolResult = $this->executeTool($detectedBeforeProvider);
+            $onToolResult($executedToolResult);
+            $finalReply = $executedToolResult['summary'];
+            foreach (explode(' ', $finalReply) as $word) {
+                $onToken($word . ' ');
+                usleep(15000);
+            }
+
+            return [
+                'reply' => trim($finalReply),
+                'tool_result' => $executedToolResult,
+            ];
+        }
 
         $iteration = 0;
         $maxIterations = 5;
@@ -526,17 +596,26 @@ class PuffyAiService
     protected function callProviderWithToolsAndStream(array $messages, array $tools, callable $onToken): array
     {
         try {
-            if ($this->provider === 'openai' || $this->provider === '9router') {
-                $response = Http::timeout($this->timeout)
-                    ->withToken($this->openAiApiKey)
-                    ->withOptions(['stream' => true])
-                    ->post("{$this->openAiBaseUrl}/chat/completions", [
-                        'model' => $this->openAiModel,
-                        'messages' => $messages,
-                        'tools' => $tools,
-                        'tool_choice' => 'auto',
-                        'stream' => true,
-                    ]);
+            $isOllama = ($this->provider === 'ollama');
+            $baseUrl = $isOllama ? "{$this->ollamaUrl}/v1" : $this->openAiBaseUrl;
+            $apiKey = $isOllama ? 'ollama' : $this->openAiApiKey;
+            $model = $isOllama ? $this->ollamaModel : $this->openAiModel;
+            $timeout = max($this->timeout, 60);
+
+            $payload = [
+                'model' => $model,
+                'messages' => $messages,
+                'stream' => true,
+            ];
+            if (!empty($tools)) {
+                $payload['tools'] = $tools;
+                $payload['tool_choice'] = 'auto';
+            }
+
+            $response = Http::timeout($timeout)
+                ->withToken($apiKey)
+                ->withOptions(['stream' => true])
+                ->post("{$baseUrl}/chat/completions", $payload);
 
                 if (!$response->successful()) {
                     $status = $response->status();
@@ -549,7 +628,7 @@ class PuffyAiService
                     };
                     Log::warning('Nanu AI provider returned unsuccessful HTTP response.', [
                         'provider' => $this->provider,
-                        'model' => $this->provider === 'ollama' ? $this->ollamaModel : $this->openAiModel,
+                        'model' => $model,
                         'http_status' => $status,
                         'body' => substr($response->body(), 0, 300),
                     ]);
@@ -570,7 +649,7 @@ class PuffyAiService
                 if ($response->successful()) {
                     $body = $response->getBody();
                     $fullContent = '';
-                    $toolCalls = null;
+                    $toolCalls = [];
                     while (!$body->eof()) {
                         $chunk = $body->read(1024);
                         $parsedLines = $this->parser->feedOpenAiChunk($chunk);
@@ -583,91 +662,33 @@ class PuffyAiService
                                     $fullContent .= $content;
                                     $onToken($content);
                                 }
-                                if (isset($delta['tool_calls'])) {
-                                    $toolCalls = $delta['tool_calls'];
+                                foreach (($delta['tool_calls'] ?? []) as $toolIndex => $incomingToolCall) {
+                                    $index = $incomingToolCall['index'] ?? $toolIndex;
+                                    $toolCalls[$index] ??= [
+                                        'id' => $incomingToolCall['id'] ?? null,
+                                        'type' => $incomingToolCall['type'] ?? 'function',
+                                        'function' => ['name' => '', 'arguments' => ''],
+                                    ];
+
+                                    if (!empty($incomingToolCall['id'])) {
+                                        $toolCalls[$index]['id'] = $incomingToolCall['id'];
+                                    }
+                                    $incomingFunction = $incomingToolCall['function'] ?? [];
+                                    if (!empty($incomingFunction['name'])) {
+                                        $toolCalls[$index]['function']['name'] .= $incomingFunction['name'];
+                                    }
+                                    if (array_key_exists('arguments', $incomingFunction)) {
+                                        $arguments = $incomingFunction['arguments'];
+                                        $toolCalls[$index]['function']['arguments'] .= is_string($arguments)
+                                            ? $arguments
+                                            : json_encode($arguments);
+                                    }
                                 }
                             }
                         }
                     }
-                    return ['content' => $fullContent, 'tool_calls' => $toolCalls];
+                    return ['content' => $fullContent, 'tool_calls' => array_values($toolCalls) ?: null];
                 }
-            } else {
-                // Ollama
-                $payload = [
-                    'model' => $this->ollamaModel,
-                    'messages' => $messages,
-                    'stream' => true,
-                ];
-                if (!empty($tools)) {
-                    $payload['tools'] = $tools;
-                }
-                $response = Http::timeout($this->timeout)
-                    ->withOptions(['stream' => true])
-                    ->post("{$this->ollamaUrl}/api/chat", $payload);
-
-                if (!$response->successful()) {
-                    $status = $response->status();
-                    $errorType = match(true) {
-                        in_array($status, [401, 403]) => 'unauthorized',
-                        $status === 404 => 'not_found',
-                        $status === 429 => 'rate_limit',
-                        $status >= 500 => 'server_error',
-                        default => 'http_error',
-                    };
-                    Log::warning('Nanu Ollama provider returned unsuccessful HTTP response.', [
-                        'provider' => $this->provider,
-                        'model' => $this->ollamaModel,
-                        'http_status' => $status,
-                        'body' => substr($response->body(), 0, 300),
-                    ]);
-                    return [
-                        'content' => '',
-                        'tool_calls' => null,
-                        'provider_error' => $errorType,
-                        'error_message' => match($errorType) {
-                            'unauthorized' => 'Autentikasi ke Ollama gagal.',
-                            'not_found' => "Model Ollama '{$this->ollamaModel}' tidak ditemukan (404). Periksa apakah model sudah di-pull.",
-                            'rate_limit' => 'Batas permintaan Ollama terlampaui.',
-                            'server_error' => "Server Ollama mengalami gangguan internal (HTTP {$status}).",
-                            default => "Ollama mengembalikan error HTTP {$status}.",
-                        },
-                    ];
-                }
-
-                $body = $response->getBody();
-                $fullContent = '';
-                $toolCalls = null;
-                while (!$body->eof()) {
-                    $chunk = $body->read(1024);
-                    $parsedObjects = $this->parser->feedOllamaChunk($chunk);
-                    foreach ($parsedObjects as $data) {
-                        $msg = $data['message'] ?? [];
-                        $content = $msg['content'] ?? null;
-                        if ($content) {
-                            $fullContent .= $content;
-                            $onToken($content);
-                        }
-                        if (isset($msg['tool_calls'])) {
-                            $toolCalls = $msg['tool_calls'];
-                        }
-                        if (isset($data['done']) && $data['done'] === true) {
-                            break 2;
-                        }
-                    }
-                }
-                // Flush remaining buffer
-                foreach ($this->parser->flushOllama() as $data) {
-                    $msg = $data['message'] ?? [];
-                    if (isset($msg['content'])) {
-                        $fullContent .= $msg['content'];
-                        $onToken($msg['content']);
-                    }
-                    if (isset($msg['tool_calls'])) {
-                        $toolCalls = $msg['tool_calls'];
-                    }
-                }
-                return ['content' => $fullContent, 'tool_calls' => $toolCalls];
-            }
         } catch (\Throwable $e) {
             $msg = strtolower($e->getMessage());
             $errorType = 'provider_exception';
