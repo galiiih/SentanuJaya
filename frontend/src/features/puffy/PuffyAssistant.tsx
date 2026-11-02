@@ -404,7 +404,7 @@ export function PuffyAssistant({ baseUrl = PUFFY_BASE_URL, idleAfterMs = 9000, v
         <button type="button" className="puffy-mascot__button" onClick={onMascot} aria-label={open ? "Puffy" : s.openChat}>
           <div className="puffy-character">
             <MascotView choice={{ mascotId: puffySettings.mascotId, palette: puffySettings.palette, customImage: puffySettings.customImage ?? undefined }} mood={mood} talking={talking} bubble={!open} />
-            {(puffySettings.mascotId === 'catdrop' || puffySettings.mascotId === 'puffy') && <span className="puffy-tail" data-visible={!open} aria-hidden="true" />}
+
           </div>
           {fx.map((f) => <span key={f.id} className="puffy-fx" aria-hidden="true">{f.emoji}</span>)}
           <span role="status" className={`puffy-say ${sayPlace}`} data-visible={Boolean(sayText)}>{sayText}</span>
