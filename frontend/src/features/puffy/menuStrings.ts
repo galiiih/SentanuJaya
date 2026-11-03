@@ -25,10 +25,10 @@ export interface MenuStrings {
 }
 
 const id: MenuStrings = {
-  settings: "Pengaturan Puffy",
+  settings: "Pengaturan Nanu",
   back: "Kembali ke chat",
   mascot: "Maskot",
-  mascotHint: "Pilih tampilan Puffy. Pilihanmu tersimpan di browser ini.",
+  mascotHint: "Pilih tampilan Nanu. Pilihanmu tersimpan di browser ini.",
   mascotChanged: (name) => `Sekarang aku tampil sebagai ${name}!`,
   customMascot: "Gambar saya",
   uploadImage: "Unggah gambar",
@@ -39,7 +39,7 @@ const id: MenuStrings = {
   palette: "Warna",
   behavior: "Perilaku",
   autoSpeak: "Bacakan jawaban otomatis",
-  autoSpeakHint: "Puffy membacakan setiap jawaban, bukan hanya saat kamu bertanya lewat suara.",
+  autoSpeakHint: "Nanu membacakan setiap jawaban, bukan hanya saat kamu bertanya lewat suara.",
   idleLabel: "Mengecil otomatis setelah",
   idleOption: (s) => (s === 0 ? "Tidak pernah" : `${s} detik`),
   startOpen: "Mulai dalam keadaan terbuka",
@@ -48,10 +48,10 @@ const id: MenuStrings = {
 };
 
 const en: MenuStrings = {
-  settings: "Puffy settings",
+  settings: "Nanu settings",
   back: "Back to chat",
   mascot: "Mascot",
-  mascotHint: "Choose how Puffy looks. Your choice is saved in this browser.",
+  mascotHint: "Choose how Nanu looks. Your choice is saved in this browser.",
   mascotChanged: (name) => `Now I look like ${name}!`,
   customMascot: "My image",
   uploadImage: "Upload image",
@@ -62,7 +62,7 @@ const en: MenuStrings = {
   palette: "Color",
   behavior: "Behavior",
   autoSpeak: "Read answers aloud",
-  autoSpeakHint: "Puffy reads every answer aloud, not only when you ask by voice.",
+  autoSpeakHint: "Nanu reads every answer aloud, not only when you ask by voice.",
   idleLabel: "Minimize automatically after",
   idleOption: (s) => (s === 0 ? "Never" : `${s} seconds`),
   startOpen: "Start expanded",
