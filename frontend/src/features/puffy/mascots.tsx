@@ -6,7 +6,7 @@
  */
 export interface MascotEntry {
   id: string;
-  kind: 'drop' | 'blob' | 'image';
+  kind: 'drop' | 'blob' | 'image' | 'wobnimo';
   /** Nama yang ditampilkan. */
   name: string;
   nameEn: string;
@@ -63,9 +63,44 @@ export const MASCOTS: MascotEntry[] = [
     palette: { body: '#ffb6c1', belly: '#fff0f3', cheek: '#ff93b5', outline: '#d4849a' },
   },
   {
+    id: 'volt',
+    kind: 'wobnimo',
+    name: 'Volt (Wobnimo)',
+    nameEn: 'Volt',
+    color: '#ffc107',
+  },
+  {
+    id: 'pip',
+    kind: 'wobnimo',
+    name: 'Pip (Wobnimo)',
+    nameEn: 'Pip',
+    color: '#00bcd4',
+  },
+  {
+    id: 'miso',
+    kind: 'wobnimo',
+    name: 'Miso (Wobnimo)',
+    nameEn: 'Miso',
+    color: '#ff9800',
+  },
+  {
+    id: 'drift',
+    kind: 'wobnimo',
+    name: 'Drift (Wobnimo)',
+    nameEn: 'Drift',
+    color: '#3f51b5',
+  },
+  {
+    id: 'rex',
+    kind: 'wobnimo',
+    name: 'Rex (Wobnimo)',
+    nameEn: 'Rex',
+    color: '#4caf50',
+  },
+  {
     id: 'mochi',
     kind: 'blob',
-    name: 'Mochi',
+    name: 'Mochi (Classic)',
     nameEn: 'Mochi',
     color: '#d4a76a',
     palette: { body: '#f5e6d0', belly: '#fff8f0', cheek: '#ffb89a', outline: '#d4b896' },
