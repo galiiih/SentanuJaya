@@ -18,6 +18,7 @@ type Translations = {
   reports: string;
   templates: string;
   master: string;
+  knowledge: string;
   users: string;
   logout: string;
   isolatedCustody: string;
@@ -49,6 +50,8 @@ type Translations = {
     masterDesc: string;
     usersTitle: string;
     usersDesc: string;
+    knowledgeTitle: string;
+    knowledgeDesc: string;
   };
   // Common Buttons & Labels
   common: {
@@ -262,6 +265,7 @@ const idTranslations: Translations = {
     reports: 'Laporan',
     templates: 'Template Dokumen',
     master: 'Master Data',
+    knowledge: 'Nanu Knowledge',
     users: 'Manajemen Pengguna',
     logout: 'Keluar',
     isolatedCustody: 'Custody terisolasi',
@@ -292,6 +296,8 @@ const idTranslations: Translations = {
     masterDesc: 'Kelola data referensi perusahaan, cabang, dan master item.',
     usersTitle: 'Manajemen Pengguna',
     usersDesc: 'Kelola akun pengguna, peran, dan hak akses sistem.',
+    knowledgeTitle: 'Nanu Knowledge',
+    knowledgeDesc: 'Kelola basis pengetahuan resmi Nanu AI dan tinjau pengajuan kandidat.',
   },
   common: {
     search: 'Cari data...',
@@ -502,6 +508,7 @@ const enTranslations: Translations = {
     reports: 'Reports',
     templates: 'Document Templates',
     master: 'Master Data',
+    knowledge: 'Nanu Knowledge',
     users: 'User Management',
     logout: 'Logout',
     isolatedCustody: 'Isolated Custody',
@@ -532,6 +539,8 @@ const enTranslations: Translations = {
     masterDesc: 'Manage company, branch, and item reference data.',
     usersTitle: 'User Management',
     usersDesc: 'Manage user accounts, roles, and system permissions.',
+    knowledgeTitle: 'Nanu Knowledge',
+    knowledgeDesc: 'Manage official Nanu AI knowledge base and review candidate submissions.',
   },
   common: {
     search: 'Search data...',

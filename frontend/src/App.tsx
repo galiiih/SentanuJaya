@@ -71,7 +71,7 @@ import {
 } from './components/ui';
 import './App.css';
 
-type PageKey = 'dashboard' | 'custody' | 'customerPo' | 'materials' | 'delivery' | 'invoicing' | 'payments' | 'reports' | 'templates' | 'master' | 'users';
+type PageKey = 'dashboard' | 'custody' | 'customerPo' | 'materials' | 'delivery' | 'invoicing' | 'payments' | 'reports' | 'templates' | 'master' | 'users' | 'knowledge';
 
 const routePages: Record<string, PageKey> = {
   '/dashboard': 'dashboard',
@@ -85,6 +85,7 @@ const routePages: Record<string, PageKey> = {
   '/templates': 'templates',
   '/master': 'master',
   '/users': 'users',
+  '/knowledge': 'knowledge',
 };
 
 const currency = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 });
@@ -229,7 +230,7 @@ function AuthenticatedLayout() {
     '/templates': ['Workspace', 'Finance & Billing', 'Template Dokumen'],
     '/materials': ['Workspace', 'Inventaris', 'Material'],
     '/master': ['Workspace', 'Inventaris', 'Master Data'],
-    '/knowledge': ['Workspace', 'Inventaris', 'Nanu Knowledge'],
+    '/knowledge': ['Workspace', 'Nanu Knowledge'],
     '/users': ['Workspace', 'Inventaris', 'Manajemen Pengguna'],
   };
   const breadcrumbItems = breadcrumbMap[location.pathname] || ['Workspace', pageTitle];
