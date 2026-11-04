@@ -1,5 +1,9 @@
 # STEP 2 PROGRESS & NEXT MILESTONES
 
+> **Dokumen historis:** laporan ini mencatat baseline awal Step 2 dan masih
+> menggunakan istilah Laravel 11. Runtime repository saat ini menggunakan
+> Laravel 13; status terbaru ada di `docs/00_README_INDEX.md`.
+
 ## 📌 Status Terkini (Step 2 - Persiapan Lingkungan & Arsitektur)
 
 ### 1. Struktur Folder Fisik Proyek

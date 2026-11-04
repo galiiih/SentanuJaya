@@ -1,5 +1,10 @@
 # STEP 3 COMPLETION REPORT — BACKEND & API ARCHITECTURE
 
+> **Dokumen historis:** laporan ini mencatat completion point Step 3. Modul
+> transaksi, API, reporting, dan AI yang disebut sebagai pekerjaan lanjutan
+> sudah berkembang setelah laporan ini; lihat `docs/00_README_INDEX.md` untuk
+> status terbaru.
+
 ## 📌 Status Terkini (Step 3 - Backend & API Development)
 
 ### 1. Migrasi Database PostgreSQL MVP-1 (Lengkap & Terstruktur)

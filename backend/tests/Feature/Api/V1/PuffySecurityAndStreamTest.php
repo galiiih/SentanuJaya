@@ -2,11 +2,13 @@
 
 namespace Tests\Feature\Api\V1;
 
-use App\Models\User;
 use App\Models\PuffyConversation;
 use App\Models\PuffyMessage;
-use App\Services\PuffyStreamParser;
+use App\Models\User;
+use App\Services\NanuKnowledgeLearningService;
 use App\Services\PuffyAiService;
+use App\Services\PuffyKnowledgeService;
+use App\Services\PuffyStreamParser;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -15,6 +17,7 @@ class PuffySecurityAndStreamTest extends TestCase
     use RefreshDatabase;
 
     protected User $user1;
+
     protected User $user2;
 
     protected function setUp(): void
@@ -40,10 +43,10 @@ class PuffySecurityAndStreamTest extends TestCase
 
     public function test_puffy_stream_parser_ollama_ndjson(): void
     {
-        $parser = new PuffyStreamParser();
+        $parser = new PuffyStreamParser;
 
         // Feed complete and partial chunks
-        $chunk1 = '{"model":"llama3","response":"Hello","done":false}' . "\n";
+        $chunk1 = '{"model":"llama3","response":"Hello","done":false}'."\n";
         $chunk2 = '{"model":"llama3","response":" World","done":true}';
 
         $objects1 = $parser->feedOllamaChunk($chunk1);
@@ -61,7 +64,7 @@ class PuffySecurityAndStreamTest extends TestCase
 
     public function test_puffy_stream_parser_openai_sse(): void
     {
-        $parser = new PuffyStreamParser();
+        $parser = new PuffyStreamParser;
 
         $chunk = "data: {\"choices\":[{\"delta\":{\"content\":\"Hello SSE\"}}]}\n\ndata: [DONE]\n\n";
         $results = $parser->feedOpenAiChunk($chunk);
@@ -127,9 +130,18 @@ class PuffySecurityAndStreamTest extends TestCase
         $this->assertEquals('get_production_progress_summary', $aiService->detectTool('Production progress'));
         $this->assertEquals('get_production_progress_summary', $aiService->detectTool('Status produksi saat ini'));
         $this->assertEquals('get_invoice_summary', $aiService->detectTool('Berapa total invoice bulan ini?'));
+        $this->assertEquals('get_invoice_tax_summary', $aiService->detectTool('Berapa PPN invoice ini?'));
         $this->assertEquals('get_goods_received_summary', $aiService->detectTool('Goods received today'));
         $this->assertEquals('get_goods_received_summary', $aiService->detectTool('Penerimaan barang hari ini'));
+        $this->assertEquals('get_goods_received_summary', $aiService->detectTool('Barang masuk hari ini'));
         $this->assertEquals('get_inventory_summary', $aiService->detectTool('What materials are currently in stock?'));
+        $this->assertEquals('get_inventory_summary', $aiService->detectTool('Stok material menipis'));
+        $this->assertEquals('get_custody_summary', $aiService->detectTool('Tampilkan barang customer yang masih berada di workshop.'));
+        $this->assertEquals('get_acceptance_summary', $aiService->detectTool('Apakah surat jalan ini sudah memiliki acceptance?'));
+        $this->assertEquals('get_delivery_summary', $aiService->detectTool('Barang customer ini sudah dikirim kembali atau belum?'));
+        $this->assertEquals('get_operational_risk_summary', $aiService->detectTool('Apa risiko operasional yang terlihat dari data saat ini?'));
+        $this->assertNull($aiService->detectTool('Tampilkan laporan finansial bulan ini.'));
+        $this->assertNull($aiService->detectTool('Bagaimana cara posting invoice?'));
         $this->assertNull($aiService->detectTool('Bagaimana cara membuat invoice?'));
         $this->assertNull($aiService->detectTool('Bagaimana proses penerimaan barang?'));
         $this->assertNull($aiService->detectTool('Siapa presiden Indonesia?'));
@@ -157,6 +169,105 @@ class PuffySecurityAndStreamTest extends TestCase
         $this->assertStringStartsWith('text/event-stream', $response->headers->get('Content-Type'));
     }
 
+    public function test_inventory_tool_returns_stock_status_from_material_and_stock_tables(): void
+    {
+        $aiService = app(PuffyAiService::class);
+
+        $result = $aiService->executeTool('get_inventory_summary');
+
+        $this->assertEquals('get_inventory_summary', $result['tool']);
+        $this->assertArrayHasKey('metrics', $result);
+        $this->assertArrayHasKey('table', $result);
+        $this->assertArrayHasKey('rows', $result['table']);
+    }
+
+    public function test_custody_and_acceptance_tools_return_structured_results(): void
+    {
+        $aiService = app(PuffyAiService::class);
+
+        foreach (['get_custody_summary', 'get_acceptance_summary', 'get_operational_risk_summary', 'get_invoice_tax_summary'] as $toolName) {
+            $result = $aiService->executeTool($toolName);
+
+            $this->assertSame($toolName, $result['tool']);
+            $this->assertArrayHasKey('metrics', $result);
+            $this->assertArrayHasKey('table', $result);
+            $this->assertArrayHasKey('rows', $result['table']);
+        }
+    }
+
+    public function test_guidance_does_not_match_every_how_to_question_to_dashboard(): void
+    {
+        $knowledge = app(PuffyKnowledgeService::class);
+        $learning = app(NanuKnowledgeLearningService::class);
+
+        $this->assertNull($knowledge->findRelevantGuidance('Bagaimana cara membuat STB baru?'));
+        $this->assertStringContainsString('Panduan STB', (string) $learning->findRelevantGuidance('Bagaimana cara membuat STB baru?'));
+        $this->assertStringContainsString('Panduan Customer Acceptance', (string) $learning->findRelevantGuidance('Bagaimana cara membuat acceptance?'));
+        $this->assertStringContainsString('Cara Meng-update Master Material', (string) $learning->findRelevantGuidance('Bagaimana caranya untuk mengupdate material?'));
+        $this->assertStringContainsString('tidak diubah langsung dari master material', strtolower((string) $learning->findRelevantGuidance('Bagaimana cara update stok material?')));
+    }
+
+    public function test_how_to_reply_is_user_facing_and_out_of_scope_question_is_not_treated_as_erp_guidance(): void
+    {
+        $aiService = app(PuffyAiService::class);
+
+        $guide = $aiService->agenticChat(
+            'Bagaimana cara membuat surat jalan?',
+            null,
+            ['role' => 'STAFF', 'route' => '/dashboard', 'title' => 'Dashboard'],
+            static function (string $label, array $ui): void {},
+            static function (array $toolResult): void {},
+            static function (string $token): void {},
+        );
+
+        $this->assertStringNotContainsString('Panduan Intent', $guide['reply']);
+        $this->assertStringContainsString('Panduan Surat Jalan', $guide['reply']);
+
+        $outOfScope = $aiService->agenticChat(
+            'Bagaimana cuaca hari ini?',
+            null,
+            ['role' => 'STAFF', 'route' => '/dashboard', 'title' => 'Dashboard'],
+            static function (string $label, array $ui): void {},
+            static function (array $toolResult): void {},
+            static function (string $token): void {},
+        );
+
+        $this->assertStringContainsString('fokus membantu operasional', $outOfScope['reply']);
+        $this->assertStringNotContainsString('panduan umum', strtolower($outOfScope['reply']));
+    }
+
+    public function test_goods_received_and_inventory_questions_bypass_provider(): void
+    {
+        $aiService = app(PuffyAiService::class);
+        $toolResults = [];
+
+        $result = $aiService->agenticChat(
+            'Barang masuk hari ini',
+            null,
+            [],
+            static function (): void {},
+            static function (array $toolResult) use (&$toolResults): void {
+                $toolResults[] = $toolResult;
+            },
+            static function (): void {},
+        );
+
+        $this->assertEquals('get_goods_received_summary', $result['tool_result']['tool']);
+        $this->assertCount(1, $toolResults);
+        $this->assertStringContainsString('diterima hari ini', $result['reply']);
+    }
+
+    public function test_tool_schemas_encode_empty_properties_as_json_objects(): void
+    {
+        $definitions = app(PuffyAiService::class)->getToolDefinitions();
+
+        foreach ($definitions as $definition) {
+            $parameters = $definition['function']['parameters'];
+            $this->assertSame('{}', json_encode($parameters['properties']));
+            $this->assertFalse($parameters['additionalProperties']);
+        }
+    }
+
     public function test_quick_questions_endpoint(): void
     {
         $response = $this->actingAs($this->user1)->getJson('/api/v1/puffy/quick-questions');
@@ -171,7 +282,7 @@ class PuffySecurityAndStreamTest extends TestCase
                 'delivery',
                 'invoicing',
                 'payments',
-            ]
+            ],
         ]);
     }
 
@@ -183,8 +294,8 @@ class PuffySecurityAndStreamTest extends TestCase
             'success',
             'message',
             'data' => [
-                '*' => ['id', 'category', 'title', 'sample_questions', 'intent']
-            ]
+                '*' => ['id', 'category', 'title', 'sample_questions', 'intent'],
+            ],
         ]);
         $data = $response->json('data');
         $this->assertCount(1, $data);

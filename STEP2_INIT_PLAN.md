@@ -1,5 +1,8 @@
 # STEP 2 PLAN — INITIALIZATION & ARCHITECTURE SETUP
 
+> **Dokumen historis:** ini adalah rencana awal dengan target Laravel 11.
+> Rencana sudah dieksekusi; runtime repository saat ini menggunakan Laravel 13.
+
 ## Target
 Mempersiapkan struktur proyek fisik, repository, skema migrasi database PostgreSQL, dan arsitektur aplikasi sesuai `DATABASE_SCHEMA.md` & `TECH_STACK_DECISION.md`.
 

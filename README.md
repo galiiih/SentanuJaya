@@ -10,7 +10,7 @@ Sentanu ERP adalah custom web app untuk bisnis jasa automotive finishing, painti
 
 - **Dokumentasi & Blueprint**: `docs/` (Indeks lengkap: `docs/00_README_INDEX.md`)
 - **Frontend App (React + TypeScript)**: `frontend/`
-- **Backend App & Migrations (Laravel 11)**: `backend/`
+- **Backend App & Migrations (Laravel 13)**: `backend/`
 
 ---
 
@@ -25,7 +25,7 @@ Sentanu ERP adalah custom web app untuk bisnis jasa automotive finishing, painti
 
 ## 💻 Tech Stack Choice
 
-- **Backend**: Laravel 11 (PHP 8.3) + Eloquent ORM
+- **Backend**: Laravel 13 (PHP 8.3) + Eloquent ORM
 - **Frontend**: React + TypeScript + Vite + Tailwind CSS + Lucide React
 - **Database**: PostgreSQL 16 + Redis Queue
 - **Security & Logging**: Segregation of Duties (SoD) + Immutable Audit Logs + Clean Error Handling
@@ -43,7 +43,7 @@ Sentanu ERP adalah custom web app untuk bisnis jasa automotive finishing, painti
 | **Step 4** | Integrasi Frontend UI & Component Verification | **SELESAI (100%)** | SPA Dashboard & Invoicing Engine Lulus `npm run build` |
 | **Step 5** | Audit Keamanan & Segregation of Duties (SoD) | **SELESAI (100%)** | `SecurityAuditLogger.php` & aturan SoD terimplementasi |
 | **Step 6** | Automated Testing & Protocol Debugging | **SELESAI (100%)** | Unit test `SecurityAndTaxEngineTest.php` dibuat & teruji |
-| **Step 7** | Production Readiness & VPS Deploy | **TERTUNDA** | Panduan Deploy VPS `docs/DEPLOYMENT_GUIDE_VPS.md` tersedia; Phase 1 frontend masih NEEDS REVIEW |
+| **Step 7** | Production Readiness & VPS Deploy | **TERTUNDA** | Panduan tersedia; deployment VPS, UAT final, training, backup-restore, dan sign-off Owner belum selesai |
 
 ---
 
@@ -56,15 +56,15 @@ Sentanu ERP adalah custom web app untuk bisnis jasa automotive finishing, painti
 Verifikasi:
 
 ```text
-npm run build      PASS — TypeScript/Vite, 1890 modules
-npx oxlint src     PASS — exit 0
+npm run build      PASS — TypeScript/Vite, 2553 modules
+npx oxlint src     berjalan dengan warning yang masih perlu dibersihkan
 ```
 
-Business logic, invoice/tax calculation, custody behavior, API, database, dan mock data tidak diubah.
+Business logic, invoice/tax calculation, custody behavior, API, database, dan mock data telah berkembang setelah baseline awal ini.
 
 ### Phase 1 — Authentication & RBAC
 
-**NEEDS REVIEW.** Implementasi teknis tersedia:
+**SELESAI secara teknis.** Implementasi yang tersedia:
 
 - `react-router-dom` URL routing.
 - `AuthProvider`, `useAuth`, mock session, login/logout.
@@ -74,29 +74,15 @@ Business logic, invoice/tax calculation, custody behavior, API, database, dan mo
 - `/login`, `/dashboard`, `/403`, `/404`.
 - DEV-only role selector untuk QA (`ADMIN`, `OWNER`, `STAFF`).
 
-Build/lint terbaru:
+Build terbaru:
 
 ```text
-npm run build      PASS — 1890 modules, 274ms
-npx oxlint src     PASS — exit 0
+npm run build      PASS — 2553 modules
+npx oxlint src     berjalan dengan warning yang masih perlu dibersihkan
 ```
 
-Manual QA yang belum selesai:
+QA teknis dasar sudah tersedia melalui PHPUnit, Playwright, dan browser smoke test. UAT bisnis penuh, deployment production, training, backup-restore, dan sign-off Owner masih belum selesai.
 
-- Runtime OWNER dan STAFF.
-- Unauthorized route → `/403`.
-- Unknown route → 404.
-- Logout dan post-logout redirect.
-- Browser back/forward.
-- Mobile drawer pada 390px.
-- Keyboard/focus/Escape.
-- Runtime console errors.
-- Screenshots Login, Dashboard, OWNER, STAFF, 403, 404, dan Mobile.
+Phase 2 master data dan modul transaksi sudah berjalan. Lihat status terbaru di `docs/00_README_INDEX.md` dan `docs/IMPLEMENTATION_PROGRESS.md`.
 
-**Phase 2 sedang berjalan terbatas pada audit dan fondasi schema/model master data.** Transaction modules belum dimulai. Detail: `docs/PHASE_2_MASTER_DATA_AUDIT.md`.
-
-### Next bounded step
-
-Sediakan PHP 8.3, Composer, dan PostgreSQL 16 untuk validasi migration/schema. Setelah itu baru lanjut backend validation/API master data. Jangan mulai Customer PO, Custody transaction, Production, Invoice, atau Payment.
-
-Terakhir diperbarui: 2026-09-28 pagi.
+Terakhir diperbarui: 2026-11-03.

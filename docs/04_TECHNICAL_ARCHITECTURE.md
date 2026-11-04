@@ -9,7 +9,7 @@ Detail keputusan ada di `TECH_STACK_DECISION.md`.
 
 | Lapisan | Pilihan |
 |---|---|
-| Backend/API | Laravel 11, PHP 8.3 |
+| Backend/API | Laravel 13, PHP 8.3 |
 | Frontend | React + TypeScript + Vite |
 | Database | PostgreSQL 16 |
 | ORM/migration | Laravel Eloquent + Laravel Migrations |

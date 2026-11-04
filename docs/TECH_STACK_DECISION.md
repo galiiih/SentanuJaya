@@ -4,7 +4,7 @@
 
 | Lapisan | Pilihan |
 |---|---|
-| Backend + API | Laravel 11, PHP 8.3 |
+| Backend + API | Laravel 13, PHP 8.3 |
 | Frontend | React + TypeScript + Vite |
 | UI | Tailwind CSS, shadcn/ui, Lucide React |
 | Database | PostgreSQL 16 |
@@ -34,7 +34,7 @@ Prisma tidak dipakai agar tidak ada dua ORM atau dua backend. Database schema ha
 ```text
 React/Vite SPA
     ↓ HTTPS JSON
-Laravel 11 API
+Laravel 13 API
     ↓ service/domain layer
 Eloquent + PostgreSQL
     ├── Redis Queue
@@ -59,4 +59,5 @@ Microservice, GraphQL, mobile native, Kubernetes, dan event bus tidak diperlukan
 
 ## Keputusan yang masih perlu persetujuan
 
-Stack ini rekomendasi teknis, tetapi `OPEN DECISION #10` belum final sampai Owner menyetujui hosting dan bentuk deployment.
+Implementasi runtime saat ini menggunakan Laravel 13. Target hosting tetap VPS,
+tetapi deployment production dan persetujuan final bentuk hosting belum dilakukan.

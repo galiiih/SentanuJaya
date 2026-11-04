@@ -1,5 +1,8 @@
 # SENTANU JAYA ERP — EXECUTIVE DASHBOARD & ADVANCED REPORTING IMPLEMENTATION REPORT
 
+**Status verifikasi terbaru:** ✅ Implemented dan terhubung ke API. Diperbarui
+2026-11-03. UAT bisnis penuh dan deployment production masih pending.
+
 ## 1. Executive Summary
 Dokumen ini merangkum penyelesaian modul **Executive Dashboard & Advanced Reporting** pada Sentanu Jaya Web App. Seluruh endpoint agregasi dan reporting telah diimplementasikan, terhubung ke backend API secara aktual, diverifikasi melalui unit/feature test (`DashboardApiTest.php` dan `ReportApiTest.php`), serta didukung integrasi frontend pada dashboard utama.
 
@@ -17,6 +20,7 @@ Dokumen ini merangkum penyelesaian modul **Executive Dashboard & Advanced Report
 - **Authorization**: Hak akses dikontrol dengan ketat berdasarkan role (`STAFF`, `ADMIN`, `OWNER`) melalui middleware autentikasi dan otorisasi API.
 
 ## 4. Test & Quality Assurance Results
-- **Backend Tests**: 118 Tests Passed, 766 Assertions (PHPUnit).
-- **Frontend Build & Type-Check**: Sukses tanpa error kompilasi TypeScript maupun build Vite (`2530 modules transformed`).
+- **Backend Tests**: 140 tests, 138 passed, 2 skipped, 921 assertions (PHPUnit).
+- **Frontend Build & Type-Check**: Sukses tanpa error kompilasi TypeScript maupun build Vite (`2553 modules transformed`).
+- **Frontend lint**: Berjalan, tetapi masih menghasilkan warning yang perlu dibersihkan.
 - **Advanced Reporting Frontend**: Seluruh tampilan laporan berbasis JSON mentah (`<pre>`) telah direfaktor menjadi tabel data terstruktur profesional lengkap dengan KPI summary cards, status badges, dan format mata uang Rupiah (IDR).

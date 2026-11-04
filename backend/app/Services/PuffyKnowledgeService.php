@@ -181,27 +181,31 @@ class PuffyKnowledgeService
                 'questions' => $tmpl['sample_questions'],
             ];
         }
+
         return $grouped;
     }
 
     public function getTemplates(?string $category = null): array
     {
         if ($category) {
-            return array_values(array_filter($this->templates, fn($t) => $t['category'] === $category));
+            return array_values(array_filter($this->templates, fn ($t) => $t['category'] === $category));
         }
+
         return $this->templates;
     }
 
     public function findRelevantGuidance(string $message): ?string
     {
-        $lower = mb_strtolower($message);
+        $lower = mb_strtolower(trim($message));
         foreach ($this->templates as $tmpl) {
             foreach ($tmpl['sample_questions'] as $q) {
-                if (str_contains($lower, mb_strtolower(substr($q, 0, 10)))) {
+                $sample = mb_strtolower(trim($q));
+                if ($lower === $sample || str_contains($lower, $sample) || str_contains($sample, $lower)) {
                     return "Panduan Intent [{$tmpl['intent']}] ({$tmpl['title']}): {$tmpl['response_guidance']}";
                 }
             }
         }
+
         return null;
     }
 }

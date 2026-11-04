@@ -101,7 +101,7 @@ System start date dan tutup bulan pertama ditentukan menjelang go-live.
 **RESOLVED**: 1 workshop. `branch_id` disiapkan, tidak tampil di UI MVP-1. Auto-set branch default.
 
 ## 22. Tech Stack & Hosting
-**RESOLVED**: Laravel 11 + React/Vite + Eloquent + PostgreSQL + Redis. Hosting: **VPS** (Hostinger KVM atau alternatif: BiznetGio, IDCloudHost). Spesifikasi awal: ~2 vCPU, 4–8 GB RAM. PostgreSQL dan Redis satu VPS dulu, pisah jika perlu.
+**RESOLVED (keputusan awal):** Laravel 11 + React/Vite + Eloquent + PostgreSQL + Redis. Implementasi runtime saat ini sudah menggunakan **Laravel 13**; hosting target tetap **VPS** (Hostinger KVM atau alternatif: BiznetGio, IDCloudHost). Spesifikasi awal: ~2 vCPU, 4–8 GB RAM. PostgreSQL dan Redis satu VPS dulu, pisah jika perlu.
 
 ## 23. Quotation
 **RESOLVED**: **Tidak masuk MVP-1**. Customer PO langsung menjadi dasar pekerjaan.

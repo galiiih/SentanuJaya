@@ -66,7 +66,7 @@ Seluruh keputusan telah dijawab Owner. Detail lengkap di `OPEN_DECISIONS_RESOLVE
 7. `#7 Quotation`: Tidak masuk MVP-1.
 8. `#8 Abandoned Goods`: Ditunda, belum prioritas MVP-1.
 9. `#9 Subkontrak`: Ada (chrome, repair, coating). Tabel sederhana disiapkan, bukan contract management penuh.
-10. `#10 Tech Stack`: Laravel 11 + React/Vite + Eloquent + PostgreSQL + Redis. Hosting VPS (Hostinger KVM / BiznetGio / IDCloudHost).
+10. `#10 Tech Stack`: Keputusan awal Laravel 11 + React/Vite + Eloquent + PostgreSQL + Redis. Runtime saat ini menggunakan Laravel 13; hosting target VPS (Hostinger KVM / BiznetGio / IDCloudHost).
 11. `#11 Status PKP`: Sudah PKP, pakai Coretax DJP. Tanggal PKP dikonfirmasi kemudian.
 12. `#12 Credit Limit`: Disiapkan di schema, enforcement otomatis ditunda.
 13. `#13 Transfer antar Branch`: Tidak perlu MVP-1, satu workshop.

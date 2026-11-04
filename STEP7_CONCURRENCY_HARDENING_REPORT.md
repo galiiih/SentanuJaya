@@ -1,5 +1,9 @@
 # STEP 7: PostgreSQL Payment Concurrency Hardening & Verification Report
 
+> **Catatan status:** laporan ini adalah snapshot verifikasi concurrency pada
+> 2026-10-17. Angka full suite di bawah adalah angka historis; hasil terbaru
+> tercatat di `docs/TEST_RESULTS.md`.
+
 **Date:** October 17, 2026  
 **Repository:** `https://github.com/galiiih/SentanuJaya` (Branch: `master`)  
 **Target Test File:** `backend/tests/Feature/Api/V1/PostgresPaymentConcurrencyTest.php`

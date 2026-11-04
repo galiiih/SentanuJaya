@@ -4,7 +4,7 @@
 ## 1. Kontrak teknis
 
 - PostgreSQL 16 menjadi sumber kebenaran transaksi.
-- Laravel 11 memakai Eloquent dan Laravel Migrations.
+- Laravel 13 memakai Eloquent dan Laravel Migrations.
 - Tidak ada Prisma schema atau migration manual di production.
 - Semua transaksi operasional menyimpan `company_id`, `branch_id`, `created_at`, `created_by`, `updated_at`, `updated_by`.
 - Dokumen memiliki `status`, `posted_at`, `posted_by`, `cancelled_at`, `cancel_reason`.

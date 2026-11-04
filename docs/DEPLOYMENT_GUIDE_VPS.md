@@ -36,7 +36,7 @@ sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE sentanu_erp TO sentan
 
 ---
 
-## ⚙️ Langkah 3: Deployment Backend Laravel 11
+## ⚙️ Langkah 3: Deployment Backend Laravel 13
 
 ```bash
 cd /var/www

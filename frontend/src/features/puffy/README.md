@@ -39,7 +39,11 @@ VITE_PUFFY_MOCK=true npm run dev
 Memakai respons SSE palsu (`mock.ts`) dengan **data contoh** yang melewati parser yang sama dengan backend asli.
 Tanpa variabel itu dan tanpa endpoint di server, Puffy menampilkan pesan error dengan tombol "Coba lagi".
 
-## Kontrak backend (belum ada di repo ini)
+## Kontrak backend (tersedia)
+
+Kontrak berikut sudah diimplementasikan oleh Laravel di `backend/routes/api.php`
+dan dilindungi session authentication. Ollama hanya dipanggil oleh backend Laravel,
+bukan oleh browser.
 
 Autentikasi memakai cookie sesi yang sama dengan Axios (`credentials: "include"`), jadi rute Puffy cukup berada di
 grup `Route::middleware([StartSession::class, 'auth'])` yang sudah ada.
@@ -73,3 +77,6 @@ event: error        data: {"message":"…"}
 
 - Mikrofon memakai Web Speech API bawaan browser. Di Chrome audio diproses server browser, jadi **tidak lokal**.
 - Ollama jangan diakses dari browser. Hanya Laravel yang boleh memanggilnya.
+- Provider default: Ollama lokal `http://127.0.0.1:11434`, model `qwen3.5:9b`.
+- Pertanyaan “Hari ini kirim berapa?” memakai fast-path database berdasarkan
+  `delivery_date`, sehingga tidak menunggu proses tool-calling model.
