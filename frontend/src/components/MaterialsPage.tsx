@@ -370,9 +370,9 @@ export function MaterialsPage() {
                         <td style={{ padding: '0.75rem' }}><StatusBadge status={m.quantity_in > 0 ? 'success' : 'warning'} label={m.movement_type} /></td>
                         <td className="p-3 font-medium">{m.material?.name || m.material_id}</td>
                         <td className="p-3">{m.warehouse?.name || '-'}</td>
-                        <td className="p-3 text-success font-semibold">{m.quantity_in > 0 ? `+${Number(m.quantity_in).toLocaleString('id-ID', { maximumFractionDigits: 0 })}` : '-'}</td>
-                        <td className="p-3 text-danger font-semibold">{m.quantity_out > 0 ? `-${Number(m.quantity_out).toLocaleString('id-ID', { maximumFractionDigits: 0 })}` : '-'}</td>
-                        <td className="p-3 font-bold">{Number(m.balance_qty_after || 0).toLocaleString('id-ID', { maximumFractionDigits: 0 })} {m.material?.unit}</td>
+                        <td className="p-3 text-success font-semibold">{m.quantity_in > 0 ? `+${Number(m.quantity_in).toLocaleString('en-US', { maximumFractionDigits: 3 })}` : '-'}</td>
+                        <td className="p-3 text-danger font-semibold">{m.quantity_out > 0 ? `-${Number(m.quantity_out).toLocaleString('en-US', { maximumFractionDigits: 3 })}` : '-'}</td>
+                        <td className="p-3 font-bold">{Number(m.balance_qty_after || 0).toLocaleString('en-US', { maximumFractionDigits: 3 })} {m.material?.unit}</td>
                         <td className="p-3 text-muted-foreground text-xs">{m.notes}</td>
                       </tr>
                     ))}
