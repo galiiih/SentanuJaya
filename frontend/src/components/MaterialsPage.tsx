@@ -493,7 +493,7 @@ export function MaterialsPage() {
                       </FormField>
 
                       <FormField label={`Kuantitas (${unitLabel})`} required>
-                        <Input type="number" step="1" min="1" placeholder="Contoh: 10" value={line.quantity_received === 0 ? '' : line.quantity_received} onChange={(e) => {
+                        <Input type="number" step="0.001" min="0.001" placeholder="Contoh: 10 atau 2,5" value={line.quantity_received === 0 ? '' : line.quantity_received} onChange={(e) => {
                           const newLines = [...receiptForm.lines];
                           newLines[idx].quantity_received = e.target.value === '' ? 0 : Number(e.target.value);
                           setReceiptForm({ ...receiptForm, lines: newLines });
