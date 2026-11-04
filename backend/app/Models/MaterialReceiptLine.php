@@ -19,6 +19,7 @@ class MaterialReceiptLine extends Model
         'uom_id',
         'unit_cost',
         'subtotal',
+        'notes',
     ];
 
     protected $casts = [
