@@ -6,11 +6,17 @@ use App\Http\Controllers\Api\BaseApiController;
 use App\Models\Stock;
 use App\Models\StockMovement;
 use App\Models\Material;
+use App\Services\InventoryService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Validator;
 
 class StockController extends BaseApiController
 {
+    public function __construct(private InventoryService $inventoryService)
+    {
+    }
+
     public function index(Request $request): JsonResponse
     {
         abort_unless($request->user()?->hasPermission('master.view'), 403, 'Forbidden');
@@ -61,5 +67,28 @@ class StockController extends BaseApiController
         })->filter(fn ($item) => $item['is_low'])->values();
 
         return $this->sendResponse($materials, 'Low stock alert retrieved successfully.');
+    }
+
+    public function adjust(Request $request): JsonResponse
+    {
+        abort_unless($request->user()?->hasPermission('master.manage'), 403, 'Forbidden');
+        $validator = Validator::make($request->all(), [
+            'warehouse_id' => 'required|uuid|exists:warehouses,id',
+            'material_id' => 'required|uuid|exists:materials,id',
+            'type' => 'required|in:IN,OUT',
+            'quantity' => 'required|numeric|min:0.001',
+            'reason' => 'required|string|max:255',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendError('Validation Error.', $validator->errors(), 422);
+        }
+
+        try {
+            $movement = $this->inventoryService->adjustStock($validator->validated(), $request->user()->id);
+            return $this->sendResponse($movement, 'Stock adjusted successfully.', 201);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return $this->sendError('Validation Error.', $e->errors(), 422);
+        }
     }
 }

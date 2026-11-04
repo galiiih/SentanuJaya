@@ -126,6 +126,7 @@ Route::prefix('v1')->group(function () {
                 Route::post('material-usages/{materialUsage}/cancel', [MaterialUsageController::class, 'cancel']);
                 Route::apiResource('material-usages', MaterialUsageController::class);
                 Route::get('stocks', [StockController::class, 'index']);
+                Route::post('stocks/adjust', [StockController::class, 'adjust']);
                 Route::get('stock-movements', [StockController::class, 'movements']);
                 Route::get('stocks/low-stock', [StockController::class, 'lowStock']);
 

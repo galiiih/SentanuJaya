@@ -466,3 +466,105 @@ export const nanuKnowledgeApi = {
   reviewCandidate: (id: string, payload: { status: 'approved' | 'rejected'; reviewer_notes?: string }) => data<NanuKnowledgeCandidateRecord>(`/nanu/candidates/${id}/review`, payload),
   listOfficial: (params?: Record<string, string | number>) => list<NanuKnowledgeBaseRecord>('/nanu/official', params),
 };
+
+export type MaterialReceiptLine = {
+  id?: string;
+  material_id: string;
+  quantity?: number;
+  quantity_received: number;
+  uom_id?: string;
+  unit_cost: number;
+  subtotal?: number;
+  notes?: string;
+  material?: Material;
+};
+
+export type MaterialReceiptRecord = {
+  id: string;
+  receipt_number: string;
+  warehouse_id: string;
+  supplier_id?: string;
+  receipt_date: string;
+  notes?: string;
+  status: 'DRAFT' | 'POSTED' | 'CANCELLED';
+  created_at: string;
+  warehouse?: { id: string; name: string };
+  supplier?: { id: string; name: string };
+  lines?: MaterialReceiptLine[];
+};
+
+export type MaterialUsageLine = {
+  id?: string;
+  material_id: string;
+  quantity: number;
+  notes?: string;
+  material?: Material;
+};
+
+export type MaterialUsageRecord = {
+  id: string;
+  usage_number: string;
+  warehouse_id: string;
+  usage_date: string;
+  notes?: string;
+  status: 'DRAFT' | 'POSTED' | 'CANCELLED';
+  created_at: string;
+  warehouse?: { id: string; name: string };
+  lines?: MaterialUsageLine[];
+};
+
+export type StockMovementRecord = {
+  id: string;
+  warehouse_id: string;
+  material_id: string;
+  movement_type: string;
+  reference_type?: string;
+  reference_id?: string;
+  quantity_in: number;
+  quantity_out: number;
+  unit_cost: number;
+  value_in: number;
+  value_out: number;
+  balance_qty_after: number;
+  balance_value_after: number;
+  movement_date: string;
+  notes?: string;
+  warehouse?: { id: string; name: string };
+  material?: { id: string; sku: string; name: string; unit: string };
+  creator?: { id: string; name: string };
+};
+
+export const materialReceiptApi = {
+  list: (params?: Record<string, string | number>) => list<MaterialReceiptRecord>('/material-receipts', params),
+  get: (id: string) => api.get<ApiResponse<MaterialReceiptRecord>>(`/material-receipts/${id}`).then((r) => r.data.data),
+  create: (payload: any) => data<MaterialReceiptRecord>('/material-receipts', payload),
+  post: (id: string) => data<MaterialReceiptRecord>(`/material-receipts/${id}/post`),
+  cancel: (id: string) => data<MaterialReceiptRecord>(`/material-receipts/${id}/cancel`),
+};
+
+export const materialUsageApi = {
+  list: (params?: Record<string, string | number>) => list<MaterialUsageRecord>('/material-usages', params),
+  get: (id: string) => api.get<ApiResponse<MaterialUsageRecord>>(`/material-usages/${id}`).then((r) => r.data.data),
+  create: (payload: any) => data<MaterialUsageRecord>('/material-usages', payload),
+  post: (id: string) => data<MaterialUsageRecord>(`/material-usages/${id}/post`),
+  cancel: (id: string) => data<MaterialUsageRecord>(`/material-usages/${id}/cancel`),
+};
+
+export const stockApi = {
+  list: (params?: Record<string, string | number>) => list<any>('/stocks', params),
+  movements: (params?: Record<string, string | number>) => list<StockMovementRecord>('/stock-movements', params),
+  lowStock: () => api.get<ApiResponse<any>>('/stocks/low-stock').then((r) => r.data.data),
+  adjust: (payload: { warehouse_id: string; material_id: string; type: 'IN' | 'OUT'; quantity: number; reason: string }) => data<StockMovementRecord>('/stocks/adjust', payload),
+};
+
+export const warehouseApi = {
+  list: () => list<any>('/warehouses'),
+};
+
+export const supplierApi = {
+  list: () => list<any>('/suppliers'),
+};
+
+export const uomApi = {
+  list: () => list<any>('/uoms'),
+};

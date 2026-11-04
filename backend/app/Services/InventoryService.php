@@ -231,4 +231,78 @@ class InventoryService
             return $locked->fresh(['lines.material', 'warehouse']);
         });
     }
+
+    public function adjustStock(array $data, string $actorId): StockMovement
+    {
+        return DB::transaction(function () use ($data, $actorId) {
+            $warehouseId = $data['warehouse_id'];
+            $materialId = $data['material_id'];
+            $type = $data['type']; // IN or OUT
+            $qty = (float) $data['quantity'];
+            $reason = $data['reason'];
+
+            $stock = Stock::query()
+                ->where('warehouse_id', $warehouseId)
+                ->where('material_id', $materialId)
+                ->lockForUpdate()
+                ->first();
+
+            if (!$stock) {
+                $stock = Stock::create([
+                    'warehouse_id' => $warehouseId,
+                    'material_id' => $materialId,
+                    'quantity_on_hand' => 0,
+                    'average_unit_cost' => 0,
+                    'total_value' => 0,
+                ]);
+                $stock = Stock::query()->lockForUpdate()->findOrFail($stock->id);
+            }
+
+            $currentQty = (float) $stock->quantity_on_hand;
+            $avgCost = (float) $stock->average_unit_cost;
+            $currentVal = (float) $stock->total_value;
+
+            if ($type === 'OUT' && $currentQty < $qty) {
+                throw ValidationException::withMessages(['quantity' => ["Insufficient stock for adjustment OUT. Available: {$currentQty}"]]);
+            }
+
+            $qtyIn = $type === 'IN' ? $qty : 0;
+            $qtyOut = $type === 'OUT' ? $qty : 0;
+            $valIn = $qtyIn * $avgCost;
+            $valOut = $qtyOut * $avgCost;
+
+            $nextQty = $currentQty + $qtyIn - $qtyOut;
+            $nextVal = max(0, $currentVal + $valIn - $valOut);
+            $nextAvgCost = $nextQty > 0 ? $nextVal / $nextQty : $avgCost;
+
+            $movement = StockMovement::create([
+                'warehouse_id' => $warehouseId,
+                'material_id' => $materialId,
+                'movement_type' => $type === 'IN' ? 'ADJUSTMENT_IN' : 'ADJUSTMENT_OUT',
+                'reference_type' => 'STOCK_ADJUSTMENT',
+                'reference_id' => null,
+                'quantity_in' => $qtyIn,
+                'quantity_out' => $qtyOut,
+                'unit_cost' => $avgCost,
+                'value_in' => $valIn,
+                'value_out' => $valOut,
+                'balance_qty_after' => $nextQty,
+                'balance_value_after' => $nextVal,
+                'movement_date' => now()->toDateString(),
+                'created_by' => $actorId,
+                'notes' => "Stock Adjustment ({$type}): {$reason}",
+            ]);
+
+            $stock->update([
+                'quantity_on_hand' => $nextQty,
+                'average_unit_cost' => $nextAvgCost,
+                'total_value' => $nextVal,
+                'last_movement_at' => now(),
+            ]);
+
+            $this->auditLogger->log($actorId, 'STOCK_ADJUSTMENT', 'STOCK', $stock->id, ['quantity_on_hand' => $currentQty], ['quantity_on_hand' => $nextQty], $reason);
+
+            return $movement->load(['warehouse', 'material', 'creator']);
+        });
+    }
 }

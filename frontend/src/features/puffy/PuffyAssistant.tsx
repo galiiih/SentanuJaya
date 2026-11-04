@@ -18,7 +18,7 @@ import { waitFor } from "./utils";
 import "./puffy.css";
 import "./puffy-menu.css";
 
-const SIZE = { open: 64, point: 56, closed: 60 } as const;
+const SIZE = { open: 96, point: 88, closed: 92 } as const;
 const MARGIN = 20;
 const PANEL = { width: 360, maxHeight: 560, mobileHeight: 416, bottom: 88, mobileBreak: 820, headerHeight: 64 } as const;
 
@@ -247,7 +247,7 @@ export function PuffyAssistant({ baseUrl = PUFFY_BASE_URL, idleAfterMs = 9000, v
   const panelH = mobile ? Math.min(PANEL.mobileHeight, vp.h * 0.55) : Math.min(PANEL.maxHeight, vp.h - 168);
   const panelLeft = vp.w - (mobile ? 12 : MARGIN) - panelW;
   const panelTop = vp.h - PANEL.bottom - panelH;
-  const home = { x: Math.max(4, panelLeft - 22), y: Math.max(PANEL.headerHeight + 4, panelTop - 46) };
+  const home = { x: Math.max(4, panelLeft - 12), y: Math.max(PANEL.headerHeight + 4, panelTop - 56) };
 
   const [dragOffset, setDragOffset] = useState<{ x: number; y: number } | null>(null);
   const [dragStart, setDragStart] = useState<{ x: number; y: number; posX: number; posY: number } | null>(null);

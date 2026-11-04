@@ -9,6 +9,7 @@ use App\Models\Customer;
 use App\Models\CustomerItem;
 use App\Models\Uom;
 use App\Models\User;
+use App\Models\Warehouse;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use LogicException;
@@ -39,15 +40,26 @@ class LocalDevelopmentSeeder extends Seeder
             'uom_id' => $uom->id,
         ]);
         CustodyLocation::updateOrCreate(['branch_id' => $branch->id, 'code' => 'RAW-LOCAL'], ['name' => 'Area Raw Local']);
+        Warehouse::firstOrCreate(
+            ['code' => 'WH-001'],
+            [
+                'branch_id' => $branch->id,
+                'name' => 'Gudang Utama Sentanu Jaya',
+                'is_active' => true,
+            ]
+        );
 
         foreach (['ADMIN', 'OWNER', 'STAFF'] as $role) {
-            User::updateOrCreate(['username' => strtolower($role) . '.local'], [
-                'email' => strtolower($role) . '@sentanu.local',
-                'full_name' => $role . ' Local',
-                'password' => Hash::make($password),
-                'role' => $role,
-                'is_active' => true,
-            ]);
+            User::updateOrCreate(
+                ['email' => strtolower($role) . '@sentanu.local'],
+                [
+                    'full_name' => ucfirst(strtolower($role)) . ' Local',
+                    'username' => strtolower($role) . '.local',
+                    'password' => Hash::make('password123'),
+                    'role' => $role,
+                    'is_active' => true,
+                ]
+            );
         }
     }
 }

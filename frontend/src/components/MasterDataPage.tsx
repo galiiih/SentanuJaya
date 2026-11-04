@@ -83,6 +83,14 @@ const masterApi = {
     update: (id: string, payload: any) => axios.patch(`/api/v1/materials/${id}`, payload).then(r => r.data.data),
     remove: (id: string) => axios.delete(`/api/v1/materials/${id}`).then(r => r.data.data),
   },
+  warehouses: {
+    icon: Building2,
+    label: 'Gudang',
+    list: () => axios.get('/api/v1/warehouses', { params: { per_page: 200 } }).then(r => r.data.data.data || r.data.data),
+    create: (payload: any) => axios.post('/api/v1/warehouses', payload).then(r => r.data.data),
+    update: (id: string, payload: any) => axios.patch(`/api/v1/warehouses/${id}`, payload).then(r => r.data.data),
+    remove: (id: string) => axios.delete(`/api/v1/warehouses/${id}`).then(r => r.data.data),
+  },
   suppliers: {
     icon: BookOpen,
     label: 'Supplier',
@@ -108,6 +116,7 @@ export function MasterDataPage() {
 
   // Dropdown options for relations
   const [companies, setCompanies] = useState<any[]>([]);
+  const [branches, setBranches] = useState<any[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [customerItems, setCustomerItems] = useState<CustomerItem[]>([]);
   const [priceLists, setPriceLists] = useState<any[]>([]);
@@ -126,13 +135,15 @@ export function MasterDataPage() {
 
   const loadReferences = async () => {
     try {
-      const [compRes, custRes, itemRes, plRes] = await Promise.all([
+      const [compRes, branchRes, custRes, itemRes, plRes] = await Promise.all([
         axios.get('/api/v1/companies', { params: { per_page: 100 } }).catch(() => ({ data: { data: [] } })),
+        axios.get('/api/v1/branches', { params: { per_page: 100 } }).catch(() => ({ data: { data: [] } })),
         axios.get('/api/v1/customers', { params: { per_page: 200 } }).catch(() => ({ data: { data: [] } })),
         axios.get('/api/v1/customer-items', { params: { per_page: 200 } }).catch(() => ({ data: { data: [] } })),
         axios.get('/api/v1/price-lists', { params: { per_page: 200 } }).catch(() => ({ data: { data: [] } })),
       ]);
       setCompanies(compRes.data.data.data || compRes.data.data || compRes.data || []);
+      setBranches(branchRes.data.data.data || branchRes.data.data || branchRes.data || []);
       setCustomers(custRes.data.data.data || custRes.data.data || []);
       setCustomerItems(itemRes.data.data.data || itemRes.data.data || []);
       setPriceLists(plRes.data.data.data || plRes.data.data || []);
@@ -192,6 +203,8 @@ export function MasterDataPage() {
       setFormData({ code: '', name: '', category: 'GENERAL', decimal_places: 0 });
     } else if (tab === 'materials') {
       setFormData({ code: '', name: '', category: 'GENERAL', unit: 'LITER', minimum_stock: 0, min_stock: 0 });
+    } else if (tab === 'warehouses') {
+      setFormData({ branch_id: branches[0]?.id || '', code: '', name: '', is_active: true });
     } else if (tab === 'suppliers') {
       setFormData({ code: '', name: '', address: '', phone: '', email: '' });
     }
@@ -318,7 +331,15 @@ export function MasterDataPage() {
           { id: 'code', header: 'Kode SKU', cell: (row: any) => row.code || '-' },
           { id: 'name', header: 'Nama Material / Cat', cell: (row: any) => row.name || '-' },
           { id: 'unit', header: 'Satuan', cell: (row: any) => row.unit || '-' },
-          { id: 'min_stock', header: 'Minimum Stok', cell: (row: any) => row.min_stock ?? '-' },
+          { id: 'min_stock', header: 'Minimum Stok', cell: (row: any) => row.minimum_stock ?? row.min_stock ?? '-' },
+          ...actionColumn
+        ];
+      case 'warehouses':
+        return [
+          { id: 'code', header: 'Kode Gudang', cell: (row: any) => row.code || '-' },
+          { id: 'name', header: 'Nama Gudang', cell: (row: any) => row.name || '-' },
+          { id: 'branch', header: 'Cabang', cell: (row: any) => row.branch?.name || '-' },
+          { id: 'is_active', header: 'Status', cell: (row: any) => row.is_active ? 'Aktif' : 'Nonaktif' },
           ...actionColumn
         ];
       case 'suppliers':
@@ -558,6 +579,30 @@ export function MasterDataPage() {
                 </FormField>
                 <FormField label="Minimum Stok">
                   <Input type="number" value={formData.minimum_stock ?? formData.min_stock ?? 0} onChange={e => setFormData({ ...formData, minimum_stock: Number(e.target.value), min_stock: Number(e.target.value) })} placeholder="5" />
+                </FormField>
+              </>
+            )}
+
+            {/* Warehouses */}
+            {tab === 'warehouses' && (
+              <>
+                <FormField label="Cabang" required>
+                  <Select value={formData.branch_id || ''} onChange={e => setFormData({ ...formData, branch_id: e.target.value })} required>
+                    <option value="">-- Pilih Cabang --</option>
+                    {branches.map(b => <option key={b.id} value={b.id}>{b.code} — {b.name}</option>)}
+                  </Select>
+                </FormField>
+                <FormField label="Kode Gudang" required>
+                  <Input value={formData.code || ''} onChange={e => setFormData({ ...formData, code: e.target.value })} placeholder="WH-001" required />
+                </FormField>
+                <FormField label="Nama Gudang" required>
+                  <Input value={formData.name || ''} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="Gudang Utama Sentanu Jaya" required />
+                </FormField>
+                <FormField label="Status Aktif">
+                  <Select value={formData.is_active !== false ? 'true' : 'false'} onChange={e => setFormData({ ...formData, is_active: e.target.value === 'true' })}>
+                    <option value="true">Aktif</option>
+                    <option value="false">Nonaktif</option>
+                  </Select>
                 </FormField>
               </>
             )}

@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
 import {
   Bell,
   BookOpen,
@@ -32,6 +31,7 @@ import { ReportsPage } from './components/ReportsPage';
 import { MasterDataPage } from './components/MasterDataPage';
 import { CustomerPoPage } from './components/CustomerPoPage';
 import { DeliveryPage } from './components/DeliveryPage';
+import { MaterialsPage } from './components/MaterialsPage';
 import { PaymentPage } from './components/PaymentPage';
 import { InvoicingPage } from './components/InvoicingPage';
 import TemplateManagementPage from './pages/TemplateManagementPage';
@@ -39,9 +39,6 @@ import UsersManagementPage from './pages/UsersManagementPage';
 import { KnowledgeManagementPage } from './components/KnowledgeManagementPage';
 import { PuffyAssistant } from './features/puffy';
 import './features/puffy/puffy.css';
-import {
-  type Material,
-} from './services/api';
 import {
   apiError,
   custodyApi,
@@ -438,43 +435,9 @@ function CustodyPage() {
     {editorOpen && <div className="modal-backdrop" role="presentation"><section className="modal" role="dialog" aria-modal="true" aria-labelledby="stb-editor-title"><div className="modal__header"><h2 id="stb-editor-title">Draft Surat Terima Barang</h2><Button variant="ghost" onClick={() => setEditorOpen(false)}>Tutup</Button></div><div className="confirmation-dialog__body"><div className="invoice-layout__form"><div className="dashboard-grid"><FormField label="Perusahaan" htmlFor="stb-company" required><Select id="stb-company" value={draft.company_id} onChange={(event) => { const companyId = event.target.value; const branch = master.branches.find((item) => item.company_id === companyId); setDraft((value) => ({ ...value, company_id: companyId, branch_id: branch?.id ?? '', custody_location_id: master.locations.find((item) => item.branch_id === branch?.id)?.id ?? '' })); }}><option value="">Pilih perusahaan</option>{master.companies.map((item) => <option key={item.id} value={item.id}>{item.code} — {item.name}</option>)}</Select></FormField><FormField label="Cabang" htmlFor="stb-branch" required><Select id="stb-branch" value={draft.branch_id} onChange={(event) => { const branchId = event.target.value; setDraft((value) => ({ ...value, branch_id: branchId, custody_location_id: master.locations.find((item) => item.branch_id === branchId)?.id ?? '' })); }}><option value="">Pilih cabang</option>{master.branches.filter((item) => item.company_id === draft.company_id).map((item) => <option key={item.id} value={item.id}>{item.code} — {item.name}</option>)}</Select></FormField></div><FormField label="Customer" htmlFor="stb-customer" required><Select id="stb-customer" value={draft.customer_id} onChange={(event) => setDraft((value) => ({ ...value, customer_id: event.target.value, customer_item_id: '' }))}><option value="">Pilih customer</option>{master.customers.map((item) => <option key={item.id} value={item.id}>{item.code} — {item.name}</option>)}</Select></FormField><div className="dashboard-grid"><FormField label="Tanggal terima" htmlFor="stb-date" required><Input id="stb-date" type="date" value={draft.received_date} onChange={(event) => setDraft((value) => ({ ...value, received_date: event.target.value }))} /></FormField><FormField label="Diterima dari" htmlFor="stb-delivered-by"><Input id="stb-delivered-by" value={draft.delivered_by_name} onChange={(event) => setDraft((value) => ({ ...value, delivered_by_name: event.target.value }))} /></FormField></div><div className="dashboard-grid"><FormField label="Barang customer" htmlFor="stb-item" required><Select id="stb-item" value={draft.customer_item_id} onChange={(event) => setDraft((value) => ({ ...value, customer_item_id: event.target.value }))}><option value="">Pilih barang</option>{customerItems.map((item) => <option key={item.id} value={item.id}>{item.code} — {item.name}</option>)}</Select></FormField><FormField label="Lokasi custody" htmlFor="stb-location" required><Select id="stb-location" value={draft.custody_location_id} onChange={(event) => setDraft((value) => ({ ...value, custody_location_id: event.target.value }))}><option value="">Pilih lokasi</option>{branchLocations.map((item) => <option key={item.id} value={item.id}>{item.code} — {item.name}</option>)}</Select></FormField><FormField label="Jumlah" htmlFor="stb-quantity" required><Input id="stb-quantity" min="0.001" step="0.001" type="number" value={draft.quantity_received} onChange={(event) => setDraft((value) => ({ ...value, quantity_received: event.target.value }))} /></FormField><FormField label="Kondisi" htmlFor="stb-condition"><Select id="stb-condition" value={draft.condition} onChange={(event) => setDraft((value) => ({ ...value, condition: event.target.value as Condition }))}>{(['GOOD', 'DENT', 'CRACK', 'OLD_PAINT', 'OTHER'] as Condition[]).map((condition) => <option key={condition} value={condition}>{condition}</option>)}</Select></FormField></div><FormField label="Catatan" htmlFor="stb-notes"><textarea id="stb-notes" className="input textarea" value={draft.notes} onChange={(event) => setDraft((value) => ({ ...value, notes: event.target.value }))} /></FormField></div><div className="confirmation-dialog__actions"><Button variant="secondary" onClick={() => setEditorOpen(false)}>Batal</Button><Button onClick={() => void saveDraft()} loading={saving}>Simpan draft</Button></div></div></section></div>}
   </>;
 }
-const materialColumns: DataTableColumn<Material>[] = [
-  { id: 'sku', header: 'SKU', cell: (item) => <span className="font-mono">{item.sku}</span>, sortValue: (item) => item.sku },
-  { id: 'name', header: 'Nama material', cell: (item) => <><strong>{item.name}</strong><span className="table-secondary">{item.category}</span></>, sortValue: (item) => item.name },
-  { id: 'stock', header: 'Stok aktual', cell: (item) => `${item.quantity_on_hand ?? 0} ${item.unit}`, sortValue: (item) => item.quantity_on_hand ?? 0, align: 'right' },
-  { id: 'minimum', header: 'Minimum', cell: (item) => `${item.minimum_stock ?? 0} ${item.unit}`, sortValue: (item) => item.minimum_stock ?? 0, align: 'right' },
-  { id: 'status', header: 'Status', cell: (item) => {
-    const stock = item.quantity_on_hand ?? 0;
-    const min = item.minimum_stock ?? 0;
-    return <StatusBadge status={stock <= min ? 'CRITICAL' : 'AMAN'} label={stock <= min ? 'Stok kritis' : 'Aman'} />;
-  }, sortValue: (item) => (item.quantity_on_hand ?? 0) - (item.minimum_stock ?? 0) },
-];
 
-function MaterialsPage() {
-  const { t } = useLanguage();
-  const [materials, setMaterials] = useState<Material[]>([]);
 
-  useEffect(() => {
-    axios.get('/api/v1/materials', { params: { per_page: 200 } })
-      .then((res: any) => {
-        const raw = res.data.data.data || res.data.data || [];
-        const mapped = raw.map((m: any) => ({
-          id: m.id,
-          sku: m.code || m.sku || '-',
-          name: m.name || '-',
-          category: m.category || 'GENERAL',
-          quantity_on_hand: m.quantity_on_hand ?? 0,
-          unit: m.unit || 'PCS',
-          minimum_stock: m.minimum_stock ?? m.min_stock ?? 0,
-          avg_cost: m.avg_cost ?? 0,
-        }));
-        setMaterials(mapped);
-      })
-      .catch((err: any) => console.error('Failed to load materials', err));
-  }, []);
 
-  return <><PageHeader title={t.pages.materialsTitle} description={t.pages.materialsDesc} /><Card data-puffy="material-stock-summary"><DataTable columns={materialColumns} rows={materials} searchText={(item) => `${item.sku} ${item.name} ${item.category}`} emptyTitle="Belum ada material" emptyDescription="Data material akan muncul setelah master material tersedia." /></Card></>;
-}
 
 function LoginPage() {
   const { isAuthenticated, login } = useAuth();

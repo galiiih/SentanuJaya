@@ -21,12 +21,12 @@ html.puffy-ready .app-content { transition: padding-right .6s var(--puffy-ease);
 
 /* ---------- Panel chat ---------- */
 .puffy-panel {
-  position: fixed; z-index: 80; right: 1.25rem; bottom: 5.5rem;
+  position: fixed; z-index: 80; right: 1.25rem; bottom: 5rem;
   display: flex; flex-direction: column;
-  width: 22.5rem; max-width: calc(100vw - 1.5rem); height: min(35rem, calc(100dvh - 10.5rem));
+  width: 22.5rem; max-width: calc(100vw - 1.5rem); height: min(35rem, calc(100dvh - 10rem));
   border: 1px solid var(--color-border); border-radius: var(--radius-lg);
   background: var(--color-surface); color: var(--color-text); box-shadow: var(--shadow-md);
-  transform-origin: calc(100% - 30px) calc(100% + 38px); /* menyusut ke arah balon di pojok kanan bawah */
+  transform-origin: 0rem calc(100% + 50px); /* menyusut ke arah pojok kiri bawah panel / maskot */
   transition: transform .6s var(--puffy-ease), opacity .45s ease, visibility 0s;
 }
 .puffy-panel[data-open="false"] {

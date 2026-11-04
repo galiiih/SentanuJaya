@@ -33,11 +33,34 @@ class MaterialReceiptController extends BaseApiController
     public function store(Request $request): JsonResponse
     {
         abort_unless($request->user()?->hasPermission('master.manage'), 403, 'Forbidden');
-        $validator = Validator::make($request->all(), [
+
+        $input = $request->all();
+
+        if (empty($input['company_id'])) {
+            $input['company_id'] = \App\Models\Company::first()?->id;
+        }
+        if (empty($input['receipt_number'])) {
+            $input['receipt_number'] = 'MR-' . date('Ymd') . '-' . strtoupper(\Illuminate\Support\Str::random(4));
+        }
+
+        if (!empty($input['lines']) && is_array($input['lines'])) {
+            foreach ($input['lines'] as &$line) {
+                if (!isset($line['quantity']) && isset($line['quantity_received'])) {
+                    $line['quantity'] = $line['quantity_received'];
+                }
+                if (empty($line['uom_id']) && !empty($line['material_id'])) {
+                    $mat = \App\Models\Material::find($line['material_id']);
+                    $line['uom_id'] = $mat?->stock_uom_id ?? $mat?->purchase_uom_id ?? \App\Models\Uom::first()?->id;
+                }
+            }
+            unset($line);
+        }
+
+        $validator = Validator::make($input, [
             'company_id' => 'required|uuid|exists:companies,id',
             'warehouse_id' => 'required|uuid|exists:warehouses,id',
             'receipt_number' => 'required|string|max:50|unique:material_receipts,receipt_number',
-            'supplier_id' => 'required|uuid|exists:suppliers,id',
+            'supplier_id' => 'nullable|uuid|exists:suppliers,id',
             'receipt_date' => 'required|date',
             'reference_no' => 'nullable|string|max:100',
             'notes' => 'nullable|string',
@@ -61,7 +84,7 @@ class MaterialReceiptController extends BaseApiController
                 'company_id' => $data['company_id'],
                 'warehouse_id' => $data['warehouse_id'],
                 'receipt_number' => $data['receipt_number'],
-                'supplier_id' => $data['supplier_id'],
+                'supplier_id' => $data['supplier_id'] ?? null,
                 'receipt_date' => $data['receipt_date'],
                 'reference_no' => $data['reference_no'] ?? null,
                 'status' => 'DRAFT',
