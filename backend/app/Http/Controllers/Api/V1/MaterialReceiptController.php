@@ -71,6 +71,7 @@ class MaterialReceiptController extends BaseApiController
             'lines.*.quantity' => 'required|numeric|min:0.001',
             'lines.*.uom_id' => 'required|uuid|exists:uoms,id',
             'lines.*.unit_cost' => 'required|numeric|min:0',
+            'lines.*.notes' => 'nullable|string|max:1000',
         ]);
 
         if ($validator->fails()) {
@@ -104,6 +105,7 @@ class MaterialReceiptController extends BaseApiController
                     'uom_id' => $line['uom_id'],
                     'unit_cost' => $cost,
                     'subtotal' => $qty * $cost,
+                    'notes' => $line['notes'] ?? null,
                 ]);
             }
 
