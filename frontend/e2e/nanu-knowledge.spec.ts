@@ -1,10 +1,10 @@
 import { test, expect, type Page } from '@playwright/test';
 
-async function loginAs(page: Page, email: string) {
+async function loginAs(page: Page, email: string, password = 'password123') {
   await page.context().clearCookies();
   await page.goto('/login');
   await page.locator('#login-email').fill(email);
-  await page.locator('#login-password').fill('password123');
+  await page.locator('#login-password').fill(password);
   await page.getByRole('button', { name: 'Login' }).click();
   await expect(page).toHaveURL(/\/dashboard$/, { timeout: 15000 });
 }
@@ -14,13 +14,13 @@ const ADMIN_EMAIL = 'admin@sentanu.local';
 
 test.describe('STAFF — Nanu Knowledge', () => {
   test('STAFF can see Puffy/Nanu chat panel exists', async ({ page }) => {
-    await loginAs(page, STAFF_EMAIL);
+    await loginAs(page, STAFF_EMAIL, 'password');
     const puffyPanel = page.locator('[class*="puffy-panel"], [aria-label*="Nanu"]').first();
     await expect(puffyPanel).toBeAttached({ timeout: 10000 });
   });
 
   test('STAFF cannot see Review Kandidat tab on /knowledge', async ({ page }) => {
-    await loginAs(page, STAFF_EMAIL);
+    await loginAs(page, STAFF_EMAIL, 'password');
     await page.goto('/knowledge');
     await page.waitForTimeout(2000);
     const reviewTab = page.locator('button:has-text("Review Kandidat")');
@@ -28,7 +28,7 @@ test.describe('STAFF — Nanu Knowledge', () => {
   });
 
   test('STAFF direct API review returns 401 or 403', async ({ page, request }) => {
-    await loginAs(page, STAFF_EMAIL);
+    await loginAs(page, STAFF_EMAIL, 'password');
     const cookies = await page.context().cookies();
     const xsrf = cookies.find(c => c.name === 'XSRF-TOKEN');
     const resp = await request.post('http://127.0.0.1:8000/api/v1/nanu/candidates/fake-id/review', {
