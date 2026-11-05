@@ -55,7 +55,7 @@ class LocalDevelopmentSeeder extends Seeder
                 [
                     'full_name' => ucfirst(strtolower($role)) . ' Local',
                     'username' => strtolower($role) . '.local',
-                    'password' => Hash::make('password123'),
+                    'password' => Hash::make($password),
                     'role' => $role,
                     'is_active' => true,
                 ]
