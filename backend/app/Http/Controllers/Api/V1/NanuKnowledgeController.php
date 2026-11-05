@@ -52,7 +52,7 @@ class NanuKnowledgeController extends BaseApiController
      */
     public function indexCandidates(Request $request): JsonResponse
     {
-        abort_unless(in_array($request->user()?->role, ['ADMIN', 'OWNER', 'DEV']), 403, 'Forbidden');
+        abort_unless(in_array($request->user()?->role, ['ADMIN', 'OWNER']), 403, 'Forbidden');
 
         $perPage = (int) $request->input('per_page', 20);
         $status = $request->input('status');
@@ -72,7 +72,7 @@ class NanuKnowledgeController extends BaseApiController
      */
     public function reviewCandidate(Request $request, string $id): JsonResponse
     {
-        abort_unless(in_array($request->user()?->role, ['ADMIN', 'OWNER', 'DEV']), 403, 'Forbidden');
+        abort_unless(in_array($request->user()?->role, ['ADMIN', 'OWNER']), 403, 'Forbidden');
 
         $validator = Validator::make($request->all(), [
             'status' => 'required|in:approved,rejected',
