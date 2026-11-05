@@ -831,6 +831,19 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await expect(overlay).not.toHaveClass(/sidebar-mobile-overlay--visible/);
   });
 
+  test('mobile navigation closes with Escape and restores page interaction', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await login(page);
+
+    const sidebar = page.locator('aside.sidebar');
+    await page.getByRole('button', { name: 'Buka navigasi' }).click();
+    await expect(sidebar).toHaveClass(/sidebar--mobile-open/);
+    await page.keyboard.press('Escape');
+    await expect(sidebar).not.toHaveClass(/sidebar--mobile-open/);
+    await expect(page.getByRole('button', { name: 'Buka navigasi' })).toHaveAttribute('aria-expanded', 'false');
+    await expect(page.getByRole('heading', { name: /Dashboard/i }).first()).toBeVisible();
+  });
+
   test('mobile navigation overlay closes the drawer without changing route', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await login(page);
