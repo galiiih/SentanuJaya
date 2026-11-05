@@ -213,6 +213,14 @@ function LanguageSwitcher() {
 function AuthenticatedLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  useEffect(() => {
+    if (!mobileNavOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMobileNavOpen(false);
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [mobileNavOpen]);
   const location = useLocation();
   const { user, logout } = useAuth();
   const { t } = useLanguage();
