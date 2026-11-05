@@ -177,49 +177,74 @@ class PuffyController extends BaseApiController
     {
         $validated = $request->validate([
             'action_type' => 'required|in:customer_po.activate',
-            'payload.po_id' => 'required|uuid|exists:customer_pos,id',
+            'payload.po_id' => 'required|uuid',
         ]);
 
         $user = $request->user();
         abort_unless($user?->hasPermission('po.activate'), 403, __('auth.unauthorized'));
 
-        $po = \App\Models\CustomerPo::with(['customer', 'lines'])->findOrFail($validated['payload']['po_id']);
-        if ($po->status !== \App\Models\CustomerPo::STATUS_DRAFT) {
-            return $this->sendError("Customer PO harus berstatus DRAFT. Status saat ini: {$po->status}.", [], 422);
+        try {
+            $result = \\Illuminate\\Support\\Facades\\DB::transaction(function () use ($validated, $user, $request) {
+                $po = \\App\\Models\\CustomerPo::with(['customer', 'lines'])
+                    ->whereKey($validated['payload']['po_id'])
+                    ->lockForUpdate()
+                    ->first();
+
+                if (! $po) {
+                    return ['error' => 'Customer PO tidak ditemukan.', 'code' => 404];
+                }
+                if ($po->status !== \\App\\Models\\CustomerPo::STATUS_DRAFT) {
+                    return ['error' => "Customer PO harus berstatus DRAFT. Status saat ini: {$po->status}.", 'code' => 422];
+                }
+                if ($po->lines->isEmpty()) {
+                    return ['error' => 'Customer PO tidak memiliki item.', 'code' => 422];
+                }
+
+                $action = PuffyPendingAction::create([
+                    'user_id' => $user->id,
+                    'action_type' => 'customer_po.activate',
+                    'payload' => [
+                        'po_id' => $po->id,
+                        'po_number' => $po->po_number,
+                        'customer_name' => $po->customer?->name,
+                        'expected_status' => $po->status,
+                    ],
+                    'status' => 'pending',
+                    'expires_at' => now()->addMinutes(10),
+                ]);
+
+                PuffyAuditLog::create([
+                    'user_id' => $user->id,
+                    'action' => 'puffy_action_drafted',
+                    'details' => [
+                        'action_id' => $action->id,
+                        'action_type' => $action->action_type,
+                        'po_id' => $po->id,
+                    ],
+                    'ip_address' => $request->ip(),
+                ]);
+
+                return ['data' => [
+                    'id' => $action->id,
+                    'action_type' => $action->action_type,
+                    'status' => $action->status,
+                    'expires_at' => $action->expires_at,
+                    'summary' => "Aktifkan Customer PO {$po->po_number} untuk {$po->customer?->name}?",
+                ]];
+            });
+
+            if (isset($result['error'])) {
+                return $this->sendError($result['error'], [], $result['code']);
+            }
+
+            return $this->sendResponse($result['data'], 'Draft aksi Nanu berhasil dibuat.', 201);
+        } catch (\\Throwable $e) {
+            \\Illuminate\\Support\\Facades\\Log::error('Nanu action draft creation failed', [
+                'user_id' => $user->id,
+                'exception' => $e->getMessage(),
+            ]);
+            return $this->sendError('Draft aksi gagal dibuat. Tidak ada perubahan yang dikonfirmasi.', [], 500);
         }
-        if ($po->lines->isEmpty()) {
-            return $this->sendError('Customer PO tidak memiliki item.', [], 422);
-        }
-
-        $action = PuffyPendingAction::create([
-            'id' => Str::uuid(),
-            'user_id' => $user->id,
-            'action_type' => 'customer_po.activate',
-            'payload' => [
-                'po_id' => $po->id,
-                'po_number' => $po->po_number,
-                'customer_name' => $po->customer?->name,
-                'expected_status' => $po->status,
-            ],
-            'status' => 'pending',
-            'expires_at' => now()->addMinutes(10),
-        ]);
-
-        PuffyAuditLog::create([
-            'id' => Str::uuid(),
-            'user_id' => $user->id,
-            'action' => 'puffy_action_drafted',
-            'details' => ['action_id' => $action->id, 'action_type' => $action->action_type, 'po_id' => $po->id],
-            'ip_address' => $request->ip(),
-        ]);
-
-        return $this->sendResponse([
-            'id' => $action->id,
-            'action_type' => $action->action_type,
-            'status' => $action->status,
-            'expires_at' => $action->expires_at,
-            'summary' => "Aktifkan Customer PO {$po->po_number} untuk {$po->customer?->name}?",
-        ], 'Draft aksi Nanu berhasil dibuat.', 201);
     }
 
     /**
