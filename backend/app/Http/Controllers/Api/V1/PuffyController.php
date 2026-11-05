@@ -184,8 +184,8 @@ class PuffyController extends BaseApiController
         abort_unless($user?->hasPermission('po.activate'), 403, __('auth.unauthorized'));
 
         try {
-            $result = \\Illuminate\\Support\\Facades\\DB::transaction(function () use ($validated, $user, $request) {
-                $po = \\App\\Models\\CustomerPo::with(['customer', 'lines'])
+            $result = \Illuminate\Support\Facades\DB::transaction(function () use ($validated, $user, $request) {
+                $po = \App\Models\CustomerPo::with(['customer', 'lines'])
                     ->whereKey($validated['payload']['po_id'])
                     ->lockForUpdate()
                     ->first();
@@ -193,7 +193,7 @@ class PuffyController extends BaseApiController
                 if (! $po) {
                     return ['error' => 'Customer PO tidak ditemukan.', 'code' => 404];
                 }
-                if ($po->status !== \\App\\Models\\CustomerPo::STATUS_DRAFT) {
+                if ($po->status !== \App\Models\CustomerPo::STATUS_DRAFT) {
                     return ['error' => "Customer PO harus berstatus DRAFT. Status saat ini: {$po->status}.", 'code' => 422];
                 }
                 if ($po->lines->isEmpty()) {
@@ -238,8 +238,8 @@ class PuffyController extends BaseApiController
             }
 
             return $this->sendResponse($result['data'], 'Draft aksi Nanu berhasil dibuat.', 201);
-        } catch (\\Throwable $e) {
-            \\Illuminate\\Support\\Facades\\Log::error('Nanu action draft creation failed', [
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Nanu action draft creation failed', [
                 'user_id' => $user->id,
                 'exception' => $e->getMessage(),
             ]);
