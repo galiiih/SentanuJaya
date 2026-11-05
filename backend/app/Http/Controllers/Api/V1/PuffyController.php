@@ -303,29 +303,54 @@ class PuffyController extends BaseApiController
     public function cancelAction(Request $request, string $id)
     {
         $user = $request->user();
-        $action = PuffyPendingAction::where('id', $id)->where('user_id', $user->id)->first();
 
-        if (!$action) {
-            return $this->sendError('Aksi tertunda tidak ditemukan.', [], 404);
+        try {
+            $result = \\Illuminate\\Support\\Facades\\DB::transaction(function () use ($id, $user, $request) {
+                $action = PuffyPendingAction::where('id', $id)
+                    ->where('user_id', $user->id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if (! $action) {
+                    return ['error' => 'Aksi tertunda tidak ditemukan.', 'code' => 404];
+                }
+                if ($action->status !== 'pending') {
+                    return ['error' => 'Aksi sudah diproses sebelumnya.', 'code' => 409];
+                }
+                if ($action->expires_at && $action->expires_at->isPast()) {
+                    $action->update(['status' => 'expired']);
+                    return ['error' => 'Draft aksi sudah kedaluwarsa.', 'code' => 410];
+                }
+
+                $action->update(['status' => 'cancelled']);
+
+                PuffyAuditLog::create([
+                    'id' => Str::uuid(),
+                    'user_id' => $user->id,
+                    'action' => 'puffy_action_cancelled',
+                    'details' => [
+                        'action_id' => $action->id,
+                        'action_type' => $action->action_type,
+                        'po_id' => $action->payload['po_id'] ?? null,
+                    ],
+                    'ip_address' => $request->ip(),
+                ]);
+
+                return ['data' => $action->fresh()];
+            });
+
+            if (isset($result['error'])) {
+                return $this->sendError($result['error'], [], $result['code']);
+            }
+
+            return $this->sendResponse($result['data'], 'Aksi dibatalkan.');
+        } catch (\\Throwable $e) {
+            \\Illuminate\\Support\\Facades\\Log::error('Nanu action cancellation failed', [
+                'action_id' => $id,
+                'exception' => $e->getMessage(),
+            ]);
+            return $this->sendError('Aksi gagal dibatalkan. Status aksi tidak dapat dipastikan.', [], 500);
         }
-
-        if ($action->status !== 'pending') {
-            return $this->sendError('Aksi sudah diproses sebelumnya.', [], 400);
-        }
-
-        $action->update([
-            'status' => 'cancelled',
-        ]);
-
-        PuffyAuditLog::create([
-            'id' => Str::uuid(),
-            'user_id' => $user->id,
-            'action' => 'puffy_action_cancelled',
-            'details' => ['action_type' => $action->action_type],
-            'ip_address' => $request->ip(),
-        ]);
-
-        return $this->sendResponse($action, 'Aksi dibatalkan.');
     }
 
     /**
