@@ -94,7 +94,7 @@ class PuffyAiService
                         'title' => 'Konfirmasi Aktivasi Customer PO',
                         'summary' => "Draft dibuat: aktifkan Customer PO {$po->po_number} untuk {$po->customer?->name}. Draft berlaku 10 menit. Konfirmasi hanya jika Anda menyetujui aktivasi ini.",
                         'hasData' => true,
-                        'action' => ['id' => $action->id, 'type' => $action->action_type, 'status' => 'pending', 'expires_at' => $action->expires_at],
+                        'action' => ['id' => $action->id, 'label' => 'Customer PO '.$po->po_number, 'description' => 'Aktifkan Customer PO '.$po->po_number.' untuk '.($po->customer?->name ?? 'customer ini'), 'status' => 'pending', 'expires_at' => $action->expires_at],
                         'source' => 'ERP Database',
                         'asOf' => now()->toIso8601String(),
                     ];
