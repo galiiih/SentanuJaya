@@ -141,14 +141,15 @@ test.describe('Sentanu Jaya Document Templates & GrapesJS E2E', () => {
     await modal.getByRole('button', { name: /Simpan Template/i }).click();
     await expect(modal).toBeHidden({ timeout: 10000 });
 
-    // Activate T1
+    // Activate T1; register the native confirmation handler before the click.
     let row1 = page.locator('tr').filter({ hasText: t1Name });
+    page.once('dialog', dialog => void dialog.accept());
     await row1.getByRole('button', { name: /Aktifkan/i }).click();
-    await page.on('dialog', dialog => dialog.accept());
     await expect(row1.getByText('Aktif')).toBeVisible();
 
     // Activate T2 - should become active, T1 should become inactive (exclusive)
     let row2 = page.locator('tr').filter({ hasText: t2Name });
+    page.once('dialog', dialog => void dialog.accept());
     await row2.getByRole('button', { name: /Aktifkan/i }).click();
     await expect(row2.getByText('Aktif')).toBeVisible();
     await expect(row1.getByText('Aktif')).toHaveCount(0);
