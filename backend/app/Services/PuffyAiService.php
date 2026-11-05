@@ -62,7 +62,7 @@ class PuffyAiService
             switch ($toolName) {
                 case 'propose_customer_po_activation':
                     $userId = $params['_authenticated_user_id'] ?? null;
-                    $user = $userId ? \\App\\Models\\User::find($userId) : null;
+                    $user = $userId ? \App\Models\User::find($userId) : null;
                     if (! $user || ! $user->hasPermission('po.activate')) {
                         return ['tool' => $toolName, 'title' => 'Aksi tidak diizinkan', 'summary' => 'Akun Anda tidak memiliki izin untuk mengaktifkan Customer PO.', 'hasData' => false, 'source' => 'ERP Authorization'];
                     }
@@ -77,14 +77,14 @@ class PuffyAiService
                     if ($po->status !== CustomerPo::STATUS_DRAFT || $po->lines->isEmpty()) {
                         return ['tool' => $toolName, 'title' => 'Customer PO belum dapat diaktifkan', 'summary' => $po->status !== CustomerPo::STATUS_DRAFT ? "Customer PO {$poNumber} berstatus {$po->status}, bukan DRAFT." : "Customer PO {$poNumber} belum memiliki item.", 'hasData' => false, 'source' => 'ERP Validation'];
                     }
-                    $action = \\App\\Models\\PuffyPendingAction::create([
+                    $action = \App\Models\PuffyPendingAction::create([
                         'user_id' => $user->id,
                         'action_type' => 'customer_po.activate',
                         'payload' => ['po_id' => $po->id, 'po_number' => $po->po_number, 'customer_name' => $po->customer?->name, 'expected_status' => $po->status],
                         'status' => 'pending',
                         'expires_at' => now()->addMinutes(10),
                     ]);
-                    \\App\\Models\\PuffyAuditLog::create([
+                    \App\Models\PuffyAuditLog::create([
                         'user_id' => $user->id,
                         'action' => 'puffy_action_drafted',
                         'details' => ['action_id' => $action->id, 'action_type' => $action->action_type, 'po_id' => $po->id],
@@ -812,7 +812,7 @@ class PuffyAiService
             || str_contains($lowerUserMsg, 'overhead produksi')
             || str_contains($lowerUserMsg, 'di luar data erp')
             || str_contains($lowerUserMsg, 'di luar erp');
-        $isActivationRequest = preg_match('/\\b(aktifkan|aktivasi|aktifasi|activate)\\b/u', $lowerUserMsg) === 1;
+        $isActivationRequest = preg_match('/\b(aktifkan|aktivasi|aktifasi|activate)\b/u', $lowerUserMsg) === 1;
         $tools = $isHowTo ? [] : $this->getToolDefinitions();
         if (! $isActivationRequest) {
             $tools = array_values(array_filter($tools, static fn (array $tool): bool =>
