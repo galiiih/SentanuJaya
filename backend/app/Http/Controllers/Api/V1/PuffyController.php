@@ -227,30 +227,73 @@ class PuffyController extends BaseApiController
     public function confirmAction(Request $request, string $id)
     {
         $user = $request->user();
-        $action = PuffyPendingAction::where('id', $id)->where('user_id', $user->id)->first();
 
-        if (!$action) {
-            return $this->sendError('Aksi tertunda tidak ditemukan.', [], 404);
+        try {
+            $result = \\Illuminate\\Support\\Facades\\DB::transaction(function () use ($id, $user, $request) {
+                $action = PuffyPendingAction::where('id', $id)
+                    ->where('user_id', $user->id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if (!$action) return ['error' => 'Aksi tertunda tidak ditemukan.', 'code' => 404];
+                if ($action->status !== 'pending') return ['error' => 'Aksi sudah diproses atau kedaluwarsa.', 'code' => 409];
+                if ($action->expires_at && $action->expires_at->isPast()) {
+                    $action->update(['status' => 'expired']);
+                    return ['error' => 'Konfirmasi aksi sudah kedaluwarsa. Buat draft baru.', 'code' => 410];
+                }
+                if ($action->action_type !== 'customer_po.activate') {
+                    return ['error' => 'Jenis aksi belum didukung.', 'code' => 422];
+                }
+                abort_unless($user?->hasPermission('po.activate'), 403, __('auth.unauthorized'));
+
+                $po = \\App\\Models\\CustomerPo::whereKey($action->payload['po_id'] ?? null)
+                    ->lockForUpdate()
+                    ->first();
+                if (!$po) return ['error' => 'Customer PO tidak ditemukan.', 'code' => 404];
+                if (($action->payload['expected_status'] ?? null) !== \\App\\Models\\CustomerPo::STATUS_DRAFT
+                    || $po->status !== \\App\\Models\\CustomerPo::STATUS_DRAFT) {
+                    return ['error' => 'Status Customer PO berubah sejak draft dibuat. Buat draft baru.', 'code' => 409];
+                }
+                if (!$po->lines()->exists()) return ['error' => 'Customer PO tidak memiliki item.', 'code' => 422];
+
+                $po->update(['status' => \\App\\Models\\CustomerPo::STATUS_OPEN]);
+                app(\\App\\Services\\SecurityAuditLogger::class)->log(
+                    $user->id,
+                    'ACTIVATE_PO',
+                    'CUSTOMER_PO',
+                    $po->id,
+                    ['status' => \\App\\Models\\CustomerPo::STATUS_DRAFT],
+                    ['status' => \\App\\Models\\CustomerPo::STATUS_OPEN, 'source' => 'NANU']
+                );
+                $action->update(['status' => 'executed', 'executed_at' => now()]);
+                PuffyAuditLog::create([
+                    'id' => Str::uuid(),
+                    'user_id' => $user->id,
+                    'action' => 'puffy_action_executed',
+                    'details' => ['action_id' => $action->id, 'action_type' => $action->action_type, 'po_id' => $po->id],
+                    'ip_address' => $request->ip(),
+                ]);
+
+                return ['data' => [
+                    'action_id' => $action->id,
+                    'status' => 'executed',
+                    'po_id' => $po->id,
+                    'po_number' => $po->po_number,
+                    'po_status' => \\App\\Models\\CustomerPo::find($po->id)->status,
+                ]];
+            });
+
+            if (isset($result['error'])) return $this->sendError($result['error'], [], $result['code']);
+            return $this->sendResponse($result['data'], 'Customer PO berhasil diaktifkan melalui Nanu.');
+        } catch (\\Symfony\\Component\\HttpKernel\\Exception\\HttpExceptionInterface $e) {
+            throw $e;
+        } catch (\\Throwable $e) {
+            \\Illuminate\\Support\\Facades\\Log::error('Nanu action execution failed', [
+                'action_id' => $id,
+                'exception' => $e->getMessage(),
+            ]);
+            return $this->sendError('Aksi gagal dijalankan. Tidak ada konfirmasi keberhasilan.', [], 500);
         }
-
-        if ($action->status !== 'pending') {
-            return $this->sendError('Aksi sudah diproses atau kedaluwarsa.', [], 409);
-        }
-
-        if ($action->expires_at && $action->expires_at->isPast()) {
-            $action->update(['status' => 'expired']);
-
-            return $this->sendError('Konfirmasi aksi sudah kedaluwarsa. Buat draft aksi baru dari Nanu.', [], 410);
-        }
-
-        // Fail closed: this endpoint must never claim that an ERP action was
-        // executed until a server-side, allowlisted executor is implemented.
-        // Keep the draft pending so the user can retry after that capability exists.
-        return $this->sendError(
-            'Eksekusi aksi ERP melalui Nanu belum tersedia. Tidak ada perubahan data yang dilakukan.',
-            ['action_id' => $action->id, 'status' => $action->status],
-            501
-        );
     }
 
     /**
