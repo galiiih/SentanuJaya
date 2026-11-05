@@ -567,3 +567,33 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
     transition: none !important;
   }
 }
+
+
+/* Keep mobile header controls from overlapping the navigation trigger. */
+@media (max-width: 600px) {
+  .app-header {
+    gap: var(--space-sm);
+    padding-left: var(--space-md);
+    padding-right: var(--space-md);
+  }
+  .app-header__context {
+    flex: 1 1 auto;
+    min-width: 0;
+    gap: var(--space-sm);
+  }
+  .app-header__account {
+    flex: 0 0 auto;
+    gap: .25rem;
+  }
+  .app-header__account > div:not(.user-menu),
+  .app-header__account > button[aria-label="Notifikasi"] {
+    display: none;
+  }
+  .user-profile-info {
+    display: none;
+  }
+  .user-profile-pill {
+    min-width: 2.2rem;
+    padding: .15rem;
+  }
+}
