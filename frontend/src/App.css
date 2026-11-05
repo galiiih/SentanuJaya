@@ -507,3 +507,58 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .sidebar--collapsed { overflow: hidden; }
 .sidebar--collapsed .sidebar__nav { overflow-y: auto; overflow-x: hidden; }
 .sidebar--collapsed .nav-item::after { content: none; display: none; }
+
+
+/* Responsive mobile navigation drawer. Desktop keeps the collapsible rail above. */
+.sidebar-mobile-trigger { display: none; flex: 0 0 auto; }
+.sidebar-mobile-overlay { display: none; }
+
+@media (max-width: 760px) {
+  .sidebar-mobile-trigger { display: inline-flex; }
+  .sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 1001;
+    width: min(18rem, 86vw);
+    height: 100dvh;
+    flex: 0 0 min(18rem, 86vw);
+    transform: translateX(-105%);
+    transition: transform 220ms cubic-bezier(.2,.75,.25,1);
+    box-shadow: 12px 0 36px rgb(0 0 0 / 22%);
+    will-change: transform;
+  }
+  .sidebar.sidebar--mobile-open { transform: translateX(0); }
+  .sidebar.sidebar--collapsed {
+    width: min(18rem, 86vw);
+    flex-basis: min(18rem, 86vw);
+  }
+  .sidebar-mobile-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    background: rgb(8 15 28 / 48%);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 180ms ease, visibility 180ms ease;
+  }
+  .sidebar-mobile-overlay--visible {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+  .app-shell__main { width: 100%; min-width: 0; }
+  .app-header__context { flex: 1 1 auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar,
+  .sidebar-mobile-overlay {
+    transition: none !important;
+  }
+}
