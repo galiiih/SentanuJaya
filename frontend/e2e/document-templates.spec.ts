@@ -26,7 +26,7 @@ test.describe('Sentanu Jaya Document Templates & GrapesJS E2E', () => {
     const templateName = `Test Invoice E2E ${suffix}`;
 
     await page.getByRole('button', { name: /Unggah \/ Buat Template/i }).click();
-    const modal = page.locator('.fixed.inset-0').first();
+    const modal = page.locator('.glass-modal-overlay').first();
     await expect(modal).toBeVisible();
 
     await modal.locator('input[type="text"]').fill(templateName);
@@ -46,7 +46,7 @@ test.describe('Sentanu Jaya Document Templates & GrapesJS E2E', () => {
     await row.getByRole('button', { name: /HTML Editor/i }).click();
 
     // Verify HTML editor modal is open
-    const editorModal = page.locator('.fixed.inset-0').first();
+    const editorModal = page.locator('.glass-modal-overlay').first();
     await expect(editorModal).toBeVisible();
     await expect(editorModal.getByText('HTML Source Editor')).toBeVisible();
 
@@ -77,7 +77,7 @@ test.describe('Sentanu Jaya Document Templates & GrapesJS E2E', () => {
     const templateName = `Visual Template ${suffix}`;
 
     await page.getByRole('button', { name: /Unggah \/ Buat Template/i }).click();
-    const modal = page.locator('.fixed.inset-0').first();
+    const modal = page.locator('.glass-modal-overlay').first();
     await modal.locator('input[type="text"]').fill(templateName);
     await modal.locator('select').first().selectOption('surat_jalan');
     await modal.locator('select').nth(1).selectOption('html');
@@ -104,7 +104,7 @@ test.describe('Sentanu Jaya Document Templates & GrapesJS E2E', () => {
     const updatedRow = page.locator('tr').filter({ hasText: templateName });
     await updatedRow.getByRole('button', { name: /Riwayat Versi/i }).click();
 
-    const versionModal = page.locator('.fixed.inset-0').first();
+    const versionModal = page.locator('.glass-modal-overlay').first();
     await expect(versionModal).toBeVisible();
     await expect(versionModal.getByText('Riwayat Versi')).toBeVisible();
     await expect(versionModal.getByText('Versi v1')).toBeVisible();
@@ -125,7 +125,7 @@ test.describe('Sentanu Jaya Document Templates & GrapesJS E2E', () => {
 
     // Create T1
     await page.getByRole('button', { name: /Unggah \/ Buat Template/i }).click();
-    let modal = page.locator('.fixed.inset-0').first();
+    let modal = page.locator('.glass-modal-overlay').first();
     await modal.locator('input[type="text"]').fill(t1Name);
     await modal.locator('select').first().selectOption('invoice');
     await modal.locator('textarea').fill('<html><body>Inv Alpha</body></html>');
@@ -134,7 +134,7 @@ test.describe('Sentanu Jaya Document Templates & GrapesJS E2E', () => {
 
     // Create T2
     await page.getByRole('button', { name: /Unggah \/ Buat Template/i }).click();
-    modal = page.locator('.fixed.inset-0').first();
+    modal = page.locator('.glass-modal-overlay').first();
     await modal.locator('input[type="text"]').fill(t2Name);
     await modal.locator('select').first().selectOption('invoice');
     await modal.locator('textarea').fill('<html><body>Inv Beta</body></html>');
