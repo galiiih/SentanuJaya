@@ -2,7 +2,12 @@
 
 namespace Tests\Feature\Api\V1;
 
+use App\Models\Company;
+use App\Models\Customer;
+use App\Models\CustomerItem;
+use App\Models\CustomerPo;
 use App\Models\PuffyConversation;
+use App\Models\PuffyPendingAction;
 use App\Models\PuffyMessage;
 use App\Models\User;
 use App\Services\NanuKnowledgeLearningService;
@@ -312,6 +317,128 @@ class PuffySecurityAndStreamTest extends TestCase
         $data = $response->json('data');
         $this->assertCount(1, $data);
         $this->assertEquals('customer-po', $data[0]['category']);
+    }
+
+    private function createDraftCustomerPo(string $number = 'PO-NANU-001'): CustomerPo
+    {
+        $company = Company::create(['code' => 'NANU', 'name' => 'PT Nanu Test']);
+        $customer = Customer::create([
+            'company_id' => $company->id,
+            'code' => 'NANU-CUST',
+            'name' => 'PT Nanu Customer',
+        ]);
+        $item = CustomerItem::create([
+            'customer_id' => $customer->id,
+            'code' => 'NANU-ITEM',
+            'name' => 'Body Kit',
+        ]);
+        $po = CustomerPo::create([
+            'company_id' => $company->id,
+            'customer_id' => $customer->id,
+            'po_number' => $number,
+            'po_date' => '2026-11-05',
+            'status' => CustomerPo::STATUS_DRAFT,
+        ]);
+        $po->lines()->create([
+            'customer_item_id' => $item->id,
+            'quantity' => 1,
+            'unit_price' => 100000,
+        ]);
+
+        return $po;
+    }
+
+    public function test_nanu_action_draft_requires_permission_and_valid_customer_po(): void
+    {
+        $po = $this->createDraftCustomerPo();
+
+        $this->actingAs($this->user1)->postJson('/api/v1/puffy/actions', [
+            'action_type' => 'customer_po.activate',
+            'payload' => ['po_id' => $po->id],
+        ])->assertStatus(403);
+
+        $this->assertDatabaseCount('puffy_pending_actions', 0);
+
+        $this->actingAs($this->user2)->postJson('/api/v1/puffy/actions', [
+            'action_type' => 'customer_po.activate',
+            'payload' => ['po_id' => $po->id],
+        ])->assertCreated()
+            ->assertJsonPath('data.action_type', 'customer_po.activate')
+            ->assertJsonPath('data.status', 'pending');
+
+        $this->assertDatabaseHas('puffy_pending_actions', [
+            'action_type' => 'customer_po.activate',
+            'status' => 'pending',
+            'user_id' => $this->user2->id,
+        ]);
+        $this->assertDatabaseHas('customer_pos', ['id' => $po->id, 'status' => CustomerPo::STATUS_DRAFT]);
+    }
+
+    public function test_nanu_action_confirmation_activates_customer_po_once(): void
+    {
+        $po = $this->createDraftCustomerPo('PO-NANU-CONFIRM');
+        $draft = $this->actingAs($this->user2)->postJson('/api/v1/puffy/actions', [
+            'action_type' => 'customer_po.activate',
+            'payload' => ['po_id' => $po->id],
+        ])->assertCreated()->json('data');
+
+        $this->postJson("/api/v1/puffy/actions/{$draft['id']}/confirm")
+            ->assertOk()
+            ->assertJsonPath('data.status', 'executed')
+            ->assertJsonPath('data.po_status', CustomerPo::STATUS_OPEN);
+
+        $this->assertDatabaseHas('customer_pos', ['id' => $po->id, 'status' => CustomerPo::STATUS_OPEN]);
+        $this->assertDatabaseHas('puffy_pending_actions', ['id' => $draft['id'], 'status' => 'executed']);
+
+        $this->postJson("/api/v1/puffy/actions/{$draft['id']}/confirm")->assertStatus(409);
+        $this->assertDatabaseHas('customer_pos', ['id' => $po->id, 'status' => CustomerPo::STATUS_OPEN]);
+    }
+
+    public function test_nanu_action_can_only_be_confirmed_by_its_creator(): void
+    {
+        $po = $this->createDraftCustomerPo('PO-NANU-OWNER');
+        $draft = $this->actingAs($this->user2)->postJson('/api/v1/puffy/actions', [
+            'action_type' => 'customer_po.activate',
+            'payload' => ['po_id' => $po->id],
+        ])->assertCreated()->json('data');
+
+        $this->actingAs($this->user1)
+            ->postJson("/api/v1/puffy/actions/{$draft['id']}/confirm")
+            ->assertStatus(404);
+
+        $this->assertDatabaseHas('customer_pos', ['id' => $po->id, 'status' => CustomerPo::STATUS_DRAFT]);
+        $this->assertDatabaseHas('puffy_pending_actions', ['id' => $draft['id'], 'status' => 'pending']);
+    }
+
+    public function test_nanu_action_cancel_leaves_customer_po_unchanged_and_is_idempotent(): void
+    {
+        $po = $this->createDraftCustomerPo('PO-NANU-CANCEL');
+        $draft = $this->actingAs($this->user2)->postJson('/api/v1/puffy/actions', [
+            'action_type' => 'customer_po.activate',
+            'payload' => ['po_id' => $po->id],
+        ])->assertCreated()->json('data');
+
+        $this->postJson("/api/v1/puffy/actions/{$draft['id']}/cancel")
+            ->assertOk()
+            ->assertJsonPath('data.status', 'cancelled');
+
+        $this->assertDatabaseHas('customer_pos', ['id' => $po->id, 'status' => CustomerPo::STATUS_DRAFT]);
+        $this->postJson("/api/v1/puffy/actions/{$draft['id']}/cancel")->assertStatus(409);
+    }
+
+    public function test_nanu_action_confirmation_rejects_expired_drafts(): void
+    {
+        $po = $this->createDraftCustomerPo('PO-NANU-EXPIRED');
+        $draft = $this->actingAs($this->user2)->postJson('/api/v1/puffy/actions', [
+            'action_type' => 'customer_po.activate',
+            'payload' => ['po_id' => $po->id],
+        ])->assertCreated()->json('data');
+
+        PuffyPendingAction::whereKey($draft['id'])->update(['expires_at' => now()->subMinute()]);
+
+        $this->postJson("/api/v1/puffy/actions/{$draft['id']}/confirm")->assertStatus(410);
+        $this->assertDatabaseHas('puffy_pending_actions', ['id' => $draft['id'], 'status' => 'expired']);
+        $this->assertDatabaseHas('customer_pos', ['id' => $po->id, 'status' => CustomerPo::STATUS_DRAFT]);
     }
 
     public function test_puffy_endpoints_require_auth(): void
