@@ -98,6 +98,7 @@ class PuffyController extends BaseApiController
             $fullContext = array_merge($pageContext, [
                 'user_name' => $user->name,
                 'role' => $user->role ?? 'STAFF',
+                'user_id' => (string) $user->id,
             ]);
 
             $result = $this->aiService->agenticChat(
