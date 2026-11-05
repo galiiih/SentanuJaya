@@ -16,9 +16,10 @@ async function login(page: Page) {
     const visibleError = await page.locator('.auth-card').innerText().catch(() => '');
     throw new Error(`Login API failed with HTTP ${loginResponse.status()}: ${responseBody}. UI: ${visibleError}`);
   }
-  // Wait for the actual authenticated redirect, not static branding on the login page.
-  await expect(page).toHaveURL(/\/dashboard$/, { timeout: 15000 });
-  await expect(page.getByRole('link', { name: /Master Data/i }).first()).toBeVisible({ timeout: 10000 });
+    // Wait for the authenticated page itself. On mobile the sidebar is intentionally
+  // hidden until the hamburger button is opened, so do not require a nav link here.
+  await expect(page).toHaveURL(/\\/dashboard$/, { timeout: 15000 });
+  await expect(page.getByRole('heading', { name: /Dashboard/i }).first()).toBeVisible({ timeout: 10000 });
 }
 
 test.describe('Sentanu Jaya ERP browser E2E', () => {
