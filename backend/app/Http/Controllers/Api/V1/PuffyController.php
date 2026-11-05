@@ -183,8 +183,8 @@ class PuffyController extends BaseApiController
         $user = $request->user();
         abort_unless($user?->hasPermission('po.activate'), 403, __('auth.unauthorized'));
 
-        $po = \\App\\Models\\CustomerPo::with(['customer', 'lines'])->findOrFail($validated['payload']['po_id']);
-        if ($po->status !== \\App\\Models\\CustomerPo::STATUS_DRAFT) {
+        $po = \App\Models\CustomerPo::with(['customer', 'lines'])->findOrFail($validated['payload']['po_id']);
+        if ($po->status !== \App\Models\CustomerPo::STATUS_DRAFT) {
             return $this->sendError("Customer PO harus berstatus DRAFT. Status saat ini: {$po->status}.", [], 422);
         }
         if ($po->lines->isEmpty()) {
@@ -230,7 +230,7 @@ class PuffyController extends BaseApiController
         $user = $request->user();
 
         try {
-            $result = \\Illuminate\\Support\\Facades\\DB::transaction(function () use ($id, $user, $request) {
+            $result = \Illuminate\Support\Facades\DB::transaction(function () use ($id, $user, $request) {
                 $action = PuffyPendingAction::where('id', $id)
                     ->where('user_id', $user->id)
                     ->lockForUpdate()
@@ -247,24 +247,24 @@ class PuffyController extends BaseApiController
                 }
                 abort_unless($user?->hasPermission('po.activate'), 403, __('auth.unauthorized'));
 
-                $po = \\App\\Models\\CustomerPo::whereKey($action->payload['po_id'] ?? null)
+                $po = \App\Models\CustomerPo::whereKey($action->payload['po_id'] ?? null)
                     ->lockForUpdate()
                     ->first();
                 if (!$po) return ['error' => 'Customer PO tidak ditemukan.', 'code' => 404];
-                if (($action->payload['expected_status'] ?? null) !== \\App\\Models\\CustomerPo::STATUS_DRAFT
-                    || $po->status !== \\App\\Models\\CustomerPo::STATUS_DRAFT) {
+                if (($action->payload['expected_status'] ?? null) !== \App\Models\CustomerPo::STATUS_DRAFT
+                    || $po->status !== \App\Models\CustomerPo::STATUS_DRAFT) {
                     return ['error' => 'Status Customer PO berubah sejak draft dibuat. Buat draft baru.', 'code' => 409];
                 }
                 if (!$po->lines()->exists()) return ['error' => 'Customer PO tidak memiliki item.', 'code' => 422];
 
-                $po->update(['status' => \\App\\Models\\CustomerPo::STATUS_OPEN]);
-                app(\\App\\Services\\SecurityAuditLogger::class)->log(
+                $po->update(['status' => \App\Models\CustomerPo::STATUS_OPEN]);
+                app(\App\Services\SecurityAuditLogger::class)->log(
                     $user->id,
                     'ACTIVATE_PO',
                     'CUSTOMER_PO',
                     $po->id,
-                    ['status' => \\App\\Models\\CustomerPo::STATUS_DRAFT],
-                    ['status' => \\App\\Models\\CustomerPo::STATUS_OPEN, 'source' => 'NANU']
+                    ['status' => \App\Models\CustomerPo::STATUS_DRAFT],
+                    ['status' => \App\Models\CustomerPo::STATUS_OPEN, 'source' => 'NANU']
                 );
                 $action->update(['status' => 'executed', 'executed_at' => now()]);
                 PuffyAuditLog::create([
@@ -280,16 +280,16 @@ class PuffyController extends BaseApiController
                     'status' => 'executed',
                     'po_id' => $po->id,
                     'po_number' => $po->po_number,
-                    'po_status' => \\App\\Models\\CustomerPo::find($po->id)->status,
+                    'po_status' => \App\Models\CustomerPo::find($po->id)->status,
                 ]];
             });
 
             if (isset($result['error'])) return $this->sendError($result['error'], [], $result['code']);
             return $this->sendResponse($result['data'], 'Customer PO berhasil diaktifkan melalui Nanu.');
-        } catch (\\Symfony\\Component\\HttpKernel\\Exception\\HttpExceptionInterface $e) {
+        } catch (\Symfony\Component\HttpKernel\Exception\HttpExceptionInterface $e) {
             throw $e;
-        } catch (\\Throwable $e) {
-            \\Illuminate\\Support\\Facades\\Log::error('Nanu action execution failed', [
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Nanu action execution failed', [
                 'action_id' => $id,
                 'exception' => $e->getMessage(),
             ]);
@@ -305,7 +305,7 @@ class PuffyController extends BaseApiController
         $user = $request->user();
 
         try {
-            $result = \\Illuminate\\Support\\Facades\\DB::transaction(function () use ($id, $user, $request) {
+            $result = \Illuminate\Support\Facades\DB::transaction(function () use ($id, $user, $request) {
                 $action = PuffyPendingAction::where('id', $id)
                     ->where('user_id', $user->id)
                     ->lockForUpdate()
@@ -344,8 +344,8 @@ class PuffyController extends BaseApiController
             }
 
             return $this->sendResponse($result['data'], 'Aksi dibatalkan.');
-        } catch (\\Throwable $e) {
-            \\Illuminate\\Support\\Facades\\Log::error('Nanu action cancellation failed', [
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Nanu action cancellation failed', [
                 'action_id' => $id,
                 'exception' => $e->getMessage(),
             ]);
