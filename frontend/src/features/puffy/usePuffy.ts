@@ -150,10 +150,23 @@ export function usePuffy(api: PuffyApi) {
     set("confirming");
     try {
       const res = await post(`/actions/${encodeURIComponent(action.id)}/${decision}`, {});
-      if (!res.ok) throw new Error(String(res.status));
+      let payload: { message?: string; success?: boolean } = {};
+      try { payload = await res.json(); } catch { /* response body may be empty */ }
+      if (!res.ok || payload.success === false) {
+        const fallback = res.status === 403 ? "Kamu tidak memiliki izin untuk tindakan ini."
+          : res.status === 404 ? "Draft aksi tidak ditemukan atau bukan milik akun ini."
+          : res.status === 409 ? "Aksi sudah diproses atau data sumber berubah. Muat ulang data lalu buat draft baru."
+          : res.status === 410 ? "Draft aksi sudah kedaluwarsa. Ajukan ulang tindakan dari Nanu."
+          : res.status === 422 ? "Data tidak memenuhi aturan ERP untuk tindakan ini."
+          : res.status >= 500 ? "Server gagal memproses tindakan. Periksa status transaksi sebelum mencoba lagi."
+          : `Tindakan gagal diproses (HTTP ${res.status}).`;
+        throw new Error(payload.message || fallback);
+      }
       set(decision === "confirm" ? "done" : "cancelled");
       if (decision === "confirm") setMood("excited");
-    } catch {
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Tindakan gagal diproses.";
+      patch(msg.id, (m) => ({ ...m, error: message }));
       set("failed");
       setMood("sad");
     }
