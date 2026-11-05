@@ -939,6 +939,18 @@ class PuffyAiService
                 $toolArgs = json_decode($toolCall['function']['arguments'] ?? '{}', true) ?? [];
 
                 if ($toolName) {
+                    // Mutating tools must execute at most once per chat turn. A model may
+                    // repeat a function call while composing its final response; never
+                    // create a second pending action draft for that repeated call.
+                    if ($toolName === 'propose_customer_po_activation' && $executedToolResult !== null) {
+                        $finalReply = (string) ($executedToolResult['summary'] ?? 'Draft aksi sudah dibuat. Periksa kartu konfirmasi sebelum melanjutkan.');
+                        foreach (explode(' ', $finalReply) as $word) {
+                            $onToken($word.' ');
+                            usleep(15000);
+                        }
+                        break;
+                    }
+
                     $onStatus("Menjalankan tool ERP: {$toolName}…", ['route' => $route, 'target' => 'table']);
                     $toolArgs['_authenticated_user_id'] = $pageContext['user_id'] ?? null;
                     $executedToolResult = $this->executeTool($toolName, $toolArgs);
