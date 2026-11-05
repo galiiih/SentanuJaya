@@ -789,4 +789,59 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await expect(page.getByText('PAY-E2E-0001')).toBeVisible({ timeout: 10000 });
   });
 
+  test('desktop sidebar collapses to an icon rail and can be expanded again', async ({ page }) => {
+    await login(page);
+    const sidebar = page.locator('aside.sidebar');
+    const toggle = page.getByRole('button', { name: 'Ciutkan sidebar' });
+
+    await expect(sidebar).toBeVisible();
+    const expandedWidth = await sidebar.evaluate((element) => element.getBoundingClientRect().width);
+    await toggle.click();
+    await expect(page.getByRole('button', { name: 'Perlebar sidebar' })).toBeVisible();
+    await expect(sidebar).toHaveClass(/sidebar--collapsed/);
+
+    const collapsedWidth = await sidebar.evaluate((element) => element.getBoundingClientRect().width);
+    expect(collapsedWidth).toBeLessThan(expandedWidth);
+    await expect(page.getByRole('link', { name: 'Master Data' })).toHaveAttribute('title', 'Master Data');
+
+    await page.getByRole('button', { name: 'Perlebar sidebar' }).click();
+    await expect(sidebar).not.toHaveClass(/sidebar--collapsed/);
+    const restoredWidth = await sidebar.evaluate((element) => element.getBoundingClientRect().width);
+    expect(restoredWidth).toBeGreaterThan(collapsedWidth);
+  });
+
+  test('mobile navigation opens as a drawer and closes after route selection', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await login(page);
+
+    const sidebar = page.locator('aside.sidebar');
+    const trigger = page.getByRole('button', { name: 'Buka navigasi' });
+    const overlay = page.getByRole('button', { name: 'Tutup navigasi' });
+
+    await expect(trigger).toBeVisible();
+    await expect(sidebar).not.toHaveClass(/sidebar--mobile-open/);
+    await trigger.click();
+    await expect(sidebar).toHaveClass(/sidebar--mobile-open/);
+    await expect(overlay).toHaveClass(/sidebar-mobile-overlay--visible/);
+    await expect(page.getByRole('link', { name: 'Master Data' })).toBeVisible();
+
+    await page.getByRole('link', { name: 'Master Data' }).click();
+    await expect(page).toHaveURL(/\/master$/);
+    await expect(sidebar).not.toHaveClass(/sidebar--mobile-open/);
+    await expect(overlay).not.toHaveClass(/sidebar-mobile-overlay--visible/);
+  });
+
+  test('mobile navigation overlay closes the drawer without changing route', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await login(page);
+
+    const sidebar = page.locator('aside.sidebar');
+    await page.getByRole('button', { name: 'Buka navigasi' }).click();
+    await expect(sidebar).toHaveClass(/sidebar--mobile-open/);
+    await page.getByRole('button', { name: 'Tutup navigasi' }).click();
+    await expect(sidebar).not.toHaveClass(/sidebar--mobile-open/);
+    await expect(page).toHaveURL(/\/dashboard$/);
+  });
+
+
 });
