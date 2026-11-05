@@ -921,6 +921,7 @@ class PuffyAiService
 
                 if ($toolName) {
                     $onStatus("Menjalankan tool ERP: {$toolName}…", ['route' => $route, 'target' => 'table']);
+                    $toolArgs['_authenticated_user_id'] = $pageContext['user_id'] ?? null;
                     $executedToolResult = $this->executeTool($toolName, $toolArgs);
                     $onToolResult($executedToolResult);
 
