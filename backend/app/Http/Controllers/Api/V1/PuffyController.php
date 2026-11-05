@@ -170,6 +170,58 @@ class PuffyController extends BaseApiController
     }
 
     /**
+     * Create an allowlisted Customer PO activation draft.
+     */
+    public function createAction(Request $request)
+    {
+        $validated = $request->validate([
+            'action_type' => 'required|in:customer_po.activate',
+            'payload.po_id' => 'required|uuid|exists:customer_pos,id',
+        ]);
+
+        $user = $request->user();
+        abort_unless($user?->hasPermission('po.activate'), 403, __('auth.unauthorized'));
+
+        $po = \\App\\Models\\CustomerPo::with(['customer', 'lines'])->findOrFail($validated['payload']['po_id']);
+        if ($po->status !== \\App\\Models\\CustomerPo::STATUS_DRAFT) {
+            return $this->sendError("Customer PO harus berstatus DRAFT. Status saat ini: {$po->status}.", [], 422);
+        }
+        if ($po->lines->isEmpty()) {
+            return $this->sendError('Customer PO tidak memiliki item.', [], 422);
+        }
+
+        $action = PuffyPendingAction::create([
+            'id' => Str::uuid(),
+            'user_id' => $user->id,
+            'action_type' => 'customer_po.activate',
+            'payload' => [
+                'po_id' => $po->id,
+                'po_number' => $po->po_number,
+                'customer_name' => $po->customer?->name,
+                'expected_status' => $po->status,
+            ],
+            'status' => 'pending',
+            'expires_at' => now()->addMinutes(10),
+        ]);
+
+        PuffyAuditLog::create([
+            'id' => Str::uuid(),
+            'user_id' => $user->id,
+            'action' => 'puffy_action_drafted',
+            'details' => ['action_id' => $action->id, 'action_type' => $action->action_type, 'po_id' => $po->id],
+            'ip_address' => $request->ip(),
+        ]);
+
+        return $this->sendResponse([
+            'id' => $action->id,
+            'action_type' => $action->action_type,
+            'status' => $action->status,
+            'expires_at' => $action->expires_at,
+            'summary' => "Aktifkan Customer PO {$po->po_number} untuk {$po->customer?->name}?",
+        ], 'Draft aksi Nanu berhasil dibuat.', 201);
+    }
+
+    /**
      * Confirm a pending action.
      */
     public function confirmAction(Request $request, string $id)
