@@ -148,6 +148,7 @@ Route::prefix('v1')->group(function () {
                 Route::post('nanu/candidates', [NanuKnowledgeController::class, 'storeCandidate']);
                 Route::post('nanu/candidates/{id}/review', [NanuKnowledgeController::class, 'reviewCandidate']);
                 Route::get('nanu/official', [NanuKnowledgeController::class, 'indexOfficial']);
+                Route::post('puffy/actions', [PuffyController::class, 'createAction']);
                 Route::post('puffy/actions/{id}/confirm', [PuffyController::class, 'confirmAction']);
                 Route::post('puffy/actions/{id}/cancel', [PuffyController::class, 'cancelAction']);
             });
