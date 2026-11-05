@@ -23,6 +23,8 @@ export function ToolResultCard({ result, s, actionState, onAction }: CardProps) 
     <div className="puffy-result">
       <h4 className="puffy-result__title">{result.title}</h4>
 
+      {result.summary && <p className="puffy-result__summary">{result.summary}</p>}
+
       {!result.hasData ? (
         <p className="puffy-result__empty">{s.noData}</p>
       ) : (
