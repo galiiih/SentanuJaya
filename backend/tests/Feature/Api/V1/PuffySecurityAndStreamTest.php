@@ -257,14 +257,26 @@ class PuffySecurityAndStreamTest extends TestCase
         $this->assertStringContainsString('diterima hari ini', $result['reply']);
     }
 
-    public function test_tool_schemas_encode_empty_properties_as_json_objects(): void
+    public function test_tool_schemas_use_object_properties_and_restrict_extra_arguments(): void
     {
         $definitions = app(PuffyAiService::class)->getToolDefinitions();
 
         foreach ($definitions as $definition) {
+            $name = $definition['function']['name'];
             $parameters = $definition['function']['parameters'];
-            $this->assertSame('{}', json_encode($parameters['properties']));
+
+            $this->assertSame('object', $parameters['type']);
             $this->assertFalse($parameters['additionalProperties']);
+
+            if ($name === 'propose_customer_po_activation') {
+                $this->assertSame(
+                    ['po_number' => ['type' => 'string', 'description' => 'Nomor Customer PO yang disebut pengguna']],
+                    $parameters['properties']
+                );
+                $this->assertSame(['po_number'], $parameters['required']);
+            } else {
+                $this->assertSame('{}', json_encode($parameters['properties']));
+            }
         }
     }
 
