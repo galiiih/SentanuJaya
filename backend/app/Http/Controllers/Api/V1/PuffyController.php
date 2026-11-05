@@ -182,23 +182,23 @@ class PuffyController extends BaseApiController
         }
 
         if ($action->status !== 'pending') {
-            return $this->sendError('Aksi sudah diproses atau kedaluwarsa.', [], 400);
+            return $this->sendError('Aksi sudah diproses atau kedaluwarsa.', [], 409);
         }
 
-        $action->update([
-            'status' => 'confirmed',
-            'executed_at' => now(),
-        ]);
+        if ($action->expires_at && $action->expires_at->isPast()) {
+            $action->update(['status' => 'expired']);
 
-        PuffyAuditLog::create([
-            'id' => Str::uuid(),
-            'user_id' => $user->id,
-            'action' => 'puffy_action_confirmed',
-            'details' => ['action_type' => $action->action_type, 'payload' => $action->payload],
-            'ip_address' => $request->ip(),
-        ]);
+            return $this->sendError('Konfirmasi aksi sudah kedaluwarsa. Buat draft aksi baru dari Nanu.', [], 410);
+        }
 
-        return $this->sendResponse($action, 'Aksi berhasil dikonfirmasi dan dieksekusi.');
+        // Fail closed: this endpoint must never claim that an ERP action was
+        // executed until a server-side, allowlisted executor is implemented.
+        // Keep the draft pending so the user can retry after that capability exists.
+        return $this->sendError(
+            'Eksekusi aksi ERP melalui Nanu belum tersedia. Tidak ada perubahan data yang dilakukan.',
+            ['action_id' => $action->id, 'status' => $action->status],
+            501
+        );
     }
 
     /**
