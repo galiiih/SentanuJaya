@@ -76,6 +76,9 @@ jobs:
       - name: Restore browser E2E seed data
         working-directory: backend
         run: php artisan db:seed --force
+      - name: Seed dedicated browser E2E accounts
+        working-directory: backend
+        run: php artisan db:seed --class=BrowserE2ESeeder --force
       - name: Install frontend dependencies
         working-directory: frontend
         run: npm ci
