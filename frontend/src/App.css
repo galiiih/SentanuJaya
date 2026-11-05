@@ -523,11 +523,16 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
     height: 100dvh;
     flex: 0 0 min(18rem, 86vw);
     transform: translateX(-105%);
-    transition: transform 220ms cubic-bezier(.2,.75,.25,1);
+    visibility: hidden;
+    transition: transform 220ms cubic-bezier(.2,.75,.25,1), visibility 0s linear 220ms;
     box-shadow: 12px 0 36px rgb(0 0 0 / 22%);
     will-change: transform;
   }
-  .sidebar.sidebar--mobile-open { transform: translateX(0); }
+  .sidebar.sidebar--mobile-open {
+    transform: translateX(0);
+    visibility: visible;
+    transition: transform 220ms cubic-bezier(.2,.75,.25,1), visibility 0s linear 0s;
+  }
   .sidebar.sidebar--collapsed {
     width: min(18rem, 86vw);
     flex-basis: min(18rem, 86vw);
