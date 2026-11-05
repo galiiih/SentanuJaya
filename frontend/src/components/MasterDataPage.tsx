@@ -397,7 +397,7 @@ export function MasterDataPage() {
       {/* Clean Single-Column Vertical Stacked Form Modal (Matching Reference Design) */}
       <Modal open={modalOpen} title={editingItem ? `Edit ${masterApi[tab].label}` : `Tambah ${masterApi[tab].label}`} onClose={() => setModalOpen(false)}>
         <form onSubmit={handleSave}>
-          <div style={{ maxHeight: '72vh', overflowY: 'auto', padding: '0.25rem 0.75rem 1rem 0.25rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             
             {/* Companies */}
             {tab === 'companies' && (
