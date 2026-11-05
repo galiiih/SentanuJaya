@@ -2,7 +2,7 @@ name: Browser E2E
 
 on:
   push:
-    branches: [feat/template-management-grapesjs]
+    branches: [feat/template-management-grapesjs, feat/sidebar-collapse-navigation-new]
   pull_request:
     branches: [master]
   workflow_dispatch:
