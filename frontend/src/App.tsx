@@ -12,6 +12,7 @@ import {
   Globe,
   LayoutDashboard,
   LogOut,
+  Menu,
   PanelLeftClose,
   PanelLeftOpen,
   Moon,
@@ -104,7 +105,7 @@ function RequirePermission({ permission, children }: { permission: Permission; c
   return hasPermission(permission) ? <>{children}</> : <Navigate to="/403" replace />;
 }
 
-function Sidebar() {
+function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => void }) {
   const { hasPermission } = useAuth();
   const { t } = useLanguage();
   const [collapsed, setCollapsed] = useState(false);
@@ -141,7 +142,7 @@ function Sidebar() {
 
   const isCollapsed = collapsed;
   return (
-    <aside className={`sidebar${isCollapsed ? ' sidebar--collapsed' : ''}`} aria-label="Navigasi utama" onMouseDown={(event) => event.stopPropagation()}>
+    <aside className={`sidebar${isCollapsed ? ' sidebar--collapsed' : ''}${mobileOpen ? ' sidebar--mobile-open' : ''}`} aria-label="Navigasi utama" onMouseDown={(event) => event.stopPropagation()}>
       <div className="sidebar__brand">
         <div data-sentanu-logo data-loop="true" style={{ width: '36px', height: '36px', flexShrink: 0 }} />
         <div className="sidebar__brand-copy"><strong>SENTANU JAYA</strong><span>ERP WORKSHOP</span></div>
@@ -155,7 +156,7 @@ function Sidebar() {
           if (!visibleItems.length) return null;
           return <div className="sidebar__section" key={section.label}><p className="nav-section-label">{section.label}</p>{visibleItems.map((item) => {
             const Icon = item.icon;
-            return <NavLink key={item.path} to={item.path} data-tooltip={item.label} title={isCollapsed ? item.label : undefined} aria-label={isCollapsed ? item.label : undefined} className={({ isActive }) => `nav-item${isActive ? ' nav-item--active' : ''}`}><Icon size={18} aria-hidden="true" /><span>{item.label}</span></NavLink>;
+            return <NavLink key={item.path} to={item.path} onClick={onClose} data-tooltip={item.label} title={isCollapsed ? item.label : undefined} aria-label={isCollapsed ? item.label : undefined} className={({ isActive }) => `nav-item${isActive ? ' nav-item--active' : ''}`}><Icon size={18} aria-hidden="true" /><span>{item.label}</span></NavLink>;
           })}</div>;
         })}
       </nav>
@@ -211,6 +212,7 @@ function LanguageSwitcher() {
 
 function AuthenticatedLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const location = useLocation();
   const { user, logout } = useAuth();
   const { t } = useLanguage();
@@ -239,10 +241,12 @@ function AuthenticatedLayout() {
 
   return (
     <div className="app-shell">
-      <Sidebar />
+      <button type="button" className={`sidebar-mobile-overlay${mobileNavOpen ? ' sidebar-mobile-overlay--visible' : ''}`} aria-label="Tutup navigasi" tabIndex={mobileNavOpen ? 0 : -1} onClick={() => setMobileNavOpen(false)} />
+      <Sidebar mobileOpen={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
       <div className="app-shell__main">
         <header className="app-header">
           <div className="app-header__context">
+            <button type="button" className="icon-button sidebar-mobile-trigger" aria-label="Buka navigasi" aria-expanded={mobileNavOpen} onClick={() => setMobileNavOpen((value) => !value)}><Menu size={19} /></button>
             <div><span className="app-header__eyebrow">SENTANU JAYA ERP</span><strong>{pageTitle}</strong></div>
           </div>
           <div className="app-header__account">
