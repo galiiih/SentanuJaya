@@ -348,6 +348,48 @@ class PuffySecurityAndStreamTest extends TestCase
         return $po;
     }
 
+    public function test_nanu_ai_tool_creates_a_pending_activation_draft_without_mutating_the_po(): void
+    {
+        $po = $this->createDraftCustomerPo('PO-NANU-TOOL');
+
+        $result = app(PuffyAiService::class)->executeTool('propose_customer_po_activation', [
+            'po_number' => $po->po_number,
+            '_authenticated_user_id' => $this->user2->id,
+        ]);
+
+        $this->assertSame('Konfirmasi Aktivasi Customer PO', $result['title']);
+        $this->assertSame('pending', $result['action']['status']);
+        $this->assertNotEmpty($result['action']['id']);
+        $this->assertDatabaseHas('puffy_pending_actions', [
+            'id' => $result['action']['id'],
+            'user_id' => $this->user2->id,
+            'action_type' => 'customer_po.activate',
+            'status' => 'pending',
+        ]);
+        $this->assertDatabaseHas('customer_pos', [
+            'id' => $po->id,
+            'status' => CustomerPo::STATUS_DRAFT,
+        ]);
+    }
+
+    public function test_nanu_ai_tool_does_not_create_a_draft_for_a_user_without_activation_permission(): void
+    {
+        $po = $this->createDraftCustomerPo('PO-NANU-TOOL-DENIED');
+
+        $result = app(PuffyAiService::class)->executeTool('propose_customer_po_activation', [
+            'po_number' => $po->po_number,
+            '_authenticated_user_id' => $this->user1->id,
+        ]);
+
+        $this->assertFalse($result['hasData']);
+        $this->assertSame('Aksi tidak diizinkan', $result['title']);
+        $this->assertDatabaseCount('puffy_pending_actions', 0);
+        $this->assertDatabaseHas('customer_pos', [
+            'id' => $po->id,
+            'status' => CustomerPo::STATUS_DRAFT,
+        ]);
+    }
+
     public function test_nanu_action_draft_requires_permission_and_valid_customer_po(): void
     {
         $po = $this->createDraftCustomerPo();
