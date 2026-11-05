@@ -62,42 +62,55 @@ class PuffyAiService
             switch ($toolName) {
                 case 'propose_customer_po_activation':
                     $userId = $params['_authenticated_user_id'] ?? null;
-                    $user = $userId ? \App\Models\User::find($userId) : null;
+                    $user = $userId ? \\App\\Models\\User::find($userId) : null;
                     if (! $user || ! $user->hasPermission('po.activate')) {
-                        return ['tool' => $toolName, 'title' => 'Aksi tidak diizinkan', 'summary' => 'Akun Anda tidak memiliki izin untuk mengaktifkan Customer PO.', 'hasData' => false, 'source' => 'ERP Authorization'];
+                        return ['tool' => $toolName, 'title' => 'Aksi tidak diizinkan', 'summary' => 'Akun Anda tidak memiliki izin untuk mengaktifkan Customer PO.', 'hasData' => false, 'source' => 'ERP Authorization', 'asOf' => now()->toIso8601String()];
                     }
                     $poNumber = trim((string) ($params['po_number'] ?? ''));
                     if ($poNumber === '') {
-                        return ['tool' => $toolName, 'title' => 'Nomor PO diperlukan', 'summary' => 'Sebutkan nomor Customer PO yang ingin diaktifkan.', 'hasData' => false, 'source' => 'ERP Validation'];
+                        return ['tool' => $toolName, 'title' => 'Nomor PO diperlukan', 'summary' => 'Sebutkan nomor Customer PO yang ingin diaktifkan.', 'hasData' => false, 'source' => 'ERP Validation', 'asOf' => now()->toIso8601String()];
                     }
-                    $po = CustomerPo::with(['customer', 'lines'])->where('po_number', $poNumber)->first();
-                    if (! $po) {
-                        return ['tool' => $toolName, 'title' => 'Customer PO tidak ditemukan', 'summary' => "Nomor Customer PO {$poNumber} tidak ditemukan.", 'hasData' => false, 'source' => 'ERP Database'];
-                    }
-                    if ($po->status !== CustomerPo::STATUS_DRAFT || $po->lines->isEmpty()) {
-                        return ['tool' => $toolName, 'title' => 'Customer PO belum dapat diaktifkan', 'summary' => $po->status !== CustomerPo::STATUS_DRAFT ? "Customer PO {$poNumber} berstatus {$po->status}, bukan DRAFT." : "Customer PO {$poNumber} belum memiliki item.", 'hasData' => false, 'source' => 'ERP Validation'];
-                    }
-                    $action = \App\Models\PuffyPendingAction::create([
-                        'user_id' => $user->id,
-                        'action_type' => 'customer_po.activate',
-                        'payload' => ['po_id' => $po->id, 'po_number' => $po->po_number, 'customer_name' => $po->customer?->name, 'expected_status' => $po->status],
-                        'status' => 'pending',
-                        'expires_at' => now()->addMinutes(10),
-                    ]);
-                    \App\Models\PuffyAuditLog::create([
-                        'user_id' => $user->id,
-                        'action' => 'puffy_action_drafted',
-                        'details' => ['action_id' => $action->id, 'action_type' => $action->action_type, 'po_id' => $po->id],
-                    ]);
-                    return [
-                        'tool' => $toolName,
-                        'title' => 'Konfirmasi Aktivasi Customer PO',
-                        'summary' => "Draft dibuat: aktifkan Customer PO {$po->po_number} untuk {$po->customer?->name}. Draft berlaku 10 menit. Konfirmasi hanya jika Anda menyetujui aktivasi ini.",
-                        'hasData' => true,
-                        'action' => ['id' => $action->id, 'label' => 'Customer PO '.$po->po_number, 'description' => 'Aktifkan Customer PO '.$po->po_number.' untuk '.($po->customer?->name ?? 'customer ini'), 'status' => 'pending', 'expires_at' => $action->expires_at],
-                        'source' => 'ERP Database',
-                        'asOf' => now()->toIso8601String(),
-                    ];
+
+                    $draftResult = \\Illuminate\\Support\\Facades\\DB::transaction(function () use ($user, $poNumber, $toolName) {
+                        $po = CustomerPo::with(['customer', 'lines'])
+                            ->where('po_number', $poNumber)
+                            ->lockForUpdate()
+                            ->first();
+                        if (! $po) {
+                            return ['tool' => $toolName, 'title' => 'Customer PO tidak ditemukan', 'summary' => "Nomor Customer PO {$poNumber} tidak ditemukan.", 'hasData' => false, 'source' => 'ERP Database', 'asOf' => now()->toIso8601String()];
+                        }
+                        if ($po->status !== CustomerPo::STATUS_DRAFT || $po->lines->isEmpty()) {
+                            $reason = $po->status !== CustomerPo::STATUS_DRAFT
+                                ? "Customer PO {$poNumber} berstatus {$po->status}, bukan DRAFT."
+                                : "Customer PO {$poNumber} belum memiliki item.";
+                            return ['tool' => $toolName, 'title' => 'Customer PO belum dapat diaktifkan', 'summary' => $reason, 'hasData' => false, 'source' => 'ERP Validation', 'asOf' => now()->toIso8601String()];
+                        }
+
+                        $action = \\App\\Models\\PuffyPendingAction::create([
+                            'user_id' => $user->id,
+                            'action_type' => 'customer_po.activate',
+                            'payload' => ['po_id' => $po->id, 'po_number' => $po->po_number, 'customer_name' => $po->customer?->name, 'expected_status' => $po->status],
+                            'status' => 'pending',
+                            'expires_at' => now()->addMinutes(10),
+                        ]);
+                        \\App\\Models\\PuffyAuditLog::create([
+                            'user_id' => $user->id,
+                            'action' => 'puffy_action_drafted',
+                            'details' => ['action_id' => $action->id, 'action_type' => $action->action_type, 'po_id' => $po->id],
+                        ]);
+
+                        return [
+                            'tool' => $toolName,
+                            'title' => 'Konfirmasi Aktivasi Customer PO',
+                            'summary' => "Draft dibuat: aktifkan Customer PO {$po->po_number} untuk {$po->customer?->name}. Draft berlaku 10 menit. Konfirmasi hanya jika Anda menyetujui aktivasi ini.",
+                            'hasData' => true,
+                            'action' => ['id' => $action->id, 'label' => 'Customer PO '.$po->po_number, 'description' => 'Aktifkan Customer PO '.$po->po_number.' untuk '.($po->customer?->name ?? 'customer ini'), 'status' => 'pending', 'expires_at' => $action->expires_at],
+                            'source' => 'ERP Database',
+                            'asOf' => now()->toIso8601String(),
+                        ];
+                    });
+
+                    return $draftResult;
 
                 case 'get_customer_po_summary':
                     $count = CustomerPo::count();
