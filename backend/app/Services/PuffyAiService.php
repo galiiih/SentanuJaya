@@ -812,7 +812,13 @@ class PuffyAiService
             || str_contains($lowerUserMsg, 'overhead produksi')
             || str_contains($lowerUserMsg, 'di luar data erp')
             || str_contains($lowerUserMsg, 'di luar erp');
+        $isActivationRequest = preg_match('/\\b(aktifkan|aktivasi|aktifasi|activate)\\b/u', $lowerUserMsg) === 1;
         $tools = $isHowTo ? [] : $this->getToolDefinitions();
+        if (! $isActivationRequest) {
+            $tools = array_values(array_filter($tools, static fn (array $tool): bool =>
+                ($tool['function']['name'] ?? null) !== 'propose_customer_po_activation'
+            ));
+        }
 
         if ($isOutOfScope) {
             $onStatus('Menyiapkan jawaban…', ['route' => $route]);
@@ -832,7 +838,7 @@ class PuffyAiService
         // melewati proses berpikir/tool-calling model. Selain lebih cepat, ini mencegah
         // request sederhana gagal karena batas waktu PHP saat model sedang cold start.
         $detectedBeforeProvider = $this->detectTool($userMessage);
-        if (in_array($detectedBeforeProvider, [
+        if (! $isActivationRequest && in_array($detectedBeforeProvider, [
             'get_today_delivery_summary',
             'get_goods_received_summary',
             'get_inventory_summary',
