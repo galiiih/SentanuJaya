@@ -46,7 +46,7 @@ test.describe('Sentanu Jaya Document Templates & GrapesJS E2E', () => {
     await row.getByRole('button', { name: /HTML Editor/i }).click();
 
     // Verify HTML editor modal is open
-    const editorModal = page.locator('.glass-modal-overlay').first();
+    const editorModal = page.locator('.fixed.inset-0').first();
     await expect(editorModal).toBeVisible();
     await expect(editorModal.getByText('HTML Source Editor')).toBeVisible();
 
@@ -104,7 +104,7 @@ test.describe('Sentanu Jaya Document Templates & GrapesJS E2E', () => {
     const updatedRow = page.locator('tr').filter({ hasText: templateName });
     await updatedRow.getByRole('button', { name: /Riwayat Versi/i }).click();
 
-    const versionModal = page.locator('.glass-modal-overlay').first();
+    const versionModal = page.locator('.fixed.inset-0').first();
     await expect(versionModal).toBeVisible();
     await expect(versionModal.getByText('Riwayat Versi')).toBeVisible();
     await expect(versionModal.getByText('Versi v1')).toBeVisible();
