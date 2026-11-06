@@ -197,7 +197,7 @@ export function MasterDataPage() {
     if (tab === 'companies') {
       setFormData({ code: '', name: '', address: '', phone: '', email: '' });
     } else if (tab === 'customers') {
-      setFormData({ company_id: defaultCompanyId, code: '', name: '', legal_name: '', npwp: '', tax_status: 'NON_PKP', address: '', phone: '', email: '' });
+      setFormData({ company_id: defaultCompanyId, code: '', name: '', legal_name: '', npwp: '', tax_condition: 3, address: '', phone: '', email: '' });
     } else if (tab === 'customer_contacts') {
       setFormData({ customer_id: customers[0]?.id || '', name: '', title: '', phone: '', email: '' });
     } else if (tab === 'customer_items') {
