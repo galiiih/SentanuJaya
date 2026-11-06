@@ -90,7 +90,7 @@ export default function TemplateManagementPage() {
       });
       setSuccessMsg('Template berhasil diperbarui (versi snapshot baru disimpan).');
       setEditingTemplate(null);
-      loadTemplates();
+      await loadTemplates();
     } catch (err: unknown) {
       setError(apiError(err));
     }
