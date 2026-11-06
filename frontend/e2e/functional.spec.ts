@@ -861,5 +861,40 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await expect(page).toHaveURL(/\/dashboard$/);
   });
 
+  test('relation-dependent master forms stay disabled when reference API fails and recover after retry', async ({ page }) => {
+    await login(page);
+
+    let failFirstCompanyRequest = true;
+    await page.route('**/api/v1/companies**', async (route) => {
+      if (failFirstCompanyRequest) {
+        failFirstCompanyRequest = false;
+        await route.fulfill({
+          status: 503,
+          contentType: 'application/json',
+          body: JSON.stringify({ message: 'Temporary reference service failure' }),
+        });
+        return;
+      }
+      await route.continue();
+    });
+
+    await page.goto('/master');
+    await expect(page.getByText('Master Data & Referensi')).toBeVisible();
+    await page.getByRole('button', { name: /Customer Contact/i }).click();
+
+    const createButton = page.getByRole('button', { name: /Tambah Customer Contact/i });
+    await expect(page.getByText(/Gagal memuat data referensi/i)).toBeVisible({ timeout: 10000 });
+    await expect(createButton).toBeDisabled();
+
+    // Retry must reload all relation options and unlock the form only after success.
+    await page.getByRole('button', { name: /Coba lagi/i }).click();
+    await expect(page.getByText(/Gagal memuat data referensi/i)).toHaveCount(0, { timeout: 10000 });
+    await expect(createButton).toBeEnabled({ timeout: 10000 });
+    await createButton.click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+    await page.getByRole('dialog').getByRole('button', { name: /Batal/i }).click();
+    await expect(page.getByRole('dialog')).toBeHidden();
+  });
+
 
 });
