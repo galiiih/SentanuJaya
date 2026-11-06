@@ -101,6 +101,8 @@ test.describe('Sentanu Jaya Document Templates & GrapesJS E2E', () => {
     // Close/wait modal to close
     await page.waitForTimeout(1000);
     await page.goto('/templates');
+    // Navigation resets the selected document type to Invoice; return to Surat Jalan.
+    await page.getByRole('button', { name: /Template Surat Jalan/i }).click();
 
     // Check version history
     const updatedRow = page.locator('tr').filter({ hasText: templateName });
@@ -158,7 +160,7 @@ test.describe('Sentanu Jaya Document Templates & GrapesJS E2E', () => {
     await page.reload();
     const refreshedRow1 = page.locator('tr').filter({ hasText: t1Name });
     const refreshedRow2 = page.locator('tr').filter({ hasText: t2Name });
-    await expect(refreshedRow2.getByText('Aktif')).toBeVisible({ timeout: 15000 });
-    await expect(refreshedRow1.getByText('Aktif')).toHaveCount(0, { timeout: 15000 });
+    await expect(refreshedRow2.getByText('Aktif', { exact: true })).toBeVisible({ timeout: 15000 });
+    await expect(refreshedRow1.getByText('Aktif', { exact: true })).toHaveCount(0, { timeout: 15000 });
   });
 });
