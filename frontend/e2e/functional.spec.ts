@@ -147,9 +147,12 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
       await expect(nameInput).toBeFocused();
     }
     await categoryInput.fill('GENERAL');
-    await dialog.getByRole('button', { name: /Simpan Data/i }).click();
+    const saveButton = dialog.getByRole('button', { name: /Simpan Data/i });
+    await saveButton.scrollIntoViewIfNeeded();
+    await expect(saveButton).toBeEnabled();
+    await saveButton.click();
 
-    await expect(dialog).toBeHidden();
+    await expect(dialog).toBeHidden({ timeout: 10000 });
     let row = await searchMasterRow(page, code);
     await expect(row).toContainText(name, { timeout: 10000 });
 
@@ -329,7 +332,10 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
       await expect(nameInput).toBeFocused();
     }
     await expect(nameInput).toHaveValue(name);
-    await dialog.getByRole('button', { name: /Simpan Data/i }).click();
+    const saveButton = dialog.getByRole('button', { name: /Simpan Data/i });
+    await saveButton.scrollIntoViewIfNeeded();
+    await expect(saveButton).toBeEnabled();
+    await saveButton.click();
     await expect(dialog).toBeHidden({ timeout: 10000 });
 
     let row = await searchMasterRow(page, code);
