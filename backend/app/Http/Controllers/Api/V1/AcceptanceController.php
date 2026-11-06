@@ -46,7 +46,7 @@ class AcceptanceController extends BaseApiController
             'notes' => 'nullable|string',
             'evidence_reference' => 'nullable|string',
             'lines' => 'required|array|min:1',
-            'lines.*.delivery_order_line_id' => 'required|uuid|exists:delivery_order_lines,id',
+            'lines.*.delivery_order_line_id' => 'required|uuid|distinct|exists:delivery_order_lines,id',
             'lines.*.quantity_ok' => 'required|numeric|min:0',
             'lines.*.quantity_rejected' => 'required|numeric|min:0',
             'lines.*.reject_reason' => 'nullable|string',
