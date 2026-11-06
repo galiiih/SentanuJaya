@@ -120,6 +120,8 @@ export function MasterDataPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [customerItems, setCustomerItems] = useState<CustomerItem[]>([]);
   const [priceLists, setPriceLists] = useState<any[]>([]);
+  const [referencesLoading, setReferencesLoading] = useState(true);
+  const [referencesError, setReferencesError] = useState('');
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any | null>(null);
@@ -134,21 +136,26 @@ export function MasterDataPage() {
   }>({ open: false, title: '', description: '', onConfirm: () => {} });
 
   const loadReferences = async () => {
+    setReferencesLoading(true);
+    setReferencesError('');
     try {
       const [compRes, branchRes, custRes, itemRes, plRes] = await Promise.all([
-        axios.get('/api/v1/companies', { params: { per_page: 100 } }).catch(() => ({ data: { data: [] } })),
-        axios.get('/api/v1/branches', { params: { per_page: 100 } }).catch(() => ({ data: { data: [] } })),
-        axios.get('/api/v1/customers', { params: { per_page: 200 } }).catch(() => ({ data: { data: [] } })),
-        axios.get('/api/v1/customer-items', { params: { per_page: 200 } }).catch(() => ({ data: { data: [] } })),
-        axios.get('/api/v1/price-lists', { params: { per_page: 200 } }).catch(() => ({ data: { data: [] } })),
+        axios.get('/api/v1/companies', { params: { per_page: 100 } }),
+        axios.get('/api/v1/branches', { params: { per_page: 100 } }),
+        axios.get('/api/v1/customers', { params: { per_page: 200 } }),
+        axios.get('/api/v1/customer-items', { params: { per_page: 200 } }),
+        axios.get('/api/v1/price-lists', { params: { per_page: 200 } }),
       ]);
       setCompanies(compRes.data.data.data || compRes.data.data || compRes.data || []);
       setBranches(branchRes.data.data.data || branchRes.data.data || branchRes.data || []);
       setCustomers(custRes.data.data.data || custRes.data.data || []);
       setCustomerItems(itemRes.data.data.data || itemRes.data.data || []);
       setPriceLists(plRes.data.data.data || plRes.data.data || []);
-    } catch {
-      // ignore reference errors
+    } catch (err: unknown) {
+      // Do not silently expose empty relationship dropdowns when their data failed to load.
+      setReferencesError(apiError(err));
+    } finally {
+      setReferencesLoading(false);
     }
   };
 
@@ -355,6 +362,8 @@ export function MasterDataPage() {
     }
   };
 
+  const needsReferenceOptions = ['customer_contacts', 'customer_items', 'price_lists', 'price_list_lines', 'warehouses', 'customers'].includes(tab);
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -362,7 +371,7 @@ export function MasterDataPage() {
         description="Kelola referensi sistem, pelanggan, item barang, kontak, price list, satuan, material, dan supplier secara terpusat."
         action={
           isAdminOrOwner ? (
-            <Button onClick={openCreate} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <Button onClick={openCreate} disabled={needsReferenceOptions && referencesLoading} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
               <Plus size={16} /> Tambah {masterApi[tab].label}
             </Button>
           ) : undefined
@@ -370,6 +379,7 @@ export function MasterDataPage() {
       />
 
       {error && <Alert tone="danger">{error}</Alert>}
+      {referencesError && <Alert tone="danger">Gagal memuat data referensi: {referencesError} <Button variant="ghost" onClick={loadReferences}>Coba lagi</Button></Alert>}
       <Toast open={!!notice} message={notice} onClose={() => setNotice('')} tone="success" />
 
       {/* Navigation Tabs */}
