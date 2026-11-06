@@ -235,7 +235,11 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
       const editDialog = page.getByRole('dialog');
       const editNameInput = editDialog.getByPlaceholder('PT Warna Abadi Kimia');
       await editNameInput.fill(editedName);
-      await editDialog.getByRole('button', { name: /Simpan Data/i }).click();
+      const saveEditButton = editDialog.getByRole('button', { name: /Simpan Data/i });
+      await saveEditButton.scrollIntoViewIfNeeded();
+      await expect(saveEditButton).toBeEnabled();
+      await saveEditButton.click();
+      await expect(editDialog).toBeHidden({ timeout: 10000 });
       row = await searchMasterRow(page, code);
       await expect(row).toContainText(editedName, { timeout: 10000 });
     } else {
