@@ -85,8 +85,10 @@ test.describe('Sentanu Jaya Document Templates & GrapesJS E2E', () => {
     await modal.getByRole('button', { name: /Simpan Template/i }).click();
     await expect(modal).toBeHidden({ timeout: 10000 });
 
-    // Open Visual Editor
+    // Visual templates are grouped by document type; switch to Surat Jalan before opening the row.
+    await page.getByRole('button', { name: /Template Surat Jalan/i }).click();
     const row = page.locator('tr').filter({ hasText: templateName });
+    await expect(row).toBeVisible({ timeout: 15000 });
     await row.getByRole('button', { name: /Visual Editor/i }).click();
 
     // Visual editor header should be visible
