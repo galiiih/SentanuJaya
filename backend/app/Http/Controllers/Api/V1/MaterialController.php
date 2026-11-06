@@ -16,7 +16,7 @@ class MaterialController extends BaseApiController
     public function index(Request $request): JsonResponse
     {
         $perPage = (int) $request->input('per_page', 20);
-        $query = Material::query()->with(['company', 'purchaseUom', 'stockUom']);
+        $query = Material::query()->with(['company', 'purchaseUom', 'stockUom'])->orderByDesc('created_at');
 
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
