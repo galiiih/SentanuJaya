@@ -562,6 +562,57 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await expect(dialog).toBeHidden();
   });
 
+  test('Customer PO draft can be created through the UI and persists after reload', async ({ page }) => {
+    await login(page);
+    await page.getByRole('link', { name: /Customer PO/i }).click();
+    await expect(page).toHaveURL(/\\/customer-po$/);
+    await page.getByRole('button', { name: /Buat Customer PO/i }).click();
+
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+
+    const companySelect = dialog.locator('#po-company');
+    const companyValue = await companySelect.locator('option').evaluateAll((options) => {
+      const option = options.find((item) => item.textContent?.includes('Sentanu Jaya Local'));
+      return option?.getAttribute('value') ?? '';
+    });
+    expect(companyValue, 'E2E company fixture must be seeded').not.toBe('');
+    await companySelect.selectOption(companyValue);
+
+    const customerSelect = dialog.locator('#po-customer');
+    const customerValue = await customerSelect.locator('option').evaluateAll((options) => {
+      const option = options.find((item) => item.textContent?.includes('Customer Local'));
+      return option?.getAttribute('value') ?? '';
+    });
+    expect(customerValue, 'E2E customer fixture must be seeded').not.toBe('');
+    await customerSelect.selectOption(customerValue);
+
+    const itemSelect = dialog.locator('select').nth(2);
+    await expect(itemSelect).toBeEnabled();
+    const itemValue = await itemSelect.locator('option').evaluateAll((options) => {
+      const option = options.find((item) => item.textContent?.includes('Bumper Local'));
+      return option?.getAttribute('value') ?? '';
+    });
+    expect(itemValue, 'E2E customer item fixture must be seeded').not.toBe('');
+    await itemSelect.selectOption(itemValue);
+
+    const poNumber = `E2E-PO-${Date.now()}`;
+    await dialog.locator('#po-number').fill(poNumber);
+    await dialog.locator('#po-date').fill(new Date().toISOString().slice(0, 10));
+    await dialog.getByRole('button', { name: /Simpan Draft/i }).click();
+
+    const createResponse = await page.waitForResponse((response) =>
+      response.url().includes('/api/v1/customer-pos') && response.request().method() === 'POST'
+    );
+    expect(createResponse.status()).toBe(201);
+    await expect(dialog).toBeHidden();
+    await expect(page.getByText(poNumber, { exact: true })).toBeVisible({ timeout: 10000 });
+
+    await page.reload();
+    await expect(page).toHaveURL(/\\/customer-po$/);
+    await expect(page.getByText(poNumber, { exact: true })).toBeVisible({ timeout: 10000 });
+  });
+
   test('Delivery page opens and exposes delivery creation controls', async ({ page }) => {
     await login(page);
     await page.getByRole('link', { name: /Surat Jalan|Delivery/i }).click();
