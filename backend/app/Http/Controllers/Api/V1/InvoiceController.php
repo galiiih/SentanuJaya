@@ -26,7 +26,7 @@ class InvoiceController extends BaseApiController
         // Fetch DELIVERED DOs for this customer, compute remaining invoiceable qty per line
         $dos = \App\Models\DeliveryOrder::query()
             ->where('customer_id', $customerId)
-            ->where('status', 'DELIVERED')
+            ->whereIn('status', [DeliveryOrder::STATUS_DELIVERED, DeliveryOrder::STATUS_CLOSED])
             ->with(['lines.acceptanceLines.acceptance', 'lines.customerItem', 'customer'])
             ->get()
             ->filter(function ($do) {
