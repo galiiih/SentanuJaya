@@ -16,7 +16,7 @@ class CustomerController extends BaseApiController
     public function index(Request $request): JsonResponse
     {
         $perPage = (int) $request->input('per_page', 20);
-        $query = Customer::query()->with(['contacts', 'items', 'priceLists']);
+        $query = Customer::query()->with(['contacts', 'items', 'priceLists'])->orderByDesc('created_at');
 
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
