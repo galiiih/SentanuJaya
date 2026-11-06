@@ -565,7 +565,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
   test('Customer PO draft can be created through the UI and persists after reload', async ({ page }) => {
     await login(page);
     await page.getByRole('link', { name: /Customer PO/i }).click();
-    await expect(page).toHaveURL(/\\/customer-po$/);
+    await expect(page).toHaveURL(/\/customer-po$/);
     await page.getByRole('button', { name: /Buat Customer PO/i }).click();
 
     const dialog = page.getByRole('dialog');
@@ -609,7 +609,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await expect(page.getByText(poNumber, { exact: true })).toBeVisible({ timeout: 10000 });
 
     await page.reload();
-    await expect(page).toHaveURL(/\\/customer-po$/);
+    await expect(page).toHaveURL(/\/customer-po$/);
     await expect(page.getByText(poNumber, { exact: true })).toBeVisible({ timeout: 10000 });
   });
 
