@@ -117,7 +117,7 @@ export default function TemplateManagementPage() {
       await documentTemplateApi.restore(tplId, versionNum);
       setSuccessMsg(`Template berhasil dipulihkan ke versi v${versionNum}.`);
       setVersionTemplate(null);
-      loadTemplates();
+      await loadTemplates();
     } catch (err: unknown) {
       setError(apiError(err));
     }
@@ -130,7 +130,7 @@ export default function TemplateManagementPage() {
     try {
       await documentTemplateApi.activate(id);
       setSuccessMsg('Template berhasil diaktifkan.');
-      loadTemplates();
+      await loadTemplates();
     } catch (err: unknown) {
       setError(apiError(err));
     }
@@ -143,7 +143,7 @@ export default function TemplateManagementPage() {
     try {
       await documentTemplateApi.delete(id);
       setSuccessMsg('Template berhasil dihapus.');
-      loadTemplates();
+      await loadTemplates();
     } catch (err: unknown) {
       setError(apiError(err));
     }
