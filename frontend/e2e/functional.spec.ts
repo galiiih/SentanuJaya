@@ -412,7 +412,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await expect(page.locator('tr').filter({ hasText: itemCode })).toHaveCount(0, { timeout: 10000 });
 
     // Price List: select the parent customer and exercise persisted CRUD.
-    await page.getByRole('button', { name: 'Price List', exact: true }).click();
+    await page.getByRole('button', { name: 'Price List', exact: true }).first().click();
     await page.getByRole('button', { name: 'Tambah Price List' }).click();
     dialog = page.getByRole('dialog');
     await dialog.getByPlaceholder('PL-2024-01').fill(priceListCode);
@@ -449,6 +449,8 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
   });
 
   test('Price List Line supports related dropdowns, price editing, persistence and child-first deletion', async ({ page }) => {
+    // This scenario creates and removes three related records, including several page reloads.
+    test.setTimeout(180_000);
     const suffix = Date.now().toString();
     const customerCode = `E2E-PLL-CUST-${suffix}`;
     const customerName = `Price Line Customer ${suffix}`;
