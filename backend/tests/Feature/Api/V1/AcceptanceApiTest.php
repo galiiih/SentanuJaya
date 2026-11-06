@@ -189,6 +189,33 @@ class AcceptanceApiTest extends TestCase
         $this->assertFalse($res->json('success'));
     }
 
+    public function test_duplicate_delivery_lines_are_rejected_to_prevent_quantity_limit_bypass(): void
+    {
+        $s = $this->seedDelivered();
+        $admin = $this->makeUser('admin');
+
+        $res = $this->actingAs($admin)->postJson('/api/v1/acceptances', [
+            'delivery_order_id' => $s['do']->id,
+            'acceptance_date' => '2026-10-04',
+            'lines' => [
+                [
+                    'delivery_order_line_id' => $s['doLine']->id,
+                    'quantity_ok' => 6,
+                    'quantity_rejected' => 0,
+                ],
+                [
+                    'delivery_order_line_id' => $s['doLine']->id,
+                    'quantity_ok' => 6,
+                    'quantity_rejected' => 0,
+                ],
+            ],
+        ]);
+
+        $res->assertStatus(422);
+        $this->assertDatabaseCount('acceptances', 0);
+        $this->assertDatabaseCount('acceptance_lines', 0);
+    }
+
     public function test_acceptance_on_non_delivered_order_fails(): void
     {
         $s = $this->seedDelivered();
