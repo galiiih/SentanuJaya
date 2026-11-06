@@ -247,6 +247,8 @@ export function DataTable<T extends { id: string }>({
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<{ id: string; direction: 'asc' | 'desc' }>();
   const [page, setPage] = useState(0);
+  // Reset pagination whenever the backing dataset changes (tab switch, reload, CRUD refresh).
+  useEffect(() => { setPage(0); }, [rows]);
   const filteredRows = useMemo(() => rows.filter((row) => searchText(row).toLocaleLowerCase().includes(query.toLocaleLowerCase())), [query, rows, searchText]);
   const sortedRows = useMemo(() => {
     if (!sort) return filteredRows;
