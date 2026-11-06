@@ -23,6 +23,19 @@ async function login(page: Page) {
 }
 
 test.describe('Sentanu Jaya ERP browser E2E', () => {
+  test.beforeEach(async ({ page }) => {
+    // Preserve API diagnostics in CI when a browser form remains open after submit.
+    page.on('response', async (response) => {
+      if (!response.url().includes('/api/v1/') || response.status() < 400) return;
+      const body = await response.text().catch(() => '');
+      console.error(`[E2E API] ${response.status()} ${response.request().method()} ${response.url()} ${body.slice(0, 1500)}`);
+    });
+    page.on('requestfailed', (request) => {
+      if (request.url().includes('/api/v1/')) {
+        console.error(`[E2E API REQUEST FAILED] ${request.method()} ${request.url()} ${request.failure()?.errorText ?? 'unknown'}`);
+      }
+    });
+  });
   test('login and master data navigation work', async ({ page }) => {
     await login(page);
     await page.getByRole('link', { name: /Master Data/i }).first().click();
