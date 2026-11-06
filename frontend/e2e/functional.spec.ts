@@ -599,11 +599,11 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     const poNumber = `E2E-PO-${Date.now()}`;
     await dialog.locator('#po-number').fill(poNumber);
     await dialog.locator('#po-date').fill(new Date().toISOString().slice(0, 10));
-    await dialog.getByRole('button', { name: /Simpan Draft/i }).click();
-
-    const createResponse = await page.waitForResponse((response) =>
+    const createResponsePromise = page.waitForResponse((response) =>
       response.url().includes('/api/v1/customer-pos') && response.request().method() === 'POST'
     );
+    await dialog.getByRole('button', { name: /Simpan Draft/i }).click();
+    const createResponse = await createResponsePromise;
     expect(createResponse.status()).toBe(201);
     await expect(dialog).toBeHidden();
     await expect(page.getByText(poNumber, { exact: true })).toBeVisible({ timeout: 10000 });
