@@ -66,7 +66,7 @@ export default function TemplateManagementPage() {
       setUploadName('');
       setUploadFile(null);
       setUploadContent('');
-      loadTemplates();
+      await loadTemplates();
     } catch (err: unknown) {
       setError(apiError(err));
     }
