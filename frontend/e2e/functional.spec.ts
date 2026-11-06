@@ -306,6 +306,10 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
   });
 
   test('Customer Contact, Customer Item and Price List support related-record dropdowns and CRUD', async ({ page }) => {
+    // This end-to-end scenario intentionally covers three related CRUD modules,
+    // including multiple reloads to verify server persistence. Give the complete
+    // workflow enough time instead of letting the 60s suite default interrupt it.
+    test.setTimeout(120_000);
     const suffix = Date.now().toString();
     const customerCode = `E2E-REL-CUST-${suffix}`;
     const customerName = `Related Test Customer ${suffix}`;
