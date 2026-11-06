@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Api\BaseApiController;
+use App\Models\DeliveryOrder;
 use App\Models\Invoice;
 use App\Services\InvoiceService;
 use Illuminate\Http\JsonResponse;
