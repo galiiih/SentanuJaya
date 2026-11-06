@@ -169,6 +169,12 @@ class AcceptanceApiTest extends TestCase
             'quantity_in' => 2,
         ]);
 
+        // The fully resolved SJ is CLOSED, but its posted OK quantity must remain invoiceable.
+        $this->assertSame('CLOSED', $s['do']->fresh()->status);
+        $this->actingAs($admin)->getJson('/api/v1/invoices/eligible-delivery-orders?customer_id=' . $s['customer']->id)
+            ->assertOk()
+            ->assertJsonFragment(['id' => $s['do']->id]);
+
         $invoiceResponse = $this->actingAs($admin)->postJson('/api/v1/invoices', [
             'delivery_order_ids' => [$s['do']->id],
             'customer_id' => $s['customer']->id,
@@ -184,11 +190,10 @@ class AcceptanceApiTest extends TestCase
         ]);
         $this->assertSame(8.0, (float) $s['doLine']->fresh()->qty_invoiced);
 
-        // The fully resolved SJ is CLOSED, but its posted OK quantity must remain invoiceable.
-        $this->assertSame('CLOSED', $s['do']->fresh()->status);
+        // Once all 8 accepted units are invoiced, no further quantity is eligible.
         $this->actingAs($admin)->getJson('/api/v1/invoices/eligible-delivery-orders?customer_id=' . $s['customer']->id)
             ->assertOk()
-            ->assertJsonFragment(['id' => $s['do']->id]);
+            ->assertJsonMissing(['id' => $s['do']->id]);
 
         // The rejected 2 units are never billable a second time.
         $this->actingAs($admin)->postJson('/api/v1/invoices', [
