@@ -154,6 +154,11 @@ test.describe('Sentanu Jaya Document Templates & GrapesJS E2E', () => {
     page.once('dialog', dialog => void dialog.accept());
     await row2.getByRole('button', { name: /Aktifkan/i }).click();
     await expect(row2.getByText('Aktif')).toBeVisible();
-    await expect(row1.getByText('Aktif')).toHaveCount(0);
+    // Re-read persisted server state to verify the previous invoice template was deactivated.
+    await page.reload();
+    const refreshedRow1 = page.locator('tr').filter({ hasText: t1Name });
+    const refreshedRow2 = page.locator('tr').filter({ hasText: t2Name });
+    await expect(refreshedRow2.getByText('Aktif')).toBeVisible({ timeout: 15000 });
+    await expect(refreshedRow1.getByText('Aktif')).toHaveCount(0, { timeout: 15000 });
   });
 });
