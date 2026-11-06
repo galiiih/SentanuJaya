@@ -166,6 +166,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await saveEditButton.scrollIntoViewIfNeeded();
     await expect(saveEditButton).toBeEnabled();
     await saveEditButton.click();
+    await expect(editDialog).toBeHidden({ timeout: 10000 });
     row = await searchMasterRow(page, code);
     await expect(row).toContainText(editedName, { timeout: 10000 });
 
@@ -220,7 +221,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
 
     await page.reload();
     await page.getByRole('button', { name: /^Supplier$/i }).click();
-    row = page.locator('tr').filter({ hasText: code });
+    row = await searchMasterRow(page, code);
     await expect(row).toContainText(name, { timeout: 10000 });
 
     // Some master tables render icon-only action controls. Locate the row actions
