@@ -104,7 +104,7 @@ test.describe('Sentanu Jaya Document Templates & GrapesJS E2E', () => {
 
     // Check version history
     const updatedRow = page.locator('tr').filter({ hasText: templateName });
-    await updatedRow.getByRole('button', { name: /Riwayat Versi/i }).click();
+    await updatedRow.getByRole('button', { name: /^Versi$/i }).click();
 
     const versionModal = page.locator('.fixed.inset-0').first();
     await expect(versionModal).toBeVisible();
