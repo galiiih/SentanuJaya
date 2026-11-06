@@ -371,7 +371,7 @@ export function MasterDataPage() {
         description="Kelola referensi sistem, pelanggan, item barang, kontak, price list, satuan, material, dan supplier secara terpusat."
         action={
           isAdminOrOwner ? (
-            <Button onClick={openCreate} disabled={needsReferenceOptions && referencesLoading} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <Button onClick={openCreate} disabled={needsReferenceOptions && (referencesLoading || !!referencesError)} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
               <Plus size={16} /> Tambah {masterApi[tab].label}
             </Button>
           ) : undefined
