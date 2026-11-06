@@ -22,6 +22,15 @@ async function login(page: Page) {
   await expect(page.getByRole('heading', { name: /Dashboard/i }).first()).toBeVisible({ timeout: 10000 });
 }
 
+async function searchMasterRow(page: Page, code: string) {
+  const search = page.getByPlaceholder('Cari data...');
+  await expect(search).toBeVisible();
+  await search.fill(code);
+  const row = page.locator('tr').filter({ hasText: code });
+  await expect(row).toHaveCount(1, { timeout: 10000 });
+  return row;
+}
+
 test.describe('Sentanu Jaya ERP browser E2E', () => {
   test.beforeEach(async ({ page }) => {
     // Preserve API diagnostics in CI when a browser form remains open after submit.
@@ -81,21 +90,26 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await taxSelect.selectOption('2');
     await expect(taxSelect).toHaveValue('2');
 
-    await dialog.getByRole('button', { name: /Simpan Data/i }).click();
+    const saveButton = dialog.getByRole('button', { name: /Simpan Data/i });
+    await saveButton.scrollIntoViewIfNeeded();
+    await expect(saveButton).toBeEnabled();
+    await saveButton.click();
     await expect(dialog).toBeHidden({ timeout: 10000 });
-    const row = page.locator('tr').filter({ hasText: code });
+    const row = await searchMasterRow(page, code);
     await expect(row).toContainText(name, { timeout: 10000 });
     created = true;
 
     // Reload to prove persisted server/database state.
     await page.reload();
-    const persistedRow = page.locator('tr').filter({ hasText: code });
+    const persistedRow = await searchMasterRow(page, code);
     await expect(persistedRow).toContainText(name, { timeout: 10000 });
 
     // Delete via the UI and confirm the destructive action.
     await persistedRow.locator('button[title="Hapus"]').click();
-    await expect(page.getByText('Hapus Data Master?')).toBeVisible();
-    await page.getByRole('button', { name: /Hapus|Konfirmasi|Ya/i }).last().click();
+    const confirmation = page.getByRole('alertdialog');
+    await expect(confirmation).toBeVisible();
+    await confirmation.getByRole('button', { name: 'Konfirmasi', exact: true }).click();
+    await expect(confirmation).toBeHidden({ timeout: 10000 });
     await expect(page.locator('tr').filter({ hasText: code })).toHaveCount(0, { timeout: 10000 });
     created = false;
 
@@ -135,21 +149,24 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await categoryInput.fill('GENERAL');
     await dialog.getByRole('button', { name: /Simpan Data/i }).click();
 
-    let row = page.locator('tr').filter({ hasText: code });
+    let row = await searchMasterRow(page, code);
     await expect(dialog).toBeHidden();
     await expect(row).toContainText(name, { timeout: 10000 });
 
     await page.reload();
     await page.getByRole('button', { name: /Satuan \(UOM\)/i }).click();
-    row = page.locator('tr').filter({ hasText: code });
+    row = await searchMasterRow(page, code);
     await expect(row).toContainText(name, { timeout: 10000 });
 
     await row.locator('button[title="Edit"]').click();
     const editDialog = page.getByRole('dialog');
     const editName = editDialog.getByPlaceholder('Pieces / Buah');
     await editName.fill(editedName);
-    await editDialog.getByRole('button', { name: /Simpan Data/i }).click();
-    row = page.locator('tr').filter({ hasText: code });
+    const saveEditButton = editDialog.getByRole('button', { name: /Simpan Data/i });
+    await saveEditButton.scrollIntoViewIfNeeded();
+    await expect(saveEditButton).toBeEnabled();
+    await saveEditButton.click();
+    row = await searchMasterRow(page, code);
     await expect(row).toContainText(editedName, { timeout: 10000 });
 
     await row.locator('button[title="Hapus"]').click();
@@ -210,7 +227,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
       const editNameInput = editDialog.getByPlaceholder('PT Warna Abadi Kimia');
       await editNameInput.fill(editedName);
       await editDialog.getByRole('button', { name: /Simpan Data/i }).click();
-      row = page.locator('tr').filter({ hasText: code });
+      row = await searchMasterRow(page, code);
       await expect(row).toContainText(editedName, { timeout: 10000 });
     } else {
       // If the supplier table has no edit action, fail with a precise UI diagnostic.
