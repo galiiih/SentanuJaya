@@ -184,12 +184,15 @@ export function ConfirmationDialog({ open, title, description, confirmLabel = 'K
   const descriptionId = useId();
   const dialog = useRef<HTMLElement>(null);
   const opener = useRef<HTMLElement | null>(null);
+  const onCloseRef = useRef(onClose);
+  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
+
   useEffect(() => {
     if (!open) return;
     opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     dialog.current?.querySelector<HTMLButtonElement>('.confirmation-dialog__confirm')?.focus();
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
+      if (event.key === 'Escape') onCloseRef.current();
       if (event.key !== 'Tab') return;
       const focusable = dialog.current?.querySelectorAll<HTMLElement>('button:not(:disabled), [href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled)');
       if (!focusable?.length) return;
@@ -199,8 +202,15 @@ export function ConfirmationDialog({ open, title, description, confirmLabel = 'K
       if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
     };
     window.addEventListener('keydown', onKeyDown);
-    return () => { window.removeEventListener('keydown', onKeyDown); opener.current?.focus(); };
-  }, [onClose, open]);
+    return () => { window.removeEventListener('keydown', onKeyDown); };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open && opener.current) {
+      opener.current.focus();
+      opener.current = null;
+    }
+  }, [open]);
 
   if (!open) return null;
   return <div className="modal-backdrop" onMouseDown={onClose}><section ref={dialog} className="modal confirmation-dialog" role="alertdialog" aria-modal="true" aria-labelledby={titleId} aria-describedby={descriptionId} onMouseDown={(event) => event.stopPropagation()}><div className="modal__header"><h2 id={titleId}>{title}</h2></div><div className="confirmation-dialog__body"><p id={descriptionId}>{description}</p><div className="confirmation-dialog__actions"><Button variant="secondary" onClick={onClose}>{cancelLabel}</Button><Button className="confirmation-dialog__confirm" variant={tone} onClick={onConfirm}>{confirmLabel}</Button></div></div></section></div>;
