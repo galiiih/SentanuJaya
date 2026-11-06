@@ -132,13 +132,13 @@ class AcceptanceApiTest extends TestCase
         $s = $this->seedDelivered();
         $admin = $this->makeUser('admin');
 
-        // A delivered quantity of 10 is returned by the customer as 6 OK + 2 rejected.
+        // A delivered quantity of 10 is returned by the customer as 8 OK + 2 rejected.
         $created = $this->actingAs($admin)->postJson('/api/v1/acceptances', [
             'delivery_order_id' => $s['do']->id,
             'acceptance_date' => '2026-10-04',
             'lines' => [[
                 'delivery_order_line_id' => $s['doLine']->id,
-                'quantity_ok' => 6,
+                'quantity_ok' => 8,
                 'quantity_rejected' => 2,
                 'reject_reason' => 'Cat mengelupas',
             ]],
@@ -179,13 +179,18 @@ class AcceptanceApiTest extends TestCase
         $this->assertDatabaseHas('invoice_lines', [
             'invoice_id' => $invoiceId,
             'delivery_order_line_id' => $s['doLine']->id,
-            'quantity' => 6,
-            'subtotal' => 600,
+            'quantity' => 8,
+            'subtotal' => 800,
         ]);
-        $this->assertSame(6.0, (float) $s['doLine']->fresh()->qty_invoiced);
+        $this->assertSame(8.0, (float) $s['doLine']->fresh()->qty_invoiced);
 
-        // The rejected 2 units are never billable, and the remaining 2 unresolved
-        // units do not become invoiceable until a later posted acceptance marks them OK.
+        // The fully resolved SJ is CLOSED, but its posted OK quantity must remain invoiceable.
+        $this->assertSame('CLOSED', $s['do']->fresh()->status);
+        $this->actingAs($admin)->getJson('/api/v1/invoices/eligible-delivery-orders?customer_id=' . $s['customer']->id)
+            ->assertOk()
+            ->assertJsonFragment(['id' => $s['do']->id]);
+
+        // The rejected 2 units are never billable a second time.
         $this->actingAs($admin)->postJson('/api/v1/invoices', [
             'delivery_order_ids' => [$s['do']->id],
             'customer_id' => $s['customer']->id,
