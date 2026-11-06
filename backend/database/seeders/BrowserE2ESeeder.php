@@ -13,6 +13,10 @@ class BrowserE2ESeeder extends Seeder
      */
     public function run(): void
     {
+        // Provide deterministic company, branch, customer, item, and custody fixtures
+        // so browser tests can exercise real operational forms against PostgreSQL.
+        $this->call(LocalDevelopmentSeeder::class);
+
         if (! User::where('email', 'agus@sentanu.local')->exists()) {
             User::factory()->create([
                 'username' => 'agus-e2e',
