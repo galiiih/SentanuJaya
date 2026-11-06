@@ -23,7 +23,7 @@ class AcceptanceApiTest extends TestCase
     {
         $company = Company::create(['name' => 'PT Sentanu', 'code' => 'SJ', 'tax_id' => '123']);
         $branch = Branch::create(['company_id' => $company->id, 'name' => 'HQ', 'code' => 'HQ']);
-        $customer = Customer::create(['company_id' => $company->id, 'name' => 'Customer A', 'code' => 'CA']);
+        $customer = Customer::create(['company_id' => $company->id, 'name' => 'Customer A', 'code' => 'CA', 'tax_condition' => 1]);
         $item = CustomerItem::create(['customer_id' => $customer->id, 'name' => 'Velg R17', 'code' => 'VR17']);
         $loc = CustodyLocation::create(['branch_id' => $branch->id, 'code' => 'WH1', 'name' => 'Warehouse 1']);
 
@@ -125,6 +125,72 @@ class AcceptanceApiTest extends TestCase
             'movement_type' => 'RETURN_REJECTED',
             'quantity_in' => 2,
         ]);
+    }
+
+    public function test_posted_acceptance_only_bills_customer_ok_quantity_and_keeps_rejected_goods_out_of_invoice(): void
+    {
+        $s = $this->seedDelivered();
+        $admin = $this->makeUser('admin');
+
+        // A delivered quantity of 10 is returned by the customer as 6 OK + 2 rejected.
+        $created = $this->actingAs($admin)->postJson('/api/v1/acceptances', [
+            'delivery_order_id' => $s['do']->id,
+            'acceptance_date' => '2026-10-04',
+            'lines' => [[
+                'delivery_order_line_id' => $s['doLine']->id,
+                'quantity_ok' => 6,
+                'quantity_rejected' => 2,
+                'reject_reason' => 'Cat mengelupas',
+            ]],
+        ])->assertCreated();
+
+        $acceptanceId = $created->json('data.id');
+        $this->assertSame('DRAFT', $created->json('data.status'));
+
+        // Unposted acceptance must not make the DO invoiceable.
+        $this->actingAs($admin)->postJson('/api/v1/invoices', [
+            'delivery_order_ids' => [$s['do']->id],
+            'customer_id' => $s['customer']->id,
+            'invoice_date' => '2026-10-06',
+        ])->assertStatus(422);
+
+        $this->actingAs($admin)->postJson("/api/v1/acceptances/{$acceptanceId}/submit")
+            ->assertOk()
+            ->assertJsonPath('data.status', 'SUBMITTED');
+
+        $posted = $this->actingAs($admin)->postJson("/api/v1/acceptances/{$acceptanceId}/post")
+            ->assertOk()
+            ->assertJsonPath('data.status', 'POSTED');
+
+        $this->assertDatabaseHas('custody_ledger', [
+            'reference_type' => 'ACCEPTANCE',
+            'reference_id' => $acceptanceId,
+            'movement_type' => 'RETURN_REJECTED',
+            'quantity_in' => 2,
+        ]);
+
+        $invoiceResponse = $this->actingAs($admin)->postJson('/api/v1/invoices', [
+            'delivery_order_ids' => [$s['do']->id],
+            'customer_id' => $s['customer']->id,
+            'invoice_date' => '2026-10-06',
+        ])->assertCreated();
+
+        $invoiceId = $invoiceResponse->json('data.id');
+        $this->assertDatabaseHas('invoice_lines', [
+            'invoice_id' => $invoiceId,
+            'delivery_order_line_id' => $s['doLine']->id,
+            'quantity' => 6,
+            'subtotal' => 600,
+        ]);
+        $this->assertSame(6.0, (float) $s['doLine']->fresh()->qty_invoiced);
+
+        // The rejected 2 units are never billable, and the remaining 2 unresolved
+        // units do not become invoiceable until a later posted acceptance marks them OK.
+        $this->actingAs($admin)->postJson('/api/v1/invoices', [
+            'delivery_order_ids' => [$s['do']->id],
+            'customer_id' => $s['customer']->id,
+            'invoice_date' => '2026-10-06',
+        ])->assertStatus(422);
     }
 
     public function test_partial_acceptance_multiple_rounds(): void
