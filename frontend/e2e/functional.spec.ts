@@ -817,7 +817,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
 
     const sidebar = page.locator('aside.sidebar');
     const trigger = page.getByRole('button', { name: 'Buka navigasi' });
-    const overlay = page.getByRole('button', { name: 'Tutup navigasi' });
+    const overlay = page.locator('.sidebar-mobile-overlay');
 
     await expect(trigger).toBeVisible();
     await expect(sidebar).not.toHaveClass(/sidebar--mobile-open/);
@@ -829,7 +829,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await page.getByRole('link', { name: 'Master Data' }).click();
     await expect(page).toHaveURL(/\/master$/);
     await expect(sidebar).not.toHaveClass(/sidebar--mobile-open/);
-    await expect(overlay).not.toHaveClass(/sidebar-mobile-overlay--visible/);
+    await expect(overlay).toBeHidden();
   });
 
   test('mobile navigation closes with Escape and restores page interaction', async ({ page }) => {
@@ -852,7 +852,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     const sidebar = page.locator('aside.sidebar');
     await page.getByRole('button', { name: 'Buka navigasi' }).click();
     await expect(sidebar).toHaveClass(/sidebar--mobile-open/);
-    await page.getByRole('button', { name: 'Tutup navigasi' }).click();
+    await page.getByRole('button', { name: 'Tutup navigasi' }).click({ position: { x: 360, y: 24 } });
     await expect(sidebar).not.toHaveClass(/sidebar--mobile-open/);
     await expect(page).toHaveURL(/\/dashboard$/);
   });
