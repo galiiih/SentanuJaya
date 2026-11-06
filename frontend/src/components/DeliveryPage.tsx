@@ -324,8 +324,18 @@ export function DeliveryPage() {
 
     for (let idx = 0; idx < acceptanceLines.length; idx++) {
       const line = acceptanceLines[idx];
-      const ok = Number(line.quantity_ok) || 0;
-      const rej = Number(line.quantity_rejected) || 0;
+      const ok = Number(line.quantity_ok);
+      const rej = Number(line.quantity_rejected);
+      if (!Number.isFinite(ok) || !Number.isFinite(rej) || ok < 0 || rej < 0) {
+        setError(`${line.item_name}: kuantitas OK dan reject harus berupa angka nol atau lebih.`);
+        setSaving(false);
+        return;
+      }
+      if (ok + rej <= 0) {
+        setError(`${line.item_name}: jumlah kuantitas OK dan reject harus lebih dari 0.`);
+        setSaving(false);
+        return;
+      }
       if (ok + rej > line.delivered_quantity) {
         setError(`${t.delivery.overAcceptanceError} (${line.item_name}: ${ok + rej} > ${line.delivered_quantity})`);
         setSaving(false);
