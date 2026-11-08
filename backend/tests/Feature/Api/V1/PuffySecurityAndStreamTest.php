@@ -488,4 +488,57 @@ class PuffySecurityAndStreamTest extends TestCase
         $this->getJson('/api/v1/puffy/quick-questions')->assertStatus(401);
         $this->getJson('/api/v1/puffy/knowledge/templates')->assertStatus(401);
     }
+
+    public function test_nanu_action_confirmation_rechecks_activation_permission(): void
+    {
+        $po = $this->createDraftCustomerPo('PO-NANU-REVOKED');
+
+        $draftResponse = $this->actingAs($this->user2)->postJson('/api/v1/puffy/actions', [
+            'action_type' => 'customer_po.activate',
+            'payload' => ['po_id' => $po->id],
+        ])->assertStatus(201);
+
+        $draftId = $draftResponse->json('data.id');
+        $this->user2->update(['role' => 'STAFF']);
+
+        $this->actingAs($this->user2)
+            ->postJson("/api/v1/puffy/actions/{$draftId}/confirm")
+            ->assertStatus(403);
+
+        $this->assertDatabaseHas('puffy_pending_actions', [
+            'id' => $draftId,
+            'status' => 'pending',
+        ]);
+        $this->assertDatabaseHas('customer_pos', [
+            'id' => $po->id,
+            'status' => CustomerPo::STATUS_DRAFT,
+        ]);
+    }
+
+    public function test_nanu_action_confirmation_rejects_customer_po_changed_after_draft(): void
+    {
+        $po = $this->createDraftCustomerPo('PO-NANU-STALE');
+
+        $draftResponse = $this->actingAs($this->user2)->postJson('/api/v1/puffy/actions', [
+            'action_type' => 'customer_po.activate',
+            'payload' => ['po_id' => $po->id],
+        ])->assertStatus(201);
+
+        $draftId = $draftResponse->json('data.id');
+        $po->update(['status' => CustomerPo::STATUS_OPEN]);
+
+        $this->actingAs($this->user2)
+            ->postJson("/api/v1/puffy/actions/{$draftId}/confirm")
+            ->assertStatus(409);
+
+        $this->assertDatabaseHas('puffy_pending_actions', [
+            'id' => $draftId,
+            'status' => 'pending',
+        ]);
+        $this->assertDatabaseHas('customer_pos', [
+            'id' => $po->id,
+            'status' => CustomerPo::STATUS_OPEN,
+        ]);
+    }
+
 }
