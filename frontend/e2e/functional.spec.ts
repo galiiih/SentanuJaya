@@ -1201,6 +1201,25 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     expect(restoredWidth).toBeGreaterThan(collapsedWidth);
   });
 
+  test('mobile drawer restores labels after collapsing the desktop sidebar', async ({ page }) => {
+    await login(page);
+
+    const sidebar = page.locator('aside.sidebar');
+    const collapseButton = sidebar.locator('button.sidebar__collapse');
+    await expect(collapseButton).toBeVisible();
+    await collapseButton.click();
+    await expect(sidebar).toHaveClass(/sidebar--collapsed/);
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    const trigger = page.getByRole('button', { name: 'Buka navigasi' });
+    await expect(trigger).toBeVisible();
+    await trigger.click();
+
+    await expect(sidebar).toHaveClass(/sidebar--mobile-open/);
+    await expect(sidebar.getByRole('link', { name: 'Master Data' })).toBeVisible();
+    await expect(collapseButton).toBeHidden();
+  });
+
   test('mobile navigation opens as a drawer and closes after route selection', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await login(page);
