@@ -302,7 +302,13 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await row.locator('button[title="Hapus"]').click();
     const confirmation = page.getByRole('alertdialog');
     await expect(confirmation).toBeVisible();
+    const deleteResponsePromise = page.waitForResponse(
+      response => response.request().method() === 'DELETE' && response.url().includes('/api/v1/materials/'),
+      { timeout: 15000 },
+    );
     await confirmation.getByRole('button', { name: 'Konfirmasi', exact: true }).click();
+    const deleteResponse = await deleteResponsePromise;
+    expect(deleteResponse.status(), await deleteResponse.text()).toBe(200);
     await expect(confirmation).toBeHidden({ timeout: 10000 });
     await expect(page.locator('tr').filter({ hasText: code })).toHaveCount(0, { timeout: 10000 });
   });
