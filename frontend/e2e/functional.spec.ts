@@ -722,6 +722,96 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await expect(dialog).toBeHidden();
   });
 
+  test('customer acceptance can be created, submitted and posted with OK and rejected quantities', async ({ page }) => {
+    const customer = { id: 'e2e-accept-customer', code: 'E2E-ACC', name: 'Customer Acceptance E2E' };
+    const deliveryOrder: any = {
+      id: 'e2e-accept-do', sj_number: 'SJ-E2E-ACC-001', company_id: 'e2e-company',
+      branch_id: 'e2e-branch', customer_id: customer.id, customer_po_id: 'e2e-po',
+      customer_po_number: 'PO-E2E-ACC', delivery_date: '2026-11-08', status: 'DELIVERED',
+      customer, customer_po: { id: 'e2e-po', po_number: 'PO-E2E-ACC' },
+      lines: [{ id: 'e2e-accept-line', delivery_order_id: 'e2e-accept-do',
+        customer_item_id: 'e2e-item', quantity: 10, unit_price: 100,
+        customer_item: { id: 'e2e-item', name: 'Spoiler E2E' } }],
+    };
+    let acceptance: any = null;
+    let createdPayload: any = null;
+
+    await login(page);
+    await page.route('**/api/v1/**', async (route) => {
+      const request = route.request();
+      const url = new URL(request.url());
+      const path = url.pathname.replace(/\/$/, '');
+      const method = request.method();
+      const response = (data: unknown, status = 200) =>
+        route.fulfill({ status, contentType: 'application/json', body: JSON.stringify({ success: true, data, message: 'OK' }) });
+      const paginated = (items: unknown[]) => ({ data: items, current_page: 1, last_page: 1, total: items.length });
+
+      if (path === '/api/v1/delivery-orders' && method === 'GET') {
+        return response(paginated([deliveryOrder]));
+      }
+      if (path === '/api/v1/customer-pos' && method === 'GET') return response(paginated([]));
+      if (path === '/api/v1/companies' && method === 'GET') return response(paginated([]));
+      if (path === '/api/v1/branches' && method === 'GET') return response(paginated([]));
+      if (path === '/api/v1/customers' && method === 'GET') return response(paginated([customer]));
+      if (path === '/api/v1/acceptances' && method === 'GET') {
+        return response(paginated(acceptance ? [acceptance] : []));
+      }
+      if (path === '/api/v1/acceptances' && method === 'POST') {
+        createdPayload = request.postDataJSON();
+        acceptance = {
+          id: 'e2e-acceptance-id', acceptance_number: 'AC-E2E-0001',
+          delivery_order_id: deliveryOrder.id, customer_id: customer.id,
+          acceptance_date: createdPayload.acceptance_date, status: 'DRAFT',
+          lines: createdPayload.lines.map((line: any) => ({
+            id: 'e2e-acceptance-line', acceptance_id: 'e2e-acceptance-id', ...line,
+          })),
+        };
+        return response(acceptance, 201);
+      }
+      if (path === '/api/v1/acceptances/e2e-acceptance-id/submit' && method === 'POST') {
+        acceptance = { ...acceptance, status: 'SUBMITTED' };
+        return response(acceptance);
+      }
+      if (path === '/api/v1/acceptances/e2e-acceptance-id/post' && method === 'POST') {
+        acceptance = { ...acceptance, status: 'POSTED' };
+        deliveryOrder.status = 'CLOSED';
+        return response(acceptance);
+      }
+      return route.continue();
+    });
+
+    await page.goto('/delivery');
+    await expect(page.getByText('SJ-E2E-ACC-001')).toBeVisible({ timeout: 10000 });
+    await page.getByRole('button', { name: 'SJ-E2E-ACC-001' }).click();
+    const detail = page.getByRole('dialog').first();
+    await expect(detail.getByText('Spoiler E2E')).toBeVisible();
+    await detail.getByRole('button', { name: /Penerimaan Baru|Catat Penerimaan/i }).click();
+
+    const form = page.getByRole('dialog').last();
+    const quantities = form.locator('input[type="number"]');
+    await expect(quantities).toHaveCount(2);
+    await quantities.nth(0).fill('8');
+    await quantities.nth(1).fill('2');
+    await form.getByPlaceholder('Alasan reject...').fill('Cat mengelupas');
+    await form.getByRole('button', { name: /Simpan|Save/i }).click();
+    await expect(form).toBeHidden({ timeout: 10000 });
+    await expect.poll(() => createdPayload).not.toBeNull();
+    expect(createdPayload.lines).toEqual([{
+      delivery_order_line_id: 'e2e-accept-line',
+      quantity_ok: 8,
+      quantity_rejected: 2,
+      reject_reason: 'Cat mengelupas',
+    }]);
+
+    await expect(detail.getByText('AC-E2E-0001')).toBeVisible({ timeout: 10000 });
+    await detail.getByRole('button', { name: /Submit Penerimaan|Kirim Penerimaan/i }).click();
+    await expect(detail.getByText('SUBMITTED')).toBeVisible({ timeout: 10000 });
+    await detail.getByRole('button', { name: /Posting Penerimaan|Post Penerimaan/i }).click();
+    await expect(detail.getByText('POSTED')).toBeVisible({ timeout: 10000 });
+    await expect(detail.getByText(/OK:\s*8 pcs/)).toBeVisible();
+    await expect(detail.getByText(/Reject:\s*2 pcs/)).toBeVisible();
+  });
+
   test('invoice creation requires an eligible delivered order and cannot submit an empty selection', async ({ page }) => {
     await login(page);
     await page.goto('/invoicing');
