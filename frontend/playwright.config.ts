@@ -3,6 +3,8 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   testDir: './e2e',
   timeout: 60 * 1000,
+  // Bound the complete serial browser suite so a stuck browser/server cannot hold CI indefinitely.
+  globalTimeout: 25 * 60 * 1000,
   expect: {
     timeout: 10000
   },
