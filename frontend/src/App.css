@@ -597,3 +597,39 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
     padding: .15rem;
   }
 }
+
+/* On phones the sidebar is a full-width navigation drawer, never a collapsed icon rail. */
+@media (max-width: 760px) {
+  .sidebar__collapse { display: none; }
+  .sidebar.sidebar--collapsed .sidebar__brand {
+    justify-content: flex-start;
+    padding: 0 0 var(--space-lg);
+  }
+  .sidebar.sidebar--collapsed .sidebar__brand-copy,
+  .sidebar.sidebar--collapsed .sidebar__foot-copy,
+  .sidebar.sidebar--collapsed .nav-section-label {
+    width: auto;
+    max-width: none;
+    opacity: 1;
+    overflow: visible;
+    pointer-events: auto;
+  }
+  .sidebar.sidebar--collapsed .nav-item {
+    justify-content: flex-start;
+    gap: var(--space-md);
+    padding: .65rem .75rem;
+    margin-bottom: .15rem;
+  }
+  .sidebar.sidebar--collapsed .nav-item span {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip-path: none;
+    white-space: normal;
+  }
+  .sidebar.sidebar--collapsed .sidebar__foot {
+    justify-content: flex-start;
+    padding: .7rem .75rem;
+  }
+}
