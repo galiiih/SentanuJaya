@@ -22,6 +22,26 @@ async function login(page: Page) {
   await expect(page.getByRole('heading', { name: /Dashboard/i }).first()).toBeVisible({ timeout: 10000 });
 }
 
+
+async function logHitTarget(page: Page, locator: ReturnType<Page['locator']>, label: string) {
+  const details = await locator.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    const x = rect.left + rect.width / 2;
+    const y = rect.top + rect.height / 2;
+    const hit = document.elementFromPoint(x, y);
+    return {
+      target: element.tagName.toLowerCase(),
+      targetClass: (element as HTMLElement).className,
+      rect: { x, y, width: rect.width, height: rect.height },
+      hit: hit?.tagName.toLowerCase() ?? null,
+      hitClass: (hit as HTMLElement | null)?.className ?? null,
+      hitText: hit?.textContent?.trim().slice(0, 100) ?? null,
+      targetIsHitOrChild: !!hit && (hit === element || element.contains(hit)),
+    };
+  });
+  console.log(`[E2E HIT TEST] ${label} ${JSON.stringify(details)}`);
+}
+
 async function searchMasterRow(page: Page, code: string) {
   const search = page.getByPlaceholder('Cari data...');
   await expect(search).toBeVisible();
@@ -108,7 +128,9 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await persistedRow.locator('button[title="Hapus"]').click();
     const confirmation = page.getByRole('alertdialog');
     await expect(confirmation).toBeVisible();
-    await confirmation.getByRole('button', { name: 'Konfirmasi', exact: true }).click();
+    const confirmButton = confirmation.getByRole('button', { name: 'Konfirmasi', exact: true });
+    await logHitTarget(page, confirmButton, 'delete confirmation');
+    await confirmButton.click();
     await expect(confirmation).toBeHidden({ timeout: 10000 });
     await expect(page.locator('tr').filter({ hasText: code })).toHaveCount(0, { timeout: 10000 });
     created = false;
@@ -161,7 +183,9 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     row = await searchMasterRow(page, code);
     await expect(row).toContainText(name, { timeout: 10000 });
 
-    await row.locator('button[title="Edit"]').click();
+    const editButton = row.locator('button[title="Edit"]');
+    await logHitTarget(page, editButton, 'master row edit');
+    await editButton.click();
     const editDialog = page.getByRole('dialog');
     const editName = editDialog.getByPlaceholder('Pieces / Buah');
     await editName.fill(editedName);
@@ -173,7 +197,9 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     row = await searchMasterRow(page, code);
     await expect(row).toContainText(editedName, { timeout: 10000 });
 
-    await row.locator('button[title="Hapus"]').click();
+    const deleteButton = row.locator('button[title="Hapus"]');
+    await logHitTarget(page, deleteButton, 'master row delete');
+    await deleteButton.click();
     const confirmation = page.getByRole('alertdialog');
     await expect(confirmation).toBeVisible();
     await confirmation.getByRole('button', { name: 'Konfirmasi', exact: true }).click();
