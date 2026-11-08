@@ -1,6 +1,9 @@
 name: PHP & PostgreSQL Tests
 
 on:
+concurrency:
+  group: php-tests-${{ github.ref }}
+  cancel-in-progress: true
   push:
     branches: [ master, feat/template-management-grapesjs, feat/sidebar-collapse-navigation-new ]
   pull_request:
