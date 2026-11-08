@@ -128,7 +128,7 @@ async function traceConfirmClick(page: Page, button: ReturnType<Page['locator']>
     (window as any).__confirmEventTrace = trace;
   });
   const responsePromise = page.waitForResponse(
-    response => response.request().method() === 'DELETE' && /\/api\/v1\/(suppliers|materials|companies)\//.test(response.url()),
+    response => response.request().method() === 'DELETE' && /\/api\/v1\//.test(response.url()),
     { timeout: 8000 },
   ).catch(() => null);
   let clickError = '';
