@@ -138,22 +138,30 @@ export function MasterDataPage() {
   const loadReferences = async () => {
     setReferencesLoading(true);
     setReferencesError('');
+    const requests = [
+      { label: 'Perusahaan', load: () => axios.get('/api/v1/companies', { params: { per_page: 100 } }), save: (value: any) => setCompanies(value) },
+      { label: 'Cabang', load: () => axios.get('/api/v1/branches', { params: { per_page: 100 } }), save: (value: any) => setBranches(value) },
+      { label: 'Customer', load: () => axios.get('/api/v1/customers', { params: { per_page: 200 } }), save: (value: any) => setCustomers(value) },
+      { label: 'Customer Item', load: () => axios.get('/api/v1/customer-items', { params: { per_page: 200 } }), save: (value: any) => setCustomerItems(value) },
+      { label: 'Price List', load: () => axios.get('/api/v1/price-lists', { params: { per_page: 200 } }), save: (value: any) => setPriceLists(value) },
+    ] as const;
     try {
-      const [compRes, branchRes, custRes, itemRes, plRes] = await Promise.all([
-        axios.get('/api/v1/companies', { params: { per_page: 100 } }),
-        axios.get('/api/v1/branches', { params: { per_page: 100 } }),
-        axios.get('/api/v1/customers', { params: { per_page: 200 } }),
-        axios.get('/api/v1/customer-items', { params: { per_page: 200 } }),
-        axios.get('/api/v1/price-lists', { params: { per_page: 200 } }),
-      ]);
-      setCompanies(compRes.data.data.data || compRes.data.data || compRes.data || []);
-      setBranches(branchRes.data.data.data || branchRes.data.data || branchRes.data || []);
-      setCustomers(custRes.data.data.data || custRes.data.data || []);
-      setCustomerItems(itemRes.data.data.data || itemRes.data.data || []);
-      setPriceLists(plRes.data.data.data || plRes.data.data || []);
-    } catch (err: unknown) {
-      // Do not silently expose empty relationship dropdowns when their data failed to load.
-      setReferencesError(apiError(err));
+      // A temporary failure in one reference endpoint must not discard successful
+      // responses from the other endpoints or leave every relationship empty.
+      const results = await Promise.allSettled(requests.map(request => request.load()));
+      const failures: string[] = [];
+      results.forEach((result, index) => {
+        if (result.status === 'fulfilled') {
+          const payload = result.value.data;
+          const rows = payload?.data?.data ?? payload?.data ?? payload ?? [];
+          requests[index].save(Array.isArray(rows) ? rows : []);
+        } else {
+          failures.push(requests[index].label);
+        }
+      });
+      if (failures.length) {
+        setReferencesError(`Gagal memuat: ${failures.join(', ')}. Silakan coba lagi.`);
+      }
     } finally {
       setReferencesLoading(false);
     }
