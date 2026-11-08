@@ -156,6 +156,16 @@ async function searchMasterRow(page: Page, code: string) {
 
 test.describe('Sentanu Jaya ERP browser E2E', () => {
   test.beforeEach(async ({ page }) => {
+    // Capture client-side failures that can prevent React from rendering controls
+    // even when the API and HTTP requests appear healthy.
+    page.on('pageerror', (error) => {
+      console.error(`[E2E PAGE ERROR] ${error.stack ?? error.message}`);
+    });
+    page.on('console', (message) => {
+      if (message.type() === 'error') {
+        console.error(`[E2E CONSOLE ERROR] ${message.text()}`);
+      }
+    });
     // Preserve API diagnostics in CI when a browser form remains open after submit.
     page.on('response', async (response) => {
       if (!response.url().includes('/api/v1/') || response.status() < 400) return;
