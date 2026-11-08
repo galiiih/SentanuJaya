@@ -797,16 +797,19 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
       request => request.method() === 'POST' && new URL(request.url()).pathname.replace(/\/$/, '') === '/api/v1/acceptances',
       { timeout: 10000 },
     );
+    // Register the response waiter before clicking; the mock responds immediately,
+    // so registering it only after waitForRequest can miss the response event.
+    const createResponsePromise = page.waitForResponse(
+      response => response.request().method() === 'POST'
+        && new URL(response.url()).pathname.replace(/\/$/, '') === '/api/v1/acceptances',
+      { timeout: 15000 },
+    );
     await form.getByRole('button', { name: /Simpan|Save/i }).click();
-    const createRequest = await createRequestPromise;
+    const [createRequest, createResponse] = await Promise.all([createRequestPromise, createResponsePromise]);
     expect(createRequest.postDataJSON()).toMatchObject({
       delivery_order_id: deliveryOrder.id,
       lines: [{ delivery_order_line_id: 'e2e-accept-line', quantity_ok: 8, quantity_rejected: 2 }],
     });
-    const createResponse = await page.waitForResponse(
-      response => response.request() === createRequest,
-      { timeout: 10000 },
-    );
     expect(createResponse.status(), await createResponse.text()).toBe(201);
     await expect(form).toBeHidden({ timeout: 10000 });
     await expect.poll(() => createdPayload).not.toBeNull();
