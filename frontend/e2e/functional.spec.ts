@@ -787,7 +787,10 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await expect(detail.getByText('Spoiler E2E')).toBeVisible();
     await detail.getByRole('button', { name: /Penerimaan Baru|Catat Penerimaan/i }).click();
 
-    const form = page.getByRole('dialog').last();
+    // Identify the creation dialog by its unique reject-reason field.
+    // A positional ".last()" locator is re-evaluated after unmount and then
+    // points at the still-open delivery detail dialog, creating a false failure.
+    const form = page.getByRole('dialog').filter({ has: page.getByPlaceholder('Alasan reject...') });
     const quantities = form.locator('input[type="number"]');
     await expect(quantities).toHaveCount(2);
     await quantities.nth(0).fill('8');
