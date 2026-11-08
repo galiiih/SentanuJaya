@@ -42,6 +42,47 @@ async function logHitTarget(page: Page, locator: ReturnType<Page['locator']>, la
   console.log(`[E2E HIT TEST] ${label} ${JSON.stringify(details)}`);
 }
 
+
+async function traceConfirmClick(page: Page, button: ReturnType<Page['locator']>, label: string) {
+  await button.evaluate((element) => {
+    const trace: Array<Record<string, unknown>> = [];
+    const record = (event: Event) => {
+      const target = event.target as HTMLElement | null;
+      trace.push({
+        type: event.type,
+        phase: event.eventPhase,
+        trusted: event.isTrusted,
+        target: target?.tagName,
+        targetClass: target?.className,
+        defaultPrevented: event.defaultPrevented,
+        activeElement: (document.activeElement as HTMLElement | null)?.className,
+        time: Math.round(performance.now()),
+      });
+    };
+    for (const type of ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click']) {
+      window.addEventListener(type, record, true);
+      window.addEventListener(type, record, false);
+    }
+    (window as any).__confirmEventTrace = trace;
+  });
+  const responsePromise = page.waitForResponse(
+    response => response.request().method() === 'DELETE' && /\/api\/v1\/(suppliers|materials|companies)\//.test(response.url()),
+    { timeout: 8000 },
+  ).catch(() => null);
+  let clickError = '';
+  try {
+    await button.click({ timeout: 10000 });
+  } catch (error) {
+    clickError = error instanceof Error ? error.message : String(error);
+  }
+  const response = await responsePromise;
+  const trace = await page.evaluate(() => (window as any).__confirmEventTrace ?? []);
+  console.log(`[E2E CONFIRM TRACE] ${label} ${JSON.stringify({ clickError, events: trace, deleteResponse: response ? { status: response.status(), url: response.url() } : null })}`);
+  if (clickError) throw new Error(`Confirmation click failed (${label}): ${clickError}`);
+  if (!response) throw new Error(`Confirmation click produced no DELETE request (${label}); inspect E2E CONFIRM TRACE above.`);
+  expect(response.status(), await response.text()).toBe(200);
+}
+
 async function searchMasterRow(page: Page, code: string) {
   const search = page.getByPlaceholder('Cari data...');
   await expect(search).toBeVisible();
@@ -202,7 +243,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await deleteButton.click();
     const confirmation = page.getByRole('alertdialog');
     await expect(confirmation).toBeVisible();
-    await confirmation.getByRole('button', { name: 'Konfirmasi', exact: true }).click();
+    await traceConfirmClick(page, confirmation.getByRole('button', { name: 'Konfirmasi', exact: true }), 'supplier');
     await expect(confirmation).toBeHidden({ timeout: 10000 });
     await expect(page.locator('tr').filter({ hasText: code })).toHaveCount(0, { timeout: 10000 });
   });
@@ -276,7 +317,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await row.locator('button[title="Hapus"]').click();
     const confirmation = page.getByRole('alertdialog');
     await expect(confirmation).toBeVisible();
-    await confirmation.getByRole('button', { name: 'Konfirmasi', exact: true }).click();
+    await traceConfirmClick(page, confirmation.getByRole('button', { name: 'Konfirmasi', exact: true }), 'company');
     await expect(confirmation).toBeHidden({ timeout: 10000 });
     await expect(page.locator('tr').filter({ hasText: code })).toHaveCount(0, { timeout: 10000 });
   });
@@ -349,7 +390,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
       response => response.request().method() === 'DELETE' && response.url().includes('/api/v1/materials/'),
       { timeout: 15000 },
     );
-    await confirmButton.click({ timeout: 10000 });
+    await traceConfirmClick(page, confirmButton, 'material');
     const deleteResponse = await deleteResponsePromise;
     expect(deleteResponse.status(), await deleteResponse.text()).toBe(200);
     await expect(confirmation).toBeHidden({ timeout: 10000 });
