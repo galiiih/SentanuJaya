@@ -328,11 +328,28 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await row.locator('button[title="Hapus"]').click();
     const confirmation = page.getByRole('alertdialog');
     await expect(confirmation).toBeVisible();
+    const confirmButton = confirmation.getByRole('button', { name: 'Konfirmasi', exact: true });
+    await logHitTarget(page, confirmButton, 'material delete confirmation');
+    console.log('[E2E MATERIAL CONFIRM STATE]', JSON.stringify(await confirmButton.evaluate((element) => {
+      const style = getComputedStyle(element);
+      const rect = element.getBoundingClientRect();
+      return {
+        focused: document.activeElement === element,
+        disabled: (element as HTMLButtonElement).disabled,
+        rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
+        pointerEvents: style.pointerEvents,
+        visibility: style.visibility,
+        opacity: style.opacity,
+        transition: style.transition,
+        animation: style.animation,
+        parent: element.parentElement?.className,
+      };
+    })));
     const deleteResponsePromise = page.waitForResponse(
       response => response.request().method() === 'DELETE' && response.url().includes('/api/v1/materials/'),
       { timeout: 15000 },
     );
-    await confirmation.getByRole('button', { name: 'Konfirmasi', exact: true }).click();
+    await confirmButton.click({ timeout: 10000 });
     const deleteResponse = await deleteResponsePromise;
     expect(deleteResponse.status(), await deleteResponse.text()).toBe(200);
     await expect(confirmation).toBeHidden({ timeout: 10000 });
