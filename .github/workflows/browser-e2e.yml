@@ -1,16 +1,16 @@
 name: Browser E2E
 
 on:
-  # Only the newest push for a branch needs a full browser run; older long suites are superseded.
-concurrency:
-  group: browser-e2e-${{ github.ref }}
-  cancel-in-progress: true
-
   push:
     branches: [feat/template-management-grapesjs, feat/sidebar-collapse-navigation-new]
   pull_request:
     branches: [master]
   workflow_dispatch:
+
+# Only the newest push for a branch needs a full browser run; older long suites are superseded.
+concurrency:
+  group: browser-e2e-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   browser-e2e:
