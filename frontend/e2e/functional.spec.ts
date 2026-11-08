@@ -804,7 +804,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     }]);
 
     await expect(detail.getByText('AC-E2E-0001')).toBeVisible({ timeout: 10000 });
-    await detail.getByRole('button', { name: /Submit Penerimaan|Kirim Penerimaan/i }).click();
+    await detail.getByRole('button', { name: /Ajukan Penerimaan|Submit Acceptance/i }).click();
     await expect(detail.getByText('SUBMITTED')).toBeVisible({ timeout: 10000 });
     await detail.getByRole('button', { name: /Posting Penerimaan|Post Penerimaan/i }).click();
     await expect(detail.getByText('POSTED')).toBeVisible({ timeout: 10000 });
