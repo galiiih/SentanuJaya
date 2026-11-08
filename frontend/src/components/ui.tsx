@@ -1,4 +1,5 @@
 import { type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { AlertCircle, CheckCircle2, ChevronDown, ChevronUp, Search, X } from 'lucide-react';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'success';
@@ -212,8 +213,11 @@ export function ConfirmationDialog({ open, title, description, confirmLabel = 'K
     }
   }, [open]);
 
-  if (!open) return null;
-  return <div className="modal-backdrop" onMouseDown={onClose}><section ref={dialog} className="modal confirmation-dialog" role="alertdialog" aria-modal="true" aria-labelledby={titleId} aria-describedby={descriptionId} onMouseDown={(event) => event.stopPropagation()}><div className="modal__header"><h2 id={titleId}>{title}</h2></div><div className="confirmation-dialog__body"><p id={descriptionId}>{description}</p><div className="confirmation-dialog__actions"><Button variant="secondary" onClick={onClose}>{cancelLabel}</Button><Button className="confirmation-dialog__confirm" variant={tone} onClick={onConfirm}>{confirmLabel}</Button></div></div></section></div>;
+  if (!open || typeof document === 'undefined') return null;
+  return createPortal(
+    <div className="modal-backdrop" onMouseDown={onClose}><section ref={dialog} className="modal confirmation-dialog" role="alertdialog" aria-modal="true" aria-labelledby={titleId} aria-describedby={descriptionId} onMouseDown={(event) => event.stopPropagation()}><div className="modal__header"><h2 id={titleId}>{title}</h2></div><div className="confirmation-dialog__body"><p id={descriptionId}>{description}</p><div className="confirmation-dialog__actions"><Button variant="secondary" onClick={onClose}>{cancelLabel}</Button><Button className="confirmation-dialog__confirm" variant={tone} onClick={onConfirm}>{confirmLabel}</Button></div></div></section></div>,
+    document.body,
+  );
 }
 
 export type DataTableColumn<T> = {
@@ -306,8 +310,8 @@ export function Modal({ open, title, children, onClose }: { open: boolean; title
     }
   }, [open]);
 
-  if (!open) return null;
-  return (
+  if (!open || typeof document === 'undefined') return null;
+  return createPortal(
     <div className="glass-modal-overlay" role="presentation" onMouseDown={onClose}>
       <section className="glass-modal" role="dialog" aria-modal="true" aria-labelledby={titleId} onMouseDown={(event) => event.stopPropagation()}>
         <div className="modal__header">
@@ -318,6 +322,7 @@ export function Modal({ open, title, children, onClose }: { open: boolean; title
           {children}
         </div>
       </section>
-    </div>
+    </div>,
+    document.body,
   );
 }
