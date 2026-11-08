@@ -793,7 +793,21 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await quantities.nth(0).fill('8');
     await quantities.nth(1).fill('2');
     await form.getByPlaceholder('Alasan reject...').fill('Cat mengelupas');
+    const createRequestPromise = page.waitForRequest(
+      request => request.method() === 'POST' && new URL(request.url()).pathname.replace(/\/$/, '') === '/api/v1/acceptances',
+      { timeout: 10000 },
+    );
     await form.getByRole('button', { name: /Simpan|Save/i }).click();
+    const createRequest = await createRequestPromise;
+    expect(createRequest.postDataJSON()).toMatchObject({
+      delivery_order_id: deliveryOrder.id,
+      lines: [{ delivery_order_line_id: 'e2e-accept-line', quantity_ok: 8, quantity_rejected: 2 }],
+    });
+    const createResponse = await page.waitForResponse(
+      response => response.request() === createRequest,
+      { timeout: 10000 },
+    );
+    expect(createResponse.status(), await createResponse.text()).toBe(201);
     await expect(form).toBeHidden({ timeout: 10000 });
     await expect.poll(() => createdPayload).not.toBeNull();
     expect(createdPayload.lines).toEqual([{
