@@ -33,6 +33,19 @@ test.describe('Mobile navigation drawer', () => {
     await expect(trigger).toHaveAttribute('aria-expanded', 'false');
   });
 
+  test('closes when the backdrop is clicked', async ({ page }) => {
+    await loginAsAdmin(page);
+
+    const sidebar = page.locator('aside.sidebar');
+    const trigger = page.getByRole('button', { name: 'Buka navigasi' });
+    await trigger.click();
+    await expect(sidebar).toBeVisible();
+
+    await page.getByRole('button', { name: 'Tutup navigasi' }).click();
+    await expect(sidebar).toBeHidden();
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+  });
+
   test('closes after selecting a navigation link', async ({ page }) => {
     await loginAsAdmin(page);
 
@@ -57,6 +70,6 @@ test.describe('Mobile navigation drawer', () => {
     await page.getByRole('button', { name: 'Buka navigasi' }).click();
     await expect(sidebar).toBeVisible();
     await expect(sidebar.getByRole('link', { name: 'Master Data' })).toBeVisible();
-    await expect(sidebar.getByRole('button', { name: 'Ciutkan sidebar' })).toBeHidden();
+    await expect(sidebar.locator('button.sidebar__collapse')).toBeHidden();
   });
 });
