@@ -76,7 +76,7 @@ function make(el){
   var reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
   var hold=parseFloat(el.getAttribute('data-hold'));if(!(hold>=0))hold=1.8;
   var loop=el.getAttribute('data-loop')==='true';
-  var ROT=2.3,GLOW=1.6,END=hold+ROT+GLOW+0.6;
+  var ROT=parseFloat(el.getAttribute('data-rot')),GLOW=parseFloat(el.getAttribute('data-glow'));if(!(ROT>0))ROT=2.3;if(!(GLOW>0))GLOW=1.6;var END=hold+ROT+GLOW+0.6;
   var renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});
   renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
   var scene=new THREE.Scene();
