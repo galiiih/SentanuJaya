@@ -1278,4 +1278,133 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
   });
 
 
+  test('Nanu confirms and cancels Customer PO actions through the real browser and API', async ({ page }) => {
+    await login(page);
+
+    // Use the deterministic master records created by BrowserE2ESeeder.
+    const fixtures = await page.evaluate(async () => {
+      const get = async (path: string) => {
+        const response = await fetch(path, { credentials: 'include', headers: { Accept: 'application/json' } });
+        if (!response.ok) throw new Error(`GET ${path}: HTTP ${response.status} ${await response.text()}`);
+        return response.json();
+      };
+      const unwrap = (body: any) => body?.data?.data ?? body?.data ?? body;
+      const [companiesBody, customersBody, itemsBody] = await Promise.all([
+        get('/api/v1/companies?per_page=100'),
+        get('/api/v1/customers?per_page=100'),
+        get('/api/v1/customer-items?per_page=100'),
+      ]);
+      const companies = unwrap(companiesBody);
+      const customers = unwrap(customersBody);
+      const items = unwrap(itemsBody);
+      const company = (Array.isArray(companies) ? companies : companies?.data ?? []).find((row: any) => row.code === 'SJ-LOCAL');
+      const customer = (Array.isArray(customers) ? customers : customers?.data ?? []).find((row: any) => row.code === 'CUST-LOCAL');
+      const item = (Array.isArray(items) ? items : items?.data ?? []).find((row: any) => row.code === 'BUMPER-LOCAL');
+      if (!company?.id || !customer?.id || !item?.id) {
+        throw new Error('BrowserE2ESeeder fixture missing: SJ-LOCAL / CUST-LOCAL / BUMPER-LOCAL');
+      }
+      return { companyId: company.id, customerId: customer.id, itemId: item.id };
+    });
+
+    const createPoAndDraft = async (suffix: string) => page.evaluate(async ({ fixtures, suffix }) => {
+      const request = async (path: string, method: string, body?: unknown) => {
+        const response = await fetch(path, {
+          method,
+          credentials: 'include',
+          headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+          ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(`${method} ${path}: HTTP ${response.status} ${JSON.stringify(payload)}`);
+        return payload?.data ?? payload;
+      };
+      const po = await request('/api/v1/customer-pos', 'POST', {
+        company_id: fixtures.companyId,
+        customer_id: fixtures.customerId,
+        po_number: `E2E-NANU-${suffix}`,
+        po_date: new Date().toISOString().slice(0, 10),
+        lines: [{ customer_item_id: fixtures.itemId, color_code: 'BLACK', quantity: 2, unit_price: 100000 }],
+      });
+      const draft = await request('/api/v1/puffy/actions', 'POST', {
+        action_type: 'customer_po.activate',
+        payload: { po_id: po.id },
+      });
+      return { poId: po.id, actionId: draft.id, poNumber: po.po_number };
+    }, { fixtures, suffix });
+
+    const readPoStatus = async (poId: string) => page.evaluate(async (id) => {
+      const response = await fetch(`/api/v1/customer-pos/${id}`, {
+        credentials: 'include', headers: { Accept: 'application/json' },
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(`Read PO failed: HTTP ${response.status} ${JSON.stringify(payload)}`);
+      return payload?.data?.status ?? payload?.status;
+    }, poId);
+
+    const renderActionInNanu = async (poNumber: string, actionId: string) => {
+      await page.route('**/api/v1/puffy/chat', async (route) => {
+        const now = new Date().toISOString();
+        const events = [
+          ['tool_result', {
+            tool: 'customer_po.activate',
+            title: 'Konfirmasi aktivasi Customer PO',
+            summary: `Draft aktivasi untuk ${poNumber} siap ditinjau.`,
+            hasData: true,
+            source: 'Nanu Action Executor',
+            asOf: now,
+            action: {
+              id: actionId,
+              label: `Aktifkan ${poNumber}`,
+              description: `mengaktifkan Customer PO ${poNumber}`,
+            },
+          }],
+          ['done', { message_id: `e2e-${actionId}`, conversation_id: `e2e-${actionId}` }],
+        ];
+        const body = events.map(([event, data]) => `event: ${event}\\ndata: ${JSON.stringify(data)}\\n\\n`).join('');
+        await route.fulfill({ status: 200, contentType: 'text/event-stream', body });
+      });
+
+      const panel = page.getByRole('region', { name: 'Nanu · asisten admin' });
+      if (!(await panel.isVisible().catch(() => false))) {
+        await page.getByRole('button', { name: 'Buka chat Nanu' }).click();
+      }
+      const input = panel.getByRole('textbox', { name: 'Tanya Nanu…' });
+      await input.fill(`Tinjau aktivasi ${poNumber}`);
+      await input.press('Enter');
+      await expect(panel.getByText(`Draft aktivasi untuk ${poNumber} siap ditinjau.`)).toBeVisible({ timeout: 10000 });
+      await expect(panel.getByRole('button', { name: 'Lanjutkan' })).toBeVisible();
+    };
+
+    const activation = await createPoAndDraft('CONFIRM');
+    expect(await readPoStatus(activation.poId)).toBe('DRAFT');
+    await renderActionInNanu(activation.poNumber, activation.actionId);
+
+    const panel = page.getByRole('region', { name: 'Nanu · asisten admin' });
+    const confirmResponse = page.waitForResponse(response =>
+      response.url().includes(`/puffy/actions/${activation.actionId}/confirm`) &&
+      response.request().method() === 'POST',
+    );
+    await panel.getByRole('button', { name: 'Lanjutkan' }).click();
+    const confirmed = await confirmResponse;
+    expect(confirmed.status(), await confirmed.text()).toBe(200);
+    await expect(panel.getByRole('status').filter({ hasText: 'tercatat di audit log' })).toBeVisible();
+    expect(await readPoStatus(activation.poId)).toBe('OPEN');
+
+    await page.unroute('**/api/v1/puffy/chat');
+    const cancellation = await createPoAndDraft('CANCEL');
+    expect(await readPoStatus(cancellation.poId)).toBe('DRAFT');
+    await renderActionInNanu(cancellation.poNumber, cancellation.actionId);
+
+    const cancelResponse = page.waitForResponse(response =>
+      response.url().includes(`/puffy/actions/${cancellation.actionId}/cancel`) &&
+      response.request().method() === 'POST',
+    );
+    await panel.getByRole('button', { name: 'Batal' }).click();
+    const cancelled = await cancelResponse;
+    expect(cancelled.status(), await cancelled.text()).toBe(200);
+    await expect(panel.getByText('Dibatalkan.')).toBeVisible();
+    expect(await readPoStatus(cancellation.poId)).toBe('DRAFT');
+  });
+
+
 });
