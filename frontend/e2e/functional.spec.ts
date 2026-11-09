@@ -223,6 +223,29 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await taxSelect.selectOption('2');
     await expect(taxSelect).toHaveValue('2');
 
+    const formDiagnostics = await dialog.evaluate((element) => ({
+      text: element.innerText,
+      buttons: Array.from(element.querySelectorAll('button')).map((button) => ({
+        text: button.innerText.trim(),
+        disabled: (button as HTMLButtonElement).disabled,
+        visible: !!(button.offsetWidth || button.offsetHeight || button.getClientRects().length),
+      })),
+      controls: Array.from(element.querySelectorAll('input, select, textarea')).map((control) => {
+        const field = control as HTMLInputElement;
+        return {
+          tag: field.tagName,
+          type: field.type,
+          name: field.name,
+          id: field.id,
+          value: field.value,
+          required: field.required,
+          valid: field.checkValidity(),
+          validationMessage: field.validationMessage,
+        };
+      }),
+    }));
+    console.log(`[E2E MASTER FORM DIAGNOSTICS] customer ${JSON.stringify(formDiagnostics)}`);
+
     const saveButton = dialog.getByRole('button', { name: /Simpan Data/i });
     await saveButton.scrollIntoViewIfNeeded();
     await expect(saveButton).toBeEnabled();
