@@ -10,13 +10,14 @@ use App\Models\Payment;
 use App\Models\PaymentAllocation;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
 class PartiallyPaidReceivablesTest extends TestCase
 {
     use RefreshDatabase;
 
-    /** @test */
+    #[Test]
     public function partially_paid_invoices_remain_in_dashboard_and_receivables_totals(): void
     {
         $admin = User::factory()->create(['role' => 'ADMIN']);
