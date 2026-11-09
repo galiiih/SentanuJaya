@@ -48,7 +48,7 @@ class DashboardController extends BaseApiController
 
         // Outstanding & Top Customers by Outstanding
         $topCustomers = Customer::with('invoices')->get()->map(function ($customer) {
-            $invoices = $customer->invoices()->where('status', 'POSTED')->get();
+            $invoices = $customer->invoices()->whereIn('status', [Invoice::STATUS_POSTED, Invoice::STATUS_PARTIALLY_PAID])->get();
             $totalBilled = $invoices->sum('total_amount');
             $invoiceIds = $invoices->pluck('id');
             $totalPaid = DB::table('payment_allocations')
@@ -67,7 +67,7 @@ class DashboardController extends BaseApiController
         })->sortByDesc('outstanding')->take(5)->values();
 
         $totalOutstanding = Customer::get()->sum(function ($customer) {
-            $invoices = $customer->invoices()->where('status', 'POSTED')->get();
+            $invoices = $customer->invoices()->whereIn('status', [Invoice::STATUS_POSTED, Invoice::STATUS_PARTIALLY_PAID])->get();
             $totalBilled = $invoices->sum('total_amount');
             $invoiceIds = $invoices->pluck('id');
             $totalPaid = DB::table('payment_allocations')
