@@ -1,16 +1,16 @@
 <?php
 
-namespace Tests\\Feature\\Api\\V1;
+namespace Tests\Feature\Api\V1;
 
-use App\\Models\\Company;
-use App\\Models\\Branch;
-use App\\Models\\Customer;
-use App\\Models\\Invoice;
-use App\\Models\\Payment;
-use App\\Models\\PaymentAllocation;
-use App\\Models\\User;
-use Illuminate\\Foundation\\Testing\\RefreshDatabase;
-use Tests\\TestCase;
+use App\Models\Company;
+use App\Models\Branch;
+use App\Models\Customer;
+use App\Models\Invoice;
+use App\Models\Payment;
+use App\Models\PaymentAllocation;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 class PartiallyPaidReceivablesTest extends TestCase
 {
