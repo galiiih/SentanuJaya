@@ -762,3 +762,120 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .sidebar-profile-menu__item { width: 100%; display: flex; align-items: center; gap: .6rem; padding: .6rem .65rem; border: 0; border-radius: .8rem; background: transparent; color: var(--color-danger); font-size: .82rem; font-weight: 600; text-align: left; }
 .sidebar-profile-menu__item:hover { background: var(--color-danger-soft); }
 .sidebar-profile-menu__item:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 1px; }
+
+
+/* =====================================================================
+   Login intro: logo di tengah → putar 360° + titik bersinar → terbang ke
+   logo sidebar → wave membuka aplikasi. Dirender LoginIntro lewat portal.
+   ===================================================================== */
+@property --intro-wave-r { syntax: '<length>'; inherits: false; initial-value: 0px; }
+.login-intro { position: fixed; inset: 0; z-index: 10000; overflow: hidden; --intro-logo-size: clamp(120px, 24vmin, 200px); }
+.login-intro__veil {
+  position: absolute; inset: 0;
+  background: radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--color-primary) 12%, transparent), transparent 52%), var(--color-bg);
+}
+.login-intro__logo {
+  position: absolute; left: 50%; top: 50%;
+  width: var(--intro-logo-size); height: var(--intro-logo-size);
+  margin: calc(var(--intro-logo-size) / -2) 0 0 calc(var(--intro-logo-size) / -2);
+  animation: login-intro-logo-in 480ms cubic-bezier(.2, .8, .2, 1) backwards;
+  will-change: transform;
+}
+.login-intro--fly .login-intro__logo,
+.login-intro--wave .login-intro__logo {
+  transform: translate(var(--intro-dx), var(--intro-dy)) scale(var(--intro-scale));
+  transition: transform 700ms cubic-bezier(.65, 0, .2, 1);
+}
+.login-intro--wave .login-intro__logo { animation: login-intro-logo-out 260ms ease-in 110ms forwards; }
+.login-intro--mobile.login-intro--wave .login-intro__logo { animation-delay: 0ms; }
+.login-intro__logo--flat { perspective: 600px; }
+.login-intro__logo--flat .sj-flat { animation: login-intro-flat-spin 1100ms cubic-bezier(.65, 0, .35, 1) 150ms both; }
+.login-intro--wave .login-intro__veil {
+  -webkit-mask-image: radial-gradient(circle at var(--intro-wave-x) var(--intro-wave-y), transparent var(--intro-wave-r), #000 calc(var(--intro-wave-r) + 90px));
+  mask-image: radial-gradient(circle at var(--intro-wave-x) var(--intro-wave-y), transparent var(--intro-wave-r), #000 calc(var(--intro-wave-r) + 90px));
+  animation: login-intro-reveal 800ms cubic-bezier(.5, 0, .2, 1) forwards, login-intro-veil-fade 240ms ease-in 600ms forwards;
+}
+.login-intro--skip { opacity: 0; transition: opacity 200ms ease; pointer-events: none; }
+.login-intro__ring {
+  position: absolute; left: var(--intro-wave-x); top: var(--intro-wave-y);
+  width: 120px; height: 120px; margin: -60px 0 0 -60px;
+  border: 2px solid #f2585c; border-radius: 50%;
+  box-shadow: 0 0 24px rgb(242 88 92 / 45%), inset 0 0 24px rgb(242 88 92 / 25%);
+  opacity: 0; transform: scale(0); pointer-events: none;
+}
+.login-intro__ring--blue { border-color: #3f58c8; box-shadow: 0 0 24px rgb(63 88 200 / 45%), inset 0 0 24px rgb(63 88 200 / 25%); }
+.login-intro--wave .login-intro__ring { animation: login-intro-ring 800ms cubic-bezier(.4, 0, .2, 1) forwards; }
+.login-intro--wave .login-intro__ring--blue { animation-delay: 110ms; }
+.login-intro__skip {
+  position: absolute; right: clamp(16px, 3vw, 28px); bottom: clamp(16px, 3vh, 28px);
+  min-height: 2.1rem; padding: 0 .95rem;
+  border: 1px solid var(--color-border-strong); border-radius: 999px;
+  background: color-mix(in srgb, var(--color-surface) 82%, transparent);
+  color: var(--color-text-secondary); font: inherit; font-size: .74rem; font-weight: 700; cursor: pointer;
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  animation: login-intro-fade 300ms ease 350ms backwards;
+  transition: opacity 200ms ease, color 150ms ease;
+}
+.login-intro__skip:hover { color: var(--color-text); }
+.login-intro__skip:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+.login-intro--wave .login-intro__skip { opacity: 0; pointer-events: none; }
+@keyframes login-intro-logo-in { from { opacity: 0; scale: .6; } to { opacity: 1; scale: 1; } }
+@keyframes login-intro-logo-out { to { opacity: 0; } }
+@keyframes login-intro-flat-spin { to { transform: rotateY(360deg); } }
+@keyframes login-intro-reveal { from { --intro-wave-r: 0px; } to { --intro-wave-r: var(--intro-wave-max); } }
+@keyframes login-intro-veil-fade { to { opacity: 0; } }
+@keyframes login-intro-ring { 0% { opacity: .85; transform: scale(.2); } 100% { opacity: 0; transform: scale(var(--intro-ring-scale)); } }
+@keyframes login-intro-fade { from { opacity: 0; } to { opacity: 1; } }
+.app-shell--intro .sidebar__brand [data-sentanu-logo] { opacity: 0; transition: opacity 300ms ease; }
+.app-shell--intro:not(.app-shell--intro-wait) .sidebar__brand [data-sentanu-logo] { opacity: 1; }
+.app-shell--intro-wait .app-content { visibility: hidden; }
+
+/* Entrance animation untuk halaman dan komponen dashboard di seluruh .app-content. */
+@keyframes sj-rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@keyframes sj-drop { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: none; } }
+@keyframes sj-slide-left { from { opacity: 0; transform: translateX(-26px); } to { opacity: 1; transform: none; } }
+@keyframes sj-slide-right { from { opacity: 0; transform: translateX(26px); } to { opacity: 1; transform: none; } }
+@keyframes sj-zoom { from { opacity: 0; transform: scale(.9); } to { opacity: 1; transform: none; } }
+@keyframes sj-flip { from { opacity: 0; transform: perspective(700px) rotateX(-28deg) translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes sj-pop { 0% { opacity: 0; transform: scale(.5); } 65% { opacity: 1; transform: scale(1.12); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes sj-wipe { from { opacity: .2; clip-path: inset(0 100% 0 0 round 14px); } to { opacity: 1; clip-path: inset(0 0 0 0 round 14px); } }
+@keyframes sj-grow-y { from { clip-path: inset(100% 0 0 0); } to { clip-path: inset(0 0 0 0); } }
+@keyframes sj-grow-x { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes sj-row { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: none; } }
+.app-content :is(.kpi-grid, .dashboard-grid, .activity-list, .production-bar) > :nth-child(2) { --sj-i: 1; }
+.app-content :is(.kpi-grid, .dashboard-grid, .activity-list, .production-bar) > :nth-child(3) { --sj-i: 2; }
+.app-content :is(.kpi-grid, .dashboard-grid, .activity-list, .production-bar) > :nth-child(4) { --sj-i: 3; }
+.app-content :is(.kpi-grid, .dashboard-grid, .activity-list, .production-bar) > :nth-child(5) { --sj-i: 4; }
+.app-content :is(.kpi-grid, .dashboard-grid, .activity-list, .production-bar) > :nth-child(6) { --sj-i: 5; }
+.app-content :is(.kpi-grid, .dashboard-grid, .activity-list, .production-bar) > :nth-child(7) { --sj-i: 6; }
+.app-content :is(.kpi-grid, .dashboard-grid, .activity-list, .production-bar) > :nth-child(n+8) { --sj-i: 7; }
+.app-content .data-table tbody tr:nth-child(2) { --sj-i: 1; }
+.app-content .data-table tbody tr:nth-child(3) { --sj-i: 2; }
+.app-content .data-table tbody tr:nth-child(4) { --sj-i: 3; }
+.app-content .data-table tbody tr:nth-child(5) { --sj-i: 4; }
+.app-content .data-table tbody tr:nth-child(6) { --sj-i: 5; }
+.app-content .data-table tbody tr:nth-child(7) { --sj-i: 6; }
+.app-content .data-table tbody tr:nth-child(8) { --sj-i: 7; }
+.app-content .data-table tbody tr:nth-child(9) { --sj-i: 8; }
+.app-content .data-table tbody tr:nth-child(n+10) { --sj-i: 9; }
+.app-content .page-header { animation: sj-drop 420ms cubic-bezier(.2, .7, .2, 1) backwards; }
+.app-content .card { animation: sj-rise 520ms cubic-bezier(.2, .7, .2, 1) calc(60ms + var(--sj-i, 0) * 70ms) backwards; }
+.app-content .dashboard-grid > .card:nth-child(odd) { animation-name: sj-slide-left; }
+.app-content .dashboard-grid > .card:nth-child(even) { animation-name: sj-slide-right; }
+.app-content .dashboard-grid > .card:has(.chart-container) { animation-name: sj-wipe; animation-duration: 750ms; }
+.app-content .kpi-grid > .kpi-card:nth-child(1) { animation-name: sj-rise; }
+.app-content .kpi-grid > .kpi-card:nth-child(2) { animation-name: sj-flip; }
+.app-content .kpi-grid > .kpi-card:nth-child(3) { animation-name: sj-zoom; }
+.app-content .kpi-grid > .kpi-card:nth-child(4) { animation-name: sj-slide-right; }
+.app-content .kpi-card__icon { animation: sj-pop 500ms cubic-bezier(.2, .9, .3, 1.3) calc(260ms + var(--sj-i, 0) * 80ms) backwards; }
+.app-content .chart-container { animation: sj-grow-y 900ms cubic-bezier(.2, .7, .2, 1) 260ms backwards; }
+.app-content .production-bar__segment { transform-origin: left center; animation: sj-grow-x 700ms cubic-bezier(.2, .7, .2, 1) calc(280ms + var(--sj-i, 0) * 70ms) backwards; }
+.app-content .activity-list li { animation: sj-slide-left 420ms cubic-bezier(.2, .7, .2, 1) calc(240ms + var(--sj-i, 0) * 60ms) backwards; }
+.app-content .activity-list .status-badge { animation: sj-pop 450ms cubic-bezier(.2, .9, .3, 1.3) calc(380ms + var(--sj-i, 0) * 60ms) backwards; }
+.app-content .data-table tbody tr { animation: sj-row 360ms cubic-bezier(.2, .7, .2, 1) calc(180ms + var(--sj-i, 0) * 35ms) backwards; }
+.app-content .alert-item { animation: sj-rise 400ms ease 240ms backwards; }
+.app-shell--intro-wait .app-content :is(.page-header, .card, .kpi-card__icon, .chart-container, .production-bar__segment, .activity-list li, .activity-list .status-badge, .data-table tbody tr, .alert-item) { animation: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  .app-content :is(.page-header, .card, .kpi-card__icon, .chart-container, .production-bar__segment, .activity-list li, .activity-list .status-badge, .data-table tbody tr, .alert-item) { animation: none !important; }
+  .login-intro, .login-intro * { animation: none !important; transition: none !important; }
+}
