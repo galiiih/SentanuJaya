@@ -5,6 +5,9 @@ export default defineConfig({
   timeout: 60 * 1000,
   // Bound the complete serial browser suite so a stuck browser/server cannot hold CI indefinitely.
   globalTimeout: 25 * 60 * 1000,
+  // Stop after the first fully retried failure; later cases cannot provide useful signal
+  // while a shared UI/auth issue is blocking the suite.
+  maxFailures: process.env.CI ? 1 : 0,
   expect: {
     timeout: 10000
   },
