@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Bell,
   BookOpen,
   Boxes,
   CheckCircle2,
-  ChevronDown,
-  ChevronUp,
+  ChevronLeft,
+  ChevronRight,
   CircleDollarSign,
   FileCheck,
   FileText,
@@ -13,8 +14,6 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
-  PanelLeftClose,
-  PanelLeftOpen,
   Moon,
   Package,
   Plus,
@@ -106,9 +105,30 @@ function RequirePermission({ permission, children }: { permission: Permission; c
 }
 
 function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => void }) {
-  const { hasPermission } = useAuth();
+  const { hasPermission, user, logout } = useAuth();
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
+  const [profileMenu, setProfileMenu] = useState<{ bottom: number; left: number } | null>(null);
+  useEffect(() => {
+    if (!profileMenu) return;
+    const closeOnOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target?.closest('.sidebar-profile-menu, .sidebar__profile')) return;
+      setProfileMenu(null);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === 'Escape') setProfileMenu(null); };
+    document.addEventListener('mousedown', closeOnOutside, true);
+    window.addEventListener('keydown', closeOnEscape);
+    return () => { document.removeEventListener('mousedown', closeOnOutside, true); window.removeEventListener('keydown', closeOnEscape); };
+  }, [profileMenu]);
+  const signOut = () => { setProfileMenu(null); logout(); navigate('/login', { replace: true }); };
+  const [tooltip, setTooltip] = useState<{ label: string; top: number; left: number } | null>(null);
+  const showTooltip = (label: string, element: HTMLElement) => {
+    const rect = element.getBoundingClientRect();
+    setTooltip({ label, top: rect.top + rect.height / 2, left: rect.right + 12 });
+  };
+  const hideTooltip = () => setTooltip(null);
 
   const navSections = [
     {
@@ -148,19 +168,27 @@ function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => 
         <div className="sidebar__brand-copy"><strong>SENTANU JAYA</strong><span>ERP WORKSHOP</span></div>
       </div>
       <div className="sidebar__toggle-row">
-        <button type="button" className="icon-button sidebar__collapse" onClick={() => setCollapsed((value) => !value)} aria-label={collapsed ? 'Perlebar sidebar' : 'Ciutkan sidebar'} aria-expanded={!collapsed} title={collapsed ? 'Perlebar sidebar' : 'Ciutkan sidebar'}>{collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}</button>
+        <button type="button" className="icon-button sidebar__collapse" onClick={() => { hideTooltip(); setCollapsed((value) => !value); }} aria-label={collapsed ? 'Perlebar sidebar' : 'Ciutkan sidebar'} aria-expanded={!collapsed} title={collapsed ? 'Perlebar sidebar' : 'Ciutkan sidebar'}>{collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}</button>
       </div>
-      <nav className="sidebar__nav" aria-label="Navigasi utama">
+      <nav className="sidebar__nav" aria-label="Navigasi utama" onScroll={hideTooltip}>
         {navSections.map((section) => {
           const visibleItems = section.items.filter((item) => hasPermission(item.permission));
           if (!visibleItems.length) return null;
           return <div className="sidebar__section" key={section.label}><p className="nav-section-label">{section.label}</p>{visibleItems.map((item) => {
             const Icon = item.icon;
-            return <NavLink key={item.path} to={item.path} onClick={onClose} data-tooltip={item.label} title={isCollapsed ? item.label : undefined} aria-label={isCollapsed ? item.label : undefined} className={({ isActive }) => `nav-item${isActive ? ' nav-item--active' : ''}`}><Icon size={18} aria-hidden="true" /><span>{item.label}</span></NavLink>;
+            return <NavLink key={item.path} to={item.path} onClick={() => { hideTooltip(); onClose(); }} data-tooltip={item.label} title={isCollapsed && tooltip?.label !== item.label ? item.label : undefined} aria-label={isCollapsed ? item.label : undefined} onMouseEnter={isCollapsed ? (event) => showTooltip(item.label, event.currentTarget) : undefined} onFocus={isCollapsed ? (event) => showTooltip(item.label, event.currentTarget) : undefined} onMouseLeave={hideTooltip} onBlur={hideTooltip} className={({ isActive }) => `nav-item${isActive ? ' nav-item--active' : ''}`}><Icon size={18} aria-hidden="true" /><span>{item.label}</span></NavLink>;
           })}</div>;
         })}
       </nav>
       <div className="sidebar__foot"><ShieldCheck size={18} /><div className="sidebar__foot-copy"><strong>{t.nav.isolatedCustody}</strong><span>{t.nav.offBalanceSheet}</span></div></div>
+      <div className="sidebar__profile-wrap">
+        <button type="button" className="sidebar__profile" aria-label="Menu pengguna" aria-haspopup="menu" aria-expanded={profileMenu !== null} onClick={(event) => { hideTooltip(); const rect = event.currentTarget.getBoundingClientRect(); setProfileMenu((current) => (current ? null : { bottom: window.innerHeight - rect.top + 8, left: rect.left })); }}>
+          <span className="sidebar__avatar" aria-hidden="true">{user?.name.slice(0, 2).toUpperCase()}</span>
+          <span className="sidebar__profile-copy"><strong>{user?.name}</strong><span>{user?.role === 'ADMIN' ? 'Administrator' : user?.role}</span></span>
+        </button>
+      </div>
+      {profileMenu ? createPortal(<div className="sidebar-profile-menu" role="menu" aria-label="Menu pengguna" style={{ bottom: profileMenu.bottom, left: profileMenu.left }}><div className="sidebar-profile-menu__header"><strong>{user?.name}</strong><span>{user?.email || 'owner@sentanujaya.id'}</span></div><button type="button" role="menuitem" className="sidebar-profile-menu__item" onClick={signOut}><LogOut size={15} aria-hidden="true" />{t.nav.logout}</button></div>, document.body) : null}
+      {isCollapsed && tooltip ? createPortal(<div className="sidebar-tooltip" role="presentation" style={{ top: tooltip.top, left: tooltip.left }}>{tooltip.label}</div>, document.body) : null}
     </aside>
   );
 }
@@ -211,7 +239,6 @@ function LanguageSwitcher() {
 }
 
 function AuthenticatedLayout() {
-  const [menuOpen, setMenuOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   useEffect(() => {
     if (!mobileNavOpen) return;
@@ -222,10 +249,7 @@ function AuthenticatedLayout() {
     return () => window.removeEventListener('keydown', closeOnEscape);
   }, [mobileNavOpen]);
   const location = useLocation();
-  const { user, logout } = useAuth();
   const { t } = useLanguage();
-  const navigate = useNavigate();
-
   const pageKey = routePages[location.pathname] ?? 'dashboard';
   const pageTitle = t.pages[`${pageKey}Title` as keyof typeof t.pages] || 'Dashboard';
 
@@ -245,8 +269,6 @@ function AuthenticatedLayout() {
   };
   const breadcrumbItems = breadcrumbMap[location.pathname] || ['Workspace', pageTitle];
 
-  const signOut = () => { logout(); navigate('/login', { replace: true }); };
-
   return (
     <div className="app-shell">
       <button type="button" className={`sidebar-mobile-overlay${mobileNavOpen ? ' sidebar-mobile-overlay--visible' : ''}`} aria-label="Tutup navigasi" tabIndex={mobileNavOpen ? 0 : -1} onClick={() => setMobileNavOpen(false)} />
@@ -263,33 +285,7 @@ function AuthenticatedLayout() {
             <LanguageSwitcher />
             <span className="header-divider" />
             <button className="icon-button" aria-label="Notifikasi" disabled title="Fitur notifikasi belum tersedia"><Bell size={19} /></button>
-            <span className="header-divider" />
-            <div className="user-menu">
-              <button 
-                type="button" 
-                className="user-profile-pill" 
-                aria-label="Menu pengguna" 
-                aria-expanded={menuOpen} 
-                onClick={() => setMenuOpen((value) => !value)}
-              >
-                <div className="user-profile-info">
-                  <span className="user-profile-name">{user?.name}</span>
-                  <span className="user-profile-role">{user?.role === 'ADMIN' ? 'Administrator' : user?.role}</span>
-                </div>
-                {menuOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                <div className="user-avatar">{user?.name.slice(0, 2).toUpperCase()}</div>
-              </button>
-              {menuOpen && (
-                <div className="user-menu__popover">
-                  <div className="user-menu__header">
-                    <strong>{user?.name}</strong>
-                    <span>{user?.email || 'owner@sentanujaya.id'}</span>
-                  </div>
-                  <div className="user-menu__divider" />
-                  <Button variant="ghost" onClick={signOut}><LogOut size={15} /> {t.nav.logout}</Button>
-                </div>
-              )}
-            </div>
+
           </div>
         </header>
         <main className="app-content"><Breadcrumb items={breadcrumbItems} /><Outlet /></main>
