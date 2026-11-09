@@ -1386,7 +1386,10 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     );
     await panel.getByRole('button', { name: 'Lanjutkan' }).click();
     const confirmed = await confirmResponse;
-    expect(confirmed.status(), await confirmed.text()).toBe(200);
+    expect(confirmed.status()).toBe(200);
+    const confirmedBody = await confirmed.json();
+    expect(confirmedBody.data.status).toBe('executed');
+    expect(confirmedBody.data.po_status).toBe('OPEN');
     await expect(panel.getByRole('status').filter({ hasText: 'tercatat di audit log' })).toBeVisible();
     expect(await readPoStatus(activation.poId)).toBe('OPEN');
 
@@ -1401,7 +1404,9 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     );
     await panel.getByRole('button', { name: 'Batal' }).click();
     const cancelled = await cancelResponse;
-    expect(cancelled.status(), await cancelled.text()).toBe(200);
+    expect(cancelled.status()).toBe(200);
+    const cancelledBody = await cancelled.json();
+    expect(cancelledBody.data.status).toBe('cancelled');
     await expect(panel.getByText('Dibatalkan.')).toBeVisible();
     expect(await readPoStatus(cancellation.poId)).toBe('DRAFT');
   });
