@@ -1360,7 +1360,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
           }],
           ['done', { message_id: `e2e-${actionId}`, conversation_id: `e2e-${actionId}` }],
         ];
-        const body = events.map(([event, data]) => `event: ${event}\\ndata: ${JSON.stringify(data)}\\n\\n`).join('');
+        const body = events.map(([event, data]) => `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`).join('');
         await route.fulfill({ status: 200, contentType: 'text/event-stream', body });
       });
 
