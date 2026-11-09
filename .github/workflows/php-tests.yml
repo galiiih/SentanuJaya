@@ -57,4 +57,4 @@ jobs:
           DB_DATABASE: sentanu_test
           DB_USERNAME: postgres
           DB_PASSWORD: password
-        run: php artisan test --display-warnings
+        run: vendor/bin/phpunit --display-warnings
