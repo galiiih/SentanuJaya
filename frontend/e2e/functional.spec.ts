@@ -242,7 +242,6 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     const confirmation = page.getByRole('alertdialog');
     await expect(confirmation).toBeVisible();
     const confirmButton = confirmation.getByRole('button', { name: 'Konfirmasi', exact: true });
-    await logHitTarget(page, confirmButton, 'delete confirmation');
     await confirmButton.click();
     await expect(confirmation).toBeHidden({ timeout: 10000 });
     await expect(page.locator('tr').filter({ hasText: code })).toHaveCount(0, { timeout: 10000 });
@@ -297,7 +296,6 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await expect(row).toContainText(name, { timeout: 10000 });
 
     const editButton = row.locator('button[title="Edit"]');
-    await logHitTarget(page, editButton, 'master row edit');
     await traceActionClick(page, editButton, 'supplier edit');
     const editDialog = page.getByRole('dialog');
     const editName = editDialog.getByPlaceholder('Pieces / Buah');
@@ -310,7 +308,6 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await expect(row).toContainText(editedName, { timeout: 10000 });
 
     const deleteButton = row.locator('button[title="Hapus"]');
-    await logHitTarget(page, deleteButton, 'master row delete');
     await deleteButton.click();
     const confirmation = page.getByRole('alertdialog');
     await expect(confirmation).toBeVisible();
@@ -440,7 +437,6 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     const confirmation = page.getByRole('alertdialog');
     await expect(confirmation).toBeVisible();
     const confirmButton = confirmation.getByRole('button', { name: 'Konfirmasi', exact: true });
-    await logHitTarget(page, confirmButton, 'material delete confirmation');
     console.log('[E2E MATERIAL CONFIRM STATE]', JSON.stringify(await confirmButton.evaluate((element) => {
       const style = getComputedStyle(element);
       const rect = element.getBoundingClientRect();
