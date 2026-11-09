@@ -69,6 +69,8 @@ import {
   Select,
   StatusBadge,
 } from './components/ui';
+import { LoginIntro } from './components/LoginIntro';
+import { INTRO_TIMING, clearLoginIntro, markLoginIntro, shouldPlayLoginIntro } from './loginIntro';
 import './App.css';
 
 type PageKey = 'dashboard' | 'custody' | 'customerPo' | 'materials' | 'delivery' | 'invoicing' | 'payments' | 'reports' | 'templates' | 'master' | 'users' | 'knowledge';
@@ -109,6 +111,8 @@ function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => 
   const { t } = useLanguage();
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
+  // Logo sidebar mulai berputar setelah logo intro mendarat.
+  const [logoHold] = useState(() => (shouldPlayLoginIntro() ? String(INTRO_TIMING.sidebarLogoHoldSec) : undefined));
   const [profileMenu, setProfileMenu] = useState<{ bottom: number; left: number } | null>(null);
   useEffect(() => {
     if (!profileMenu) return;
@@ -164,7 +168,7 @@ function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => 
   return (
     <aside className={`sidebar${isCollapsed ? ' sidebar--collapsed' : ''}${mobileOpen ? ' sidebar--mobile-open' : ''}`} aria-label="Navigasi utama" onMouseDown={(event) => event.stopPropagation()}>
       <div className="sidebar__brand">
-        <div data-sentanu-logo data-loop="true" style={{ width: '36px', height: '36px', flexShrink: 0 }} />
+        <div data-sentanu-logo data-loop="true" data-hold={logoHold} style={{ width: '36px', height: '36px', flexShrink: 0 }} />
         <div className="sidebar__brand-copy"><strong>SENTANU JAYA</strong><span>ERP WORKSHOP</span></div>
       </div>
       <div className="sidebar__toggle-row">
@@ -240,6 +244,8 @@ function LanguageSwitcher() {
 
 function AuthenticatedLayout() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [intro, setIntro] = useState<'off' | 'wait' | 'wave'>(() => (shouldPlayLoginIntro() ? 'wait' : 'off'));
+  useEffect(() => { clearLoginIntro(); }, []);
   useEffect(() => {
     if (!mobileNavOpen) return;
     const closeOnEscape = (event: KeyboardEvent) => {
@@ -270,7 +276,8 @@ function AuthenticatedLayout() {
   const breadcrumbItems = breadcrumbMap[location.pathname] || ['Workspace', pageTitle];
 
   return (
-    <div className="app-shell">
+    <>
+    <div className={`app-shell${intro !== 'off' ? ' app-shell--intro' : ''}${intro === 'wait' ? ' app-shell--intro-wait' : ''}`} inert={intro !== 'off' ? true : undefined}>
       <button type="button" className={`sidebar-mobile-overlay${mobileNavOpen ? ' sidebar-mobile-overlay--visible' : ''}`} aria-label="Tutup navigasi" tabIndex={mobileNavOpen ? 0 : -1} onClick={() => setMobileNavOpen(false)} />
       <Sidebar mobileOpen={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
       <div className="app-shell__main">
@@ -292,6 +299,8 @@ function AuthenticatedLayout() {
       </div>
       <PuffyAssistant />
     </div>
+    {intro !== 'off' && <LoginIntro onWave={() => setIntro((value) => (value === 'wait' ? 'wave' : value))} onDone={() => setIntro('off')} />}
+    </>
   );
 }
 
@@ -460,7 +469,7 @@ function LoginPage() {
   if (isAuthenticated) return <Navigate to="/dashboard" replace />;
   const submit = async (event: React.FormEvent) => {
     event.preventDefault(); setError(''); setLoading(true);
-    try { await login(email, password); navigate(destination, { replace: true }); } catch (reason) { setError(reason instanceof Error ? reason.message : 'Login gagal.'); } finally { setLoading(false); }
+    try { markLoginIntro(); await login(email, password); navigate(destination, { replace: true }); } catch (reason) { clearLoginIntro(); setError(reason instanceof Error ? reason.message : 'Login gagal.'); } finally { setLoading(false); }
   };
   return <main className="auth-page"><Card className="auth-card"><div className="auth-brand"><div data-sentanu-logo data-loop="true" style={{ width: '36px', height: '36px', flexShrink: 0 }} /><div><strong>SENTANU JAYA</strong><span>ERP WORKSHOP</span></div></div><div className="auth-copy"><h1>Masuk ke Sentanu Jaya ERP</h1><p>Gunakan akun yang terdaftar untuk mengakses lingkungan pengembangan.</p></div>{error && <Alert tone="danger">{error}</Alert>}<form className="auth-form" onSubmit={submit}><FormField label="Email" htmlFor="login-email" required><Input id="login-email" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} required /></FormField><FormField label="Password" htmlFor="login-password" required><Input id="login-password" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></FormField><Button type="submit" loading={loading}>Login</Button></form><p className="auth-note">Forgot password belum tersedia.</p></Card></main>;
 }
