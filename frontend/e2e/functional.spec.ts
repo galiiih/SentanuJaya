@@ -1138,6 +1138,20 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await expect(page).toHaveURL(/\/dashboard$/);
   });
 
+  test('logout lives in the sidebar profile menu, not in the header', async ({ page }) => {
+    await login(page);
+    await expect(page.locator('.app-header .user-menu')).toHaveCount(0);
+
+    await page.getByRole('button', { name: 'Menu pengguna' }).click();
+    await expect(page.getByRole('menuitem', { name: 'Keluar' })).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('menuitem', { name: 'Keluar' })).toHaveCount(0);
+
+    await page.getByRole('button', { name: 'Menu pengguna' }).click();
+    await page.getByRole('menuitem', { name: 'Keluar' }).click();
+    await expect(page).toHaveURL(/\\/login$/);
+  });
+
   test('relation-dependent master forms stay disabled when reference API fails and recover after retry', async ({ page }) => {
     await login(page);
 
