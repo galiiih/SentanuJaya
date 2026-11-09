@@ -42,18 +42,29 @@ export function LoginIntro({ onWave, onDone }: { onWave: () => void; onDone: () 
   const flatFallback = typeof window !== 'undefined' && !(window as unknown as { THREE?: unknown }).THREE;
 
   useEffect(() => {
-    const timers: number[] = [];
-    timers.push(window.setTimeout(() => {
-      if (phaseRef.current !== 'center' || !rootRef.current || !logoRef.current) return;
-      setGeo(measureTarget(rootRef.current, logoRef.current));
+    let waveTimer: number | undefined;
+    let doneTimer: number | undefined;
+    const flyTimer = window.setTimeout(() => {
+      if (phaseRef.current !== 'center') return;
+      if (rootRef.current && logoRef.current) {
+        setGeo(measureTarget(rootRef.current, logoRef.current));
+      }
       go('fly');
-    }, T.flyAt));
-    timers.push(window.setTimeout(() => {
-      if (phaseRef.current === 'skip') return;
-      go('wave'); callbacks.current.onWave();
-    }, T.waveAt));
-    timers.push(window.setTimeout(() => { if (phaseRef.current !== 'skip') callbacks.current.onDone(); }, T.doneAt));
-    return () => timers.forEach((id) => window.clearTimeout(id));
+      waveTimer = window.setTimeout(() => {
+        if (phaseRef.current !== 'fly') return;
+        go('wave');
+        callbacks.current.onWave();
+        doneTimer = window.setTimeout(() => {
+          if (phaseRef.current === 'wave') callbacks.current.onDone();
+        }, Math.max(0, T.doneAt - T.waveAt));
+      }, Math.max(0, T.waveAt - T.flyAt));
+    }, T.flyAt);
+
+    return () => {
+      window.clearTimeout(flyTimer);
+      if (waveTimer !== undefined) window.clearTimeout(waveTimer);
+      if (doneTimer !== undefined) window.clearTimeout(doneTimer);
+    };
   }, [go]);
 
   const skip = useCallback(() => {
