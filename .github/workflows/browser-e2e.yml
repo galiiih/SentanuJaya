@@ -113,6 +113,8 @@ jobs:
         with:
           name: browser-e2e-results
           path: |
-            frontend/playwright-report/
-            frontend/test-results/
+            frontend/test-results/**/test-failed-1.png
+            frontend/test-results/**/error-context.md
+            frontend/playwright-report/index.html
           if-no-files-found: ignore
+          retention-days: 5
