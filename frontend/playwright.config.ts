@@ -20,6 +20,8 @@ export default defineConfig({
     baseURL: 'http://localhost:5173',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
+    // Animasi diuji terpisah; suite umum memakai preferensi reduced-motion.
+    reducedMotion: 'reduce',
   },
   webServer: [
     {
