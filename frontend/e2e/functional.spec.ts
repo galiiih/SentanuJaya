@@ -23,26 +23,6 @@ async function login(page: Page) {
 }
 
 
-async function logHitTarget(page: Page, locator: ReturnType<Page['locator']>, label: string) {
-  const details = await locator.evaluate((element) => {
-    const rect = element.getBoundingClientRect();
-    const x = rect.left + rect.width / 2;
-    const y = rect.top + rect.height / 2;
-    const hit = document.elementFromPoint(x, y);
-    return {
-      target: element.tagName.toLowerCase(),
-      targetClass: (element as HTMLElement).className,
-      rect: { x, y, width: rect.width, height: rect.height },
-      hit: hit?.tagName.toLowerCase() ?? null,
-      hitClass: (hit as HTMLElement | null)?.className ?? null,
-      hitText: hit?.textContent?.trim().slice(0, 100) ?? null,
-      targetIsHitOrChild: !!hit && (hit === element || element.contains(hit)),
-    };
-  });
-  console.log(`[E2E HIT TEST] ${label} ${JSON.stringify(details)}`);
-}
-
-
 async function traceActionClick(page: Page, locator: ReturnType<Page['locator']>, label: string) {
   await locator.evaluate((element) => {
     const target = element as HTMLElement;
