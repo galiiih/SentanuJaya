@@ -50,7 +50,7 @@ class ReportController extends BaseApiController
         abort_unless($user && in_array($user->role, ['ADMIN', 'OWNER', 'STAFF'], true), 403, 'Forbidden');
 
         $customers = Customer::with('invoices')->get()->map(function ($customer) {
-            $invoices = $customer->invoices()->where('status', 'POSTED')->get();
+            $invoices = $customer->invoices()->whereIn('status', [Invoice::STATUS_POSTED, Invoice::STATUS_PARTIALLY_PAID])->get();
             $totalBilled = $invoices->sum('total_amount');
             $invoiceIds = $invoices->pluck('id');
             $totalPaid = DB::table('payment_allocations')
