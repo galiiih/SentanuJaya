@@ -1058,6 +1058,8 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     const toggle = page.getByRole('button', { name: 'Ciutkan sidebar' });
 
     await expect(sidebar).toBeVisible();
+    await expect(toggle).toHaveAttribute('aria-controls', 'main-sidebar-navigation');
+    await expect(sidebar).toHaveAttribute('id', 'main-sidebar-navigation');
     const expandedWidth = await sidebar.evaluate((element) => element.getBoundingClientRect().width);
     await toggle.click();
     await expect(page.getByRole('button', { name: 'Perlebar sidebar' })).toBeVisible();
