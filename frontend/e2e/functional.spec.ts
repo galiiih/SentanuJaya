@@ -1149,7 +1149,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
 
     await page.getByRole('button', { name: 'Menu pengguna' }).click();
     await page.getByRole('menuitem', { name: 'Keluar' }).click();
-    await expect(page).toHaveURL(/\\/login$/);
+    await expect(page).toHaveURL(/\/login$/);
   });
 
   test('relation-dependent master forms stay disabled when reference API fails and recover after retry', async ({ page }) => {
