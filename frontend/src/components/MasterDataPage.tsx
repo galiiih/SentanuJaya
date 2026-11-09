@@ -281,8 +281,8 @@ export function MasterDataPage() {
       header: 'Aksi',
       cell: (row: any) => (
         <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <Button variant="ghost" onClick={() => openEdit(row)} title="Edit"><Edit size={16} /></Button>
-          <Button variant="ghost" onClick={() => handleDelete(row)} title="Hapus" style={{ color: 'var(--color-danger)' }}><Trash2 size={16} /></Button>
+          <Button variant="ghost" onClick={() => openEdit(row)} title="Edit" aria-label="Edit"><Edit size={16} /></Button>
+          <Button variant="ghost" onClick={() => handleDelete(row)} title="Hapus" aria-label="Hapus" style={{ color: 'var(--color-danger)' }}><Trash2 size={16} /></Button>
         </div>
       )
     }] : [];
