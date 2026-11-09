@@ -23,108 +23,6 @@ async function login(page: Page) {
 }
 
 
-async function traceActionClick(page: Page, locator: ReturnType<Page['locator']>, label: string) {
-  await locator.evaluate((element) => {
-    const target = element as HTMLElement;
-    const samples: Array<Record<string, unknown>> = [];
-    const sample = () => {
-      const rect = target.getBoundingClientRect();
-      const x = rect.left + rect.width / 2;
-      const y = rect.top + rect.height / 2;
-      const hit = document.elementFromPoint(x, y) as HTMLElement | null;
-      const ancestors: Array<Record<string, unknown>> = [];
-      let node: HTMLElement | null = target;
-      while (node && ancestors.length < 7) {
-        const style = getComputedStyle(node);
-        const animations = node.getAnimations().map(animation => ({
-          playState: animation.playState,
-          currentTime: animation.currentTime,
-          effect: animation.effect?.getTiming().duration,
-        }));
-        ancestors.push({
-          tag: node.tagName.toLowerCase(),
-          className: typeof node.className === 'string' ? node.className : '',
-          rect: (() => { const r = node!.getBoundingClientRect(); return { x: r.x, y: r.y, width: r.width, height: r.height }; })(),
-          transition: style.transition,
-          animation: style.animation,
-          animations,
-        });
-        node = node.parentElement;
-      }
-      samples.push({
-        time: Math.round(performance.now()),
-        connected: target.isConnected,
-        rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
-        hit: hit ? { tag: hit.tagName.toLowerCase(), className: typeof hit.className === 'string' ? hit.className : '' } : null,
-        hitTarget: !!hit && (hit === target || target.contains(hit)),
-        ancestors,
-      });
-      if (samples.length > 150) samples.shift();
-    };
-    sample();
-    const timer = window.setInterval(sample, 80);
-    (window as any).__e2eActionStability = { samples, timer };
-  });
-
-  let actionError: unknown;
-  try {
-    await locator.scrollIntoViewIfNeeded({ timeout: 12000 });
-    await locator.click({ timeout: 12000 });
-  } catch (error) {
-    actionError = error;
-  } finally {
-    const trace = await page.evaluate(() => {
-      const state = (window as any).__e2eActionStability;
-      if (!state) return null;
-      window.clearInterval(state.timer);
-      return state.samples;
-    }).catch(() => null);
-    console.log(`[E2E ACTION STABILITY] ${label} ${JSON.stringify(trace)}`);
-  }
-  if (actionError) throw actionError;
-}
-
-
-async function traceConfirmClick(page: Page, button: ReturnType<Page['locator']>, label: string) {
-  await button.evaluate((element) => {
-    const trace: Array<Record<string, unknown>> = [];
-    const record = (event: Event) => {
-      const target = event.target as HTMLElement | null;
-      trace.push({
-        type: event.type,
-        phase: event.eventPhase,
-        trusted: event.isTrusted,
-        target: target?.tagName,
-        targetClass: target?.className,
-        defaultPrevented: event.defaultPrevented,
-        activeElement: (document.activeElement as HTMLElement | null)?.className,
-        time: Math.round(performance.now()),
-      });
-    };
-    for (const type of ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click']) {
-      window.addEventListener(type, record, true);
-      window.addEventListener(type, record, false);
-    }
-    (window as any).__confirmEventTrace = trace;
-  });
-  const responsePromise = page.waitForResponse(
-    response => response.request().method() === 'DELETE' && /\/api\/v1\//.test(response.url()),
-    { timeout: 8000 },
-  ).catch(() => null);
-  let clickError = '';
-  try {
-    await button.click({ timeout: 10000 });
-  } catch (error) {
-    clickError = error instanceof Error ? error.message : String(error);
-  }
-  const response = await responsePromise;
-  const trace = await page.evaluate(() => (window as any).__confirmEventTrace ?? []);
-  console.log(`[E2E CONFIRM TRACE] ${label} ${JSON.stringify({ clickError, events: trace, deleteResponse: response ? { status: response.status(), url: response.url() } : null })}`);
-  if (clickError) throw new Error(`Confirmation click failed (${label}): ${clickError}`);
-  if (!response) throw new Error(`Confirmation click produced no DELETE request (${label}); inspect E2E CONFIRM TRACE above.`);
-  expect(response.status(), await response.text()).toBe(200);
-}
-
 async function searchMasterRow(page: Page, code: string) {
   // CRUD assertions should wait for the uniquely keyed row, not drive the
   // controlled DataTable search input while the post-save refresh is rendering.
@@ -251,15 +149,13 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
 
     await expect(codeInput).toBeVisible();
     await codeInput.click();
-    for (const char of code) {
-      await page.keyboard.type(char);
-      await expect(codeInput).toBeFocused();
-    }
+    await expect(codeInput).toBeFocused();
+    await codeInput.pressSequentially(code, { delay: 5 });
+    await expect(codeInput).toHaveValue(code);
     await nameInput.click();
-    for (const char of name) {
-      await page.keyboard.type(char);
-      await expect(nameInput).toBeFocused();
-    }
+    await expect(nameInput).toBeFocused();
+    await nameInput.pressSequentially(name, { delay: 5 });
+    await expect(nameInput).toHaveValue(name);
     await categoryInput.fill('GENERAL');
     const saveButton = dialog.getByRole('button', { name: /Simpan Data/i });
     await saveButton.scrollIntoViewIfNeeded();
@@ -276,13 +172,13 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await expect(row).toContainText(name, { timeout: 10000 });
 
     const editButton = row.locator('button[title="Edit"]');
-    await traceActionClick(page, editButton, 'supplier edit');
+    await editButton.click();
     const editDialog = page.getByRole('dialog');
     const editName = editDialog.getByPlaceholder('Pieces / Buah');
     await editName.fill(editedName);
     const saveEditButton = editDialog.getByRole('button', { name: /Simpan Data/i });
     await expect(saveEditButton).toBeEnabled();
-    await traceActionClick(page, saveEditButton, 'master save edit');
+    await saveEditButton.click();
     await expect(editDialog).toBeHidden({ timeout: 10000 });
     row = await searchMasterRow(page, code);
     await expect(row).toContainText(editedName, { timeout: 10000 });
@@ -291,7 +187,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await deleteButton.click();
     const confirmation = page.getByRole('alertdialog');
     await expect(confirmation).toBeVisible();
-    await traceConfirmClick(page, confirmation.getByRole('button', { name: 'Konfirmasi', exact: true }), 'supplier');
+    await confirmation.getByRole('button', { name: 'Konfirmasi', exact: true }).click();
     await expect(confirmation).toBeHidden({ timeout: 10000 });
     await expect(page.locator('tr').filter({ hasText: code })).toHaveCount(0, { timeout: 10000 });
   });
@@ -352,7 +248,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
       await editNameInput.fill(editedName);
       const saveEditButton = editDialog.getByRole('button', { name: /Simpan Data/i });
       await expect(saveEditButton).toBeEnabled();
-      await traceActionClick(page, saveEditButton, 'supplier save edit');
+      await saveEditButton.click();
       await expect(editDialog).toBeHidden({ timeout: 10000 });
       row = await searchMasterRow(page, code);
       await expect(row).toContainText(editedName, { timeout: 10000 });
@@ -364,7 +260,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await row.locator('button[title="Hapus"]').click();
     const confirmation = page.getByRole('alertdialog');
     await expect(confirmation).toBeVisible();
-    await traceConfirmClick(page, confirmation.getByRole('button', { name: 'Konfirmasi', exact: true }), 'company');
+    await confirmation.getByRole('button', { name: 'Konfirmasi', exact: true }).click();
     await expect(confirmation).toBeHidden({ timeout: 10000 });
     await expect(page.locator('tr').filter({ hasText: code })).toHaveCount(0, { timeout: 10000 });
   });
@@ -403,7 +299,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await page.getByRole('button', { name: /Material \/ Cat/i }).click();
     row = await searchMasterRow(page, code);
     await expect(row).toContainText(name, { timeout: 10000 });
-    await traceActionClick(page, row.locator('button[title="Edit"]'), 'material edit');
+    await row.locator('button[title="Edit"]').click();
     const editDialog = page.getByRole('dialog');
     await editDialog.getByPlaceholder('Cat Polyurethane Hitam Glossy').fill(editedName);
     const saveEditButton = editDialog.getByRole('button', { name: /Simpan Data/i });
