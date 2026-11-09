@@ -116,7 +116,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await expect(persistedRow).toContainText(name, { timeout: 10000 });
 
     // Delete via the UI and confirm the destructive action.
-    await persistedRow.locator('button[title="Hapus"]').click();
+    await persistedRow.getByRole('button', { name: 'Hapus', exact: true }).click();
     const confirmation = page.getByRole('alertdialog');
     await expect(confirmation).toBeVisible();
     const confirmButton = confirmation.getByRole('button', { name: 'Konfirmasi', exact: true });
@@ -171,7 +171,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     row = await searchMasterRow(page, code);
     await expect(row).toContainText(name, { timeout: 10000 });
 
-    const editButton = row.locator('button[title="Edit"]');
+    const editButton = row.getByRole('button', { name: 'Edit', exact: true });
     await editButton.click();
     const editDialog = page.getByRole('dialog');
     const editName = editDialog.getByPlaceholder('Pieces / Buah');
@@ -183,7 +183,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     row = await searchMasterRow(page, code);
     await expect(row).toContainText(editedName, { timeout: 10000 });
 
-    const deleteButton = row.locator('button[title="Hapus"]');
+    const deleteButton = row.getByRole('button', { name: 'Hapus', exact: true });
     await deleteButton.click();
     const confirmation = page.getByRole('alertdialog');
     await expect(confirmation).toBeVisible();
@@ -240,7 +240,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
 
     // Some master tables render icon-only action controls. Locate the row actions
     // by their accessible labels first, then fall back to title/aria-label metadata.
-    const editButton = row.locator('button[aria-label="Edit"], button[title="Edit"]').first();
+    const editButton = row.getByRole('button', { name: 'Edit', exact: true });
     if (await editButton.count()) {
       await editButton.click();
       const editDialog = page.getByRole('dialog');
@@ -257,7 +257,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
       throw new Error('Supplier row is persisted, but no Edit button with accessible name or title was rendered.');
     }
 
-    await row.locator('button[title="Hapus"]').click();
+    await row.getByRole('button', { name: 'Hapus', exact: true }).click();
     const confirmation = page.getByRole('alertdialog');
     await expect(confirmation).toBeVisible();
     await confirmation.getByRole('button', { name: 'Konfirmasi', exact: true }).click();
@@ -299,7 +299,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await page.getByRole('button', { name: /Material \/ Cat/i }).click();
     row = await searchMasterRow(page, code);
     await expect(row).toContainText(name, { timeout: 10000 });
-    await row.locator('button[title="Edit"]').click();
+    await row.getByRole('button', { name: 'Edit', exact: true }).click();
     const editDialog = page.getByRole('dialog');
     await editDialog.getByPlaceholder('Cat Polyurethane Hitam Glossy').fill(editedName);
     const saveEditButton = editDialog.getByRole('button', { name: /Simpan Data/i });
@@ -309,7 +309,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await expect(editDialog).toBeHidden({ timeout: 10000 });
     row = await searchMasterRow(page, code);
     await expect(row).toContainText(editedName, { timeout: 10000 });
-    await row.locator('button[title="Hapus"]').click();
+    await row.getByRole('button', { name: 'Hapus', exact: true }).click();
     const confirmation = page.getByRole('alertdialog');
     await expect(confirmation).toBeVisible();
     const confirmButton = confirmation.getByRole('button', { name: 'Konfirmasi', exact: true });
@@ -381,7 +381,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     row = await searchMasterRow(page, code);
     await expect(row).toContainText(name, { timeout: 10000 });
 
-    await row.locator('button[title="Edit"]').click();
+    await row.getByRole('button', { name: 'Edit', exact: true }).click();
     const editDialog = page.getByRole('dialog');
     await editDialog.getByPlaceholder('PT Sentanu Jaya').fill(editedName);
     const saveEditButton = editDialog.getByRole('button', { name: /Simpan Data/i });
@@ -392,7 +392,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     row = await searchMasterRow(page, code);
     await expect(row).toContainText(editedName, { timeout: 10000 });
 
-    await row.locator('button[title="Hapus"]').click();
+    await row.getByRole('button', { name: 'Hapus', exact: true }).click();
     const confirmation = page.getByRole('alertdialog');
     await expect(confirmation).toBeVisible();
     await confirmation.getByRole('button', { name: 'Konfirmasi', exact: true }).click();
@@ -450,13 +450,13 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await page.getByRole('button', { name: 'Customer Contact' }).click();
     contactRow = page.locator('tr').filter({ hasText: contactName });
     await expect(contactRow).toBeVisible({ timeout: 10000 });
-    await contactRow.locator('button[title="Edit"]').click();
+    await contactRow.getByRole('button', { name: 'Edit', exact: true }).click();
     dialog = page.getByRole('dialog');
     await dialog.getByPlaceholder('Bapak Budi').fill(`Edited ${contactName}`);
     await dialog.getByRole('button', { name: /Simpan Data/i }).click();
     contactRow = page.locator('tr').filter({ hasText: `Edited ${contactName}` });
     await expect(contactRow).toBeVisible({ timeout: 10000 });
-    await contactRow.locator('button[title="Hapus"]').click();
+    await contactRow.getByRole('button', { name: 'Hapus', exact: true }).click();
     await expect(page.getByText('Hapus Data Master?')).toBeVisible();
     await page.getByRole('button', { name: /Hapus|Konfirmasi|Ya/i }).last().click();
     await expect(page.locator('tr').filter({ hasText: contactName })).toHaveCount(0, { timeout: 10000 });
@@ -482,13 +482,13 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await page.getByRole('button', { name: 'Customer Item' }).click();
     itemRow = page.locator('tr').filter({ hasText: itemCode });
     await expect(itemRow).toContainText(itemName, { timeout: 10000 });
-    await itemRow.locator('button[title="Edit"]').click();
+    await itemRow.getByRole('button', { name: 'Edit', exact: true }).click();
     dialog = page.getByRole('dialog');
     await dialog.getByPlaceholder('Front Bumper Pajero Sport').fill(`Edited ${itemName}`);
     await dialog.getByRole('button', { name: /Simpan Data/i }).click();
     itemRow = page.locator('tr').filter({ hasText: `Edited ${itemName}` });
     await expect(itemRow).toBeVisible({ timeout: 10000 });
-    await itemRow.locator('button[title="Hapus"]').click();
+    await itemRow.getByRole('button', { name: 'Hapus', exact: true }).click();
     await expect(page.getByText('Hapus Data Master?')).toBeVisible();
     await page.getByRole('button', { name: /Hapus|Konfirmasi|Ya/i }).last().click();
     await expect(page.locator('tr').filter({ hasText: itemCode })).toHaveCount(0, { timeout: 10000 });
@@ -509,13 +509,13 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await page.getByRole('button', { name: 'Price List', exact: true }).click();
     priceRow = page.locator('tr').filter({ hasText: priceListCode });
     await expect(priceRow).toContainText(priceListName, { timeout: 10000 });
-    await priceRow.locator('button[title="Edit"]').click();
+    await priceRow.getByRole('button', { name: 'Edit', exact: true }).click();
     dialog = page.getByRole('dialog');
     await dialog.getByPlaceholder('Kontrak Harga 2024').fill(`Edited ${priceListName}`);
     await dialog.getByRole('button', { name: /Simpan Data/i }).click();
     priceRow = page.locator('tr').filter({ hasText: `Edited ${priceListName}` });
     await expect(priceRow).toBeVisible({ timeout: 10000 });
-    await priceRow.locator('button[title="Hapus"]').click();
+    await priceRow.getByRole('button', { name: 'Hapus', exact: true }).click();
     await expect(page.getByText('Hapus Data Master?')).toBeVisible();
     await page.getByRole('button', { name: /Hapus|Konfirmasi|Ya/i }).last().click();
     await expect(page.locator('tr').filter({ hasText: priceListCode })).toHaveCount(0, { timeout: 10000 });
@@ -524,7 +524,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await page.getByRole('button', { name: 'Customer', exact: true }).click();
     customerRow = page.locator('tr').filter({ hasText: customerCode });
     await expect(customerRow).toBeVisible({ timeout: 10000 });
-    await customerRow.locator('button[title="Hapus"]').click();
+    await customerRow.getByRole('button', { name: 'Hapus', exact: true }).click();
     await expect(page.getByText('Hapus Data Master?')).toBeVisible();
     await page.getByRole('button', { name: /Hapus|Konfirmasi|Ya/i }).last().click();
     await expect(page.locator('tr').filter({ hasText: customerCode })).toHaveCount(0, { timeout: 10000 });
@@ -599,7 +599,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     lineRow = page.locator('tr').filter({ hasText: listName }).filter({ hasText: itemName });
     await expect(lineRow).toContainText('1.750.000', { timeout: 10000 });
 
-    await lineRow.locator('button[title="Edit"]').click();
+    await lineRow.getByRole('button', { name: 'Edit', exact: true }).click();
     dialog = page.getByRole('dialog');
     await dialog.getByPlaceholder('1500000').fill(editedPrice);
     await dialog.getByRole('button', { name: /Simpan Data/i }).click();
@@ -607,28 +607,28 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await expect(lineRow).toContainText('1.850.000', { timeout: 10000 });
 
     // Delete dependent line before its parent records to respect foreign keys.
-    await lineRow.locator('button[title="Hapus"]').click();
+    await lineRow.getByRole('button', { name: 'Hapus', exact: true }).click();
     await expect(page.getByText('Hapus Data Master?')).toBeVisible();
     await page.getByRole('button', { name: /Hapus|Konfirmasi|Ya/i }).last().click();
     await expect(page.locator('tr').filter({ hasText: listName }).filter({ hasText: itemName })).toHaveCount(0, { timeout: 10000 });
 
     await page.getByRole('button', { name: 'Price List', exact: true }).click();
     let parentRow = page.locator('tr').filter({ hasText: listCode });
-    await parentRow.locator('button[title="Hapus"]').click();
+    await parentRow.getByRole('button', { name: 'Hapus', exact: true }).click();
     await expect(page.getByText('Hapus Data Master?')).toBeVisible();
     await page.getByRole('button', { name: /Hapus|Konfirmasi|Ya/i }).last().click();
     await expect(page.locator('tr').filter({ hasText: listCode })).toHaveCount(0, { timeout: 10000 });
 
     await page.getByRole('button', { name: 'Customer Item' }).click();
     parentRow = page.locator('tr').filter({ hasText: itemCode });
-    await parentRow.locator('button[title="Hapus"]').click();
+    await parentRow.getByRole('button', { name: 'Hapus', exact: true }).click();
     await expect(page.getByText('Hapus Data Master?')).toBeVisible();
     await page.getByRole('button', { name: /Hapus|Konfirmasi|Ya/i }).last().click();
     await expect(page.locator('tr').filter({ hasText: itemCode })).toHaveCount(0, { timeout: 10000 });
 
     await page.getByRole('button', { name: 'Customer', exact: true }).click();
     parentRow = page.locator('tr').filter({ hasText: customerCode });
-    await parentRow.locator('button[title="Hapus"]').click();
+    await parentRow.getByRole('button', { name: 'Hapus', exact: true }).click();
     await expect(page.getByText('Hapus Data Master?')).toBeVisible();
     await page.getByRole('button', { name: /Hapus|Konfirmasi|Ya/i }).last().click();
     await expect(page.locator('tr').filter({ hasText: customerCode })).toHaveCount(0, { timeout: 10000 });
