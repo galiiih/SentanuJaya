@@ -94,6 +94,11 @@ jobs:
       - name: Install Playwright Chromium
         working-directory: frontend
         run: npx playwright install --with-deps chromium
+      # Run the new intro scenarios independently so an unrelated pre-existing CRUD failure
+      # cannot stop Playwright's maxFailures guard before these tests are reached.
+      - name: Run login intro browser tests
+        working-directory: frontend
+        run: npx playwright test e2e/login-intro.spec.ts --reporter=list
       - name: Run browser E2E
         working-directory: frontend
         # Playwright has its own 25-minute global timeout; this shell watchdog is a
