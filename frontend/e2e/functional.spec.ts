@@ -332,7 +332,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
       response => response.request().method() === 'DELETE' && response.url().includes('/api/v1/materials/'),
       { timeout: 15000 },
     );
-    await traceConfirmClick(page, confirmButton, 'material');
+    await confirmButton.click();
     const deleteResponse = await deleteResponsePromise;
     expect(deleteResponse.status(), await deleteResponse.text()).toBe(200);
     await expect(confirmation).toBeHidden({ timeout: 10000 });
@@ -381,7 +381,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     row = await searchMasterRow(page, code);
     await expect(row).toContainText(name, { timeout: 10000 });
 
-    await traceActionClick(page, row.locator('button[title="Edit"]'), 'company edit');
+    await row.locator('button[title="Edit"]').click();
     const editDialog = page.getByRole('dialog');
     await editDialog.getByPlaceholder('PT Sentanu Jaya').fill(editedName);
     const saveEditButton = editDialog.getByRole('button', { name: /Simpan Data/i });
