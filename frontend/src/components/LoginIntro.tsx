@@ -34,6 +34,7 @@ export function LoginIntro({ onWave, onDone }: { onWave: () => void; onDone: () 
   const [phase, setPhase] = useState<Phase>('center');
   const [geo, setGeo] = useState<Geometry | null>(null);
   const skipRef = useRef<HTMLButtonElement>(null);
+  const skipTimerRef = useRef<number | null>(null);
   const callbacks = useRef({ onWave, onDone });
   useEffect(() => { callbacks.current = { onWave, onDone }; });
   const phaseRef = useRef<Phase>('center');
@@ -58,14 +59,27 @@ export function LoginIntro({ onWave, onDone }: { onWave: () => void; onDone: () 
   const skip = useCallback(() => {
     if (phaseRef.current === 'skip') return;
     go('skip'); callbacks.current.onWave();
-    window.setTimeout(() => callbacks.current.onDone(), 220);
+    if (skipTimerRef.current !== null) window.clearTimeout(skipTimerRef.current);
+    skipTimerRef.current = window.setTimeout(() => {
+      skipTimerRef.current = null;
+      callbacks.current.onDone();
+    }, 220);
   }, [go]);
 
   useEffect(() => {
     skipRef.current?.focus();
-    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') skip(); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || phaseRef.current === 'skip') return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      skip();
+    };
+    // Capture Escape before page-level shortcuts or focus handlers can consume it.
+    document.addEventListener('keydown', onKey, true);
+    return () => {
+      document.removeEventListener('keydown', onKey, true);
+      if (skipTimerRef.current !== null) window.clearTimeout(skipTimerRef.current);
+    };
   }, [skip]);
 
   const style = {
