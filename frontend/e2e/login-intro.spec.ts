@@ -47,13 +47,23 @@ test.describe('isolated login intro and sidebar', () => {
     await expect(intro).toBeVisible();
     await expect(page.locator('.menu-button')).toBeVisible();
     await expect(intro).toHaveClass(/login-intro--mobile/, { timeout: 6000 });
-    await expect(intro).toHaveClass(/login-intro--fly|login-intro--wave/, { timeout: 6000 });
-    const dx = await intro.evaluate((element) => Number.parseFloat(getComputedStyle(element).getPropertyValue('--intro-dx')));
-    expect(Number.isFinite(dx)).toBeTruthy();
-    const dy = await intro.evaluate((element) => Number.parseFloat(getComputedStyle(element).getPropertyValue('--intro-dy')));
-    expect(Number.isFinite(dy)).toBeTruthy();
-    expect(getComputedStyle(await intro.elementHandle() as Element).getPropertyValue('--intro-dx')).toMatch(/^-?\\d+(?:\\.\\d+)?px$/);
-    await expect(intro).toHaveClass(/login-intro--wave/, { timeout: 6000 });
+    // Inspect geometry immediately in the fly phase; the intro intentionally
+    // unmounts at its 3.3s deadline, so a late locator read would race teardown.
+    await expect(intro).toHaveClass(/login-intro--fly/, { timeout: 2500 });
+    const geometry = await intro.evaluate((element) => {
+      const style = getComputedStyle(element);
+      return {
+        dx: Number.parseFloat(style.getPropertyValue('--intro-dx')),
+        dy: Number.parseFloat(style.getPropertyValue('--intro-dy')),
+        dxStyle: style.getPropertyValue('--intro-dx').trim(),
+        dyStyle: style.getPropertyValue('--intro-dy').trim(),
+      };
+    });
+    expect(Number.isFinite(geometry.dx)).toBeTruthy();
+    expect(Number.isFinite(geometry.dy)).toBeTruthy();
+    expect(geometry.dxStyle).toMatch(/^-?\d+(?:\.\d+)?px$/);
+    expect(geometry.dyStyle).toMatch(/^-?\d+(?:\.\d+)?px$/);
+    await expect(intro).toHaveClass(/login-intro--wave/, { timeout: 1500 });
     await expect(intro).toBeHidden({ timeout: 4000 });
   });
 
