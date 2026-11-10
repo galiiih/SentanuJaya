@@ -4,7 +4,9 @@ on:
   push:
     branches: [feat/template-management-grapesjs, feat/sidebar-collapse-navigation-new]
   pull_request:
-    branches: [master]
+    # Run checks for PRs targeting either maintained integration branch.
+    # `branches` filters the PR base branch, not the source/head branch.
+    branches: [main, master, feat/template-management-grapesjs]
   workflow_dispatch:
 
 # Only the newest push for a branch needs a full browser run; older long suites are superseded.
