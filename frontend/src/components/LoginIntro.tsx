@@ -59,8 +59,9 @@ export function LoginIntro({ onWave, onDone }: { onWave: () => void; onDone: () 
     }, T.waveAt);
 
     const doneTimer = window.setTimeout(() => {
-      if (phaseRef.current === 'skip') return;
-      phaseRef.current = 'skip';
+      // Completion is an unconditional deadline: a prior phase/skip state must
+      // never strand the portal on the final wave frame.
+      go('skip');
       callbacks.current.onDone();
     }, T.doneAt);
 
