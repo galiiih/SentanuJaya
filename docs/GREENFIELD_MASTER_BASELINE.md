@@ -35,7 +35,7 @@
 
 ## 🔗 3. Aturan Relasi Transaksi Paling Utama
 - **1 Surat Jalan = 1 Customer + 1 Customer PO**
-- **1 Invoice dapat menggabungkan N Surat Jalan** (milik Customer yang sama berstatus `UNINVOICED`).
+- **1 Surat Jalan = 1 Invoice**. Satu Invoice tidak boleh menggabungkan beberapa Surat Jalan; satu Surat Jalan tidak boleh memiliki lebih dari satu Invoice aktif.
 - **Billable Quantity = Accepted Quantity** (Bukan Quantity Shipped).
 
 ---
