@@ -40,6 +40,17 @@ class InvoiceService
                 throw ValidationException::withMessages(['delivery_order_ids' => ['Satu atau lebih Surat Jalan tidak valid atau bukan milik customer ini.']]);
             }
 
+            // Business rule: one Surat Jalan may have only one non-cancelled invoice.
+            // The DO rows are already locked above, serializing competing invoice creation.
+            $alreadyInvoiced = InvoiceDeliveryLink::query()
+                ->whereIn('delivery_order_id', $dOrders->pluck('id'))
+                ->whereHas('invoice', fn ($query) => $query->where('status', '!=', Invoice::STATUS_CANCELLED))
+                ->exists();
+
+            if ($alreadyInvoiced) {
+                throw ValidationException::withMessages(['delivery_order_ids' => ['Surat Jalan ini sudah memiliki Invoice aktif. Satu Surat Jalan hanya dapat ditagihkan melalui satu Invoice.']]);
+            }
+
             $subtotal = 0;
             $lineData = [];
             $deliveryAmounts = [];
