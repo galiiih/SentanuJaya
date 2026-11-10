@@ -209,14 +209,15 @@ function AuthenticatedLayout() {
   useEffect(() => { clearLoginIntro(); }, []);
   useEffect(() => {
     if (introPhase === 'off') return;
-    // Parent-owned failsafe: never leave the app inert if a child animation
-    // timer is throttled or its portal is interrupted during route navigation.
-    const watchdog = window.setTimeout(() => setIntroPhase('off'), INTRO_TIMING.doneAt + 1200);
+    // Keep a parent-owned deadline for each active phase. Re-arming on the
+    // wait -> wave transition avoids a stale mount closure and guarantees
+    // the inert app shell is released even if the portal timer is interrupted.
+    const timeout = introPhase === 'wait'
+      ? INTRO_TIMING.doneAt + 1200
+      : INTRO_TIMING.waveMs + 1200;
+    const watchdog = window.setTimeout(() => setIntroPhase('off'), timeout);
     return () => window.clearTimeout(watchdog);
-    // This is deliberately mount-scoped: a wave-phase state update must not
-    // restart the watchdog and extend the blocking intro indefinitely.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [introPhase]);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuButton = useRef<HTMLButtonElement>(null);
   const drawerCloseButton = useRef<HTMLButtonElement>(null);
