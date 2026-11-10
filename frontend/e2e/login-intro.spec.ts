@@ -88,8 +88,9 @@ test.describe('isolated login intro and sidebar', () => {
 
   test('card entrance animations are applied after intro completes', async ({ page }) => {
     await submitLogin(page);
-    await page.getByRole('button', { name: 'Lewati animasi pembuka' }).click();
-    await expect(page.getByTestId('login-intro')).toBeHidden({ timeout: 1500 });
+    // Login navigation can take longer than the intro's skip window in CI.
+    // This test covers the post-intro card handoff, not the skip interaction.
+    await expect(page.getByTestId('login-intro')).toBeHidden({ timeout: 8000 });
     const names = await page.locator('.kpi-grid > .kpi-card').evaluateAll((cards) => cards.map((card) => getComputedStyle(card).animationName));
     expect(names).toEqual(['sj-rise', 'sj-flip', 'sj-zoom', 'sj-slide-right']);
   });
