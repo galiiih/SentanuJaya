@@ -1,16 +1,50 @@
 # Implementation Progress — Sentanu Jaya ERP
-Date: November 3, 2026
-Branch: feat/sidebar-collapse-navigation-new
 
-## Core Modules & Recent Fixes Status
-1. **Authentication & Authorization**: PASS — Role-based access, session token handling, and API guards verified.
-2. **Master Data & Users**: PASS — User management, high-contrast badges, breadcrumb route hierarchies.
-3. **3D Logo Animation**: PASS — Integrated MutationObserver for SPA dynamic mounts, enabled continuous animation loop with 2.5s pause (`data-loop="true"`).
-4. **Advanced Reporting & Analytics**: PASS — Replaced raw JSON `<pre>` dumps with clean structured data tables, status badges, currency formatting (IDR), and KPI summary cards across financial, receivables, operational, and custody tabs.
-5. **Template Management**: PASS — Fixed blank white screen on menu selection by updating API list helper to robustly handle both paginated objects and plain array responses (`documentTemplates`).
-6. **Global Glassmorphism UI & Form Modernization**: PASS — Implemented exact `.glass-card` specification (`rgba(15, 23, 42, 0.45)` dark / `rgba(255, 255, 255, 0.35)` light, `blur(8px)`, specific inset glow shadows, and `::before`/`::after` linear-gradient highlights) across all modals and form cards (Customer PO, Surat Jalan, Invoice, Pembayaran, Master Data, Template Management) while preserving razor-sharp background views without overlay blur. Fixed Customer PO nested scrollbar to single modal scrollbar.
-12. **Responsive Collapsible Sidebar (PR #7)**: PASS — Implemented animated collapsible sidebar rail model across desktop, tablet, and mobile viewports (`feat/sidebar-collapse-navigation-new`, commit `075bed2`), ensuring consistent collapsed state and smooth navigation transitions without problematic drawer overlays.
-13. **Nanu AI Assistant Conversational Intelligence & Dual Provider Integration**: PASS — Refined Nanu AI system prompt and backend intent parsing (`PuffyAiService.php`) to strictly distinguish GUIDE/HOW-TO, DATA QUERY, and OUT-OF-SCOPE requests. Configured robust dual LLM provider support.
-14. **Mascot Plugin Integration & 3D Blob Upgrade (Phase 1 & Phase 2)**: PASS — Integrated 12 reference mascot files, implemented 3D blob upgrades, unique per-mascot floating/swaying animations (`puffy-menu.css`), added arms/hands to all blob mascots (`BlobMascot.tsx`), fixed leftover tail artifact exclusively for Cat Drop mascot (`PuffyAssistant.tsx`), with localStorage settings persistence and settings panel UI.
-15. **Nanu AI Ollama & Chat Stability Fixes**: PASS — Resolved Ollama HTTP 400 error by routing tool-enabled requests through Ollama's OpenAI-compatible `/v1/chat/completions` endpoint, added `set_time_limit(0)` to prevent 30-second PHP timeouts during deep model reasoning/cold-start, added daily delivery fast-path for sub-second responses, and added defensive optional chaining across all UI components (`PuffyAssistant.tsx`, `ToolResultCard.tsx`) to eliminate white screen runtime crashes.
-16. **Testing & QA**: PASS — 140 PHPUnit backend tests (138 passed, 2 skipped, 921 assertions); Frontend TypeScript build & Vite verified successfully (`2553 modules transformed`); Playwright E2E tested. Frontend lint masih memiliki warning dan UAT bisnis/deployment production belum selesai.
+Snapshot: 10 November 2026  
+Branch: `feat/sidebar-collapse-navigation-new`  
+Verified commit: `dd93497be321f769be3e3013bfc28e92c7c8ea83`
+
+## Status implementasi
+
+| Area | Status | Bukti / catatan |
+|---|---|---|
+| Authentication & RBAC | Implemented; automated coverage passing | Session-based auth dan role ADMIN/OWNER/STAFF; backend suite lulus |
+| Master Data & User Management | Implemented; automated coverage passing | 17 master resources dan CRUD; detail coverage perlu tetap dirujuk ke test suite |
+| Goods Receipt / Custody | Implemented; automated coverage passing | STB lifecycle dan custody separation |
+| Customer PO, Delivery, Acceptance | Implemented; automated coverage passing | Lifecycle dan API tersedia; perlu UAT operasional |
+| Invoice & Payment | Implemented; automated coverage passing | Integration suite: 24 tests, 113 assertions pada workflow browser |
+| Dashboard & Reporting | Implemented | Dashboard KPI dan laporan; rekonsiliasi hasil bisnis tetap bagian UAT |
+| Document Template Management | Implemented | Upload, HTML source editor, GrapesJS visual editor, versioning; perlu UAT template dokumen riil |
+| Nanu AI / Ollama | Implemented | Provider lokal dan OpenAI-compatible; kualitas jawaban serta koneksi model perlu UAT pada environment target |
+| Responsive collapsible sidebar | Implemented; browser E2E passing | Desktop/mobile interactions dan accessibility relationship |
+| Login Intro animation | Fixed and verified | Dedicated suite 7/7 pass; full Browser E2E 48/48 pass |
+| Production deployment | NOT COMPLETE | VPS deployment, environment hardening, backup-restore drill, opening data, training, dan Owner sign-off belum dibuktikan |
+
+## Latest automated verification
+
+Workflow run untuk commit di atas:
+
+- **PHP & PostgreSQL:** 152 tests passed, 1,032 assertions.
+- **Invoice & Payment integration subset:** 24 tests passed, 113 assertions.
+- **Dedicated Login Intro Playwright suite:** 7 passed.
+- **Full Browser E2E:** 48 passed.
+- **Frontend TypeScript + Vite production build:** PASS.
+
+Referensi:
+- Browser E2E: https://github.com/galiiih/SentanuJaya/actions/runs/42670088652
+- PHP & PostgreSQL: https://github.com/galiiih/SentanuJaya/actions/runs/42670087870
+- Verified commit: https://github.com/galiiih/SentanuJaya/commit/dd93497be321f769be3e3013bfc28e92c7c8ea83
+
+## Remaining work before production
+
+1. Reconcile every implemented module against the approved business baseline and state machines.
+2. Complete role-by-role authorization and negative-path testing for all sensitive actions.
+3. Run end-to-end business scenarios using realistic test data, including customer-owned goods, QC acceptance/rejection, delivery, invoicing, tax, and payment allocation.
+4. Verify print/document templates against actual business documents and browser print output.
+5. Complete responsive and light/dark visual UAT; resolve lint warnings and non-blocking console/network noise where appropriate.
+6. Perform production environment, secrets, queue, storage, logging, backup/restore, monitoring, and deployment checks.
+7. Obtain Owner UAT sign-off before production use.
+
+## Branch / merge policy
+
+Current work remains on `feat/sidebar-collapse-navigation-new`. No merge to `main` or production deployment has been performed. Final merge is deferred until the implementation and UAT checklist above are completed and reviewed.
