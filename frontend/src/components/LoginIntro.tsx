@@ -9,7 +9,7 @@ const MOBILE_QUERY = '(max-width: 820px)';
 function measureTarget(root: HTMLElement, logo: HTMLElement): Geometry {
   const mobile = typeof window.matchMedia === 'function' && window.matchMedia(MOBILE_QUERY).matches;
   const target = mobile
-    ? document.querySelector<HTMLElement>('.sidebar-mobile-trigger')
+    ? document.querySelector<HTMLElement>('.menu-button')
     : document.querySelector<HTMLElement>('.sidebar__brand [data-sentanu-logo]');
   const rootRect = root.getBoundingClientRect();
   const size = logo.offsetWidth || 160;
