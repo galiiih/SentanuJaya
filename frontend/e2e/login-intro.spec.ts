@@ -58,6 +58,33 @@ test.describe('login intro animation', () => {
     await expect(page.locator('.sidebar-mobile-trigger')).toBeVisible();
   });
 
+  test('mobile navigation drawer opens and closes with Escape and backdrop', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await submitLogin(page);
+    await page.getByRole('button', { name: 'Lewati animasi pembuka' }).click();
+    await expect(page.getByTestId('login-intro')).toBeHidden({ timeout: 1500 });
+
+    const trigger = page.getByRole('button', { name: 'Buka navigasi' });
+    const sidebar = page.locator('#main-sidebar-navigation');
+    const backdrop = page.getByRole('button', { name: 'Tutup navigasi' });
+
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    await trigger.click();
+    await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    await expect(sidebar).toHaveClass(/sidebar--mobile-open/);
+    await expect(backdrop).toHaveClass(/sidebar-mobile-overlay--visible/);
+
+    await page.keyboard.press('Escape');
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    await expect(sidebar).not.toHaveClass(/sidebar--mobile-open/);
+
+    await trigger.click();
+    await expect(sidebar).toHaveClass(/sidebar--mobile-open/);
+    await backdrop.click({ position: { x: 350, y: 420 } });
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    await expect(sidebar).not.toHaveClass(/sidebar--mobile-open/);
+  });
+
   test('can be skipped with the skip button', async ({ page }) => {
     await submitLogin(page);
     await page.getByRole('button', { name: 'Lewati animasi pembuka' }).click();
