@@ -6,7 +6,7 @@ const user = { id: 1, name: 'Admin Test', email: 'admin@sentanu.local', role: 'A
 async function mockApi(page: Page) {
   let loggedIn = false;
   await page.route('**/api/v1/**', async (route) => {
-    const path = new URL(route.request().url()).pathname.replace(/^.*\\/api\\/v1/, '');
+    const path = new URL(route.request().url()).pathname.replace(/^.*\/api\/v1/, '');
     const reply = (status: number, data: unknown, success = true) => route.fulfill({
       status, contentType: 'application/json',
       body: JSON.stringify({ success, message: success ? 'OK' : 'Unauthenticated', data }),
@@ -35,7 +35,7 @@ test.describe('isolated login intro and sidebar', () => {
     await expect(page.getByRole('button', { name: 'Lewati animasi pembuka' })).toBeVisible();
     await expect(intro).toHaveClass(/login-intro--wave/, { timeout: 6000 });
     await expect(intro).toBeHidden({ timeout: 4000 });
-    await expect(page).toHaveURL(/\\/dashboard$/);
+    await expect(page).toHaveURL(/\/dashboard$/);
     await expect(page.locator('aside.sidebar').first()).toBeVisible();
     await expect(page.locator('.app-shell')).not.toHaveClass(/app-shell--intro/);
   });
