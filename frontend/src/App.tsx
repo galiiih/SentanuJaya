@@ -206,28 +206,16 @@ function LanguageSwitcher() {
 function AuthenticatedLayout() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [introPhase, setIntroPhase] = useState<'off' | 'wait' | 'wave'>(() => (shouldPlayLoginIntro() ? 'wait' : 'off'));
-  const introWatchdogRef = useRef<number | null>(null);
   useEffect(() => { clearLoginIntro(); }, []);
   useEffect(() => {
-    if (introPhase === 'off') {
-      if (introWatchdogRef.current !== null) window.clearTimeout(introWatchdogRef.current);
-      introWatchdogRef.current = null;
-      return;
-    }
+    if (introPhase === 'off') return;
     // Parent-owned failsafe: never leave the app inert if a child animation
     // timer is throttled or its portal is interrupted during route navigation.
-    if (introWatchdogRef.current === null) {
-      introWatchdogRef.current = window.setTimeout(() => {
-        introWatchdogRef.current = null;
-        setIntroPhase('off');
-      }, INTRO_TIMING.doneAt + 1200);
-    }
-  }, [introPhase]);
-  useEffect(() => () => {
-    if (introWatchdogRef.current !== null) {
-      window.clearTimeout(introWatchdogRef.current);
-      introWatchdogRef.current = null;
-    }
+    const watchdog = window.setTimeout(() => setIntroPhase('off'), INTRO_TIMING.doneAt + 1200);
+    return () => window.clearTimeout(watchdog);
+    // This is deliberately mount-scoped: a wave-phase state update must not
+    // restart the watchdog and extend the blocking intro indefinitely.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuButton = useRef<HTMLButtonElement>(null);
