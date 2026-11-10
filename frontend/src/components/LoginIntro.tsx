@@ -47,6 +47,12 @@ export function LoginIntro({ onWave, onDone }: { onWave: () => void; onDone: () 
   const skipTimerRef = useRef<number | null>(null);
   const callbacks = useRef({ onWave, onDone });
   useEffect(() => { callbacks.current = { onWave, onDone }; });
+  // Publish parent state from the rendered phase itself, not from competing
+  // timer callbacks. This keeps the app shell and portal phase in sync.
+  useEffect(() => {
+    if (phase === 'wave') callbacks.current.onWave();
+    if (phase === 'skip') callbacks.current.onDone();
+  }, [phase]);
   const phaseRef = useRef<Phase>('center');
   const finishedRef = useRef(false);
   const go = useCallback((next: Phase) => { phaseRef.current = next; setPhase(next); }, []);
@@ -56,8 +62,7 @@ export function LoginIntro({ onWave, onDone }: { onWave: () => void; onDone: () 
     go('skip');
     // A throttled background tab may delay the scheduled wave timer past the
     // completion deadline. Always release the app from its intro-wait state.
-    callbacks.current.onWave();
-    callbacks.current.onDone();
+    // Parent handoff is published by the phase effect above.
   }, [go]);
   const flatFallback = typeof window !== 'undefined' && !(window as unknown as { THREE?: unknown }).THREE;
 
@@ -86,7 +91,6 @@ export function LoginIntro({ onWave, onDone }: { onWave: () => void; onDone: () 
     const waveTimer = window.setTimeout(() => {
       if (phaseRef.current === 'skip') return;
       go('wave');
-      callbacks.current.onWave();
     }, T.waveAt);
 
     const doneTimer = window.setTimeout(() => {
@@ -104,12 +108,7 @@ export function LoginIntro({ onWave, onDone }: { onWave: () => void; onDone: () 
 
   const skip = useCallback(() => {
     if (phaseRef.current === 'skip') return;
-    go('skip'); callbacks.current.onWave();
-    if (skipTimerRef.current !== null) window.clearTimeout(skipTimerRef.current);
-    skipTimerRef.current = window.setTimeout(() => {
-      skipTimerRef.current = null;
-      finish();
-    }, 220);
+    finish();
   }, [finish, go]);
 
   useLayoutEffect(() => {
