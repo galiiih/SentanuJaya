@@ -2,7 +2,7 @@ name: Browser E2E
 
 on:
   push:
-    branches: [feat/template-management-grapesjs, feat/sidebar-collapse-navigation-new]
+    branches: [feat/template-management-grapesjs, feat/sidebar-collapse-navigation-new, feat/sidebar-login-intro-isolated]
   pull_request:
     # Run checks for PRs targeting either maintained integration branch.
     # `branches` filters the PR base branch, not the source/head branch.
