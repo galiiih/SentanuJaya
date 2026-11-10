@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Eye, Send, FileCheck } from 'lucide-react';
+import { Plus, Eye, Send, FileCheck, FileText } from 'lucide-react';
 import { useAuth, permissions } from '../auth';
 import { useLanguage } from '../i18n';
 import {
@@ -634,6 +634,7 @@ export function DeliveryPage() {
       {detailRecord && (
         <Modal open={Boolean(detailRecord)} title={`Surat Jalan — ${detailRecord.sj_number}`} onClose={() => setDetailRecord(null)}>
           <div className="confirmation-dialog__body" style={{ maxHeight: '80vh', overflowY: 'auto' }}>
+            <div className="no-print" style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}><Button onClick={() => window.print()}><FileText size={16} /> Cetak Surat Jalan</Button></div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', marginBottom: '1rem' }}>
               <div>
                 <span className="card__meta">{t.common.customer}</span>
@@ -738,12 +739,19 @@ export function DeliveryPage() {
               )}
             </div>
 
-            <div className="confirmation-dialog__actions" style={{ marginTop: '1.5rem' }}>
-              <Button variant="ghost" onClick={() => setDetailRecord(null)}>
-                {t.common.close}
-              </Button>
+            <div className="confirmation-dialog__actions no-print" style={{ marginTop: '1.5rem' }}>
+              <Button variant="ghost" onClick={() => setDetailRecord(null)}>{t.common.close}</Button>
             </div>
           </div>
+          <section className="print-document" aria-label="Cetak surat jalan">
+            <header className="print-doc-header"><div><div className="print-brand">SENTANU JAYA</div><div className="print-subtitle">BODY KIT & ACCESSORIES PAINTING</div></div><div className="print-doc-type">SURAT JALAN</div></header>
+            <div className="print-meta-grid"><div><strong>Kepada</strong><div>{detailRecord.customer?.name || '-'}</div><strong>Alamat Pengiriman</strong><div>{detailRecord.shipping_address || '-'}</div></div><div><strong>No. Surat Jalan</strong><div>{detailRecord.sj_number}</div><strong>Tanggal</strong><div>{detailRecord.delivery_date}</div><strong>No. PO Customer</strong><div>{detailRecord.customer_po?.po_number || detailRecord.customer_po_number || '-'}</div></div></div>
+            <table className="print-table"><thead><tr><th>No.</th><th>Nama Barang</th><th>Warna</th><th>Keterangan</th><th className="print-right">Qty</th><th>Satuan</th></tr></thead><tbody>{detailRecord.lines.map((line,index)=><tr key={line.id}><td>{index+1}</td><td>{line.customer_item?.name || line.customer_item_id}</td><td>{line.color_code || '-'}</td><td>{line.notes || '-'}</td><td className="print-right">{line.quantity}</td><td>pcs</td></tr>)}</tbody></table>
+            {detailRecord.notes ? <p className="print-note">Catatan: {detailRecord.notes}</p> : null}
+            <div className="print-shipping-meta"><span>Pengemudi: {detailRecord.driver_name || '-'}</span><span>No. Kendaraan: {detailRecord.vehicle_plate || '-'}</span></div>
+            <footer className="print-signatures"><div>Pengirim,<br /><br /><br />________________________</div><div>Penerima,<br /><br /><br />________________________</div></footer>
+            <div className="print-footer">Mohon diperiksa jumlah dan kondisi barang saat diterima. Dokumen dicetak dari Sentanu Jaya ERP.</div>
+          </section>
         </Modal>
       )}
 
