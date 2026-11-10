@@ -139,8 +139,8 @@ export default function VisualEditorModal({ template, onClose, onSaved }: Visual
 
   if (template.format !== 'html') {
     return (
-      <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-none flex items-center justify-center p-4 z-50">
-        <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 space-y-4">
+      <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-none flex items-center justify-center p-4 z-50 glass-modal-overlay">
+        <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 space-y-4 glass-modal">
           <h2 className="text-lg font-bold text-slate-900">Format Tidak Didukung Visual Editor</h2>
           <p className="text-sm text-slate-600">
             Visual Drag-and-Drop Editor hanya tersedia untuk template dengan format HTML. Template ini berformat <strong className="uppercase">{template.format}</strong>.
