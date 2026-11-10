@@ -1,43 +1,57 @@
 # Test Results & Readiness Report — Sentanu Jaya ERP
-Date: November 3, 2026
-Code Commit SHA: Working tree contains uncommitted changes
-Branch: `feat/sidebar-collapse-navigation-new`
 
-## 1. Backend PHPUnit Test Suite (SQLite Local)
-- **Command**: `php artisan test`
-- **Result**: PASSED
-- **Total Tests**: 134
-- **Passed**: 132
-- **Skipped**: 2
-- **Assertions**: 856
-- **Exit Code**: 0
+Date: November 10, 2026  
+Verified branch: `feat/sidebar-collapse-navigation-new`  
+Verified commit: `6602bac073f5bc7ca637a11c0bd18b8a5c9bac59`
 
-### Test Breakdown & Recent Updates:
-- **Template Management API**: Verified robust response handling for plain array and paginated list endpoints.
-- **Reports & Dashboard**: Verified KPI summary cards, structured data tables, and IDR currency formatting.
-- **SessionSchemaTest & ReportApiTest**: Passed.
+## 1. Latest CI — PHP & PostgreSQL 16
 
-## 2. PostgreSQL 16 CI Workflow
-- **Workflow**: `.github/workflows/php-tests.yml`
-- **Service**: PostgreSQL 16 (`sentanu_test`, user `postgres`, password `password`).
-- **Status**: Configured with config/event caching and executed in GitHub Actions for live PostgreSQL validation.
+- **Workflow:** [PHP & PostgreSQL Tests](https://github.com/galiiih/SentanuJaya/actions/runs/42773368206)
+- **Result:** SUCCESS
+- **PHPUnit:** 153 tests passed
+- **Assertions:** 1,038
+- **Database:** PostgreSQL 16.15
+- **Job:** all workflow steps completed successfully.
 
-## 3. Frontend Build & Typecheck
-- **Command**: `npm run build` (TypeScript compilation + Vite build)
-- **Result**: PASSED
-- **Modules Transformed**: 2,553
-- **Exit Code**: 0
+## 2. Latest CI — Browser E2E
 
-## 4. Browser E2E & Visual Inspections
-- **3D Logo Animation**: Verified continuous animation looping with 2.5s pause (`data-loop="true"`), powered by `MutationObserver` in `sentanu-logo-3d.js` for dynamic SPA mounting.
-- **Advanced Reports**: Raw JSON `<pre>` blocks replaced with professional data tables and summary KPI cards.
-- **Template Management**: Blank white screen fixed by normalizing API list helper (`api.ts`).
+- **Workflow:** [Browser E2E](https://github.com/galiiih/SentanuJaya/actions/runs/42773368180)
+- **Result:** SUCCESS
+- **Full Browser E2E:** 48 passed, 0 failed (12.2 minutes)
+- **Dedicated Login Intro suite:** 7 passed
+- **Invoice & Payment integration subset:** 24 passed, 113 assertions
+- **Frontend TypeScript verification:** PASS
+- **Vite production build:** PASS
+- **Playwright report artifact:** uploaded successfully.
 
-## 5. Summary & Compliance
-- **Backend full suite**: PASS — 140 tests, 138 passed, 2 skipped, 921 assertions.
-- **Frontend build**: PASS.
-- **Frontend lint**: Not clean — warnings remain; strict `--deny-warnings` does not pass.
-- **PR / commit for current working tree**: Not applicable; changes are not committed.
-- **Deployment**: None performed.
-- **UAT final, training, backup-restore test, dan Owner sign-off**: Belum selesai.
-- **Production Data / Credentials**: Untouched.
+The latest run covers login intro completion, application smoke/navigation, Master Data CRUD workflows, Knowledge Management navigation, and invoice/payment integration checks. A passing automated suite is not a substitute for manual business UAT.
+
+## 3. Previous local test snapshots (historical)
+
+The earlier SQLite/local test counts below are retained only as historical records and must not be confused with the latest PostgreSQL CI result:
+
+- November 3 local snapshot: 134 tests, 132 passed, 2 skipped, 856 assertions.
+- Earlier report snapshots contained 140 tests / 138 passed / 2 skipped / 921 assertions.
+
+For current automated verification, use the latest CI evidence in sections 1 and 2.
+
+## 4. Warnings and limitations
+
+- PostgreSQL logs include expected duplicate-key/unique-constraint messages from negative-path and concurrency tests; the PHPUnit process still completed with exit success.
+- GitHub Actions emitted Node.js 20 deprecation warnings for some action versions; these are maintenance warnings, not test failures.
+- Frontend lint strictness has not been established as clean by the latest workflows. Do not infer lint success from the successful TypeScript/build steps.
+- This report does not establish visual correctness on every device, browser, or color theme.
+
+## 5. Production readiness
+
+**Not production-ready yet.** The following operational/business gates remain open:
+
+- Complete role-by-role authorization and negative-path review for sensitive actions.
+- Run realistic end-to-end business UAT: customer-owned goods, production stages, QC, partial acceptance/rejection, delivery, invoice eligibility, PPN/PPh, and payment allocation.
+- Verify actual Surat Jalan and Invoice templates in browser print/PDF output against approved company documents.
+- Complete responsive, light/dark, and accessibility visual UAT.
+- Verify production environment variables/secrets, queue, storage permissions, logging, monitoring, and error handling.
+- Perform and document backup/restore drill and opening-data preparation.
+- Complete user training and obtain Owner sign-off.
+
+No production data or credentials were changed. No merge to `main` and no production deployment were performed.
