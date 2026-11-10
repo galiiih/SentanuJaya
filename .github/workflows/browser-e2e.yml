@@ -84,9 +84,14 @@ jobs:
       - name: Restore browser E2E seed data
         working-directory: backend
         run: php artisan db:seed --force
-      - name: Seed dedicated browser E2E accounts
+      - name: Seed dedicated browser E2E accounts when available
         working-directory: backend
-        run: php artisan db:seed --class=BrowserE2ESeeder --force
+        run: |
+          if [ -f database/seeders/BrowserE2ESeeder.php ]; then
+            php artisan db:seed --class=BrowserE2ESeeder --force
+          else
+            echo "BrowserE2ESeeder is not part of this branch; retaining default seed data."
+          fi
       - name: Install frontend dependencies
         working-directory: frontend
         run: npm ci
@@ -98,9 +103,14 @@ jobs:
         run: npx playwright install --with-deps chromium
       # Run the new intro scenarios independently so an unrelated pre-existing CRUD failure
       # cannot stop Playwright's maxFailures guard before these tests are reached.
-      - name: Run login intro browser tests
+      - name: Run login intro browser tests when available
         working-directory: frontend
-        run: npx playwright test e2e/login-intro.spec.ts --reporter=list
+        run: |
+          if [ -f e2e/login-intro.spec.ts ]; then
+            npx playwright test e2e/login-intro.spec.ts --reporter=list
+          else
+            echo "Dedicated login intro spec is not part of this branch; the full E2E suite will run below."
+          fi
       - name: Run browser E2E
         working-directory: frontend
         # Playwright has its own 25-minute global timeout; this shell watchdog is a
