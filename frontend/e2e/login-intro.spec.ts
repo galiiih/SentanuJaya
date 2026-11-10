@@ -47,9 +47,9 @@ test.describe('isolated login intro and sidebar', () => {
     await expect(intro).toBeVisible();
     await expect(page.locator('.menu-button')).toBeVisible();
     await expect(intro).toHaveClass(/login-intro--mobile/, { timeout: 6000 });
-    // Inspect geometry immediately in the fly phase; the intro intentionally
-    // unmounts at its 3.3s deadline, so a late locator read would race teardown.
-    await expect(intro).toHaveClass(/login-intro--fly/, { timeout: 2500 });
+    // The mobile class is applied in the same render that publishes the
+    // measured target. The fly phase is brief and may already have advanced
+    // to wave on slower CI workers, so do not require observing that transient phase.
     const geometry = await intro.evaluate((element) => {
       const style = getComputedStyle(element);
       return {
