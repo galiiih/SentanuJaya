@@ -44,6 +44,12 @@ export function LoginIntro({ onWave, onDone }: { onWave: () => void; onDone: () 
   useEffect(() => {
     let waveTimer: number | undefined;
     let doneTimer: number | undefined;
+    let completionGuard: number | undefined;
+    const complete = () => {
+      if (phaseRef.current === 'skip') return;
+      phaseRef.current = 'skip';
+      callbacks.current.onDone();
+    };
     const flyTimer = window.setTimeout(() => {
       if (phaseRef.current !== 'center') return;
       if (rootRef.current && logoRef.current) {
@@ -54,16 +60,19 @@ export function LoginIntro({ onWave, onDone }: { onWave: () => void; onDone: () 
         if (phaseRef.current !== 'fly') return;
         go('wave');
         callbacks.current.onWave();
-        doneTimer = window.setTimeout(() => {
-          if (phaseRef.current === 'wave') callbacks.current.onDone();
-        }, Math.max(0, T.doneAt - T.waveAt));
+        doneTimer = window.setTimeout(complete, Math.max(0, T.doneAt - T.waveAt));
       }, Math.max(0, T.waveAt - T.flyAt));
     }, T.flyAt);
+
+    // Independent deadline: a missed phase callback must never leave the app
+    // covered by the intro overlay indefinitely (e.g. under browser throttling).
+    completionGuard = window.setTimeout(complete, Math.max(T.doneAt, T.flyAt + T.waveAt) + 1200);
 
     return () => {
       window.clearTimeout(flyTimer);
       if (waveTimer !== undefined) window.clearTimeout(waveTimer);
       if (doneTimer !== undefined) window.clearTimeout(doneTimer);
+      if (completionGuard !== undefined) window.clearTimeout(completionGuard);
     };
   }, [go]);
 
