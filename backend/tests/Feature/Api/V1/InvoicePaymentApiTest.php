@@ -152,20 +152,18 @@ class InvoicePaymentApiTest extends TestCase
     ])->assertStatus(422);
     }
 
-    public function test_second_invoice_can_only_bill_new_later_acceptance_quantity(): void
-{
-    $s = $this->delivery();
-    $admin = $this->user('ADMIN');
-    $this->postAcceptance($s['do'], $s['line'], 30, 10);
+    public function test_one_surat_jalan_cannot_create_a_second_invoice_even_after_later_acceptance(): void
+    {
+        $s = $this->delivery();
+        $admin = $this->user('ADMIN');
+        $this->postAcceptance($s['do'], $s['line'], 30, 10);
 
-    $first = app(InvoiceService::class)->buildDraftInvoice([$s['do']->id], $s['customer']->id, '2026-10-06', 1, $admin->id);
-    app(InvoiceService::class)->postInvoice($first, $admin->id);
+        $first = app(InvoiceService::class)->buildDraftInvoice([$s['do']->id], $s['customer']->id, '2026-10-06', 1, $admin->id);
+        app(InvoiceService::class)->postInvoice($first, $admin->id);
 
-    $this->postAcceptance($s['do'], $s['line'], 5, 0);
-    $second = app(InvoiceService::class)->buildDraftInvoice([$s['do']->id], $s['customer']->id, '2026-10-08', 1, $admin->id);
-
-    $this->assertSame(5.0, (float) $second->lines->first()->quantity);
-    $this->assertSame(35.0, (float) $s['line']->fresh()->qty_invoiced);
+        $this->postAcceptance($s['do'], $s['line'], 5, 0);
+        $this->expectException(\\Illuminate\\Validation\\ValidationException::class);
+        app(InvoiceService::class)->buildDraftInvoice([$s['do']->id], $s['customer']->id, '2026-10-08', 1, $admin->id);
     }
 
     public function test_invoice_can_be_posted_and_draft_cancel_restores_invoiceable_quantity(): void
