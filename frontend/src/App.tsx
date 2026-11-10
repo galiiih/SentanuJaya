@@ -224,7 +224,10 @@ function AuthenticatedLayout() {
     }
   }, [introPhase]);
   useEffect(() => () => {
-    if (introWatchdogRef.current !== null) window.clearTimeout(introWatchdogRef.current);
+    if (introWatchdogRef.current !== null) {
+      window.clearTimeout(introWatchdogRef.current);
+      introWatchdogRef.current = null;
+    }
   }, []);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuButton = useRef<HTMLButtonElement>(null);
