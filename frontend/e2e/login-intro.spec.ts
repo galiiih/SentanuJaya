@@ -85,6 +85,45 @@ test.describe('login intro animation', () => {
     await expect(sidebar).not.toHaveClass(/sidebar--mobile-open/);
   });
 
+  test('desktop sidebar collapses and expands without losing accessible navigation labels', async ({ page }) => {
+    await submitLogin(page);
+    await page.getByRole('button', { name: 'Lewati animasi pembuka' }).click();
+    await expect(page.getByTestId('login-intro')).toBeHidden({ timeout: 1500 });
+
+    const sidebar = page.locator('#main-sidebar-navigation');
+    const collapse = page.getByRole('button', { name: 'Ciutkan sidebar' });
+    await expect(sidebar).toBeVisible();
+    await collapse.click();
+
+    await expect(sidebar).toHaveClass(/sidebar--collapsed/);
+    await expect(page.getByRole('button', { name: 'Perlebar sidebar' })).toHaveAttribute('aria-expanded', 'false');
+    const dashboardLink = page.getByRole('link', { name: 'Dashboard' });
+    await expect(dashboardLink).toBeVisible();
+    await expect(dashboardLink).toHaveAttribute('aria-label', 'Dashboard');
+    await expect(dashboardLink).toHaveAttribute('title', 'Dashboard');
+
+    await page.getByRole('button', { name: 'Perlebar sidebar' }).click();
+    await expect(sidebar).not.toHaveClass(/sidebar--collapsed/);
+    await expect(page.getByRole('button', { name: 'Ciutkan sidebar' })).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  test('switches cleanly at the mobile drawer breakpoint', async ({ page }) => {
+    await page.setViewportSize({ width: 760, height: 900 });
+    await submitLogin(page);
+    await page.getByRole('button', { name: 'Lewati animasi pembuka' }).click();
+    await expect(page.getByTestId('login-intro')).toBeHidden({ timeout: 1500 });
+
+    const trigger = page.getByRole('button', { name: 'Buka navigasi' });
+    const sidebar = page.locator('#main-sidebar-navigation');
+    await expect(trigger).toBeVisible();
+    await expect(sidebar).toBeHidden();
+
+    await page.setViewportSize({ width: 761, height: 900 });
+    await expect(trigger).toBeHidden();
+    await expect(sidebar).toBeVisible();
+    await expect(sidebar).not.toHaveClass(/sidebar--mobile-open/);
+  });
+
   test('can be skipped with the skip button', async ({ page }) => {
     await submitLogin(page);
     await page.getByRole('button', { name: 'Lewati animasi pembuka' }).click();
