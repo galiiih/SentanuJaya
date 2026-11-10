@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Api\BaseApiController;
+use App\Models\Acceptance;
 use App\Models\DeliveryOrder;
 use App\Models\Invoice;
 use App\Services\InvoiceService;
@@ -42,7 +43,7 @@ class InvoiceController extends BaseApiController
 
                 return $do->lines->contains(function ($line) {
                     $qtyOk = (float) $line->acceptanceLines
-                        ->filter(fn ($al) => $al->acceptance?->status === \\App\\Models\\Acceptance::STATUS_POSTED)
+                        ->filter(fn ($al) => $al->acceptance?->status === Acceptance::STATUS_POSTED)
                         ->sum('quantity_ok');
                     return $qtyOk > 0;
                 });
