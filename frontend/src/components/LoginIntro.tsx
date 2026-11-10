@@ -57,7 +57,9 @@ export function LoginIntro({ onWave, onDone }: { onWave: () => void; onDone: () 
       }
       go('fly');
       waveTimer = window.setTimeout(() => {
-        if (phaseRef.current !== 'fly') return;
+        // The intro is a one-way sequence. Do not let a stale phase check
+        // strand the overlay if React replays effects during development/StrictMode.
+        if (phaseRef.current === 'skip') return;
         go('wave');
         callbacks.current.onWave();
         doneTimer = window.setTimeout(complete, Math.max(0, T.doneAt - T.waveAt));
