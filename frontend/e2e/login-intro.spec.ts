@@ -57,10 +57,14 @@ test.describe('isolated login intro and sidebar', () => {
         dy: Number.parseFloat(style.getPropertyValue('--intro-dy')),
         dxStyle: style.getPropertyValue('--intro-dx').trim(),
         dyStyle: style.getPropertyValue('--intro-dy').trim(),
+        inlineDx: (element as HTMLElement).style.getPropertyValue('--intro-dx').trim(),
+        inlineDy: (element as HTMLElement).style.getPropertyValue('--intro-dy').trim(),
+        styleAttribute: element.getAttribute('style'),
       };
     });
-    expect(Number.isFinite(geometry.dx)).toBeTruthy();
-    expect(Number.isFinite(geometry.dy)).toBeTruthy();
+    console.log('Mobile intro geometry:', JSON.stringify(geometry));
+    expect(Number.isFinite(geometry.dx), JSON.stringify(geometry)).toBeTruthy();
+    expect(Number.isFinite(geometry.dy), JSON.stringify(geometry)).toBeTruthy();
     expect(geometry.dxStyle).toMatch(/^-?\d+(?:\.\d+)?px$/);
     expect(geometry.dyStyle).toMatch(/^-?\d+(?:\.\d+)?px$/);
     await expect(intro).toHaveClass(/login-intro--wave/, { timeout: 1500 });
