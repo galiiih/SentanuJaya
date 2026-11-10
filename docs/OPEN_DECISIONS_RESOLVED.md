@@ -33,7 +33,7 @@ Tax rate configurable. Jangan hardcode 11% atau 12%.
 Dampak schema: `price_list_lines` perlu kolom `size` nullable.
 
 ## 7. Invoice
-**RESOLVED**: 1 Invoice → 1 Customer → banyak SJ. 1 SJ → 1 PO. 1 PO → banyak SJ. Tidak boleh lintas customer dalam satu invoice.
+**RESOLVED (aturan operasional terbaru)**: 1 Invoice → 1 Customer → 1 Surat Jalan. 1 SJ → 1 PO. 1 PO → banyak SJ. Setiap SJ ditagihkan melalui invoice tersendiri; tidak boleh menggabungkan beberapa SJ dalam satu invoice atau membuat invoice aktif kedua untuk SJ yang sama.
 
 ## 8. Pembayaran / DP
 **RESOLVED**: MVP-1 tanpa DP. Metode: **Cash dan Bank Transfer**. Schema siapkan `down_payments` dan `payment_allocations` untuk future. Payment + Payment Allocation pattern.
