@@ -184,13 +184,28 @@ class CustodyService
 
             $doLine = $aLine->deliveryOrderLine;
 
-            // Return to original location custody balance
-            $balance = CustodyBalance::query()
+            // Return rejected goods to the same custody location from which this SJ
+            // consumed them; never select an arbitrary location for the same item.
+            $locationId = $doLine->custody_location_id;
+            $balanceQuery = CustodyBalance::query()
                 ->where('customer_id', $delivery->customer_id)
                 ->where('customer_item_id', $doLine->customer_item_id)
-                ->where('stage', 'RAW')
-                ->lockForUpdate()
-                ->first();
+                ->where('stage', 'RAW');
+            if ($locationId) {
+                $balanceQuery->where('custody_location_id', $locationId);
+            }
+            $balance = $balanceQuery->lockForUpdate()->first();
+
+            if (!$balance) {
+                $balance = CustodyBalance::create([
+                    'customer_id' => $delivery->customer_id,
+                    'customer_item_id' => $doLine->customer_item_id,
+                    'custody_location_id' => $locationId,
+                    'stage' => 'RAW',
+                    'balance_quantity' => 0,
+                ]);
+                $balance = CustodyBalance::query()->lockForUpdate()->findOrFail($balance->id);
+            }
 
             CustodyLedger::create([
                 'customer_id' => $delivery->customer_id,
@@ -200,28 +215,17 @@ class CustodyService
                 'movement_type' => 'RETURN_REJECTED',
                 'quantity_in' => $aLine->quantity_rejected,
                 'quantity_out' => 0,
-                'custody_location_id' => $balance?->custody_location_id,
+                'custody_location_id' => $balance->custody_location_id,
                 'stage' => 'RETURNED',
                 'movement_date' => $acceptance->acceptance_date,
                 'created_by' => $actorId,
                 'notes' => __('acceptance.ledger_note_reject', ['number' => $acceptance->acceptance_number]),
             ]);
 
-            if ($balance) {
-                $balance->update([
-                    'balance_quantity' => (float) $balance->balance_quantity + (float) $aLine->quantity_rejected,
-                    'last_movement_at' => now(),
-                ]);
-            } else {
-                CustodyBalance::create([
-                    'customer_id' => $delivery->customer_id,
-                    'customer_item_id' => $doLine->customer_item_id,
-                    'custody_location_id' => null,
-                    'stage' => 'RAW',
-                    'balance_quantity' => $aLine->quantity_rejected,
-                    'last_movement_at' => now(),
-                ]);
-            }
+            $balance->update([
+                'balance_quantity' => (float) $balance->balance_quantity + (float) $aLine->quantity_rejected,
+                'last_movement_at' => now(),
+            ]);
         }
     }
 }
