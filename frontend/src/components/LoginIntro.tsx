@@ -90,9 +90,8 @@ export function LoginIntro({ onWave, onDone }: { onWave: () => void; onDone: () 
     }, T.waveAt);
 
     const doneTimer = window.setTimeout(() => {
-      // A manual skip owns completion once requested. The shared finish guard
-      // also makes the deadline and skip callback safe if they race.
-      if (phaseRef.current === 'skip') return;
+      // The deadline is the final safety net even if a skip timer was
+      // interrupted by navigation or effect cleanup. finish() is idempotent.
       finish();
     }, T.doneAt);
 
