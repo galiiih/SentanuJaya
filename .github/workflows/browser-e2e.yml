@@ -4,7 +4,9 @@ on:
   push:
     branches: [feat/template-management-grapesjs]
   pull_request:
-    branches: [master]
+    # PR filters apply to the target/base branch. Include the integration branch
+    # used by feature PRs so browser checks run before they are merged.
+    branches: [main, master, feat/template-management-grapesjs]
   workflow_dispatch:
 
 jobs:
