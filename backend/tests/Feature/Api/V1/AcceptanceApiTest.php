@@ -359,4 +359,58 @@ class AcceptanceApiTest extends TestCase
             'entity_id' => $accId,
         ]);
     }
+    public function test_rejected_goods_return_to_the_original_delivery_custody_location(): void
+    {
+        $s = $this->seedDelivered();
+        $admin = $this->makeUser('admin');
+        $otherLocation = CustodyLocation::create([
+            'branch_id' => $s['branch']->id,
+            'code' => 'WH2',
+            'name' => 'Warehouse 2',
+        ]);
+
+        $s['doLine']->update(['custody_location_id' => $s['loc']->id]);
+
+        // Insert another location first to catch arbitrary first-balance selection.
+        $otherBalance = CustodyBalance::create([
+            'customer_id' => $s['customer']->id,
+            'customer_item_id' => $s['item']->id,
+            'custody_location_id' => $otherLocation->id,
+            'stage' => 'RAW',
+            'balance_quantity' => 50,
+        ]);
+        $originalBalance = CustodyBalance::create([
+            'customer_id' => $s['customer']->id,
+            'customer_item_id' => $s['item']->id,
+            'custody_location_id' => $s['loc']->id,
+            'stage' => 'RAW',
+            'balance_quantity' => 0,
+        ]);
+
+        $created = $this->actingAs($admin)->postJson('/api/v1/acceptances', [
+            'delivery_order_id' => $s['do']->id,
+            'acceptance_date' => '2026-10-04',
+            'lines' => [[
+                'delivery_order_line_id' => $s['doLine']->id,
+                'quantity_ok' => 8,
+                'quantity_rejected' => 2,
+                'reject_reason' => 'Cat mengelupas',
+            ]],
+        ])->assertCreated();
+
+        $id = $created->json('data.id');
+        $this->actingAs($admin)->postJson("/api/v1/acceptances/{$id}/submit")->assertOk();
+        $this->actingAs($admin)->postJson("/api/v1/acceptances/{$id}/post")->assertOk();
+
+        $this->assertSame(2.0, (float) $originalBalance->fresh()->balance_quantity);
+        $this->assertSame(50.0, (float) $otherBalance->fresh()->balance_quantity);
+        $this->assertDatabaseHas('custody_ledger', [
+            'reference_type' => 'ACCEPTANCE',
+            'reference_id' => $id,
+            'movement_type' => 'RETURN_REJECTED',
+            'custody_location_id' => $s['loc']->id,
+            'quantity_in' => 2,
+        ]);
+    }
+
 }
