@@ -2,7 +2,7 @@
 
 Snapshot: 10 November 2026  
 Branch: `feat/sidebar-collapse-navigation-new`  
-Verified commit: `dd93497be321f769be3e3013bfc28e92c7c8ea83`
+Verified commit: `6602bac073f5bc7ca637a11c0bd18b8a5c9bac59`
 
 ## Status implementasi
 
@@ -12,7 +12,7 @@ Verified commit: `dd93497be321f769be3e3013bfc28e92c7c8ea83`
 | Master Data & User Management | Implemented; automated coverage passing | 17 master resources dan CRUD; detail coverage perlu tetap dirujuk ke test suite |
 | Goods Receipt / Custody | Implemented; automated coverage passing | STB lifecycle dan custody separation |
 | Customer PO, Delivery, Acceptance | Implemented; automated coverage passing | Lifecycle dan API tersedia; perlu UAT operasional |
-| Invoice & Payment | Implemented; automated coverage passing | Integration suite: 24 tests, 113 assertions pada workflow browser |
+| Invoice & Payment | Implemented; automated coverage passing | Integration subset: 24 tests, 113 assertions pada workflow browser |
 | Dashboard & Reporting | Implemented | Dashboard KPI dan laporan; rekonsiliasi hasil bisnis tetap bagian UAT |
 | Document Template Management | Implemented | Upload, HTML source editor, GrapesJS visual editor, versioning; perlu UAT template dokumen riil |
 | Nanu AI / Ollama | Implemented | Provider lokal dan OpenAI-compatible; kualitas jawaban serta koneksi model perlu UAT pada environment target |
@@ -22,18 +22,20 @@ Verified commit: `dd93497be321f769be3e3013bfc28e92c7c8ea83`
 
 ## Latest automated verification
 
-Workflow run untuk commit di atas:
+Workflow run untuk commit `6602bac073f5bc7ca637a11c0bd18b8a5c9bac59`:
 
-- **PHP & PostgreSQL:** 152 tests passed, 1,032 assertions.
+- **PHP & PostgreSQL 16:** 153 tests passed, 1,038 assertions.
 - **Invoice & Payment integration subset:** 24 tests passed, 113 assertions.
 - **Dedicated Login Intro Playwright suite:** 7 passed.
-- **Full Browser E2E:** 48 passed.
+- **Full Browser E2E:** 48 passed, 0 failed.
 - **Frontend TypeScript + Vite production build:** PASS.
+- **Browser E2E workflow:** seluruh job steps completed successfully.
+- **PHP & PostgreSQL workflow:** seluruh job steps completed successfully.
 
 Referensi:
-- Browser E2E: https://github.com/galiiih/SentanuJaya/actions/runs/42670088652
-- PHP & PostgreSQL: https://github.com/galiiih/SentanuJaya/actions/runs/42670087870
-- Verified commit: https://github.com/galiiih/SentanuJaya/commit/dd93497be321f769be3e3013bfc28e92c7c8ea83
+- Browser E2E: https://github.com/galiiih/SentanuJaya/actions/runs/42773368180
+- PHP & PostgreSQL: https://github.com/galiiih/SentanuJaya/actions/runs/42773368206
+- Verified commit: https://github.com/galiiih/SentanuJaya/commit/6602bac073f5bc7ca637a11c0bd18b8a5c9bac59
 
 ## Remaining work before production
 
