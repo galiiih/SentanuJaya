@@ -378,7 +378,7 @@ export default function TemplateManagementPage() {
 
       {/* HTML Editor Modal */}
       {editingTemplate && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-none flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-none flex items-center justify-center p-4 z-50 glass-modal-overlay">
           <div className="bg-white rounded-xl shadow-2xl max-w-5xl w-full h-[90vh] flex flex-col overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
               <div>
@@ -450,7 +450,7 @@ export default function TemplateManagementPage() {
       {/* Version History Modal */}
       {versionTemplate && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-none flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full p-6 space-y-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full p-6 space-y-4 glass-modal">
             <div className="flex justify-between items-center border-b pb-3">
               <div>
                 <h2 className="text-lg font-bold text-slate-900">Riwayat Versi: {versionTemplate.name}</h2>
