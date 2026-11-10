@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import { INTRO_TIMING as T } from '../loginIntro';
 
@@ -81,7 +81,7 @@ export function LoginIntro({ onWave, onDone }: { onWave: () => void; onDone: () 
     }, 220);
   }, [go]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     skipRef.current?.focus();
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== 'Escape' || phaseRef.current === 'skip') return;
