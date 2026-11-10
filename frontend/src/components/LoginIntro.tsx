@@ -42,39 +42,32 @@ export function LoginIntro({ onWave, onDone }: { onWave: () => void; onDone: () 
   const flatFallback = typeof window !== 'undefined' && !(window as unknown as { THREE?: unknown }).THREE;
 
   useEffect(() => {
-    let waveTimer: number | undefined;
-    let doneTimer: number | undefined;
-    let completionGuard: number | undefined;
-    const complete = () => {
-      if (phaseRef.current === 'skip') return;
-      phaseRef.current = 'skip';
-      callbacks.current.onDone();
-    };
+    // Schedule each phase against the same mount-time clock. Chained timers
+    // can be lost when a browser throttles/replays effects during navigation.
     const flyTimer = window.setTimeout(() => {
-      if (phaseRef.current !== 'center') return;
+      if (phaseRef.current === 'skip') return;
       if (rootRef.current && logoRef.current) {
         setGeo(measureTarget(rootRef.current, logoRef.current));
       }
       go('fly');
-      waveTimer = window.setTimeout(() => {
-        // The intro is a one-way sequence. Do not let a stale phase check
-        // strand the overlay if React replays effects during development/StrictMode.
-        if (phaseRef.current === 'skip') return;
-        go('wave');
-        callbacks.current.onWave();
-        doneTimer = window.setTimeout(complete, Math.max(0, T.doneAt - T.waveAt));
-      }, Math.max(0, T.waveAt - T.flyAt));
     }, T.flyAt);
 
-    // Independent deadline: a missed phase callback must never leave the app
-    // covered by the intro overlay indefinitely (e.g. under browser throttling).
-    completionGuard = window.setTimeout(complete, Math.max(T.doneAt, T.flyAt + T.waveAt) + 1200);
+    const waveTimer = window.setTimeout(() => {
+      if (phaseRef.current === 'skip') return;
+      go('wave');
+      callbacks.current.onWave();
+    }, T.waveAt);
+
+    const doneTimer = window.setTimeout(() => {
+      if (phaseRef.current === 'skip') return;
+      phaseRef.current = 'skip';
+      callbacks.current.onDone();
+    }, T.doneAt);
 
     return () => {
       window.clearTimeout(flyTimer);
-      if (waveTimer !== undefined) window.clearTimeout(waveTimer);
-      if (doneTimer !== undefined) window.clearTimeout(doneTimer);
-      if (completionGuard !== undefined) window.clearTimeout(completionGuard);
+      window.clearTimeout(waveTimer);
+      window.clearTimeout(doneTimer);
     };
   }, [go]);
 
