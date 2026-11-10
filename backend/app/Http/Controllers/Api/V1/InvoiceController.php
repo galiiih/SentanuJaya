@@ -31,13 +31,20 @@ class InvoiceController extends BaseApiController
             ->with(['lines.acceptanceLines.acceptance', 'lines.customerItem', 'customer'])
             ->get()
             ->filter(function ($do) {
-                // Keep DO if any line has remaining invoiceable qty
+                // A Surat Jalan is eligible only until its single active invoice is created.
+                $hasActiveInvoice = $do->invoiceLinks()
+                    ->whereHas('invoice', fn ($query) => $query->where('status', '!=', Invoice::STATUS_CANCELLED))
+                    ->exists();
+
+                if ($hasActiveInvoice) {
+                    return false;
+                }
+
                 return $do->lines->contains(function ($line) {
                     $qtyOk = (float) $line->acceptanceLines
-                        ->filter(fn ($al) => $al->acceptance?->status === \App\Models\Acceptance::STATUS_POSTED)
+                        ->filter(fn ($al) => $al->acceptance?->status === \\App\\Models\\Acceptance::STATUS_POSTED)
                         ->sum('quantity_ok');
-                    $qtyInvoiced = (float) $line->qty_invoiced;
-                    return ($qtyOk - $qtyInvoiced) > 0;
+                    return $qtyOk > 0;
                 });
             })
             ->values();
