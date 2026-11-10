@@ -38,7 +38,14 @@ export function LoginIntro({ onWave, onDone }: { onWave: () => void; onDone: () 
   const callbacks = useRef({ onWave, onDone });
   useEffect(() => { callbacks.current = { onWave, onDone }; });
   const phaseRef = useRef<Phase>('center');
+  const finishedRef = useRef(false);
   const go = useCallback((next: Phase) => { phaseRef.current = next; setPhase(next); }, []);
+  const finish = useCallback(() => {
+    if (finishedRef.current) return;
+    finishedRef.current = true;
+    go('skip');
+    callbacks.current.onDone();
+  }, [go]);
   const flatFallback = typeof window !== 'undefined' && !(window as unknown as { THREE?: unknown }).THREE;
 
   useEffect(() => {
@@ -59,10 +66,10 @@ export function LoginIntro({ onWave, onDone }: { onWave: () => void; onDone: () 
     }, T.waveAt);
 
     const doneTimer = window.setTimeout(() => {
-      // Completion is an unconditional deadline: a prior phase/skip state must
-      // never strand the portal on the final wave frame.
-      go('skip');
-      callbacks.current.onDone();
+      // A manual skip owns completion once requested. The shared finish guard
+      // also makes the deadline and skip callback safe if they race.
+      if (phaseRef.current === 'skip') return;
+      finish();
     }, T.doneAt);
 
     return () => {
@@ -70,7 +77,7 @@ export function LoginIntro({ onWave, onDone }: { onWave: () => void; onDone: () 
       window.clearTimeout(waveTimer);
       window.clearTimeout(doneTimer);
     };
-  }, [go]);
+  }, [finish, go]);
 
   const skip = useCallback(() => {
     if (phaseRef.current === 'skip') return;
@@ -78,9 +85,9 @@ export function LoginIntro({ onWave, onDone }: { onWave: () => void; onDone: () 
     if (skipTimerRef.current !== null) window.clearTimeout(skipTimerRef.current);
     skipTimerRef.current = window.setTimeout(() => {
       skipTimerRef.current = null;
-      callbacks.current.onDone();
+      finish();
     }, 220);
-  }, [go]);
+  }, [finish, go]);
 
   useLayoutEffect(() => {
     skipRef.current?.focus();
