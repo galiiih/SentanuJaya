@@ -51,18 +51,11 @@ test.describe('isolated login intro and sidebar', () => {
     // measured target. The fly phase is brief and may already have advanced
     // to wave on slower CI workers, so do not require observing that transient phase.
     const geometry = await intro.evaluate((element) => {
-      const style = getComputedStyle(element);
-      return {
-        dx: Number.parseFloat(style.getPropertyValue('--intro-dx')),
-        dy: Number.parseFloat(style.getPropertyValue('--intro-dy')),
-        dxStyle: style.getPropertyValue('--intro-dx').trim(),
-        dyStyle: style.getPropertyValue('--intro-dy').trim(),
-        inlineDx: (element as HTMLElement).style.getPropertyValue('--intro-dx').trim(),
-        inlineDy: (element as HTMLElement).style.getPropertyValue('--intro-dy').trim(),
-        styleAttribute: element.getAttribute('style'),
-      };
+      const inlineStyle = (element as HTMLElement).style;
+      const dx = inlineStyle.getPropertyValue('--intro-dx').trim();
+      const dy = inlineStyle.getPropertyValue('--intro-dy').trim();
+      return { dx: Number.parseFloat(dx), dy: Number.parseFloat(dy), dxStyle: dx, dyStyle: dy };
     });
-    console.log('Mobile intro geometry:', JSON.stringify(geometry));
     expect(Number.isFinite(geometry.dx), JSON.stringify(geometry)).toBeTruthy();
     expect(Number.isFinite(geometry.dy), JSON.stringify(geometry)).toBeTruthy();
     expect(geometry.dxStyle).toMatch(/^-?\d+(?:\.\d+)?px$/);
