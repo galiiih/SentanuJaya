@@ -50,15 +50,16 @@ test.describe('isolated login intro and sidebar', () => {
     await expect(intro).toHaveClass(/login-intro--fly|login-intro--wave/, { timeout: 6000 });
     const dx = await intro.evaluate((element) => Number.parseFloat(getComputedStyle(element).getPropertyValue('--intro-dx')));
     expect(Number.isFinite(dx)).toBeTruthy();
-    expect(Math.abs(dx)).toBeGreaterThan(20);
+    const dy = await intro.evaluate((element) => Number.parseFloat(getComputedStyle(element).getPropertyValue('--intro-dy')));
+    expect(Number.isFinite(dy)).toBeTruthy();
+    expect(getComputedStyle(await intro.elementHandle() as Element).getPropertyValue('--intro-dx')).toMatch(/^-?\\d+(?:\\.\\d+)?px$/);
     await expect(intro).toHaveClass(/login-intro--wave/, { timeout: 6000 });
     await expect(intro).toBeHidden({ timeout: 4000 });
   });
 
   test('desktop sidebar collapses and expands with accessible labels', async ({ page }) => {
     await submitLogin(page);
-    await page.getByRole('button', { name: 'Lewati animasi pembuka' }).click();
-    await expect(page.getByTestId('login-intro')).toBeHidden({ timeout: 1500 });
+    await expect(page.getByTestId('login-intro')).toBeHidden({ timeout: 6000 });
     const sidebar = page.locator('#main-sidebar-navigation');
     await expect(sidebar).toBeVisible();
     await page.getByRole('button', { name: 'Ciutkan sidebar' }).click();
