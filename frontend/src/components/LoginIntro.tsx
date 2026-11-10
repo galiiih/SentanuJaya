@@ -12,20 +12,30 @@ function measureTarget(root: HTMLElement, logo: HTMLElement): Geometry {
     ? document.querySelector<HTMLElement>('.app-header__context .menu-button')
     : document.querySelector<HTMLElement>('.sidebar__brand [data-sentanu-logo]');
   const rootRect = root.getBoundingClientRect();
-  const size = logo.offsetWidth || 160;
+  const finite = (value: number, fallback: number) => Number.isFinite(value) ? value : fallback;
+  const rootLeft = finite(rootRect.left, 0);
+  const rootTop = finite(rootRect.top, 0);
+  const rootWidth = finite(rootRect.width, window.innerWidth || 1);
+  const rootHeight = finite(rootRect.height, window.innerHeight || 1);
+  const size = finite(logo.getBoundingClientRect().width || logo.offsetWidth, 160);
   const rect = target?.getBoundingClientRect();
-  const hasTarget = !!rect && rect.width > 0 && rect.height > 0;
-  const tx = hasTarget ? rect.left + rect.width / 2 : 48;
-  const ty = hasTarget ? rect.top + rect.height / 2 : 48;
+  const hasTarget = !!rect
+    && Number.isFinite(rect.left) && Number.isFinite(rect.top)
+    && Number.isFinite(rect.width) && Number.isFinite(rect.height)
+    && rect.width > 0 && rect.height > 0;
+  // A missing/hidden mobile trigger must never poison the CSS transform with NaN.
+  const tx = hasTarget ? rect.left + rect.width / 2 : rootLeft + 48;
+  const ty = hasTarget ? rect.top + rect.height / 2 : rootTop + 48;
   const targetSize = hasTarget ? Math.min(rect.width, rect.height) : 36;
-  const cx = rootRect.left + rootRect.width / 2;
-  const cy = rootRect.top + rootRect.height / 2;
-  return {
-    dx: tx - cx, dy: ty - cy, scale: Math.max(0.05, targetSize / size),
-    wx: tx - rootRect.left, wy: ty - rootRect.top,
-    max: Math.hypot(Math.max(tx, rootRect.width - tx), Math.max(ty, rootRect.height - ty)) + 120,
-    mobile,
-  };
+  const cx = rootLeft + rootWidth / 2;
+  const cy = rootTop + rootHeight / 2;
+  const wx = finite(tx - rootLeft, 48);
+  const wy = finite(ty - rootTop, 48);
+  const dx = finite(tx - cx, 0);
+  const dy = finite(ty - cy, 0);
+  const scale = finite(Math.max(0.05, targetSize / Math.max(size, 1)), 0.225);
+  const max = finite(Math.hypot(Math.max(wx, rootWidth - wx), Math.max(wy, rootHeight - wy)) + 120, 2000);
+  return { dx, dy, scale, wx, wy, max, mobile };
 }
 
 export function LoginIntro({ onWave, onDone }: { onWave: () => void; onDone: () => void }) {
