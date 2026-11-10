@@ -54,6 +54,9 @@ export function LoginIntro({ onWave, onDone }: { onWave: () => void; onDone: () 
     if (finishedRef.current) return;
     finishedRef.current = true;
     go('skip');
+    // A throttled background tab may delay the scheduled wave timer past the
+    // completion deadline. Always release the app from its intro-wait state.
+    callbacks.current.onWave();
     callbacks.current.onDone();
   }, [go]);
   const flatFallback = typeof window !== 'undefined' && !(window as unknown as { THREE?: unknown }).THREE;
