@@ -364,6 +364,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .login-intro__logo--flat { perspective: 600px; }
 .login-intro__logo--flat .sj-flat { animation: login-intro-flat-spin 1100ms cubic-bezier(.65,0,.35,1) 150ms both; }
 .login-intro--wave .login-intro__veil { -webkit-mask-image: radial-gradient(circle at var(--intro-wave-x) var(--intro-wave-y), transparent var(--intro-wave-r), #000 calc(var(--intro-wave-r) + 90px)); mask-image: radial-gradient(circle at var(--intro-wave-x) var(--intro-wave-y), transparent var(--intro-wave-r), #000 calc(var(--intro-wave-r) + 90px)); animation: login-intro-reveal 800ms cubic-bezier(.5,0,.2,1) forwards, login-intro-veil-fade 240ms ease-in 600ms forwards; }
+.login-intro--skip { opacity: 0; transition: opacity 200ms ease; pointer-events: none; }
 .login-intro__ring { position: absolute; left: var(--intro-wave-x); top: var(--intro-wave-y); width: 120px; height: 120px; margin: -60px 0 0 -60px; border: 2px solid #f2585c; border-radius: 50%; box-shadow: 0 0 24px rgb(242 88 92 / 45%), inset 0 0 24px rgb(242 88 92 / 25%); opacity: 0; transform: scale(0); pointer-events: none; }
 .login-intro__ring--blue { border-color: #3f58c8; box-shadow: 0 0 24px rgb(63 88 200 / 45%), inset 0 0 24px rgb(63 88 200 / 25%); }
 .login-intro--wave .login-intro__ring { animation: login-intro-ring 800ms cubic-bezier(.4,0,.2,1) forwards; }
