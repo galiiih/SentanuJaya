@@ -9,7 +9,7 @@ class InvoiceServiceTest extends TestCase
     /** @test */
     public function test_multisj_invoicing_and_revenue_recognition_gate()
     {
-        // Simulasi 2 Surat Jalan Accepted:
+        // Historical calculation example only (multi-SJ invoice is not permitted by current business rules):
         // SJ-1: 20 pcs x Rp 450.000 = Rp 9.000.000
         // SJ-2: 15 pcs x Rp 893.066,67 = Rp 13.396.000
         // Total Subtotal = Rp 22.396.000 (Sesuai invoice nyata PT Varia Baru)
