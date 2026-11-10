@@ -162,7 +162,7 @@ class InvoicePaymentApiTest extends TestCase
         app(InvoiceService::class)->postInvoice($first, $admin->id);
 
         $this->postAcceptance($s['do'], $s['line'], 5, 0);
-        $this->expectException(\\Illuminate\\Validation\\ValidationException::class);
+        $this->expectException(\Illuminate\Validation\ValidationException::class);
         app(InvoiceService::class)->buildDraftInvoice([$s['do']->id], $s['customer']->id, '2026-10-08', 1, $admin->id);
     }
 
