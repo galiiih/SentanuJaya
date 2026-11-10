@@ -11,6 +11,8 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  PanelLeftClose,
+  PanelLeftOpen,
   Moon,
   Package,
   Plus,
@@ -66,6 +68,8 @@ import {
   Select,
   StatusBadge,
 } from './components/ui';
+import { LoginIntro } from './components/LoginIntro';
+import { INTRO_TIMING, clearLoginIntro, markLoginIntro, shouldPlayLoginIntro } from './loginIntro';
 import './App.css';
 
 type PageKey = 'dashboard' | 'custody' | 'customerPo' | 'materials' | 'delivery' | 'invoicing' | 'reports' | 'master';
@@ -100,6 +104,7 @@ function RequirePermission({ permission, children }: { permission: Permission; c
 function Sidebar({ mobile, onClose, closeButtonRef }: { mobile?: boolean; onClose?: () => void; closeButtonRef?: React.RefObject<HTMLButtonElement | null> }) {
   const { hasPermission } = useAuth();
   const { t } = useLanguage();
+  const [collapsed, setCollapsed] = useState(false);
 
   const navSections = [
     {
@@ -131,23 +136,24 @@ function Sidebar({ mobile, onClose, closeButtonRef }: { mobile?: boolean; onClos
   ];
 
   return (
-    <aside id={mobile ? 'mobile-navigation' : undefined} className={`sidebar${mobile ? ' sidebar--mobile' : ''}`} role={mobile ? 'dialog' : undefined} aria-modal={mobile || undefined} aria-label={mobile ? 'Navigasi utama' : undefined} onMouseDown={(event) => event.stopPropagation()}>
+    <aside id={mobile ? 'mobile-navigation' : 'main-sidebar-navigation'} className={`sidebar${mobile ? ' sidebar--mobile' : ''}${!mobile && collapsed ? ' sidebar--collapsed' : ''}`} role={mobile ? 'dialog' : undefined} aria-modal={mobile || undefined} aria-label="Navigasi utama" onMouseDown={(event) => event.stopPropagation()}>
       <div className="sidebar__brand">
-        <div data-sentanu-logo data-loop="true" style={{ width: '36px', height: '36px', flexShrink: 0 }} />
-        <div><strong>SENTANU JAYA</strong><span>ERP WORKSHOP</span></div>
+        <div data-sentanu-logo data-loop="true" data-hold={shouldPlayLoginIntro() ? String(INTRO_TIMING.sidebarLogoHoldSec) : undefined} style={{ width: '36px', height: '36px', flexShrink: 0 }} />
+        <div className="sidebar__brand-copy"><strong>SENTANU JAYA</strong><span>ERP WORKSHOP</span></div>
         {mobile && <button ref={closeButtonRef} className="icon-button sidebar__close" onClick={onClose} aria-label="Tutup navigasi"><X size={20} /></button>}
       </div>
+      {!mobile && <div className="sidebar__toggle-row"><button type="button" className="icon-button sidebar__collapse" onClick={() => setCollapsed((value) => !value)} aria-label={collapsed ? 'Perlebar sidebar' : 'Ciutkan sidebar'} aria-controls="main-sidebar-navigation" aria-expanded={!collapsed} title={collapsed ? 'Perlebar sidebar' : 'Ciutkan sidebar'}>{collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}</button></div>}
       <nav className="sidebar__nav" aria-label="Navigasi utama">
         {navSections.map((section) => {
           const visibleItems = section.items.filter((item) => hasPermission(item.permission));
           if (!visibleItems.length) return null;
-          return <div key={section.label}><p className="nav-section-label">{section.label}</p>{visibleItems.map((item) => {
+          return <div className="sidebar__section" key={section.label}><p className="nav-section-label">{section.label}</p>{visibleItems.map((item) => {
             const Icon = item.icon;
-            return <NavLink key={item.path} to={item.path} className={({ isActive }) => `nav-item${isActive ? ' nav-item--active' : ''}`} onClick={onClose}><Icon size={18} /><span>{item.label}</span></NavLink>;
+            return <NavLink key={item.path} to={item.path} title={!mobile && collapsed ? item.label : undefined} aria-label={!mobile && collapsed ? item.label : undefined} className={({ isActive }) => `nav-item${isActive ? ' nav-item--active' : ''}`} onClick={onClose}><Icon size={18} aria-hidden="true" /><span>{item.label}</span></NavLink>;
           })}</div>;
         })}
       </nav>
-      <div className="sidebar__foot"><ShieldCheck size={18} /><div><strong>{t.nav.isolatedCustody}</strong><span>{t.nav.offBalanceSheet}</span></div></div>
+      <div className="sidebar__foot"><ShieldCheck size={18} /><div className="sidebar__foot-copy"><strong>{t.nav.isolatedCustody}</strong><span>{t.nav.offBalanceSheet}</span></div></div>
     </aside>
   );
 }
@@ -199,6 +205,8 @@ function LanguageSwitcher() {
 
 function AuthenticatedLayout() {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [introPhase, setIntroPhase] = useState<'off' | 'wait' | 'wave'>(() => (shouldPlayLoginIntro() ? 'wait' : 'off'));
+  useEffect(() => { clearLoginIntro(); }, []);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuButton = useRef<HTMLButtonElement>(null);
   const drawerCloseButton = useRef<HTMLButtonElement>(null);
@@ -237,7 +245,8 @@ function AuthenticatedLayout() {
   const signOut = () => { logout(); navigate('/login', { replace: true }); };
 
   return (
-    <div className="app-shell">
+    <>
+    <div className={`app-shell${introPhase !== 'off' ? ' app-shell--intro' : ''}${introPhase === 'wait' ? ' app-shell--intro-wait' : ''}`} inert={introPhase !== 'off' ? true : undefined}>
       <Sidebar />
       {drawerOpen && <div className="drawer-overlay" onMouseDown={closeDrawer}><Sidebar mobile onClose={closeDrawer} closeButtonRef={drawerCloseButton} /></div>}
       <div className="app-shell__main">
@@ -258,6 +267,8 @@ function AuthenticatedLayout() {
         <main className="app-content"><Breadcrumb items={breadcrumbItems} /><Outlet /></main>
       </div>
     </div>
+    {introPhase !== 'off' && <LoginIntro onWave={() => setIntroPhase((value) => (value === 'wait' ? 'wave' : value))} onDone={() => setIntroPhase('off')} />}
+    </>
   );
 }
 
@@ -460,7 +471,7 @@ function LoginPage() {
   if (isAuthenticated) return <Navigate to="/dashboard" replace />;
   const submit = async (event: React.FormEvent) => {
     event.preventDefault(); setError(''); setLoading(true);
-    try { await login(email, password); navigate(destination, { replace: true }); } catch (reason) { setError(reason instanceof Error ? reason.message : 'Login gagal.'); } finally { setLoading(false); }
+    try { markLoginIntro(); await login(email, password); navigate(destination, { replace: true }); } catch (reason) { clearLoginIntro(); setError(reason instanceof Error ? reason.message : 'Login gagal.'); } finally { setLoading(false); }
   };
   return <main className="auth-page"><Card className="auth-card"><div className="auth-brand"><div data-sentanu-logo data-loop="true" style={{ width: '36px', height: '36px', flexShrink: 0 }} /><div><strong>SENTANU JAYA</strong><span>ERP WORKSHOP</span></div></div><div className="auth-copy"><h1>Masuk ke Sentanu Jaya ERP</h1><p>Gunakan akun yang terdaftar untuk mengakses lingkungan pengembangan.</p></div>{error && <Alert tone="danger">{error}</Alert>}<form className="auth-form" onSubmit={submit}><FormField label="Email" htmlFor="login-email" required><Input id="login-email" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} required /></FormField><FormField label="Password" htmlFor="login-password" required><Input id="login-password" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></FormField><Button type="submit" loading={loading}>Login</Button></form><p className="auth-note">Forgot password belum tersedia.</p></Card></main>;
 }
