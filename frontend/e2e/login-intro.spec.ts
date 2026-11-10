@@ -42,6 +42,22 @@ test.describe('login intro animation', () => {
     await expect(page.locator('.app-shell')).not.toHaveClass(/app-shell--intro/);
   });
 
+  test('flies the intro logo toward the mobile navigation trigger on narrow screens', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await submitLogin(page);
+    const intro = page.getByTestId('login-intro');
+    await expect(intro).toBeVisible();
+    await expect(page.locator('.sidebar-mobile-trigger')).toBeVisible();
+    await expect(intro).toHaveClass(/login-intro--mobile/, { timeout: 6000 });
+    await expect(intro).toHaveClass(/login-intro--fly|login-intro--wave/, { timeout: 6000 });
+    const dx = await intro.evaluate((element) => Number.parseFloat(getComputedStyle(element).getPropertyValue('--intro-dx')));
+    expect(Number.isFinite(dx)).toBeTruthy();
+    expect(Math.abs(dx)).toBeGreaterThan(20);
+    await expect(intro).toHaveClass(/login-intro--wave/, { timeout: 6000 });
+    await expect(intro).toBeHidden({ timeout: 4000 });
+    await expect(page.locator('.sidebar-mobile-trigger')).toBeVisible();
+  });
+
   test('can be skipped with the skip button', async ({ page }) => {
     await submitLogin(page);
     await page.getByRole('button', { name: 'Lewati animasi pembuka' }).click();
