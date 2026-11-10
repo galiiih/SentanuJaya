@@ -64,7 +64,18 @@ export function LoginIntro({ onWave, onDone }: { onWave: () => void; onDone: () 
     const flyTimer = window.setTimeout(() => {
       if (phaseRef.current === 'skip') return;
       if (rootRef.current && logoRef.current) {
-        setGeo(measureTarget(rootRef.current, logoRef.current));
+        const measured = measureTarget(rootRef.current, logoRef.current);
+        // Write the validated geometry before changing phase. This guarantees
+        // the fly/wave CSS never observes an unset or stale transform target.
+        const cssPx = (value: number) => `${Number.isFinite(value) ? value : 0}px`;
+        rootRef.current.style.setProperty('--intro-dx', cssPx(measured.dx));
+        rootRef.current.style.setProperty('--intro-dy', cssPx(measured.dy));
+        rootRef.current.style.setProperty('--intro-wave-x', cssPx(measured.wx));
+        rootRef.current.style.setProperty('--intro-wave-y', cssPx(measured.wy));
+        rootRef.current.style.setProperty('--intro-wave-max', cssPx(measured.max));
+        rootRef.current.style.setProperty('--intro-scale', String(Number.isFinite(measured.scale) ? measured.scale : 0.225));
+        rootRef.current.style.setProperty('--intro-ring-scale', String(Number.isFinite((measured.max * 2) / 120) ? (measured.max * 2) / 120 : 30));
+        setGeo(measured);
       }
       go('fly');
     }, T.flyAt);
