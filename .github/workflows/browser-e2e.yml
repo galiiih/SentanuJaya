@@ -101,6 +101,12 @@ jobs:
       - name: Install Playwright Chromium
         working-directory: frontend
         run: npx playwright install --with-deps chromium
+      # Run print-document scenarios independently so unrelated CRUD/login flakes
+      # cannot prevent the A4 document checks from executing.
+      - name: Run Surat Jalan and Invoice print browser tests
+        working-directory: frontend
+        run: |
+          npx playwright test e2e/functional.spec.ts --grep "Surat Jalan print document|invoice creation and payment allocation" --reporter=list
       # Run the new intro scenarios independently so an unrelated pre-existing CRUD failure
       # cannot stop Playwright's maxFailures guard before these tests are reached.
       - name: Run login intro browser tests when available
@@ -111,12 +117,6 @@ jobs:
           else
             echo "Dedicated login intro spec is not part of this branch; the full E2E suite will run below."
           fi
-      # Run print-document scenarios independently so unrelated CRUD/login flakes
-      # cannot prevent the A4 document checks from executing.
-      - name: Run Surat Jalan and Invoice print browser tests
-        working-directory: frontend
-        run: |
-          npx playwright test e2e/functional.spec.ts --grep "Surat Jalan print document|invoice creation and payment allocation" --reporter=list
       - name: Run browser E2E
         working-directory: frontend
         # Playwright has its own 25-minute global timeout; this shell watchdog is a
