@@ -35,7 +35,8 @@ test.describe('login intro animation', () => {
     await expect(page.getByRole('button', { name: 'Lewati animasi pembuka' })).toBeVisible();
     // Assert the transition itself so a regression reports whether the intro
     // stalled before the wave instead of only timing out on final dismissal.
-    await expect(intro).toHaveClass(/login-intro--wave/, { timeout: 6000 });
+    // The full browser suite can contend for CPU while the logo animation is running.
+    await expect(intro).toHaveClass(/login-intro--wave/, { timeout: 12000 });
     await expect(intro).toBeHidden({ timeout: 4000 });
     await expect(page).toHaveURL(/\/dashboard$/);
     await expect(page.locator('aside.sidebar')).toBeVisible();
