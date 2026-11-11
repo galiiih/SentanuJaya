@@ -1016,6 +1016,8 @@ html[data-theme] .modal .modal__header .icon-button { color:var(--color-text-sec
   .print-meta-grid strong { margin-top: 2mm; color: #475569; font-size: 7pt; text-transform: uppercase; }
   .print-table { width: 100%; border-collapse: collapse; margin: 4mm 0 7mm; }
   .print-table thead { display: table-header-group; }
+  .print-table tr { break-inside: avoid; page-break-inside: avoid; }
+  .print-doc-header, .print-meta-grid, .print-totals, .print-signatures { break-inside: avoid; page-break-inside: avoid; }
   .print-table th { background: #f1f5f9 !important; color: #111827 !important; font-weight: 700; text-align: left; }
   .print-table th, .print-table td { border: 1px solid #cbd5e1; padding: 2mm; vertical-align: top; }
   .print-right { text-align: right !important; white-space: nowrap; }
