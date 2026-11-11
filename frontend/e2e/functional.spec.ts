@@ -971,6 +971,9 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
       if (path === '/api/v1/invoices/eligible-delivery-orders' && method === 'GET') {
         return response([deliveryOrder]);
       }
+      if (path === '/api/v1/invoices/e2e-invoice-id' && method === 'GET') {
+        return response(invoice ?? { id: 'e2e-invoice-id', invoice_number: 'INV-E2E-0001', customer });
+      }
       if (path === '/api/v1/invoices' && method === 'GET') {
         return route.fulfill({ json: paginated(invoice ? [invoice] : []) });
       }
@@ -980,7 +983,9 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
           id: 'e2e-invoice-id', invoice_number: 'INV-E2E-0001', customer_id: customer.id,
           customer, invoice_date: invoiceCreatePayload.invoice_date, due_date: '2026-11-21',
           status: 'POSTED', dpp: 1250, ppn_amount: 0, pph_amount: 0,
-          total_amount: 1250, amount_paid: 0, amount_due: 1250,
+          total_amount: 1250, amount_paid: 0, amount_due: 1250, notes: 'Catatan invoice E2E',
+          lines: [{ id: 'e2e-invoice-line-id', description: 'Body Kit Spoiler', quantity: 1, unit_price_snapshot: 1250, subtotal: 1250, delivery_order_line: { color_code: 'BLACK' } }],
+          delivery_links: [{ id: 'e2e-invoice-link-id', delivery_order_id: deliveryOrder.id, amount_billed: 1250, delivery_order: deliveryOrder }],
         };
         return response(invoice, 201);
       }
@@ -1033,6 +1038,31 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     expect(invoiceCreatePayload.customer_id).toBe(customer.id);
     expect(invoiceCreatePayload.delivery_order_ids).toEqual([deliveryOrder.id]);
     await expect(page.getByText('INV-E2E-0001')).toBeVisible({ timeout: 10000 });
+
+    // Open invoice detail and verify its dedicated A4 print document.
+    await page.evaluate(() => { window.print = () => { (window as Window & { __printCalled?: boolean }).__printCalled = true; }; });
+    const invoiceRow = page.locator('tr').filter({ hasText: 'INV-E2E-0001' });
+    await invoiceRow.getByRole('button').first().click();
+    const invoiceDetail = page.getByRole('dialog');
+    await expect(invoiceDetail.getByRole('button', { name: /Cetak Invoice/i })).toBeVisible();
+    const invoicePrint = invoiceDetail.locator('.print-document');
+    await expect(invoicePrint).toContainText('INV-E2E-0001');
+    await expect(invoicePrint).toContainText('PO-E2E-001');
+    await expect(invoicePrint).toContainText('BLACK');
+    await expect(invoicePrint).toContainText('Jl. Contoh No. 10, Jakarta');
+    await expect(invoicePrint).toContainText('DPP / Subtotal');
+    await expect(invoicePrint).toContainText('Sisa Tagihan');
+    await page.emulateMedia({ media: 'print' });
+    const invoicePrintGeometry = await invoicePrint.evaluate((element) => ({ display: getComputedStyle(element).display, position: getComputedStyle(element).position, width: getComputedStyle(element).width }));
+    expect(invoicePrintGeometry.display).toBe('block');
+    expect(invoicePrintGeometry.position).toBe('fixed');
+    expect(parseFloat(invoicePrintGeometry.width)).toBeGreaterThan(780);
+    await page.screenshot({ path: testInfo.outputPath('invoice-print-preview.png'), fullPage: true });
+    await page.pdf({ path: testInfo.outputPath('invoice-print-preview.pdf'), format: 'A4', printBackground: true });
+    await page.emulateMedia({ media: 'screen' });
+    await invoiceDetail.getByRole('button', { name: /Cetak Invoice/i }).click();
+    await expect.poll(() => page.evaluate(() => (window as Window & { __printCalled?: boolean }).__printCalled)).toBe(true);
+    await invoiceDetail.getByRole('button', { name: /Tutup|Close/i }).click().catch(() => {});
 
     // Payment creation: allocate the invoice amount using the browser form, then verify the UI reload.
     await page.goto('/payments');
