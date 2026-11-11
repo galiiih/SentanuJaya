@@ -1002,7 +1002,8 @@ html[data-theme] .modal .modal__header .icon-button { color:var(--color-text-sec
   .glass-modal > .modal__header { display: none !important; }
   .glass-modal > div { margin: 0 !important; }
   .print-document, .print-document * { visibility: visible !important; }
-  .print-document { display: block !important; position: fixed !important; inset: 0 auto auto 0 !important; width: 210mm !important; min-height: 297mm !important; box-sizing: border-box !important; padding: 14mm !important; margin: 0 !important; color: #111827 !important; background: #fff !important; font: 9pt/1.4 Arial, Helvetica, sans-serif !important; }
+  .glass-modal > *:not(.print-document) { display: none !important; }
+  .print-document { display: block !important; position: relative !important; inset: auto !important; width: 210mm !important; min-height: 0 !important; box-sizing: border-box !important; padding: 14mm !important; margin: 0 !important; color: #111827 !important; background: #fff !important; font: 9pt/1.4 Arial, Helvetica, sans-serif !important; }
   .no-print { display: none !important; }
   .print-doc-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0f172a; padding-bottom: 8mm; margin-bottom: 8mm; }
   .print-brand { font-size: 19pt; font-weight: 800; letter-spacing: .04em; }
