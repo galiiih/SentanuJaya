@@ -988,3 +988,41 @@ html[data-theme] .modal .modal__header .icon-button { color:var(--color-text-sec
 .app-content .card .text-slate-400 { color:var(--color-text-muted); }
 [data-theme="dark"] .app-content .card :is(.text-slate-500,.text-slate-600,.text-slate-700) { color:var(--color-text-secondary); }
 [data-theme="dark"] .app-content .card :is(.text-slate-800,.text-slate-900) { color:var(--color-text); }
+
+
+/* A4 print documents — modal content is rendered through a body portal. */
+.print-document { display: none; }
+@page { size: A4 portrait; margin: 0; }
+@media print {
+  html, body { width: 210mm !important; min-width: 0 !important; margin: 0 !important; padding: 0 !important; background: #fff !important; }
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body * { visibility: hidden !important; }
+  .glass-modal-overlay { position: static !important; display: block !important; inset: auto !important; padding: 0 !important; margin: 0 !important; background: #fff !important; }
+  .glass-modal { position: static !important; display: block !important; width: auto !important; max-width: none !important; max-height: none !important; overflow: visible !important; margin: 0 !important; padding: 0 !important; border: 0 !important; border-radius: 0 !important; box-shadow: none !important; background: #fff !important; color: #111827 !important; backdrop-filter: none !important; }
+  .glass-modal > .modal__header { display: none !important; }
+  .glass-modal > div { margin: 0 !important; }
+  .print-document, .print-document * { visibility: visible !important; }
+  .print-document { display: block !important; position: fixed !important; inset: 0 auto auto 0 !important; width: 210mm !important; min-height: 297mm !important; box-sizing: border-box !important; padding: 14mm !important; margin: 0 !important; color: #111827 !important; background: #fff !important; font: 9pt/1.4 Arial, Helvetica, sans-serif !important; }
+  .no-print { display: none !important; }
+  .print-doc-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0f172a; padding-bottom: 8mm; margin-bottom: 8mm; }
+  .print-brand { font-size: 19pt; font-weight: 800; letter-spacing: .04em; }
+  .print-subtitle { margin-top: 2mm; color: #475569; font-size: 7pt; letter-spacing: .08em; }
+  .print-doc-type { font-size: 16pt; font-weight: 800; letter-spacing: .06em; }
+  .print-meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12mm; margin-bottom: 8mm; }
+  .print-meta-grid > div { display: flex; flex-direction: column; gap: 1.5mm; min-width: 0; }
+  .print-meta-grid strong { margin-top: 2mm; color: #475569; font-size: 7pt; text-transform: uppercase; }
+  .print-table { width: 100%; border-collapse: collapse; margin: 4mm 0 7mm; }
+  .print-table thead { display: table-header-group; }
+  .print-table th { background: #f1f5f9 !important; color: #111827 !important; font-weight: 700; text-align: left; }
+  .print-table th, .print-table td { border: 1px solid #cbd5e1; padding: 2mm; vertical-align: top; }
+  .print-right { text-align: right !important; white-space: nowrap; }
+  .print-totals { width: 62%; margin-left: auto; }
+  .print-totals > div { display: flex; justify-content: space-between; gap: 5mm; border-bottom: 1px solid #e2e8f0; padding: 2mm 0; }
+  .print-grand-total { border-top: 2px solid #0f172a !important; border-bottom: 2px solid #0f172a !important; font-size: 11pt; font-weight: 800; margin-top: 2mm; }
+  .print-note { margin-top: 5mm; }
+  .print-shipping-meta { display: flex; gap: 12mm; margin-top: 6mm; }
+  .print-signatures { display: flex; justify-content: space-between; margin-top: 18mm; page-break-inside: avoid; }
+  .print-signatures > div { width: 42%; }
+  .print-footer { margin-top: 8mm; padding-top: 3mm; border-top: 1px solid #cbd5e1; color: #64748b; font-size: 7pt; }
+  .print-table tr { break-inside: avoid; }
+}
