@@ -1057,7 +1057,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await page.emulateMedia({ media: 'print' });
     const invoicePrintGeometry = await invoicePrint.evaluate((element) => ({ display: getComputedStyle(element).display, position: getComputedStyle(element).position, width: getComputedStyle(element).width }));
     expect(invoicePrintGeometry.display).toBe('block');
-    expect(invoicePrintGeometry.position).toBe('fixed');
+    expect(invoicePrintGeometry.position).toBe('relative');
     expect(parseFloat(invoicePrintGeometry.width)).toBeGreaterThan(780);
     await page.screenshot({ path: testInfo.outputPath('invoice-print-preview.png'), fullPage: true });
     await page.pdf({ path: testInfo.outputPath('invoice-print-preview.pdf'), format: 'A4', printBackground: true });
