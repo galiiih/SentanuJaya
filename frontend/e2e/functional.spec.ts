@@ -1436,13 +1436,13 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await expect(printDocument).toContainText('Budi E2E');
     await expect(printDocument).toContainText('B 1234 E2E');
 
-    // Verify A4 geometry and capture a browser-generated print preview.
+    // Apply print media before asserting print-only CSS and capturing the generated preview.
+    await page.emulateMedia({ media: 'print' });
     const printGeometry = await printDocument.evaluate((element) => ({ display: getComputedStyle(element).display, position: getComputedStyle(element).position, width: getComputedStyle(element).width }));
     expect(printGeometry.display).toBe('block');
     expect(printGeometry.position).toBe('fixed');
     expect(parseFloat(printGeometry.width)).toBeGreaterThan(780);
     // Capture the actual print stylesheet rendering so the CI artifact can be visually reviewed.
-    await page.emulateMedia({ media: 'print' });
     await page.screenshot({ path: testInfo.outputPath('surat-jalan-print-preview.png'), fullPage: true });
     await page.pdf({ path: testInfo.outputPath('surat-jalan-print-preview.pdf'), format: 'A4', printBackground: true });
     await page.emulateMedia({ media: 'screen' });
