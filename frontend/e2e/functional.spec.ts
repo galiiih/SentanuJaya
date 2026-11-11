@@ -942,11 +942,11 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
   });
 
 
-  test('invoice creation and payment allocation work through real browser interactions', async ({ page }) => {
+  test('invoice creation and payment allocation work through real browser interactions', async ({ page }, testInfo) => {
     const customer = { id: 'e2e-customer-id', code: 'E2E-FIN', name: 'E2E Financial Customer' };
     const deliveryOrder = {
       id: 'e2e-delivery-id', sj_number: 'SJ-E2E-FIN-001', customer_id: customer.id,
-      delivery_date: '2026-10-22', status: 'DELIVERED', lines: [{
+      delivery_date: '2026-10-22', status: 'DELIVERED', shipping_address: 'Jl. Contoh No. 10, Jakarta', customer_po_number: 'PO-E2E-001', customer_po: { po_number: 'PO-E2E-001' }, lines: [{
         id: 'e2e-delivery-line-id', quantity: 1, unit_price_snapshot: 1250, qty_invoiced: 0,
         acceptance_lines: [{ quantity_ok: 1, quantity_rejected: 0, acceptance: { status: 'POSTED' } }],
       }], customer,
