@@ -1055,9 +1055,11 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await expect(invoicePrint).toContainText('DPP / Subtotal');
     await expect(invoicePrint).toContainText('Sisa Tagihan');
     await page.emulateMedia({ media: 'print' });
-    const invoicePrintGeometry = await invoicePrint.evaluate((element) => ({ display: getComputedStyle(element).display, position: getComputedStyle(element).position, width: getComputedStyle(element).width }));
+    const invoicePrintGeometry = await invoicePrint.evaluate((element) => ({ display: getComputedStyle(element).display, position: getComputedStyle(element).position, visibility: getComputedStyle(element).visibility, width: getComputedStyle(element).width, height: element.getBoundingClientRect().height }));
     expect(invoicePrintGeometry.display).toBe('block');
     expect(invoicePrintGeometry.position).toBe('relative');
+    expect(invoicePrintGeometry.visibility).toBe('visible');
+    expect(invoicePrintGeometry.height).toBeGreaterThan(300);
     expect(parseFloat(invoicePrintGeometry.width)).toBeGreaterThan(780);
     await page.screenshot({ path: testInfo.outputPath('invoice-print-preview.png'), fullPage: true });
     await page.pdf({ path: testInfo.outputPath('invoice-print-preview.pdf'), format: 'A4', printBackground: true });
@@ -1438,9 +1440,11 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
 
     // Apply print media before asserting print-only CSS and capturing the generated preview.
     await page.emulateMedia({ media: 'print' });
-    const printGeometry = await printDocument.evaluate((element) => ({ display: getComputedStyle(element).display, position: getComputedStyle(element).position, width: getComputedStyle(element).width }));
+    const printGeometry = await printDocument.evaluate((element) => ({ display: getComputedStyle(element).display, position: getComputedStyle(element).position, visibility: getComputedStyle(element).visibility, width: getComputedStyle(element).width, height: element.getBoundingClientRect().height }));
     expect(printGeometry.display).toBe('block');
     expect(printGeometry.position).toBe('relative');
+    expect(printGeometry.visibility).toBe('visible');
+    expect(printGeometry.height).toBeGreaterThan(300);
     expect(parseFloat(printGeometry.width)).toBeGreaterThan(780);
     // Capture the actual print stylesheet rendering so the CI artifact can be visually reviewed.
     await page.screenshot({ path: testInfo.outputPath('surat-jalan-print-preview.png'), fullPage: true });
