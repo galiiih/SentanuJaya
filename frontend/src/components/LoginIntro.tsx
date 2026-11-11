@@ -113,7 +113,7 @@ export function LoginIntro({ onWave, onDone }: { onWave: () => void; onDone: () 
   } as CSSProperties;
 
   return createPortal(
-    <div ref={rootRef} className={`login-intro login-intro--${phase}${geo?.mobile ? ' login-intro--mobile' : ''}`} style={style} data-testid="login-intro" role="status" aria-label="Memuat aplikasi">
+    <div ref={rootRef} className={`login-intro login-intro--${phase}${geo?.mobile ? ' login-intro--mobile' : ''}`} style={style} data-testid="login-intro" role="status" aria-label="Memuat aplikasi" onTransitionEnd={(event) => { if (event.target === event.currentTarget && phaseRef.current === 'skip') finish(); }}>
       <div className="login-intro__veil" />
       <span className="login-intro__ring" aria-hidden="true" />
       <span className="login-intro__ring login-intro__ring--blue" aria-hidden="true" />
