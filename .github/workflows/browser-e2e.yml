@@ -100,7 +100,20 @@ jobs:
         run: npm run build
       - name: Install Playwright Chromium
         working-directory: frontend
-        run: npx playwright install --with-deps chromium
+        run: |
+          # GitHub-hosted runner package mirrors can intermittently fail DNS resolution.
+          # Retry the browser/dependency install before failing the entire E2E job.
+          for attempt in 1 2 3; do
+            if npx playwright install --with-deps chromium; then
+              exit 0
+            fi
+            if [ "$attempt" -lt 3 ]; then
+              echo "Playwright Chromium install failed (attempt $attempt/3); retrying in 20 seconds..."
+              sleep 20
+            fi
+          done
+          echo "::error::Playwright Chromium installation failed after 3 attempts."
+          exit 1
       # Run print-document scenarios independently so unrelated CRUD/login flakes
       # cannot prevent the A4 document checks from executing.
       - name: Run Surat Jalan and Invoice print browser tests
