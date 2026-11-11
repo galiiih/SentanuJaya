@@ -26,16 +26,16 @@ Sentanu ERP adalah custom web app untuk bisnis jasa automotive finishing, painti
 - Database: PostgreSQL 16.
 - Testing: PHPUnit dan Playwright.
 
-## Status pengembangan — 10 November 2026
+## Status pengembangan — 11 November 2026
 
 Implementasi modul inti dan automated test suite telah berkembang melampaui baseline awal. Jangan gunakan angka modul/test dari snapshot lama di dokumen historis; lihat [Implementation Progress](docs/IMPLEMENTATION_PROGRESS.md) untuk status dan bukti terbaru.
 
-Verifikasi pada commit `6602bac073f5bc7ca637a11c0bd18b8a5c9bac59`:
-- PHP & PostgreSQL: 153 tests passed, 1,038 assertions.
-- Browser E2E: 48 tests passed, 0 failed.
-- Dedicated Login Intro E2E: 7 tests passed.
+Verifikasi pada commit `b2f0e1bd5143cb5d173f87e09f1e79571d7112ca`:
+- PHP & PostgreSQL: 153 tests passed, 1,037 assertions.
+- Browser E2E: 53 tests passed, 0 failed.
+- Dedicated Login Intro E2E: 11 tests passed.
 - Invoice & Payment integration subset: 24 tests passed, 113 assertions.
-- Frontend TypeScript + Vite production build: PASS.
+- Dedicated print E2E: 2 tests passed; Surat Jalan dan Invoice PDF masing-masing 1 halaman A4.\n- Frontend TypeScript + Vite production build: PASS.
 
 ## Production readiness
 
