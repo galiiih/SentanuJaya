@@ -1440,7 +1440,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await page.emulateMedia({ media: 'print' });
     const printGeometry = await printDocument.evaluate((element) => ({ display: getComputedStyle(element).display, position: getComputedStyle(element).position, width: getComputedStyle(element).width }));
     expect(printGeometry.display).toBe('block');
-    expect(printGeometry.position).toBe('fixed');
+    expect(printGeometry.position).toBe('relative');
     expect(parseFloat(printGeometry.width)).toBeGreaterThan(780);
     // Capture the actual print stylesheet rendering so the CI artifact can be visually reviewed.
     await page.screenshot({ path: testInfo.outputPath('surat-jalan-print-preview.png'), fullPage: true });
