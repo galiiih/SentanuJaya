@@ -1425,7 +1425,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
 
     const detail = page.getByRole('dialog');
     await expect(detail.getByRole('button', { name: /Cetak Surat Jalan/i })).toBeVisible();
-    const printDocument = detail.locator('.print-document');
+    const printDocument = page.locator('.print-document').last();
     await expect(printDocument).toContainText('SJ-E2E-PRINT-001');
     await expect(printDocument).toContainText('PO-E2E-SJ-001');
     await expect(printDocument).toContainText('E2E Surat Jalan Customer');
