@@ -1047,7 +1047,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await invoiceRow.getByRole('button').first().click();
     const invoiceDetail = page.getByRole('dialog');
     await expect(invoiceDetail.getByRole('button', { name: /Cetak Invoice/i })).toBeVisible();
-    const invoicePrint = invoiceDetail.locator('.print-document');
+    const invoicePrint = page.locator('.print-document[aria-label="Dokumen cetak Invoice"]');
     await expect(invoicePrint).toContainText('INV-E2E-0001');
     await expect(invoicePrint).toContainText('PO-E2E-001');
     await expect(invoicePrint).toContainText('BLACK');
