@@ -40,13 +40,13 @@
 4. `DATABASE_SCHEMA.md` dan migration aktif menjadi acuan schema; jangan menganggap tabel fase berikutnya sudah ada tanpa memeriksa migration.
 5. Dokumen historis adalah referensi, bukan instruksi implementasi bila sudah digantikan keputusan terbaru.
 
-## Status eksekusi — snapshot 10 November 2026
+## Status eksekusi — snapshot 11 November 2026
 
 - Implementasi inti Phase 0–5 tersedia; status per modul dan bukti terbaru tercatat di `IMPLEMENTATION_PROGRESS.md`.
-- PHP/PostgreSQL workflow: 152 tests passed, 1,032 assertions.
-- Browser E2E workflow: 48 tests passed; dedicated Login Intro suite 7 tests passed.
+- PHP/PostgreSQL workflow: 153 tests passed, 1,037 assertions.
+- Browser E2E workflow: 53 tests passed; dedicated Login Intro suite 11 tests passed; dedicated print suite 2 tests passed.
 - Frontend TypeScript dan Vite production build: PASS.
 - Production readiness: BELUM SELESAI. Deployment VPS, UAT bisnis final, training, backup-restore drill, opening data, dan Owner sign-off masih harus diselesaikan.
 - Current branch: `feat/sidebar-collapse-navigation-new`; belum di-merge ke `main`.
 
-Terakhir diperbarui: 2026-11-10.
+Terakhir diperbarui: 2026-11-11.
