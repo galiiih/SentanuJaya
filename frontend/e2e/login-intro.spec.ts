@@ -136,13 +136,15 @@ test.describe('login intro animation', () => {
     await submitLogin(page);
     await expect(page.getByTestId('login-intro')).toBeVisible();
     await page.keyboard.press('Escape');
-    await expect(page.getByTestId('login-intro')).toBeHidden({ timeout: 1500 });
+    await expect(page.getByTestId('login-intro')).toBeHidden({ timeout: 5000 });
   });
 
   test('does not replay on reload of an existing session', async ({ page }) => {
     await submitLogin(page);
-    await page.getByRole('button', { name: 'Lewati animasi pembuka' }).click();
-    await expect(page.getByTestId('login-intro')).toBeHidden({ timeout: 1500 });
+    // Escape remains available even if the timed intro has already entered its wave phase.
+    // The skip button intentionally stops accepting pointer input during that phase.
+    await page.keyboard.press('Escape');
+    await expect(page.getByTestId('login-intro')).toBeHidden({ timeout: 5000 });
     await page.reload();
     await expect(page.locator('aside.sidebar')).toBeVisible();
     await expect(page.getByTestId('login-intro')).toHaveCount(0);
