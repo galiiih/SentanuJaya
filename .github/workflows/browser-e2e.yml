@@ -138,6 +138,10 @@ jobs:
           path: |
             frontend/test-results/**/test-failed-1.png
             frontend/test-results/**/error-context.md
+            frontend/test-results/**/surat-jalan-print-preview.png
+            frontend/test-results/**/surat-jalan-print-preview.pdf
+            frontend/test-results/**/invoice-print-preview.png
+            frontend/test-results/**/invoice-print-preview.pdf
             frontend/playwright-report/index.html
           if-no-files-found: ignore
           retention-days: 5
