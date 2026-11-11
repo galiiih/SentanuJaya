@@ -35,7 +35,8 @@ Verifikasi pada commit `b2f0e1bd5143cb5d173f87e09f1e79571d7112ca`:
 - Browser E2E: 53 tests passed, 0 failed.
 - Dedicated Login Intro E2E: 11 tests passed.
 - Invoice & Payment integration subset: 24 tests passed, 113 assertions.
-- Dedicated print E2E: 2 tests passed; Surat Jalan dan Invoice PDF masing-masing 1 halaman A4.\n- Frontend TypeScript + Vite production build: PASS.
+- Dedicated print E2E: 2 tests passed; Surat Jalan dan Invoice PDF masing-masing 1 halaman A4.
+- Frontend TypeScript + Vite production build: PASS.
 
 ## Production readiness
 
