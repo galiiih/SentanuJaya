@@ -810,7 +810,9 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await expect(page.getByText('SJ-E2E-ACC-001')).toBeVisible({ timeout: 10000 });
     await page.getByRole('button', { name: 'SJ-E2E-ACC-001' }).click();
     const detail = page.getByRole('dialog').first();
-    await expect(detail.getByText('Spoiler E2E')).toBeVisible();
+    // The printable document repeats line-item labels; keep this workflow assertion
+    // scoped to the interactive detail panel, not the separate print-only document.
+    await expect(detail.locator('.confirmation-dialog__body.no-print').getByText('Spoiler E2E')).toBeVisible();
     await detail.getByRole('button', { name: /Penerimaan Baru|Catat Penerimaan/i }).click();
 
     // Identify the creation dialog by its unique reject-reason field.
