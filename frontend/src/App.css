@@ -994,6 +994,8 @@ html[data-theme] .modal .modal__header .icon-button { color:var(--color-text-sec
 .print-document { display: none; }
 @page { size: A4 portrait; margin: 0; }
 @media print {
+  /* The application shell (#root) is a full-viewport block. Keeping it in print flow creates a blank first A4 page before the body-portal modal. */
+  #root { display: none !important; }
   html, body { width: 210mm !important; min-width: 0 !important; margin: 0 !important; padding: 0 !important; background: #fff !important; }
   body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   body * { visibility: hidden !important; }
