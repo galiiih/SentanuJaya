@@ -1,8 +1,8 @@
 # Implementation Progress — Sentanu Jaya ERP
 
-Snapshot: 10 November 2026  
+Snapshot: 11 November 2026  
 Branch: `feat/sidebar-collapse-navigation-new`  
-Verified commit: `6602bac073f5bc7ca637a11c0bd18b8a5c9bac59`
+Verified commit: `b2f0e1bd5143cb5d173f87e09f1e79571d7112ca`
 
 ## Status implementasi
 
@@ -17,25 +17,26 @@ Verified commit: `6602bac073f5bc7ca637a11c0bd18b8a5c9bac59`
 | Document Template Management | Implemented | Upload, HTML source editor, GrapesJS visual editor, versioning; perlu UAT template dokumen riil |
 | Nanu AI / Ollama | Implemented | Provider lokal dan OpenAI-compatible; kualitas jawaban serta koneksi model perlu UAT pada environment target |
 | Responsive collapsible sidebar | Implemented; browser E2E passing | Desktop/mobile interactions dan accessibility relationship |
-| Login Intro animation | Fixed and verified | Dedicated suite 7/7 pass; full Browser E2E 48/48 pass |
+| Login Intro animation | Fixed and verified | Dedicated suite 11/11 pass; full Browser E2E 53/53 pass; Escape/skip completion verified |
 | Production deployment | NOT COMPLETE | VPS deployment, environment hardening, backup-restore drill, opening data, training, dan Owner sign-off belum dibuktikan |
 
 ## Latest automated verification
 
-Workflow run untuk commit `6602bac073f5bc7ca637a11c0bd18b8a5c9bac59`:
+Workflow run untuk commit `b2f0e1bd5143cb5d173f87e09f1e79571d7112ca`:
 
-- **PHP & PostgreSQL 16:** 153 tests passed, 1,038 assertions.
+- **PHP & PostgreSQL 16:** 153 tests passed, 1,037 assertions.
 - **Invoice & Payment integration subset:** 24 tests passed, 113 assertions.
-- **Dedicated Login Intro Playwright suite:** 7 passed.
-- **Full Browser E2E:** 48 passed, 0 failed.
+- **Dedicated Login Intro Playwright suite:** 11 passed.
+- **Full Browser E2E:** 53 passed, 0 failed.
 - **Frontend TypeScript + Vite production build:** PASS.
+- **Dedicated print E2E:** 2 passed (Surat Jalan dan Invoice); artefak PDF A4 keduanya satu halaman.
 - **Browser E2E workflow:** seluruh job steps completed successfully.
 - **PHP & PostgreSQL workflow:** seluruh job steps completed successfully.
 
 Referensi:
-- Browser E2E: https://github.com/galiiih/SentanuJaya/actions/runs/42773368180
-- PHP & PostgreSQL: https://github.com/galiiih/SentanuJaya/actions/runs/42773368206
-- Verified commit: https://github.com/galiiih/SentanuJaya/commit/6602bac073f5bc7ca637a11c0bd18b8a5c9bac59
+- Browser E2E: https://github.com/galiiih/SentanuJaya/actions/runs/43007966011
+- PHP & PostgreSQL: https://github.com/galiiih/SentanuJaya/actions/runs/43007965905
+- Verified commit: https://github.com/galiiih/SentanuJaya/commit/b2f0e1bd5143cb5d173f87e09f1e79571d7112ca
 
 ## Remaining work before production
 
