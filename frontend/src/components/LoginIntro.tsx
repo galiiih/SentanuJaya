@@ -44,14 +44,12 @@ export function LoginIntro({ onWave, onDone }: { onWave: () => void; onDone: () 
   const [phase, setPhase] = useState<Phase>('center');
   const [geo, setGeo] = useState<Geometry | null>(null);
   const skipRef = useRef<HTMLButtonElement>(null);
-  const skipTimerRef = useRef<number | null>(null);
   const callbacks = useRef({ onWave, onDone });
   useEffect(() => { callbacks.current = { onWave, onDone }; });
   // Publish parent state from the rendered phase itself, not from competing
   // timer callbacks. This keeps the app shell and portal phase in sync.
   useEffect(() => {
     if (phase === 'wave') callbacks.current.onWave();
-    if (phase === 'skip') callbacks.current.onDone();
   }, [phase]);
   const phaseRef = useRef<Phase>('center');
   const finishedRef = useRef(false);
@@ -60,9 +58,9 @@ export function LoginIntro({ onWave, onDone }: { onWave: () => void; onDone: () 
     if (finishedRef.current) return;
     finishedRef.current = true;
     go('skip');
-    // A throttled background tab may delay the scheduled wave timer past the
-    // completion deadline. Always release the app from its intro-wait state.
-    // Parent handoff is published by the phase effect above.
+    // Release the app shell synchronously with the final phase. The parent
+    // watchdog remains a fallback if the component timer is interrupted.
+    callbacks.current.onDone();
   }, [go]);
   const flatFallback = typeof window !== 'undefined' && !(window as unknown as { THREE?: unknown }).THREE;
 
@@ -123,7 +121,6 @@ export function LoginIntro({ onWave, onDone }: { onWave: () => void; onDone: () 
     document.addEventListener('keydown', onKey, true);
     return () => {
       document.removeEventListener('keydown', onKey, true);
-      if (skipTimerRef.current !== null) window.clearTimeout(skipTimerRef.current);
     };
   }, [skip]);
 
