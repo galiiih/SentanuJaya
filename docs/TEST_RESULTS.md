@@ -1,30 +1,30 @@
 # Test Results & Readiness Report — Sentanu Jaya ERP
 
-Date: November 10, 2026  
+Date: November 11, 2026  
 Verified branch: `feat/sidebar-collapse-navigation-new`  
-Verified commit: `6602bac073f5bc7ca637a11c0bd18b8a5c9bac59`
+Verified commit: `b2f0e1bd5143cb5d173f87e09f1e79571d7112ca`
 
 ## 1. Latest CI — PHP & PostgreSQL 16
 
-- **Workflow:** [PHP & PostgreSQL Tests](https://github.com/galiiih/SentanuJaya/actions/runs/42773368206)
+- **Workflow:** [PHP & PostgreSQL Tests](https://github.com/galiiih/SentanuJaya/actions/runs/43007965905)
 - **Result:** SUCCESS
 - **PHPUnit:** 153 tests passed
-- **Assertions:** 1,038
+- **Assertions:** 1,037
 - **Database:** PostgreSQL 16.15
 - **Job:** all workflow steps completed successfully.
 
 ## 2. Latest CI — Browser E2E
 
-- **Workflow:** [Browser E2E](https://github.com/galiiih/SentanuJaya/actions/runs/42773368180)
+- **Workflow:** [Browser E2E](https://github.com/galiiih/SentanuJaya/actions/runs/43007966011)
 - **Result:** SUCCESS
-- **Full Browser E2E:** 48 passed, 0 failed (12.2 minutes)
-- **Dedicated Login Intro suite:** 7 passed
+- **Full Browser E2E:** 53 passed, 0 failed (13.0 minutes)
+- **Dedicated Login Intro suite:** 11 passed
 - **Invoice & Payment integration subset:** 24 passed, 113 assertions
 - **Frontend TypeScript verification:** PASS
 - **Vite production build:** PASS
 - **Playwright report artifact:** uploaded successfully.
 
-The latest run covers login intro completion, application smoke/navigation, Master Data CRUD workflows, Knowledge Management navigation, and invoice/payment integration checks. A passing automated suite is not a substitute for manual business UAT.
+Dedicated print suite: 2 tests passed; Surat Jalan and Invoice PDFs were each verified as one-page A4 documents. The latest full run covers login intro completion (including Escape dismissal), application smoke/navigation, Master Data CRUD workflows, Knowledge Management navigation, and invoice/payment integration checks. A passing automated suite is not a substitute for manual business UAT.
 
 ## 3. Previous local test snapshots (historical)
 
