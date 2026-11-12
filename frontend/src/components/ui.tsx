@@ -296,10 +296,42 @@ export function Modal({ open, title, children, onClose }: { open: boolean; title
   useEffect(() => {
     if (!open) return;
     opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    const onKeyDown = (event: KeyboardEvent) => { if (event.key === 'Escape') onCloseRef.current(); };
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    closeButton.current?.focus();
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onCloseRef.current();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+
+      const focusable = document.querySelector('.glass-modal')?.querySelectorAll<HTMLElement>(
+        'button:not(:disabled), [href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])',
+      );
+      if (!focusable?.length) {
+        event.preventDefault();
+        closeButton.current?.focus();
+        return;
+      }
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && (document.activeElement === first || !document.querySelector('.glass-modal')?.contains(document.activeElement))) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && (document.activeElement === last || !document.querySelector('.glass-modal')?.contains(document.activeElement))) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
     window.addEventListener('keydown', onKeyDown);
-    return () => { 
-      window.removeEventListener('keydown', onKeyDown); 
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = previousOverflow;
     };
   }, [open]);
 
