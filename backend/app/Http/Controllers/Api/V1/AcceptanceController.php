@@ -58,6 +58,11 @@ class AcceptanceController extends BaseApiController
                 throw ValidationException::withMessages(['delivery_order_id' => [__('acceptance.errors.delivery_not_delivered')]]);
             }
 
+            // Serialize acceptance-number allocation across all delivery orders in the same company.
+            // Locking only the current delivery order does not prevent two different orders from
+            // reading the same MAX(acceptance_number) and generating a duplicate sequence.
+            Company::query()->whereKey($delivery->company_id)->lockForUpdate()->firstOrFail();
+
             // Validate cumulative quantities
             $this->validateCumulativeQuantities($delivery, $data['lines']);
 
