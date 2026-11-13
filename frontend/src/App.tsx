@@ -205,17 +205,13 @@ function LanguageSwitcher() {
 
 function AuthenticatedLayout() {
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [introPhase, setIntroPhase] = useState<'off' | 'wait' | 'wave'>(() => (shouldPlayLoginIntro() ? 'wait' : 'off'));
+  const [introPhase, setIntroPhase] = useState<'off' | 'wait'>(() => (shouldPlayLoginIntro() ? 'wait' : 'off'));
   useEffect(() => { clearLoginIntro(); }, []);
   useEffect(() => {
     if (introPhase === 'off') return;
-    // Keep a parent-owned deadline for each active phase. Re-arming on the
-    // wait -> wave transition avoids a stale mount closure and guarantees
-    // the inert app shell is released even if the portal timer is interrupted.
-    const timeout = introPhase === 'wait'
-      ? INTRO_TIMING.doneAt + 1200
-      : INTRO_TIMING.waveMs + 1200;
-    const watchdog = window.setTimeout(() => setIntroPhase('off'), timeout);
+    // A single parent-owned deadline is a fallback if the portal animation
+    // timer is interrupted. Do not re-arm it for intermediate visual phases.
+    const watchdog = window.setTimeout(() => setIntroPhase('off'), INTRO_TIMING.doneAt + 2000);
     return () => window.clearTimeout(watchdog);
   }, [introPhase]);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -278,7 +274,7 @@ function AuthenticatedLayout() {
         <main className="app-content"><Breadcrumb items={breadcrumbItems} /><Outlet /></main>
       </div>
     </div>
-    {introPhase !== 'off' && <LoginIntro onWave={() => setIntroPhase((value) => (value === 'wait' ? 'wave' : value))} onDone={() => setIntroPhase('off')} />}
+    {introPhase !== 'off' && <LoginIntro onDone={() => setIntroPhase('off')} />}
     </>
   );
 }
