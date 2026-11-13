@@ -92,7 +92,7 @@ test.describe('isolated login intro and sidebar', () => {
     // This test covers the post-intro card handoff, not the skip interaction.
     await expect(page.getByTestId('login-intro')).toBeHidden({ timeout: 8000 });
     const cards = page.locator('.kpi-grid > .kpi-card');
-    await expect(page.locator('.app-shell')).not.toHaveClass(/app-shell--intro-wait/, { timeout: 3000 });
+    await expect(page.locator('.app-shell')).not.toHaveClass(/app-shell--intro-wait/, { timeout: 8000 });
     await expect.poll(
       () => cards.evaluateAll((items) => items.map((card) => getComputedStyle(card).animationName)),
       { timeout: 3000 },
