@@ -161,7 +161,7 @@ class DeliveryOrderController extends BaseApiController
     {
         abort_unless($request->user()?->hasPermission('delivery.view'), 403, __('delivery_order.errors.forbidden'));
         return $this->sendResponse(
-            $deliveryOrder->load(['customer', 'customerPo', 'lines.customerItem', 'lines.customerPoLine', 'acceptances.lines']),
+            $deliveryOrder->load(['company', 'branch', 'customer', 'customerPo', 'lines.customerItem', 'lines.customerPoLine', 'acceptances.lines']),
             __('delivery_order.messages.retrieved')
         );
     }
