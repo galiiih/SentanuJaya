@@ -46,7 +46,8 @@ export function LoginIntro({ onWave, onDone }: { onWave: () => void; onDone: () 
     go('skip');
     callbacks.current.onDone();
   }, [go]);
-  // Keep the animated SVG visible until the 3D renderer has actually drawn.\n  // THREE may be loaded while WebGL context creation still fails (e.g. llvmpipe).\n  const flatFallback = true;
+  // Keep the animated SVG visible until the 3D renderer has actually drawn.
+  // THREE may be loaded while WebGL context creation still fails (e.g. llvmpipe).\n  const flatFallback = true;
 
   useEffect(() => {
     // Schedule each phase against the same mount-time clock. Chained timers
