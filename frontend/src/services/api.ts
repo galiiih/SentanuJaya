@@ -3,7 +3,18 @@ import axios, { AxiosError } from 'axios';
 export type ApiList<T> = { data: T[]; current_page: number; last_page: number; total: number };
 export type ApiResponse<T> = { success: boolean; data: T; message: string };
 export type ApiUser = { id: string; name: string; email: string; role: string };
-export type Company = { id: string; code: string; name: string };
+export type Company = {
+  id: string;
+  code: string;
+  name: string;
+  legal_name?: string | null;
+  npwp?: string | null;
+  is_pkp?: boolean;
+  pkp_date?: string | null;
+  address?: string | null;
+  phone?: string | null;
+  email?: string | null;
+};
 export type Branch = { id: string; company_id: string; code: string; name: string };
 export type Customer = { id: string; code: string; name: string };
 export type CustomerItem = { id: string; customer_id: string; code: string; name: string; vehicle_model?: string; part_type?: string };
@@ -128,6 +139,7 @@ export type DeliveryOrderRecord = {
   invoice_status?: 'UNINVOICED' | 'INVOICED';
   created_at: string;
   customer?: Customer;
+  company?: Company;
   customer_po?: CustomerPo;
   lines: DeliveryOrderLineRecord[];
 };
