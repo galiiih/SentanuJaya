@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import {
   Bell,
@@ -206,6 +206,7 @@ function LanguageSwitcher() {
 function AuthenticatedLayout() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [introPhase, setIntroPhase] = useState<'off' | 'wait'>(() => (shouldPlayLoginIntro() ? 'wait' : 'off'));
+  const completeIntro = useCallback(() => setIntroPhase('off'), []);
   useEffect(() => { clearLoginIntro(); }, []);
   useEffect(() => {
     if (introPhase === 'off') return;
@@ -274,7 +275,7 @@ function AuthenticatedLayout() {
         <main className="app-content"><Breadcrumb items={breadcrumbItems} /><Outlet /></main>
       </div>
     </div>
-    {introPhase !== 'off' && <LoginIntro onDone={() => setIntroPhase('off')} />}
+    {introPhase !== 'off' && <LoginIntro onDone={completeIntro} />}
     </>
   );
 }
