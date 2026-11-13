@@ -38,19 +38,12 @@ function measureTarget(root: HTMLElement, logo: HTMLElement): Geometry {
   return { dx, dy, scale, wx, wy, max, mobile };
 }
 
-export function LoginIntro({ onWave, onDone }: { onWave: () => void; onDone: () => void }) {
+export function LoginIntro({ onDone }: { onDone: () => void }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const logoRef = useRef<HTMLDivElement>(null);
   const [phase, setPhase] = useState<Phase>('center');
   const [geo, setGeo] = useState<Geometry | null>(null);
   const skipRef = useRef<HTMLButtonElement>(null);
-  const callbacks = useRef({ onWave, onDone });
-  useEffect(() => { callbacks.current = { onWave, onDone }; });
-  // Publish parent state from the rendered phase itself, not from competing
-  // timer callbacks. This keeps the app shell and portal phase in sync.
-  useEffect(() => {
-    if (phase === 'wave') callbacks.current.onWave();
-  }, [phase]);
   const phaseRef = useRef<Phase>('center');
   const finishedRef = useRef(false);
   const go = useCallback((next: Phase) => { phaseRef.current = next; setPhase(next); }, []);
@@ -60,8 +53,8 @@ export function LoginIntro({ onWave, onDone }: { onWave: () => void; onDone: () 
     go('skip');
     // Release the app shell synchronously with the final phase. The parent
     // watchdog remains a fallback if the component timer is interrupted.
-    callbacks.current.onDone();
-  }, [go]);
+    onDone();
+  }, [go, onDone]);
   const flatFallback = typeof window !== 'undefined' && !(window as unknown as { THREE?: unknown }).THREE;
 
   useEffect(() => {
