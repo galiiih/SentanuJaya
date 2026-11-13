@@ -426,7 +426,19 @@ export function InvoicingPage() {
           </div>
           <section className="print-document" aria-label="Dokumen cetak Invoice">
             <header className="print-doc-header">
-              <div className="print-brand-lockup"><div data-sentanu-logo aria-label="Logo Sentanu Jaya" style={{ width: '14mm', height: '17mm', flexShrink: 0 }} /><div><div className="print-brand">SENTANU JAYA</div><div className="print-subtitle">BODY KIT & ACCESSORIES PAINTING</div></div></div>
+              <div className="print-brand-lockup">
+                <div data-sentanu-logo aria-label="Logo Sentanu Jaya" style={{ width: '14mm', height: '17mm', flexShrink: 0 }} />
+                <div className="print-company-identity">
+                  <div className="print-brand">{detail.delivery_links?.[0]?.delivery_order?.company?.name || 'SENTANU JAYA'}</div>
+                  {detail.delivery_links?.[0]?.delivery_order?.company?.legal_name && <div className="print-company-legal">{detail.delivery_links[0].delivery_order.company.legal_name}</div>}
+                  {detail.delivery_links?.[0]?.delivery_order?.company?.address && <div>{detail.delivery_links[0].delivery_order.company.address}</div>}
+                  <div className="print-company-contact">
+                    {[detail.delivery_links?.[0]?.delivery_order?.company?.phone, detail.delivery_links?.[0]?.delivery_order?.company?.email].filter(Boolean).join(' · ')}
+                  </div>
+                  {detail.delivery_links?.[0]?.delivery_order?.company?.npwp && <div>NPWP: {detail.delivery_links[0].delivery_order.company.npwp}</div>}
+                  <div className="print-subtitle">BODY KIT & ACCESSORIES PAINTING</div>
+                </div>
+              </div>
               <div className="print-doc-type">INVOICE</div>
             </header>
             <div className="print-meta-grid">
