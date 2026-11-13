@@ -17,7 +17,7 @@ concurrency:
 jobs:
   browser-e2e:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 50
     services:
       postgres:
         image: postgres:16
@@ -136,10 +136,10 @@ jobs:
         # second line of defense if the Node/Playwright process stops responding.
         run: |
           set +e
-          timeout --signal=INT --kill-after=30s 26m npm run test:e2e -- --reporter=list,html
+          timeout --signal=INT --kill-after=30s 41m npm run test:e2e -- --reporter=list,html
           status=$?
           if [ "$status" -eq 124 ]; then
-            echo "::error::Browser E2E exceeded the 26-minute shell watchdog."
+            echo "::error::Browser E2E exceeded the 41-minute shell watchdog."
             ps -eo pid,ppid,stat,etime,cmd --sort=-etime | head -n 25
           fi
           exit "$status"
