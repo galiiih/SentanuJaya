@@ -103,7 +103,7 @@ class InvoiceController extends BaseApiController
         abort_unless($request->user()?->hasPermission('invoice.view'), 403, __('invoice.errors.forbidden'));
 
         return $this->sendResponse(
-            $invoice->load(['deliveryLinks.deliveryOrder', 'lines.deliveryOrderLine.customerItem', 'allocations.payment']),
+            $invoice->load(['deliveryLinks.deliveryOrder.company', 'deliveryLinks.deliveryOrder.branch', 'lines.deliveryOrderLine.customerItem', 'allocations.payment']),
             __('invoice.messages.retrieved')
         );
     }
