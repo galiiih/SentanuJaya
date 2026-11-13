@@ -759,7 +759,17 @@ export function DeliveryPage() {
           </div>
           <section className="print-document" aria-label="Dokumen cetak Surat Jalan">
             <header className="print-doc-header">
-              <div><div className="print-brand">SENTANU JAYA</div><div className="print-subtitle">BODY KIT & ACCESSORIES PAINTING</div></div>
+              <div className="print-brand-lockup">
+                <div data-sentanu-logo aria-label="Logo Sentanu Jaya" style={{ width: '14mm', height: '17mm', flexShrink: 0 }} />
+                <div className="print-company-identity">
+                  <div className="print-brand">{detailRecord.company?.name || 'SENTANU JAYA'}</div>
+                  {detailRecord.company?.legal_name && <div className="print-company-legal">{detailRecord.company.legal_name}</div>}
+                  {detailRecord.company?.address && <div>{detailRecord.company.address}</div>}
+                  <div className="print-company-contact">{[detailRecord.company?.phone, detailRecord.company?.email].filter(Boolean).join(' · ')}</div>
+                  {detailRecord.company?.npwp && <div>NPWP: {detailRecord.company.npwp}</div>}
+                  <div className="print-subtitle">BODY KIT & ACCESSORIES PAINTING</div>
+                </div>
+              </div>
               <div className="print-doc-type">SURAT JALAN</div>
             </header>
             <div className="print-meta-grid">
