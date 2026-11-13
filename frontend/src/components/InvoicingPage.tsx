@@ -426,7 +426,7 @@ export function InvoicingPage() {
           </div>
           <section className="print-document" aria-label="Dokumen cetak Invoice">
             <header className="print-doc-header">
-              <div><div className="print-brand">SENTANU JAYA</div><div className="print-subtitle">BODY KIT & ACCESSORIES PAINTING</div></div>
+              <div className="print-brand-lockup"><div data-sentanu-logo aria-label="Logo Sentanu Jaya" style={{ width: '14mm', height: '17mm', flexShrink: 0 }} /><div><div className="print-brand">SENTANU JAYA</div><div className="print-subtitle">BODY KIT & ACCESSORIES PAINTING</div></div></div>
               <div className="print-doc-type">INVOICE</div>
             </header>
             <div className="print-meta-grid">
