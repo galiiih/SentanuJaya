@@ -60,6 +60,7 @@ class UserController extends BaseApiController
             'password' => Hash::make($request->input('password')),
             'role' => $request->input('role'),
             'is_active' => $request->input('is_active', true),
+            'must_change_password' => true,
         ]);
 
         return response()->json([
@@ -110,6 +111,7 @@ class UserController extends BaseApiController
 
         if ($request->filled('password')) {
             $data['password'] = Hash::make($request->input('password'));
+            $data['must_change_password'] = true;
         }
 
         $user->update($data);
