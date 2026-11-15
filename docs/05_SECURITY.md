@@ -627,6 +627,14 @@ Server tidak boleh punya akses hapus ke arsip backup
 1. Owner menyetujui pembuatan akun
 2. Akun dibuat dengan role minimal
 3. Password sementara, wajib ganti saat login pertama
+   - Akun baru otomatis memiliki `must_change_password = true`
+   - Login akun nonaktif ditolak pada proses autentikasi
+   - Middleware backend memblokir seluruh API operasional selama flag masih aktif
+   - Hanya endpoint ganti password, pemeriksaan sesi, dan logout yang diizinkan
+   - Password baru minimal 12 karakter, wajib konfirmasi, berbeda dari password sementara,
+     serta diverifikasi terhadap password saat ini
+   - Setelah berhasil, flag dihapus dan sesi diregenerasi
+   - Reset password oleh Owner mengaktifkan kembali kewajiban ganti password
 4. Training termasuk materi keamanan dasar
 ```
 
