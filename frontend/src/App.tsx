@@ -94,11 +94,13 @@ const currency = new Intl.NumberFormat('id-ID', { style: 'currency', currency: '
 const quantity = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 2 });
 const formatQuantity = (value: string | number) => quantity.format(Number(value));
 
-function RequireAuth({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isReady } = useAuth();
+function RequireAuth({ children, allowPasswordChange = false }: { children: React.ReactNode; allowPasswordChange?: boolean }) {
+  const { isAuthenticated, isReady, user } = useAuth();
   const location = useLocation();
   if (!isReady) return <main className="auth-page" aria-busy="true"><Card className="auth-card">Memeriksa sesi…</Card></main>;
-  return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace state={{ from: location }} />;
+  if (!isAuthenticated) return <Navigate to="/login" replace state={{ from: location }} />;
+  if (user?.must_change_password && !allowPasswordChange) return <Navigate to="/change-password" replace />;
+  return <>{children}</>;
 }
 
 function RequirePermission({ permission, children }: { permission: Permission; children: React.ReactNode }) {
@@ -458,7 +460,7 @@ function CustodyPage() {
 
 
 function LoginPage() {
-  const { isAuthenticated, login } = useAuth();
+  const { isAuthenticated, login, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [email, setEmail] = useState('');
@@ -466,12 +468,43 @@ function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const destination = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? '/dashboard';
-  if (isAuthenticated) return <Navigate to="/dashboard" replace />;
+  if (isAuthenticated) return <Navigate to={user?.must_change_password ? '/change-password' : '/dashboard'} replace />;
   const submit = async (event: React.FormEvent) => {
     event.preventDefault(); setError(''); setLoading(true);
-    try { markLoginIntro(); await login(email, password); navigate(destination, { replace: true }); } catch (reason) { clearLoginIntro(); setError(reason instanceof Error ? reason.message : 'Login gagal.'); } finally { setLoading(false); }
+    try { markLoginIntro(); await login(email, password); navigate(user?.must_change_password ? '/change-password' : destination, { replace: true }); } catch (reason) { clearLoginIntro(); setError(reason instanceof Error ? reason.message : 'Login gagal.'); } finally { setLoading(false); }
   };
   return <main className="auth-page"><Card className="auth-card"><div className="auth-brand"><div data-sentanu-logo data-loop="true" style={{ width: '36px', height: '36px', flexShrink: 0 }} /><div><strong>SENTANU JAYA</strong><span>ERP WORKSHOP</span></div></div><div className="auth-copy"><h1>Masuk ke Sentanu Jaya ERP</h1><p>Gunakan akun yang terdaftar untuk mengakses lingkungan pengembangan.</p></div>{error && <Alert tone="danger">{error}</Alert>}<form className="auth-form" onSubmit={submit}><FormField label="Email" htmlFor="login-email" required><Input id="login-email" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} required /></FormField><FormField label="Password" htmlFor="login-password" required><Input id="login-password" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></FormField><Button type="submit" loading={loading}>Login</Button></form><p className="auth-note">Forgot password belum tersedia.</p></Card></main>;
+}
+
+
+function PasswordChangePage() {
+  const { user, changePassword, logout } = useAuth();
+  const navigate = useNavigate();
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmation, setConfirmation] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault(); setError('');
+    if (password !== confirmation) { setError('Konfirmasi password tidak sama.'); return; }
+    setLoading(true);
+    try { await changePassword(currentPassword, password, confirmation); navigate('/dashboard', { replace: true }); }
+    catch (reason) { setError(reason instanceof Error ? reason.message : 'Gagal memperbarui password.'); }
+    finally { setLoading(false); }
+  };
+  return <main className="auth-page"><Card className="auth-card">
+    <div className="auth-brand"><div data-sentanu-logo style={{ width: '36px', height: '36px', flexShrink: 0 }} /><div><strong>SENTANU JAYA</strong><span>KEAMANAN AKUN</span></div></div>
+    <div className="auth-copy"><h1>Ganti Password</h1><p>Halo {user?.name}, password sementara harus diganti sebelum Anda dapat menggunakan aplikasi. Gunakan minimal 12 karakter.</p></div>
+    {error && <Alert tone="danger">{error}</Alert>}
+    <form className="auth-form" onSubmit={submit}>
+      <FormField label="Password sementara saat ini" htmlFor="current-password" required><Input id="current-password" type="password" autoComplete="current-password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} required /></FormField>
+      <FormField label="Password baru" htmlFor="new-password" required><Input id="new-password" type="password" autoComplete="new-password" minLength={12} value={password} onChange={(event) => setPassword(event.target.value)} required /></FormField>
+      <FormField label="Konfirmasi password baru" htmlFor="confirm-password" required><Input id="confirm-password" type="password" autoComplete="new-password" minLength={12} value={confirmation} onChange={(event) => setConfirmation(event.target.value)} required /></FormField>
+      <Button type="submit" loading={loading}>Simpan Password Baru</Button>
+      <Button type="button" variant="ghost" onClick={() => void logout().then(() => navigate('/login', { replace: true }))}>Keluar</Button>
+    </form>
+  </Card></main>;
 }
 
 function ErrorPage({ code, title, description }: { code: '403' | '404'; title: string; description: string }) { const navigate = useNavigate(); return <main className="error-page"><Card className="error-card"><span>{code}</span><h1>{title}</h1><p>{description}</p><Button onClick={() => navigate('/dashboard')}>Kembali ke Dashboard</Button></Card></main>; }
@@ -481,6 +514,7 @@ export function App() {
     <LanguageProvider>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/change-password" element={<RequireAuth allowPasswordChange><PasswordChangePage /></RequireAuth>} />
         <Route element={<RequireAuth><AuthenticatedLayout /></RequireAuth>}>
           <Route path="/dashboard" element={<RequirePermission permission={permissions.dashboardView}><Dashboard /></RequirePermission>} />
           <Route path="/custody" element={<RequirePermission permission={permissions.custodyView}><CustodyPage /></RequirePermission>} />
