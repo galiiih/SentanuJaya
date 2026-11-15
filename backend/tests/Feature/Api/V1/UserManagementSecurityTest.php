@@ -16,6 +16,13 @@ class UserManagementSecurityTest extends TestCase
         $target = User::factory()->create(['role' => 'STAFF']);
 
         $this->actingAs($admin)->postJson('/api/v1/users', [
+            'name' => 'New Staff',
+            'email' => 'new.staff@sentanu.local',
+            'password' => 'secret123',
+            'role' => 'STAFF',
+        ])->assertForbidden();
+
+        $this->actingAs($admin)->postJson('/api/v1/users', [
             'name' => 'New Owner',
             'email' => 'new.owner@sentanu.local',
             'password' => 'secret123',
@@ -27,6 +34,7 @@ class UserManagementSecurityTest extends TestCase
         ])->assertForbidden();
 
         $this->assertDatabaseMissing('users', ['email' => 'new.owner@sentanu.local']);
+        $this->assertDatabaseMissing('users', ['email' => 'new.staff@sentanu.local']);
         $this->assertDatabaseHas('users', ['id' => $target->id, 'role' => 'STAFF']);
     }
 
