@@ -29,6 +29,8 @@ class UserController extends BaseApiController
         $currentUser = $request->user();
         abort_unless($currentUser && in_array($currentUser->role, ['ADMIN', 'OWNER'], true), 403, 'Forbidden: Admin or Owner required to create users');
 
+        abort_unless($currentUser->role === 'OWNER' || $request->input('role') !== 'OWNER', 403, 'Only Owner can create an Owner account');
+
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
@@ -81,6 +83,10 @@ class UserController extends BaseApiController
         $currentUser = $request->user();
         abort_unless($currentUser && in_array($currentUser->role, ['ADMIN', 'OWNER'], true), 403, 'Forbidden: Admin or Owner required to update users');
 
+        if ($currentUser->role !== 'OWNER') {
+            abort_unless($user->role !== 'OWNER' && $request->input('role', $user->role) !== 'OWNER', 403, 'Only Owner can manage Owner accounts or assign the Owner role');
+        }
+
         $validator = Validator::make($request->all(), [
             'name' => 'sometimes|required|string|max:255',
             'email' => 'sometimes|required|string|email|max:255|unique:users,email,' . $user->id,
@@ -127,20 +133,34 @@ class UserController extends BaseApiController
     public function destroy(Request $request, User $user): JsonResponse
     {
         $currentUser = $request->user();
-        abort_unless($currentUser && in_array($currentUser->role, ['ADMIN', 'OWNER'], true), 403, 'Forbidden: Admin or Owner required to delete users');
+        abort_unless($currentUser && in_array($currentUser->role, ['ADMIN', 'OWNER'], true), 403, 'Forbidden: Admin or Owner required to deactivate users');
 
         if ($currentUser->id === $user->id) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Cannot delete your own currently logged in account.',
+                'message' => 'Cannot deactivate your own currently logged in account.',
             ], 422);
         }
 
-        $user->delete();
+        if ($currentUser->role !== 'OWNER') {
+            abort_unless($user->role !== 'OWNER', 403, 'Only Owner can deactivate an Owner account');
+        }
+
+        if ($user->role === 'OWNER' && $user->is_active) {
+            $activeOwners = User::where('role', 'OWNER')->where('is_active', true)->count();
+            if ($activeOwners <= 1) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'The last active Owner account cannot be deactivated.',
+                ], 422);
+            }
+        }
+
+        $user->update(['is_active' => false]);
 
         return response()->json([
             'status' => 'success',
-            'message' => 'User deleted successfully',
+            'message' => 'User deactivated successfully. Historical records are preserved.',
         ]);
     }
 }
