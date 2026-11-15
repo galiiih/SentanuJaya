@@ -38,6 +38,31 @@ class UserManagementSecurityTest extends TestCase
         $this->assertDatabaseHas('users', ['id' => $target->id, 'role' => 'STAFF']);
     }
 
+    public function test_new_accounts_must_change_temporary_password_before_using_the_api(): void
+    {
+        $owner = User::factory()->create(['role' => 'OWNER']);
+        $this->actingAs($owner)->postJson('/api/v1/users', [
+            'name' => 'New Staff', 'email' => 'first.login@sentanu.local',
+            'password' => 'Temporary123!', 'role' => 'STAFF',
+        ])->assertCreated();
+        $newUser = User::where('email', 'first.login@sentanu.local')->firstOrFail();
+        $this->assertTrue($newUser->must_change_password);
+        $this->actingAs($newUser)->getJson('/api/v1/dashboard/summary')->assertForbidden();
+        $this->actingAs($newUser)->postJson('/api/v1/auth/change-password', [
+            'current_password' => 'Temporary123!', 'password' => 'NewSecurePass123!',
+            'password_confirmation' => 'NewSecurePass123!',
+        ])->assertOk()->assertJsonPath('data.must_change_password', false);
+        $this->actingAs($newUser)->getJson('/api/v1/dashboard/summary')->assertOk();
+    }
+
+    public function test_inactive_user_cannot_login(): void
+    {
+        $user = User::factory()->create(['is_active' => false]);
+        $this->postJson('/api/v1/auth/login', ['email' => $user->email, 'password' => 'password'])
+            ->assertUnprocessable();
+        $this->assertGuest();
+    }
+
     public function test_admin_cannot_modify_or_deactivate_an_owner(): void
     {
         $admin = User::factory()->create(['role' => 'ADMIN']);
