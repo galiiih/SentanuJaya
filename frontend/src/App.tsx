@@ -460,7 +460,7 @@ function CustodyPage() {
 
 
 function LoginPage() {
-  const { isAuthenticated, login, user } = useAuth();
+  const { isAuthenticated, login, user, getCurrentUser } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [email, setEmail] = useState('');
@@ -471,7 +471,7 @@ function LoginPage() {
   if (isAuthenticated) return <Navigate to={user?.must_change_password ? '/change-password' : '/dashboard'} replace />;
   const submit = async (event: React.FormEvent) => {
     event.preventDefault(); setError(''); setLoading(true);
-    try { markLoginIntro(); await login(email, password); navigate(user?.must_change_password ? '/change-password' : destination, { replace: true }); } catch (reason) { clearLoginIntro(); setError(reason instanceof Error ? reason.message : 'Login gagal.'); } finally { setLoading(false); }
+    try { markLoginIntro(); await login(email, password); navigate(getCurrentUser()?.must_change_password ? '/change-password' : destination, { replace: true }); } catch (reason) { clearLoginIntro(); setError(reason instanceof Error ? reason.message : 'Login gagal.'); } finally { setLoading(false); }
   };
   return <main className="auth-page"><Card className="auth-card"><div className="auth-brand"><div data-sentanu-logo data-loop="true" style={{ width: '36px', height: '36px', flexShrink: 0 }} /><div><strong>SENTANU JAYA</strong><span>ERP WORKSHOP</span></div></div><div className="auth-copy"><h1>Masuk ke Sentanu Jaya ERP</h1><p>Gunakan akun yang terdaftar untuk mengakses lingkungan pengembangan.</p></div>{error && <Alert tone="danger">{error}</Alert>}<form className="auth-form" onSubmit={submit}><FormField label="Email" htmlFor="login-email" required><Input id="login-email" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} required /></FormField><FormField label="Password" htmlFor="login-password" required><Input id="login-password" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></FormField><Button type="submit" loading={loading}>Login</Button></form><p className="auth-note">Forgot password belum tersedia.</p></Card></main>;
 }
