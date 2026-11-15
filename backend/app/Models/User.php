@@ -44,7 +44,7 @@ class User extends Authenticatable
      * Phase 4 permission matrix.
      * STAFF: create draft SJ, view SJ/acceptance
      * ADMIN: create/submit/deliver SJ, record acceptance, create invoice
-     * OWNER: all ADMIN + cancel posted, override, approve invoice, view reports
+     * OWNER: all ADMIN + cancel posted, override, approve invoice
      */
     private const PERMISSIONS = [
         'STAFF' => [
@@ -59,6 +59,7 @@ class User extends Authenticatable
             'invoice.view', 'invoice.create',
             'po.view', 'po.create', 'po.edit', 'po.activate', 'po.cancel', 'po.close',
             'master.view', 'master.manage',
+            'report.view',
         ],
         'OWNER' => [
             'delivery.view', 'delivery.create', 'delivery.submit', 'delivery.deliver',
