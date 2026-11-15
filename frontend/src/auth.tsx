@@ -42,6 +42,7 @@ type AuthContextValue = {
   isReady: boolean;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
+  changePassword: (currentPassword: string, password: string, confirmation: string) => Promise<void>;
   logout: () => Promise<void>;
   getCurrentUser: () => User | null;
   hasPermission: (permission: Permission) => boolean;
@@ -69,6 +70,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAuthenticated: user !== null,
     login: async (email, password) => {
       try { setUser(asUser(await authApi.login(email, password))); }
+      catch (error) { throw new Error(apiError(error)); }
+    },
+    changePassword: async (currentPassword, password, confirmation) => {
+      try { setUser(asUser(await authApi.changePassword(currentPassword, password, confirmation))); }
       catch (error) { throw new Error(apiError(error)); }
     },
     logout: async () => {
