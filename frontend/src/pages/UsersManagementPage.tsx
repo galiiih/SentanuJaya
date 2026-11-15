@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { apiError } from '../services/api';
+import { useAuth } from '../auth';
 import {
   Button,
   Card,
@@ -28,6 +29,8 @@ const userApi = {
 };
 
 export default function UsersManagementPage() {
+  const { user } = useAuth();
+  const isOwner = user?.role === 'OWNER';
   const [users, setUsers] = useState<UserRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -101,12 +104,12 @@ export default function UsersManagementPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Hapus akun pengguna ini?')) return;
+    if (!confirm('Nonaktifkan akun pengguna ini? Riwayat transaksi akan tetap tersimpan.')) return;
     setError(null);
     setSuccess(null);
     try {
       await userApi.delete(id);
-      setSuccess('Pengguna berhasil dihapus.');
+      setSuccess('Akun pengguna berhasil dinonaktifkan. Riwayat transaksi tetap tersimpan.');
       loadUsers();
     } catch (err: unknown) {
       setError(apiError(err));
@@ -117,12 +120,12 @@ export default function UsersManagementPage() {
     <div className="space-y-6">
       <PageHeader
         title="Manajemen Pengguna & Hak Akses"
-        description="Kelola akun login sistem: ADMIN, OWNER, dan STAFF beserta status aktifnya."
-        action={
+        description="Kelola akun login sistem: ADMIN, OWNER, dan STAFF beserta status aktifnya. Persetujuan dan pembuatan akun baru hanya dapat dilakukan Owner."
+        action={isOwner ? (
           <Button variant="primary" onClick={handleOpenCreate}>
             + Tambah Pengguna Baru
           </Button>
-        }
+        ) : undefined}
       />
 
       {error && <div className="p-4 bg-red-50 text-red-700 rounded-lg text-sm border border-red-200">{error}</div>}
@@ -225,7 +228,7 @@ export default function UsersManagementPage() {
               >
                 <option value="STAFF">STAFF</option>
                 <option value="ADMIN">ADMIN</option>
-                <option value="OWNER">OWNER</option>
+                {isOwner && <option value="OWNER">OWNER</option>}
               </Select>
             </FormField>
 
