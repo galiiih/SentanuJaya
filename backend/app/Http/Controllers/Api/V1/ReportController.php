@@ -19,7 +19,7 @@ class ReportController extends BaseApiController
     public function financial(Request $request): JsonResponse
     {
         $user = $request->user();
-        abort_unless($user && in_array($user->role, ['ADMIN', 'OWNER', 'STAFF'], true), 403, 'Forbidden');
+        abort_unless($user?->hasPermission('report.view'), 403, 'Forbidden: report.view permission required');
 
         $startDate = $request->input('start_date', now()->startOfMonth()->toDateString());
         $endDate = $request->input('end_date', now()->endOfMonth()->toDateString());
@@ -47,7 +47,7 @@ class ReportController extends BaseApiController
     public function receivables(Request $request): JsonResponse
     {
         $user = $request->user();
-        abort_unless($user && in_array($user->role, ['ADMIN', 'OWNER', 'STAFF'], true), 403, 'Forbidden');
+        abort_unless($user?->hasPermission('report.view'), 403, 'Forbidden: report.view permission required');
 
         $customers = Customer::with('invoices')->get()->map(function ($customer) {
             $invoices = $customer->invoices()->whereIn('status', [Invoice::STATUS_POSTED, Invoice::STATUS_PARTIALLY_PAID])->get();
@@ -79,7 +79,7 @@ class ReportController extends BaseApiController
     public function operational(Request $request): JsonResponse
     {
         $user = $request->user();
-        abort_unless($user && in_array($user->role, ['ADMIN', 'OWNER', 'STAFF'], true), 403, 'Forbidden');
+        abort_unless($user?->hasPermission('report.view'), 403, 'Forbidden: report.view permission required');
 
         $activePos = CustomerPo::with('customer', 'lines')->where('status', 'ACTIVE')->get();
         $goodsReceipts = GoodsReceipt::with('supplier')->latest()->take(50)->get();
@@ -95,7 +95,7 @@ class ReportController extends BaseApiController
     public function custody(Request $request): JsonResponse
     {
         $user = $request->user();
-        abort_unless($user && in_array($user->role, ['ADMIN', 'OWNER', 'STAFF'], true), 403, 'Forbidden');
+        abort_unless($user?->hasPermission('report.view'), 403, 'Forbidden: report.view permission required');
 
         $balances = CustodyBalance::with('customer', 'customerItem')->get();
 
