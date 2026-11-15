@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Session\Middleware\StartSession;
+use App\Http\Middleware\EnsurePasswordChanged;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\V1\{
     UomController,
@@ -47,7 +48,9 @@ Route::prefix('v1')->group(function () {
     Route::middleware([StartSession::class, 'auth'])->group(function () {
         Route::get('auth/me', [AuthController::class, 'me']);
         Route::post('auth/logout', [AuthController::class, 'logout']);
+        Route::post('auth/change-password', [AuthController::class, 'changePassword']);
 
+        Route::middleware(EnsurePasswordChanged::class)->group(function () {
         // Master Data (Protected by Auth)
         Route::apiResource('uoms', UomController::class);
         Route::apiResource('companies', CompanyController::class);
@@ -151,5 +154,6 @@ Route::prefix('v1')->group(function () {
                 Route::post('puffy/actions', [PuffyController::class, 'createAction']);
                 Route::post('puffy/actions/{id}/confirm', [PuffyController::class, 'confirmAction']);
                 Route::post('puffy/actions/{id}/cancel', [PuffyController::class, 'cancelAction']);
-            });
         });
+        });
+    });
