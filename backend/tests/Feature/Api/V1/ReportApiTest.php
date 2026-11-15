@@ -25,6 +25,24 @@ class ReportApiTest extends TestCase
     }
 
     /** @test */
+    public function test_report_permission_is_consistent_for_admin_and_owner_only()
+    {
+        $admin = User::factory()->create(['role' => 'ADMIN']);
+        $owner = User::factory()->create(['role' => 'OWNER']);
+        $staff = User::factory()->create(['role' => 'STAFF']);
+
+        $this->assertTrue($admin->hasPermission('report.view'));
+        $this->assertTrue($owner->hasPermission('report.view'));
+        $this->assertFalse($staff->hasPermission('report.view'));
+
+        foreach ([$admin, $owner] as $authorizedUser) {
+            $this->actingAs($authorizedUser)->getJson('/api/v1/reports/financial')->assertOk();
+        }
+
+        $this->actingAs($staff)->getJson('/api/v1/reports/financial')->assertForbidden();
+    }
+
+    /** @test */
     public function test_receivables_calculation_with_payments()
     {
         $admin = User::factory()->create([
