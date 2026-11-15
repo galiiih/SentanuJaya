@@ -27,9 +27,7 @@ class UserController extends BaseApiController
     public function store(Request $request): JsonResponse
     {
         $currentUser = $request->user();
-        abort_unless($currentUser && in_array($currentUser->role, ['ADMIN', 'OWNER'], true), 403, 'Forbidden: Admin or Owner required to create users');
-
-        abort_unless($currentUser->role === 'OWNER' || $request->input('role') !== 'OWNER', 403, 'Only Owner can create an Owner account');
+        abort_unless($currentUser && $currentUser->role === 'OWNER', 403, 'Only Owner can approve and create user accounts');
 
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
