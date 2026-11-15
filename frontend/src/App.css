@@ -990,8 +990,53 @@ html[data-theme] .modal .modal__header .icon-button { color:var(--color-text-sec
 [data-theme="dark"] .app-content .card :is(.text-slate-800,.text-slate-900) { color:var(--color-text); }
 
 
-/* A4 print documents — modal content is rendered through a body portal. */
-.print-document { display: none; }
+/* A4 invoice / delivery document preview. The same document is used for printing. */
+.print-document {
+  display: block;
+  width: min(100%, 210mm);
+  box-sizing: border-box;
+  margin: 1.5rem auto 0;
+  padding: clamp(1rem, 3vw, 14mm);
+  color: #111827;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 8px 28px rgb(15 23 42 / 12%);
+  font: 9pt/1.45 Arial, Helvetica, sans-serif;
+}
+.print-doc-header { display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; border-bottom:2px solid #0f172a; padding-bottom:1rem; margin-bottom:1rem; }
+.print-brand-lockup { display:flex; align-items:center; gap:.85rem; min-width:0; max-width:78%; }
+.print-company-identity { min-width:0; overflow-wrap:anywhere; color:#334155; font-size:8pt; line-height:1.4; }
+.print-company-legal { font-weight:700; }
+.print-company-contact { color:#475569; }
+.print-company-identity .print-brand { color:#111827; font-size:17pt; line-height:1.1; }
+.print-brand { color:#111827; font-size:19pt; font-weight:800; letter-spacing:.04em; }
+.print-subtitle { margin-top:2mm; color:#475569; font-size:7pt; letter-spacing:.08em; }
+.print-doc-type { flex-shrink:0; color:#111827; font-size:16pt; font-weight:800; letter-spacing:.06em; }
+.print-meta-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; margin-bottom:1rem; color:#111827; }
+.print-meta-grid > div { display:flex; flex-direction:column; gap:.2rem; min-width:0; overflow-wrap:anywhere; }
+.print-meta-grid strong { margin-top:.35rem; color:#475569; font-size:7pt; text-transform:uppercase; }
+.print-table { width:100%; border-collapse:collapse; margin:.5rem 0 1rem; color:#111827; }
+.print-table thead { display:table-header-group; }
+.print-table th { background:#f1f5f9; color:#111827; font-weight:700; text-align:left; }
+.print-table th,.print-table td { border:1px solid #cbd5e1; padding:.45rem; vertical-align:top; }
+.print-right { text-align:right !important; white-space:nowrap; }
+.print-totals { width:min(100%, 62%); margin-left:auto; color:#111827; }
+.print-totals > div { display:flex; justify-content:space-between; gap:.75rem; border-bottom:1px solid #e2e8f0; padding:.45rem 0; }
+.print-grand-total { border-top:2px solid #0f172a !important; border-bottom:2px solid #0f172a !important; font-size:11pt; font-weight:800; margin-top:.4rem; }
+.print-note { margin-top:.75rem; color:#334155; }
+.print-shipping-meta { display:flex; gap:1.5rem; margin-top:.75rem; }
+.print-signatures { display:flex; justify-content:space-between; gap:2rem; margin-top:2.5rem; color:#111827; }
+.print-signatures > div { width:42%; }
+.print-footer { margin-top:1.25rem; padding-top:.5rem; border-top:1px solid #cbd5e1; color:#64748b; font-size:7pt; }
+@media (max-width: 640px) {
+  .print-doc-header { flex-wrap:wrap; }
+  .print-brand-lockup { max-width:100%; }
+  .print-meta-grid { grid-template-columns:1fr; gap:.5rem; }
+  .print-totals { width:100%; }
+  .print-table { font-size:7pt; }
+  .print-table th,.print-table td { padding:.25rem; }
+}
 @page { size: A4 portrait; margin: 0; }
 @media print {
   /* The application shell (#root) is a full-viewport block. Keeping it in print flow creates a blank first A4 page before the body-portal modal. */
