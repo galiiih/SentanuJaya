@@ -2,7 +2,7 @@ import axios, { AxiosError } from 'axios';
 
 export type ApiList<T> = { data: T[]; current_page: number; last_page: number; total: number };
 export type ApiResponse<T> = { success: boolean; data: T; message: string };
-export type ApiUser = { id: string; name: string; email: string; role: string };
+export type ApiUser = { id: string; name: string; email: string; role: string; must_change_password: boolean };
 export type Company = {
   id: string;
   code: string;
@@ -50,6 +50,7 @@ export const authApi = {
   login: (email: string, password: string) => data<ApiUser>('/auth/login', { email, password }),
   me: () => api.get<ApiResponse<ApiUser>>('/auth/me').then((response) => response.data.data),
   logout: () => data<[]>(`/auth/logout`),
+  changePassword: (currentPassword: string, password: string, confirmation: string) => data<ApiUser>('/auth/change-password', { current_password: currentPassword, password, password_confirmation: confirmation }),
 };
 
 export const goodsReceiptApi = {
