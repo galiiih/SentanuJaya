@@ -296,10 +296,16 @@ class DeliveryOrderController extends BaseApiController
         $order = DB::transaction(function () use ($deliveryOrder, $request, $canCancelPosted) {
             $locked = DeliveryOrder::query()->lockForUpdate()->findOrFail($deliveryOrder->id);
 
+            if ($locked->status === DeliveryOrder::STATUS_DELIVERED || $locked->status === DeliveryOrder::STATUS_CLOSED) {
+                throw ValidationException::withMessages([
+                    'status' => ['Surat Jalan yang sudah dikirim ke customer tidak dapat dibatalkan. Lakukan proses retur/koreksi agar pergerakan custody dan riwayat penerimaan tetap akurat.'],
+                ]);
+            }
+
             if ($locked->status === DeliveryOrder::STATUS_DRAFT) {
-                // OK — any cancel permission
-            } elseif (in_array($locked->status, [DeliveryOrder::STATUS_SUBMITTED, DeliveryOrder::STATUS_DELIVERED]) && $canCancelPosted) {
-                // OWNER only for non-draft cancel
+                // Draft can be cancelled by users with draft-cancel permission.
+            } elseif ($locked->status === DeliveryOrder::STATUS_SUBMITTED && $canCancelPosted) {
+                // OWNER may cancel before physical delivery.
             } else {
                 throw ValidationException::withMessages(['status' => [__('delivery_order.errors.cannot_cancel')]]);
             }
