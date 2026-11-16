@@ -17,6 +17,7 @@ export const permissions = {
   acceptancePost: 'acceptance.post',
   invoiceView: 'invoice.view',
   invoiceCreate: 'invoice.create',
+  reportView: 'report.view',
   paymentView: 'payment.view',
   paymentCreate: 'payment.create',
   poView: 'po.view',
@@ -31,7 +32,7 @@ export type Permission = typeof permissions[keyof typeof permissions];
 
 const rolePermissions: Record<Role, readonly Permission[]> = {
   ADMIN: Object.values(permissions),
-  OWNER: [permissions.dashboardView, permissions.custodyView, permissions.invoiceView, permissions.invoiceCreate, permissions.paymentView, permissions.paymentCreate, permissions.poView, permissions.poCreate, permissions.poEdit, permissions.poActivate, permissions.poCancel, permissions.poClose, permissions.deliveryView, permissions.deliveryCreate, permissions.acceptanceView, permissions.acceptanceCreate, permissions.acceptanceSubmit, permissions.acceptancePost, permissions.userManage],
+  OWNER: [permissions.dashboardView, permissions.custodyView, permissions.invoiceView, permissions.invoiceCreate, permissions.reportView, permissions.paymentView, permissions.paymentCreate, permissions.poView, permissions.poCreate, permissions.poEdit, permissions.poActivate, permissions.poCancel, permissions.poClose, permissions.deliveryView, permissions.deliveryCreate, permissions.acceptanceView, permissions.acceptanceCreate, permissions.acceptanceSubmit, permissions.acceptancePost, permissions.userManage],
   STAFF: [permissions.dashboardView, permissions.custodyView, permissions.materialView, permissions.deliveryView, permissions.deliveryCreate, permissions.acceptanceView, permissions.poView, permissions.poCreate, permissions.poEdit],
 };
 
