@@ -27,6 +27,7 @@ use App\Http\Controllers\Api\V1\{
     AuthController,
     DeliveryOrderController,
     AcceptanceController,
+    CustomerReturnController,
     CustomerPoController,
     InvoiceController,
     PaymentController,
@@ -94,6 +95,11 @@ Route::prefix('v1')->group(function () {
                 Route::post('acceptances/{acceptance}/post', [AcceptanceController::class, 'post']);
                 Route::post('acceptances/{acceptance}/cancel', [AcceptanceController::class, 'cancel']);
                 Route::apiResource('acceptances', AcceptanceController::class)->except(['update', 'destroy']);
+
+                // Customer returns after customer acceptance
+                Route::post('customer-returns/{customerReturn}/post', [CustomerReturnController::class, 'post']);
+                Route::post('customer-returns/{customerReturn}/cancel', [CustomerReturnController::class, 'cancel']);
+                Route::apiResource('customer-returns', CustomerReturnController::class)->only(['index', 'store', 'show']);
 
                 // Phase 5: Invoice
                 Route::get('invoices/eligible-delivery-orders', [InvoiceController::class, 'eligibleDeliveryOrders']);
