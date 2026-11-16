@@ -404,6 +404,16 @@ export const paymentApi = {
     api.get<ApiResponse<CustomerOutstanding>>(`/customers/${customerId}/outstanding`).then((r) => r.data.data),
 };
 
+export type CustomerReturnLineRecord = { id: string; delivery_order_line_id: string; quantity: number; reason?: string; delivery_order_line?: DeliveryOrderLineRecord };
+export type CustomerReturnRecord = { id: string; return_number: string; delivery_order_id: string; customer_id: string; return_date: string; status: 'DRAFT' | 'POSTED' | 'CANCELLED'; notes?: string; customer?: Customer; delivery_order?: DeliveryOrderRecord; lines: CustomerReturnLineRecord[] };
+export type CustomerReturnPayload = { delivery_order_id: string; return_date: string; notes?: string; lines: { delivery_order_line_id: string; quantity: number; reason?: string }[] };
+export const customerReturnApi = {
+  list: (params?: Record<string, string | number>) => list<CustomerReturnRecord>('/customer-returns', params),
+  create: (payload: CustomerReturnPayload) => data<CustomerReturnRecord>('/customer-returns', payload),
+  post: (id: string) => data<CustomerReturnRecord>(`/customer-returns/${id}/post`),
+  cancel: (id: string) => data<CustomerReturnRecord>(`/customer-returns/${id}/cancel`),
+};
+
 export type DocumentTemplateVersionRecord = {
   id: number;
   document_template_id: number;
