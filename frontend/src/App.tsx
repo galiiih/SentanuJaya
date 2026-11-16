@@ -18,6 +18,7 @@ import {
   Package,
   Plus,
   Receipt,
+  RotateCcw,
   ShieldCheck,
   Sun,
   Truck,
@@ -31,6 +32,7 @@ import { ReportsPage } from './components/ReportsPage';
 import { MasterDataPage } from './components/MasterDataPage';
 import { CustomerPoPage } from './components/CustomerPoPage';
 import { DeliveryPage } from './components/DeliveryPage';
+import { CustomerReturnsPage } from './components/CustomerReturnsPage';
 import { MaterialsPage } from './components/MaterialsPage';
 import { PaymentPage } from './components/PaymentPage';
 import { InvoicingPage } from './components/InvoicingPage';
@@ -144,6 +146,7 @@ function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => 
         { path: '/custody', label: t.nav.custody, icon: Package, permission: permissions.custodyView },
         { path: '/customer-po', label: t.nav.customerPo, icon: FileText, permission: permissions.poView },
         { path: '/delivery', label: t.nav.delivery, icon: Truck, permission: permissions.deliveryView },
+        { path: '/customer-returns', label: 'Retur Customer', icon: RotateCcw, permission: permissions.returnView },
       ],
     },
     {
@@ -520,6 +523,7 @@ export function App() {
           <Route path="/custody" element={<RequirePermission permission={permissions.custodyView}><CustodyPage /></RequirePermission>} />
           <Route path="/customer-po" element={<RequirePermission permission={permissions.poView}><CustomerPoPage /></RequirePermission>} />
           <Route path="/delivery" element={<RequirePermission permission={permissions.deliveryView}><DeliveryPage /></RequirePermission>} />
+          <Route path="/customer-returns" element={<RequirePermission permission={permissions.returnView}><CustomerReturnsPage /></RequirePermission>} />
           <Route path="/materials" element={<RequirePermission permission={permissions.materialView}><MaterialsPage /></RequirePermission>} />
           <Route path="/invoicing" element={<RequirePermission permission={permissions.invoiceView}><InvoicingPage /></RequirePermission>} />
           <Route path="/templates" element={<RequirePermission permission={permissions.invoiceView}><TemplateManagementPage /></RequirePermission>} />
