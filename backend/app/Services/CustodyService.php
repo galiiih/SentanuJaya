@@ -130,8 +130,10 @@ class CustodyService
                 ->where('customer_item_id', $line->customer_item_id)
                 ->where('stage', 'RAW');
 
-            if (!empty($line->custody_location_id)) {
+            if ($line->custody_location_id) {
                 $balanceQuery->where('custody_location_id', $line->custody_location_id);
+            } else {
+                $balanceQuery->whereNull('custody_location_id');
             }
 
             $balance = $balanceQuery->lockForUpdate()->first();
@@ -193,6 +195,8 @@ class CustodyService
                 ->where('stage', 'RAW');
             if ($locationId) {
                 $balanceQuery->where('custody_location_id', $locationId);
+            } else {
+                $balanceQuery->whereNull('custody_location_id');
             }
             $balance = $balanceQuery->lockForUpdate()->first();
 
