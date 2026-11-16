@@ -1,21 +1,21 @@
 <?php
 
-namespace App\\Http\\Controllers\\Api\\V1;
+namespace App\Http\Controllers\Api\V1;
 
-use App\\Http\\Controllers\\Api\\BaseApiController;
-use App\\Models\\Acceptance;
-use App\\Models\\AcceptanceLine;
-use App\\Models\\Company;
-use App\\Models\\CustodyBalance;
-use App\\Models\\CustodyLedger;
-use App\\Models\\CustomerReturn;
-use App\\Models\\DeliveryOrder;
-use App\\Models\\DeliveryOrderLine;
-use App\\Services\\SecurityAuditLogger;
-use Illuminate\\Http\\JsonResponse;
-use Illuminate\\Http\\Request;
-use Illuminate\\Support\\Facades\\DB;
-use Illuminate\\Validation\\ValidationException;
+use App\Http\Controllers\Api\BaseApiController;
+use App\Models\Acceptance;
+use App\Models\AcceptanceLine;
+use App\Models\Company;
+use App\Models\CustodyBalance;
+use App\Models\CustodyLedger;
+use App\Models\CustomerReturn;
+use App\Models\DeliveryOrder;
+use App\Models\DeliveryOrderLine;
+use App\Services\SecurityAuditLogger;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class CustomerReturnController extends BaseApiController
 {
