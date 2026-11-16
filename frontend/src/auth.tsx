@@ -15,6 +15,9 @@ export const permissions = {
   acceptanceCreate: 'acceptance.create',
   acceptanceSubmit: 'acceptance.submit',
   acceptancePost: 'acceptance.post',
+  returnView: 'return.view',
+  returnCreate: 'return.create',
+  returnPost: 'return.post',
   invoiceView: 'invoice.view',
   invoiceCreate: 'invoice.create',
   reportView: 'report.view',
@@ -33,8 +36,8 @@ export type Permission = typeof permissions[keyof typeof permissions];
 
 const rolePermissions: Record<Role, readonly Permission[]> = {
   ADMIN: Object.values(permissions),
-  OWNER: [permissions.dashboardView, permissions.custodyView, permissions.invoiceView, permissions.invoiceCreate, permissions.reportView, permissions.paymentView, permissions.paymentCreate, permissions.poView, permissions.poCreate, permissions.poEdit, permissions.poActivate, permissions.poCancel, permissions.poClose, permissions.deliveryView, permissions.deliveryCreate, permissions.acceptanceView, permissions.acceptanceCreate, permissions.acceptanceSubmit, permissions.acceptancePost, permissions.userManage],
-  STAFF: [permissions.dashboardView, permissions.custodyView, permissions.materialView, permissions.deliveryView, permissions.deliveryCreate, permissions.acceptanceView, permissions.poView, permissions.poCreate, permissions.poEdit],
+  OWNER: [permissions.dashboardView, permissions.custodyView, permissions.invoiceView, permissions.invoiceCreate, permissions.reportView, permissions.paymentView, permissions.paymentCreate, permissions.poView, permissions.poCreate, permissions.poEdit, permissions.poActivate, permissions.poCancel, permissions.poClose, permissions.deliveryView, permissions.deliveryCreate, permissions.acceptanceView, permissions.acceptanceCreate, permissions.acceptanceSubmit, permissions.acceptancePost, permissions.returnView, permissions.returnCreate, permissions.returnPost, permissions.userManage],
+  STAFF: [permissions.dashboardView, permissions.custodyView, permissions.materialView, permissions.deliveryView, permissions.deliveryCreate, permissions.acceptanceView, permissions.returnView, permissions.returnCreate, permissions.poView, permissions.poCreate, permissions.poEdit],
 };
 
 export type User = ApiUser & { role: Role; permissions: readonly Permission[] };
