@@ -22,7 +22,7 @@ export function CustomerReturnsPage() {
     setLoading(true); setError('');
     try {
       const [doResult, returnResult] = await Promise.all([deliveryOrderApi.list(), customerReturnApi.list()]);
-      setOrders((doResult.data || []).filter((o) => ['DELIVERED', 'CLOSED'].includes(o.status)));
+      setOrders((doResult.data || []).filter((o: DeliveryOrderRecord) => ['DELIVERED', 'CLOSED'].includes(o.status)));
       setReturns(returnResult.data || []);
     } catch (e) { setError(apiError(e)); } finally { setLoading(false); }
   };
@@ -51,7 +51,7 @@ export function CustomerReturnsPage() {
     { id: 'customer', header: 'Customer', cell: (r) => r.customer?.name || '-' },
     { id: 'date', header: 'Tanggal', cell: (r) => r.return_date },
     { id: 'status', header: 'Status', cell: (r) => <StatusBadge status={r.status} /> },
-    { id: 'actions', header: 'Aksi', cell: (r) => r.status === 'DRAFT' && canPost ? <Button size="sm" onClick={() => void post(r.id)} disabled={loading}><Send size={14} /> Posting</Button> : '-' },
+    { id: 'actions', header: 'Aksi', cell: (r) => r.status === 'DRAFT' && canPost ? <Button onClick={() => void post(r.id)} disabled={loading}><Send size={14} /> Posting</Button> : '-' },
   ];
   return <>
     <PageHeader title="Retur Barang Customer" description="Catat pengembalian barang setelah diterima customer. Posting mengembalikan barang ke custody tanpa mengubah invoice atau pembayaran." action={canCreate ? <Button onClick={openCreate} disabled={loading}><Plus size={16} /> Buat Retur</Button> : undefined} />
