@@ -11,7 +11,7 @@ class DeliveryOrderLine extends Model
 
     protected $fillable = [
         'delivery_order_id', 'customer_po_line_id', 'customer_item_id', 'color_code',
-        'quantity', 'unit_price', 'unit_price_snapshot', 'qty_accepted', 'qty_rejected', 'qty_invoiced', 'notes',
+        'quantity', 'unit_price', 'unit_price_snapshot', 'qty_accepted', 'qty_rejected', 'qty_invoiced', 'custody_location_id', 'notes',
     ];
 
     public function deliveryOrder()
