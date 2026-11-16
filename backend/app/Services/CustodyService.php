@@ -132,11 +132,28 @@ class CustodyService
 
             if ($line->custody_location_id) {
                 $balanceQuery->where('custody_location_id', $line->custody_location_id);
+                $balance = $balanceQuery->lockForUpdate()->first();
             } else {
-                $balanceQuery->whereNull('custody_location_id');
-            }
+                // Older/imported Surat Jalan may not have a location selected.
+                // Resolve it only when there is exactly one custody balance with
+                // enough stock; never silently choose an arbitrary warehouse.
+                $candidates = (clone $balanceQuery)
+                    ->where('balance_quantity', '>=', $line->quantity)
+                    ->orderBy('custody_location_id')
+                    ->lockForUpdate()
+                    ->get();
 
-            $balance = $balanceQuery->lockForUpdate()->first();
+                if ($candidates->count() > 1) {
+                    throw ValidationException::withMessages([
+                        'custody_location_id' => ['Lokasi custody harus ditentukan karena barang tersedia di lebih dari satu lokasi.'],
+                    ]);
+                }
+
+                $balance = $candidates->first();
+                if ($balance) {
+                    $line->update(['custody_location_id' => $balance->custody_location_id]);
+                }
+            }
 
             if (!$balance || (float) $balance->balance_quantity < (float) $line->quantity) {
                 throw ValidationException::withMessages([
