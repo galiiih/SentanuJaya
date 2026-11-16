@@ -136,7 +136,7 @@ export type DeliveryOrderRecord = {
   driver_name?: string;
   vehicle_plate?: string;
   notes?: string;
-  status: 'DRAFT' | 'SUBMITTED' | 'DELIVERED' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED';
+  status: 'DRAFT' | 'SUBMITTED' | 'DELIVERED' | 'CLOSED' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED';
   invoice_status?: 'UNINVOICED' | 'INVOICED';
   created_at: string;
   customer?: Customer;
