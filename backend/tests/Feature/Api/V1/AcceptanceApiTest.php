@@ -413,4 +413,59 @@ class AcceptanceApiTest extends TestCase
         ]);
     }
 
+
+    public function test_rejected_goods_with_null_original_location_do_not_change_another_location_balance(): void
+    {
+        $s = $this->seedDelivered();
+        $admin = $this->makeUser('admin');
+        $otherLocation = CustodyLocation::create([
+            'branch_id' => $s['branch']->id,
+            'code' => 'WH2',
+            'name' => 'Warehouse 2',
+        ]);
+
+        // The delivery line has no custody location. A balance at another
+        // location must never be selected as a fallback.
+        $otherBalance = CustodyBalance::create([
+            'customer_id' => $s['customer']->id,
+            'customer_item_id' => $s['item']->id,
+            'custody_location_id' => $otherLocation->id,
+            'stage' => 'RAW',
+            'balance_quantity' => 50,
+        ]);
+
+        $created = $this->actingAs($admin)->postJson('/api/v1/acceptances', [
+            'delivery_order_id' => $s['do']->id,
+            'acceptance_date' => '2026-10-04',
+            'lines' => [[
+                'delivery_order_line_id' => $s['doLine']->id,
+                'quantity_ok' => 8,
+                'quantity_rejected' => 2,
+                'reject_reason' => 'Cat mengelupas',
+            ]],
+        ])->assertCreated();
+
+        $id = $created->json('data.id');
+        $this->actingAs($admin)->postJson("/api/v1/acceptances/{$id}/submit")->assertOk();
+        $this->actingAs($admin)->postJson("/api/v1/acceptances/{$id}/post")->assertOk();
+
+        $nullLocationBalance = CustodyBalance::query()
+            ->where('customer_id', $s['customer']->id)
+            ->where('customer_item_id', $s['item']->id)
+            ->whereNull('custody_location_id')
+            ->where('stage', 'RAW')
+            ->first();
+
+        $this->assertNotNull($nullLocationBalance);
+        $this->assertSame(2.0, (float) $nullLocationBalance->balance_quantity);
+        $this->assertSame(50.0, (float) $otherBalance->fresh()->balance_quantity);
+        $this->assertDatabaseHas('custody_ledger', [
+            'reference_type' => 'ACCEPTANCE',
+            'reference_id' => $id,
+            'movement_type' => 'RETURN_REJECTED',
+            'custody_location_id' => null,
+            'quantity_in' => 2,
+        ]);
+    }
+
 }
