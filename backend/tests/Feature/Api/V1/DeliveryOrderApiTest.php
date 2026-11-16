@@ -215,9 +215,22 @@ class DeliveryOrderApiTest extends TestCase
         $this->actingAs($owner)->postJson("/api/v1/delivery-orders/$doId/submit")->assertOk();
         $this->actingAs($owner)->postJson("/api/v1/delivery-orders/$doId/deliver")->assertOk();
 
+        // A delivered SJ has already generated an OUT_TO_CUSTOMER custody movement.
+        // Cancelling it without a return workflow would corrupt physical stock history.
         $res2 = $this->actingAs($owner)->postJson("/api/v1/delivery-orders/$doId/cancel");
-        $res2->assertOk();
-        $this->assertEquals('CANCELLED', $res2->json('data.status'));
+        $res2->assertStatus(422);
+        $this->assertDatabaseHas('delivery_orders', [
+            'id' => $doId,
+            'status' => 'DELIVERED',
+        ]);
+
+        $balance = CustodyBalance::where('customer_item_id', $s['item']->id)->first();
+        $this->assertEquals(15, (float) $balance->balance_quantity);
+        $this->assertDatabaseHas('custody_ledger', [
+            'reference_type' => 'DELIVERY_ORDER',
+            'movement_type' => 'OUT_TO_CUSTOMER',
+            'quantity_out' => 5,
+        ]);
     }
 
     public function test_lifecycle_violations_are_rejected(): void
