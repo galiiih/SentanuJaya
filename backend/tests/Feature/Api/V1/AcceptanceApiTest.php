@@ -424,8 +424,15 @@ class AcceptanceApiTest extends TestCase
             'name' => 'Warehouse 2',
         ]);
 
-        // The delivery line has no custody location. A balance at another
-        // location must never be selected as a fallback.
+        // The delivery line has no location. Its original null-location
+        // balance is explicit; another warehouse must not be used as fallback.
+        $nullLocationBalance = CustodyBalance::create([
+            'customer_id' => $s['customer']->id,
+            'customer_item_id' => $s['item']->id,
+            'custody_location_id' => null,
+            'stage' => 'RAW',
+            'balance_quantity' => 0,
+        ]);
         $otherBalance = CustodyBalance::create([
             'customer_id' => $s['customer']->id,
             'customer_item_id' => $s['item']->id,
@@ -456,8 +463,8 @@ class AcceptanceApiTest extends TestCase
             ->where('stage', 'RAW')
             ->first();
 
-        $this->assertNotNull($nullLocationBalance);
-        $this->assertSame(2.0, (float) $nullLocationBalance->balance_quantity);
+        $this->assertNotNull($nullLocationBalance->fresh());
+        $this->assertSame(2.0, (float) $nullLocationBalance->fresh()->balance_quantity);
         $this->assertSame(50.0, (float) $otherBalance->fresh()->balance_quantity);
         $this->assertDatabaseHas('custody_ledger', [
             'reference_type' => 'ACCEPTANCE',
