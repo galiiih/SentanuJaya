@@ -49,7 +49,7 @@ class User extends Authenticatable
     private const PERMISSIONS = [
         'STAFF' => [
             'delivery.view', 'delivery.create',
-            'acceptance.view',
+            'acceptance.view', 'return.view',
             'po.view', 'po.create', 'po.edit',
             'master.view',
         ],
@@ -66,6 +66,7 @@ class User extends Authenticatable
             'delivery.view', 'delivery.create', 'delivery.submit', 'delivery.deliver',
             'delivery.cancel_draft', 'delivery.cancel_posted',
             'acceptance.view', 'acceptance.create', 'acceptance.submit', 'acceptance.post',
+            'return.view', 'return.create', 'return.post',
             'invoice.view', 'invoice.create', 'invoice.approve',
             'report.view',
             'po.view', 'po.create', 'po.edit', 'po.activate', 'po.cancel', 'po.close',
