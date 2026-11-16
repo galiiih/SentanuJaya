@@ -151,7 +151,7 @@ function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => 
       items: [
         { path: '/invoicing', label: 'Invoice', icon: Receipt, permission: permissions.invoiceView },
         { path: '/payments', label: 'Pembayaran', icon: CircleDollarSign, permission: permissions.paymentView },
-        { path: '/reports', label: 'Laporan', icon: FileCheck, permission: permissions.invoiceView },
+        { path: '/reports', label: 'Laporan', icon: FileCheck, permission: permissions.reportView },
         { path: '/templates', label: 'Template Dokumen', icon: FileText, permission: permissions.invoiceView },
       ],
     },
@@ -523,7 +523,7 @@ export function App() {
           <Route path="/materials" element={<RequirePermission permission={permissions.materialView}><MaterialsPage /></RequirePermission>} />
           <Route path="/invoicing" element={<RequirePermission permission={permissions.invoiceView}><InvoicingPage /></RequirePermission>} />
           <Route path="/templates" element={<RequirePermission permission={permissions.invoiceView}><TemplateManagementPage /></RequirePermission>} />
-          <Route path="/reports" element={<RequirePermission permission={permissions.invoiceView}><ReportsPage /></RequirePermission>} />
+          <Route path="/reports" element={<RequirePermission permission={permissions.reportView}><ReportsPage /></RequirePermission>} />
           <Route path="/master" element={<RequirePermission permission={permissions.dashboardView}><MasterDataPage /></RequirePermission>} />
           <Route path="/knowledge" element={<RequirePermission permission={permissions.dashboardView}><KnowledgeManagementPage /></RequirePermission>} />
           <Route path="/users" element={<RequirePermission permission={permissions.userManage}><UsersManagementPage /></RequirePermission>} />
