@@ -56,6 +56,7 @@ class User extends Authenticatable
         'ADMIN' => [
             'delivery.view', 'delivery.create', 'delivery.submit', 'delivery.deliver', 'delivery.cancel_draft',
             'acceptance.view', 'acceptance.create', 'acceptance.submit', 'acceptance.post',
+            'return.view', 'return.create', 'return.post',
             'invoice.view', 'invoice.create',
             'po.view', 'po.create', 'po.edit', 'po.activate', 'po.cancel', 'po.close',
             'master.view', 'master.manage',
