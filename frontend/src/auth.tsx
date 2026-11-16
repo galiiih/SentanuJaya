@@ -18,8 +18,9 @@ export const permissions = {
   invoiceView: 'invoice.view',
   invoiceCreate: 'invoice.create',
   reportView: 'report.view',
-  paymentView: 'payment.view',
-  paymentCreate: 'payment.create',
+  // Payments are governed by the same backend permissions as invoice access.
+  paymentView: 'invoice.view',
+  paymentCreate: 'invoice.create',
   poView: 'po.view',
   poCreate: 'po.create',
   poEdit: 'po.edit',
