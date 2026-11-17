@@ -490,6 +490,21 @@ export const nanuKnowledgeApi = {
   listOfficial: (params?: Record<string, string | number>) => list<NanuKnowledgeBaseRecord>('/nanu/official', params),
 };
 
+
+export type DocumentationCategory = { id: string; name: string; slug: string; description?: string | null; published_articles_count?: number };
+export type DocumentationArticle = {
+  id: string; slug: string; title: string; summary?: string | null; body_markdown?: string;
+  module_key?: string | null; keywords?: string[]; related_slugs?: string[];
+  minimum_role: string; publication_status: string; current_version: number;
+  published_at?: string | null; category?: DocumentationCategory | null;
+};
+export const documentationApi = {
+  categories: () => list<DocumentationCategory>('/documentation/categories'),
+  list: (params?: Record<string, string | number>) => list<DocumentationArticle>('/documentation', params),
+  get: (slug: string) => api.get<ApiResponse<{ article: DocumentationArticle; related: DocumentationArticle[] }>>(`/documentation/${encodeURIComponent(slug)}`).then((r) => r.data.data),
+  feedback: (id: string, payload: { was_helpful: boolean; comment?: string }) => data<any>(`/documentation/${id}/feedback`, payload),
+};
+
 export type MaterialReceiptLine = {
   id?: string;
   material_id: string;
