@@ -103,6 +103,15 @@ const masterApi = {
 
 type MasterKey = keyof typeof masterApi;
 
+// Display quantities without meaningless trailing decimal zeros while preserving
+// fractional stock thresholds (e.g. 1.000 -> 1 and 1.500 -> 1,5).
+const formatStockQuantity = (value: unknown): string => {
+  if (value === null || value === undefined || value === '') return '-';
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return String(value);
+  return new Intl.NumberFormat('id-ID', { maximumFractionDigits: 3 }).format(numeric);
+};
+
 export function MasterDataPage() {
   const { user } = useAuth();
   const isAdminOrOwner = user?.role === 'ADMIN' || user?.role === 'OWNER';
@@ -346,7 +355,7 @@ export function MasterDataPage() {
           { id: 'code', header: 'Kode SKU', cell: (row: any) => row.code || '-' },
           { id: 'name', header: 'Nama Material / Cat', cell: (row: any) => row.name || '-' },
           { id: 'unit', header: 'Satuan', cell: (row: any) => row.unit || '-' },
-          { id: 'min_stock', header: 'Minimum Stok', cell: (row: any) => row.minimum_stock ?? row.min_stock ?? '-' },
+          { id: 'min_stock', header: 'Minimum Stok', cell: (row: any) => formatStockQuantity(row.minimum_stock ?? row.min_stock) },
           ...actionColumn
         ];
       case 'warehouses':
