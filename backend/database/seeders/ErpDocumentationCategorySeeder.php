@@ -1,9 +1,9 @@
 <?php
 
-namespace Database\\Seeders;
+namespace Database\Seeders;
 
-use App\\Models\\ErpDocumentationCategory;
-use Illuminate\\Database\\Seeder;
+use App\Models\ErpDocumentationCategory;
+use Illuminate\Database\Seeder;
 
 class ErpDocumentationCategorySeeder extends Seeder
 {
