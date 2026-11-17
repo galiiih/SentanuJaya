@@ -575,16 +575,19 @@ class PuffyAiService
                         'asOf' => now()->toIso8601String(),
                     ];
             }
-        } catch (\Exception $e) {
-            Log::error("Puffy tool execution error for {$toolName}: ".$e->getMessage());
+        } catch (\\Throwable $e) {
+            Log::error("Puffy tool execution error for {$toolName}: ".$e->getMessage(), [
+                'exception' => get_class($e),
+            ]);
 
             return [
                 'tool' => $toolName,
-                'title' => 'Kesalahan Eksekusi Tool',
-                'summary' => 'Gagal mengambil data dari database ERP: '.$e->getMessage(),
+                'title' => 'Pemeriksaan Data Gagal',
+                'summary' => 'Pemeriksaan database ERP gagal. Angka indikator tidak dapat dipastikan; silakan coba kembali atau hubungi administrator.',
                 'hasData' => false,
+                'status' => 'failed',
                 'source' => 'ERP Database',
-                'asOf' => now()->toIso8601String(),
+                'asOf' => now('Asia/Jakarta')->toIso8601String(),
             ];
         }
     }
