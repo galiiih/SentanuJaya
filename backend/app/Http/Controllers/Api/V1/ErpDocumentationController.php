@@ -28,7 +28,23 @@ class ErpDocumentationController extends BaseApiController
 
     private function canManage(Request $request): bool
     {
-        return in_array($request->user()?->role, ['OWNER', 'ADMIN', 'DEV', 'DEV ADMIN'], true);
+        $user = $request->user();
+
+        return $user !== null && (
+            in_array($user->role, ['DEV', 'DEV ADMIN'], true)
+            || $user->hasPermission('documentation.manage')
+        );
+    }
+
+    private function allowedMinimumRoles(Request $request): array
+    {
+        return match ($this->roleRank($request->user()?->role)) {
+            1 => ['STAFF'],
+            2 => ['STAFF', 'OWNER'],
+            3 => ['STAFF', 'OWNER', 'ADMIN'],
+            4 => ['STAFF', 'OWNER', 'ADMIN', 'DEV', 'DEV ADMIN'],
+            default => [],
+        };
     }
 
     private function audit(Request $request, string $type, string $id, string $action, ?array $before, ?array $after): void
@@ -45,11 +61,15 @@ class ErpDocumentationController extends BaseApiController
 
     public function categories(Request $request): JsonResponse
     {
+        $allowedRoles = $this->allowedMinimumRoles($request);
         $categories = ErpDocumentationCategory::query()
             ->where('is_active', true)
             ->orderBy('sort_order')
             ->orderBy('name')
-            ->withCount(['articles as published_articles_count' => fn ($q) => $q->where('publication_status', 'published')])
+            ->withCount(['articles as published_articles_count' => fn ($q) => $q
+                ->where('publication_status', 'published')
+                ->whereNotNull('published_at')
+                ->whereIn('minimum_role', $allowedRoles)])
             ->get();
 
         return $this->sendResponse($categories, 'Kategori dokumentasi berhasil dimuat.');
@@ -57,13 +77,7 @@ class ErpDocumentationController extends BaseApiController
 
     public function index(Request $request): JsonResponse
     {
-        $allowedRoles = match ($this->roleRank($request->user()?->role)) {
-            1 => ['STAFF'],
-            2 => ['STAFF', 'OWNER'],
-            3 => ['STAFF', 'OWNER', 'ADMIN'],
-            4 => ['STAFF', 'OWNER', 'ADMIN', 'DEV', 'DEV ADMIN'],
-            default => [],
-        };
+        $allowedRoles = $this->allowedMinimumRoles($request);
 
         $query = ErpDocumentation::query()
             ->with('category:id,name,slug')
@@ -103,7 +117,9 @@ class ErpDocumentationController extends BaseApiController
         $related = collect($article->related_slugs ?? [])->isEmpty()
             ? collect()
             : ErpDocumentation::query()->whereIn('slug', $article->related_slugs)
-                ->where('publication_status', 'published')->whereNotNull('published_at')
+                ->where('publication_status', 'published')
+                ->whereNotNull('published_at')
+                ->whereIn('minimum_role', $this->allowedMinimumRoles($request))
                 ->get(['id', 'slug', 'title', 'summary']);
 
         return $this->sendResponse(['article' => $article, 'related' => $related], 'Artikel dokumentasi berhasil dimuat.');
@@ -186,7 +202,11 @@ class ErpDocumentationController extends BaseApiController
 
     public function publish(Request $request, string $id): JsonResponse
     {
-        abort_unless(in_array($request->user()?->role, ['ADMIN', 'DEV', 'DEV ADMIN'], true), 403, 'Hanya ADMIN atau DEV ADMIN yang dapat mempublikasikan dokumentasi.');
+        $user = $request->user();
+        abort_unless($user !== null && (
+            in_array($user->role, ['DEV', 'DEV ADMIN'], true)
+            || $user->hasPermission('documentation.publish')
+        ), 403, 'Anda tidak memiliki izin mempublikasikan dokumentasi.');
         $article = DB::transaction(function () use ($request, $id) {
             $record = ErpDocumentation::query()->lockForUpdate()->findOrFail($id);
             $before = $record->only(['publication_status', 'published_at']);
