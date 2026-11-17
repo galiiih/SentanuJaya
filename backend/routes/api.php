@@ -157,6 +157,14 @@ Route::prefix('v1')->group(function () {
                 Route::post('nanu/candidates', [NanuKnowledgeController::class, 'storeCandidate']);
                 Route::post('nanu/candidates/{id}/review', [NanuKnowledgeController::class, 'reviewCandidate']);
                 Route::get('nanu/official', [NanuKnowledgeController::class, 'indexOfficial']);
+                // ERP Documentation Center
+                Route::get('documentation/categories', [ErpDocumentationController::class, 'categories']);
+                Route::get('documentation', [ErpDocumentationController::class, 'index']);
+                Route::get('documentation/{slug}', [ErpDocumentationController::class, 'show']);
+                Route::post('documentation', [ErpDocumentationController::class, 'store']);
+                Route::put('documentation/{id}', [ErpDocumentationController::class, 'update']);
+                Route::post('documentation/{id}/publish', [ErpDocumentationController::class, 'publish']);
+                Route::post('documentation/{id}/feedback', [ErpDocumentationController::class, 'feedback']);
                 Route::post('puffy/actions', [PuffyController::class, 'createAction']);
                 Route::post('puffy/actions/{id}/confirm', [PuffyController::class, 'confirmAction']);
                 Route::post('puffy/actions/{id}/cancel', [PuffyController::class, 'cancelAction']);
