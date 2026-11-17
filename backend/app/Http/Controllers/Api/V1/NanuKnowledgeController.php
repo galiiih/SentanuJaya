@@ -105,7 +105,13 @@ class NanuKnowledgeController extends BaseApiController
         $perPage = (int) $request->input('per_page', 20);
         $search = $request->input('search');
 
-        $query = NanuKnowledgeBase::query()->latest();
+        $role = $request->user()?->role ?? 'STAFF';
+        $query = NanuKnowledgeBase::query()
+            ->where('is_published', true)
+            ->where(function ($builder) use ($role) {
+                $builder->where('audience_role', 'ALL')->orWhere('audience_role', $role);
+            })
+            ->latest();
 
         if ($search) {
             $query->where(function ($q) use ($search) {
