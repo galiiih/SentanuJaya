@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Api\BaseApiController;
 use App\Models\Warehouse;
+use App\Models\StockMovement;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
@@ -63,7 +64,7 @@ class WarehouseController extends BaseApiController
         if (isset($data['branch_id']) && $data['branch_id'] !== $warehouse->branch_id
             && ($warehouse->stocks()->exists() || $warehouse->materialReceipts()->exists()
                 || $warehouse->materialUsages()->exists()
-                || \\App\\Models\\StockMovement::where('warehouse_id', $warehouse->id)->exists())) {
+                || StockMovement::where('warehouse_id', $warehouse->id)->exists())) {
             return $this->sendError('Warehouse with inventory history cannot be moved to another branch.', [], 409);
         }
 
@@ -79,7 +80,7 @@ class WarehouseController extends BaseApiController
 
         if ($warehouse->stocks()->exists() || $warehouse->materialReceipts()->exists()
             || $warehouse->materialUsages()->exists()
-            || \\App\\Models\\StockMovement::where('warehouse_id', $warehouse->id)->exists()) {
+            || StockMovement::where('warehouse_id', $warehouse->id)->exists()) {
             return $this->sendError('Warehouse with stock or transaction history cannot be deleted.', [], 409);
         }
 
