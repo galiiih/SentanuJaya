@@ -20,6 +20,7 @@ type Translations = {
   master: string;
   knowledge: string;
   users: string;
+  customerReturns: string;
   logout: string;
   isolatedCustody: string;
   offBalanceSheet: string;
@@ -267,6 +268,7 @@ const idTranslations: Translations = {
     master: 'Master Data',
     knowledge: 'Nanu Knowledge',
     users: 'Manajemen Pengguna',
+    customerReturns: 'Retur Customer',
     logout: 'Keluar',
     isolatedCustody: 'Custody terisolasi',
     offBalanceSheet: 'Off-balance sheet active',
@@ -510,6 +512,7 @@ const enTranslations: Translations = {
     master: 'Master Data',
     knowledge: 'Nanu Knowledge',
     users: 'User Management',
+    customerReturns: 'Customer Returns',
     logout: 'Logout',
     isolatedCustody: 'Isolated Custody',
     offBalanceSheet: 'Off-balance sheet active',
