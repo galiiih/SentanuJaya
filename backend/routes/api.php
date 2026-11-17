@@ -40,6 +40,7 @@ use App\Http\Controllers\Api\V1\{
     WorkOrderController,
     UserController,
     PuffyController,
+    ErpDocumentationController,
 };
 
 Route::prefix('v1')->group(function () {
