@@ -44,4 +44,48 @@ class WarehouseController extends BaseApiController
         }
         return $this->sendResponse($warehouse, 'Warehouse retrieved successfully.');
     }
+    public function update(Request $request, string $id): JsonResponse
+    {
+        abort_unless($request->user()?->hasPermission('master.manage'), 403, 'Forbidden');
+        $warehouse = Warehouse::findOrFail($id);
+        $validator = Validator::make($request->all(), [
+            'branch_id' => 'sometimes|required|uuid|exists:branches,id',
+            'code' => 'sometimes|required|string|max:50|unique:warehouses,code,'.$id.',id,branch_id,'.($request->input('branch_id', $warehouse->branch_id)),
+            'name' => 'sometimes|required|string|max:255',
+            'is_active' => 'sometimes|boolean',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendError('Validation Error.', $validator->errors(), 422);
+        }
+
+        $data = $validator->validated();
+        if (isset($data['branch_id']) && $data['branch_id'] !== $warehouse->branch_id
+            && ($warehouse->stocks()->exists() || $warehouse->materialReceipts()->exists()
+                || $warehouse->materialUsages()->exists()
+                || \\App\\Models\\StockMovement::where('warehouse_id', $warehouse->id)->exists())) {
+            return $this->sendError('Warehouse with inventory history cannot be moved to another branch.', [], 409);
+        }
+
+        $warehouse->update($data);
+
+        return $this->sendResponse($warehouse->load('branch'), 'Warehouse updated successfully.');
+    }
+
+    public function destroy(Request $request, string $id): JsonResponse
+    {
+        abort_unless($request->user()?->hasPermission('master.manage'), 403, 'Forbidden');
+        $warehouse = Warehouse::findOrFail($id);
+
+        if ($warehouse->stocks()->exists() || $warehouse->materialReceipts()->exists()
+            || $warehouse->materialUsages()->exists()
+            || \\App\\Models\\StockMovement::where('warehouse_id', $warehouse->id)->exists()) {
+            return $this->sendError('Warehouse with stock or transaction history cannot be deleted.', [], 409);
+        }
+
+        $warehouse->delete();
+
+        return $this->sendResponse(null, 'Warehouse deleted successfully.');
+    }
+
 }
