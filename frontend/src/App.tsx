@@ -114,7 +114,7 @@ function RequirePermission({ permission, children }: { permission: Permission; c
 
 function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => void }) {
   const { hasPermission, user, logout } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
   // Logo sidebar mulai berputar setelah logo intro mendarat.
@@ -148,26 +148,26 @@ function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => 
         { path: '/custody', label: t.nav.custody, icon: Package, permission: permissions.custodyView },
         { path: '/customer-po', label: t.nav.customerPo, icon: FileText, permission: permissions.poView },
         { path: '/delivery', label: t.nav.delivery, icon: Truck, permission: permissions.deliveryView },
-        { path: '/customer-returns', label: 'Retur Customer', icon: RotateCcw, permission: permissions.returnView },
+        { path: '/customer-returns', label: t.nav.customerReturns, icon: RotateCcw, permission: permissions.returnView },
       ],
     },
     {
-      label: 'FINANCE & BILLING',
+      label: t.nav.finance,
       items: [
-        { path: '/invoicing', label: 'Invoice', icon: Receipt, permission: permissions.invoiceView },
-        { path: '/payments', label: 'Pembayaran', icon: CircleDollarSign, permission: permissions.paymentView },
-        { path: '/reports', label: 'Laporan', icon: FileCheck, permission: permissions.reportView },
-        { path: '/templates', label: 'Template Dokumen', icon: FileText, permission: permissions.invoiceView },
+        { path: '/invoicing', label: t.nav.invoicing, icon: Receipt, permission: permissions.invoiceView },
+        { path: '/payments', label: t.nav.payments, icon: CircleDollarSign, permission: permissions.paymentView },
+        { path: '/reports', label: t.nav.reports, icon: FileCheck, permission: permissions.reportView },
+        { path: '/templates', label: t.nav.templates, icon: FileText, permission: permissions.invoiceView },
       ],
     },
     {
       label: t.nav.inventory,
       items: [
         { path: '/materials', label: t.nav.materials, icon: Boxes, permission: permissions.materialView },
-        { path: '/master', label: 'Master Data', icon: Package, permission: permissions.dashboardView },
-        { path: '/knowledge', label: 'Nanu Knowledge', icon: BookOpen, permission: permissions.dashboardView },
-        { path: '/documentation', label: 'Panduan ERP', icon: BookOpen, permission: permissions.dashboardView },
-        { path: '/users', label: 'Manajemen Pengguna', icon: Users, permission: permissions.userManage },
+        { path: '/master', label: t.nav.master, icon: Package, permission: permissions.dashboardView },
+        { path: '/knowledge', label: t.nav.knowledge, icon: BookOpen, permission: permissions.dashboardView },
+        { path: '/documentation', label: language === 'en' ? 'ERP Documentation' : 'Panduan ERP', icon: BookOpen, permission: permissions.dashboardView },
+        { path: '/users', label: t.nav.users, icon: Users, permission: permissions.userManage },
       ],
     },
   ];
