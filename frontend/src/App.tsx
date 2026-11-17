@@ -39,6 +39,7 @@ import { InvoicingPage } from './components/InvoicingPage';
 import TemplateManagementPage from './pages/TemplateManagementPage';
 import UsersManagementPage from './pages/UsersManagementPage';
 import { KnowledgeManagementPage } from './components/KnowledgeManagementPage';
+import { DocumentationCenterPage } from './components/DocumentationCenterPage';
 import { PuffyAssistant } from './features/puffy';
 import './features/puffy/puffy.css';
 import {
@@ -75,7 +76,7 @@ import { LoginIntro } from './components/LoginIntro';
 import { INTRO_TIMING, clearLoginIntro, markLoginIntro, shouldPlayLoginIntro } from './loginIntro';
 import './App.css';
 
-type PageKey = 'dashboard' | 'custody' | 'customerPo' | 'materials' | 'delivery' | 'invoicing' | 'payments' | 'reports' | 'templates' | 'master' | 'users' | 'knowledge';
+type PageKey = 'dashboard' | 'custody' | 'customerPo' | 'materials' | 'delivery' | 'invoicing' | 'payments' | 'reports' | 'templates' | 'master' | 'users' | 'knowledge' | 'documentation';
 
 const routePages: Record<string, PageKey> = {
   '/dashboard': 'dashboard',
@@ -90,6 +91,7 @@ const routePages: Record<string, PageKey> = {
   '/master': 'master',
   '/users': 'users',
   '/knowledge': 'knowledge',
+  '/documentation': 'documentation',
 };
 
 const currency = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 });
@@ -164,6 +166,7 @@ function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => 
         { path: '/materials', label: t.nav.materials, icon: Boxes, permission: permissions.materialView },
         { path: '/master', label: 'Master Data', icon: Package, permission: permissions.dashboardView },
         { path: '/knowledge', label: 'Nanu Knowledge', icon: BookOpen, permission: permissions.dashboardView },
+        { path: '/documentation', label: 'Panduan ERP', icon: BookOpen, permission: permissions.dashboardView },
         { path: '/users', label: 'Manajemen Pengguna', icon: Users, permission: permissions.userManage },
       ],
     },
@@ -530,6 +533,7 @@ export function App() {
           <Route path="/reports" element={<RequirePermission permission={permissions.reportView}><ReportsPage /></RequirePermission>} />
           <Route path="/master" element={<RequirePermission permission={permissions.dashboardView}><MasterDataPage /></RequirePermission>} />
           <Route path="/knowledge" element={<RequirePermission permission={permissions.dashboardView}><KnowledgeManagementPage /></RequirePermission>} />
+          <Route path="/documentation" element={<RequirePermission permission={permissions.dashboardView}><DocumentationCenterPage /></RequirePermission>} />
           <Route path="/users" element={<RequirePermission permission={permissions.userManage}><UsersManagementPage /></RequirePermission>} />
           <Route path="/payments" element={<RequirePermission permission={permissions.paymentView}><PaymentPage /></RequirePermission>} />
           <Route path="/403" element={<ErrorPage code="403" title="Access Denied" description="Anda tidak memiliki izin untuk membuka halaman ini." />} />
