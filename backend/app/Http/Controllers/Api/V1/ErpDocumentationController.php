@@ -1,17 +1,17 @@
 <?php
 
-namespace App\\Http\\Controllers\\Api\\V1;
+namespace App\Http\Controllers\Api\V1;
 
-use App\\Http\\Controllers\\Api\\BaseApiController;
-use App\\Models\\ErpDocumentation;
-use App\\Models\\ErpDocumentationCategory;
-use App\\Models\\ErpDocumentationFeedback;
-use App\\Models\\ErpDocumentationVersion;
-use App\\Models\\NanuKnowledgeAuditLog;
-use Illuminate\\Http\\JsonResponse;
-use Illuminate\\Http\\Request;
-use Illuminate\\Support\\Facades\\DB;
-use Illuminate\\Support\\Str;
+use App\Http\Controllers\Api\BaseApiController;
+use App\Models\ErpDocumentation;
+use App\Models\ErpDocumentationCategory;
+use App\Models\ErpDocumentationFeedback;
+use App\Models\ErpDocumentationVersion;
+use App\Models\NanuKnowledgeAuditLog;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class ErpDocumentationController extends BaseApiController
 {
