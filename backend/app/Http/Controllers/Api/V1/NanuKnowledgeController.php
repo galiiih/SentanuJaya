@@ -106,11 +106,16 @@ class NanuKnowledgeController extends BaseApiController
         $search = $request->input('search');
 
         $role = $request->user()?->role ?? 'STAFF';
+        $allowedAudiences = match ($role) {
+            'STAFF' => ['ALL', 'STAFF'],
+            'OWNER' => ['ALL', 'STAFF', 'OWNER'],
+            'ADMIN' => ['ALL', 'STAFF', 'OWNER', 'ADMIN'],
+            'DEV', 'DEV ADMIN' => ['ALL', 'STAFF', 'OWNER', 'ADMIN', 'DEV', 'DEV ADMIN'],
+            default => ['ALL'],
+        };
         $query = NanuKnowledgeBase::query()
             ->where('is_published', true)
-            ->where(function ($builder) use ($role) {
-                $builder->where('audience_role', 'ALL')->orWhere('audience_role', $role);
-            })
+            ->whereIn('audience_role', $allowedAudiences)
             ->latest();
 
         if ($search) {
