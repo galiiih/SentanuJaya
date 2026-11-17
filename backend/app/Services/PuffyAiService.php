@@ -471,49 +471,94 @@ class PuffyAiService
                     ];
 
                 case 'get_operational_risk_summary':
-                    $risks = [];
+                    // Each query is evaluated independently inside the tool's error boundary.
+                    // A successful empty result is still a completed health check, not missing data.
                     $openPoCount = CustomerPo::where('status', CustomerPo::STATUS_OPEN)->count();
                     $activeWorkOrderCount = WorkOrder::whereIn('status', ['OPEN', 'IN_PROGRESS'])->count();
-                    $deliveryCount = DeliveryOrder::whereNotIn('status', [DeliveryOrder::STATUS_CANCELLED])->count();
-                    $outstandingInvoiceCount = Invoice::whereIn('status', [Invoice::STATUS_POSTED, Invoice::STATUS_PARTIALLY_PAID, Invoice::STATUS_OVERDUE])->where('amount_due', '>', 0)->count();
-                    $lowStockCount = Material::get()->filter(function (Material $material): bool {
-                        $threshold = (float) ($material->reorder_level ?: $material->minimum_stock);
+                    $activeDeliveryCount = DeliveryOrder::whereIn('status', [
+                        DeliveryOrder::STATUS_DRAFT,
+                        DeliveryOrder::STATUS_SUBMITTED,
+                        DeliveryOrder::STATUS_DELIVERED,
+                    ])->count();
+                    $outstandingInvoiceCount = Invoice::whereIn('status', [
+                        Invoice::STATUS_POSTED,
+                        Invoice::STATUS_PARTIALLY_PAID,
+                        Invoice::STATUS_OVERDUE,
+                    ])->where('amount_due', '>', 0)->count();
+                    $lowStockCount = Material::query()->get()->filter(function (Material $material): bool {
+                        $threshold = (float) ($material->reorder_level ?? $material->minimum_stock ?? 0);
 
                         return (float) Stock::where('material_id', $material->id)->sum('quantity_on_hand') <= $threshold;
                     })->count();
 
-                    if ($openPoCount === 0) {
-                        $risks[] = 'Tidak ada Customer PO berstatus OPEN.';
-                    }
-                    if ($activeWorkOrderCount === 0) {
-                        $risks[] = 'Tidak ada Work Order yang sedang berjalan.';
-                    }
-                    if ($deliveryCount === 0) {
-                        $risks[] = 'Belum ada Surat Jalan aktif yang tercatat.';
-                    }
-                    if ($outstandingInvoiceCount > 0) {
-                        $risks[] = "Ada {$outstandingInvoiceCount} invoice dengan saldo belum lunas.";
-                    }
-                    if ($lowStockCount > 0) {
-                        $risks[] = "Ada {$lowStockCount} material pada atau di bawah batas minimum.";
-                    }
+                    $indicators = [
+                        [
+                            'label' => 'Customer PO OPEN',
+                            'value' => $openPoCount,
+                            'status' => $openPoCount > 0 ? 'Ada aktivitas' : 'Tidak ada aktivitas',
+                            'detail' => $openPoCount > 0
+                                ? "{$openPoCount} Customer PO berstatus OPEN."
+                                : 'Belum ada Customer PO berstatus OPEN.',
+                        ],
+                        [
+                            'label' => 'Work Order berjalan',
+                            'value' => $activeWorkOrderCount,
+                            'status' => $activeWorkOrderCount > 0 ? 'Sedang berjalan' : 'Tidak ada aktivitas',
+                            'detail' => $activeWorkOrderCount > 0
+                                ? "{$activeWorkOrderCount} Work Order berstatus OPEN atau IN_PROGRESS."
+                                : 'Tidak ada Work Order yang sedang berjalan.',
+                        ],
+                        [
+                            'label' => 'Surat Jalan aktif',
+                            'value' => $activeDeliveryCount,
+                            'status' => $activeDeliveryCount > 0 ? 'Dalam proses' : 'Tidak ada aktivitas',
+                            'detail' => $activeDeliveryCount > 0
+                                ? "{$activeDeliveryCount} Surat Jalan berstatus DRAFT, SUBMITTED, atau DELIVERED."
+                                : 'Tidak ada Surat Jalan aktif (DRAFT, SUBMITTED, atau DELIVERED).',
+                        ],
+                        [
+                            'label' => 'Invoice outstanding',
+                            'value' => $outstandingInvoiceCount,
+                            'status' => $outstandingInvoiceCount > 0 ? 'Perlu tindak lanjut' : 'Tidak ada tunggakan',
+                            'detail' => $outstandingInvoiceCount > 0
+                                ? "{$outstandingInvoiceCount} invoice memiliki saldo belum lunas."
+                                : 'Tidak ada invoice outstanding.',
+                        ],
+                        [
+                            'label' => 'Material stok minimum',
+                            'value' => $lowStockCount,
+                            'status' => $lowStockCount > 0 ? 'Perlu pemeriksaan' : 'Stok di atas minimum',
+                            'detail' => $lowStockCount > 0
+                                ? "{$lowStockCount} material memiliki stok pada atau di bawah batas minimum."
+                                : 'Tidak ada material pada atau di bawah batas minimum.',
+                        ],
+                    ];
+
+                    $attentionCount = $outstandingInvoiceCount + $lowStockCount;
+                    $summary = $attentionCount > 0
+                        ? "Pemeriksaan berhasil. {$outstandingInvoiceCount} indikator invoice outstanding dan {$lowStockCount} indikator stok minimum memerlukan tindak lanjut. Aktivitas operasional ditampilkan sebagai informasi, bukan otomatis sebagai risiko."
+                        : 'Pemeriksaan berhasil. Tidak ditemukan tunggakan invoice atau stok material pada/di bawah minimum. Jumlah aktivitas ditampilkan sebagai informasi operasional.';
 
                     return [
                         'tool' => $toolName,
-                        'title' => 'Ringkasan Risiko Operasional',
-                        'summary' => $risks === []
-                            ? 'Tidak ditemukan indikator risiko operasional dari data ERP saat ini.'
-                            : 'Indikator yang perlu diperhatikan: '.implode(' ', $risks),
-                        'hasData' => $risks !== [],
+                        'title' => 'Ringkasan Kondisi Operasional',
+                        'summary' => $summary,
+                        'hasData' => true,
                         'metrics' => [
-                            ['label' => 'Indikator Risiko', 'value' => (string) count($risks)],
-                            ['label' => 'PO Open', 'value' => (string) $openPoCount],
+                            ['label' => 'Customer PO OPEN', 'value' => (string) $openPoCount],
                             ['label' => 'WO Berjalan', 'value' => (string) $activeWorkOrderCount],
+                            ['label' => 'Surat Jalan Aktif', 'value' => (string) $activeDeliveryCount],
                             ['label' => 'Invoice Outstanding', 'value' => (string) $outstandingInvoiceCount],
+                            ['label' => 'Stok Minimum', 'value' => (string) $lowStockCount],
                         ],
                         'table' => [
-                            'columns' => ['Indikator'],
-                            'rows' => array_map(static fn (string $risk): array => [$risk], $risks),
+                            'columns' => ['Indikator', 'Jumlah', 'Status', 'Keterangan'],
+                            'rows' => array_map(static fn (array $item): array => [
+                                $item['label'],
+                                (string) $item['value'],
+                                $item['status'],
+                                $item['detail'],
+                            ], $indicators),
                         ],
                         'source' => 'ERP Database',
                         'asOf' => now('Asia/Jakarta')->toIso8601String(),
