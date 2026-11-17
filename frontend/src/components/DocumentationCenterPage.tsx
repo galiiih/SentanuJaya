@@ -34,8 +34,8 @@ export function DocumentationCenterPage() {
   useEffect(() => { void loadArticles(); }, [category, search]);
 
   const headings = useMemo(() => (selected?.body_markdown || '').split('\n')
-    .filter((line) => /^#{1,3}\\s+/.test(line))
-    .map((line) => line.replace(/^#{1,3}\\s+/, '').trim()), [selected]);
+    .filter((line) => /^#{1,3}\s+/.test(line))
+    .map((line) => line.replace(/^#{1,3}\s+/, '').trim()), [selected]);
 
   const openArticle = async (slug: string) => {
     setFeedback('');
