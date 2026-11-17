@@ -57,10 +57,19 @@ class ErpDocumentationController extends BaseApiController
 
     public function index(Request $request): JsonResponse
     {
+        $allowedRoles = match ($this->roleRank($request->user()?->role)) {
+            1 => ['STAFF'],
+            2 => ['STAFF', 'OWNER'],
+            3 => ['STAFF', 'OWNER', 'ADMIN'],
+            4 => ['STAFF', 'OWNER', 'ADMIN', 'DEV', 'DEV ADMIN'],
+            default => [],
+        };
+
         $query = ErpDocumentation::query()
             ->with('category:id,name,slug')
             ->where('publication_status', 'published')
-            ->whereNotNull('published_at');
+            ->whereNotNull('published_at')
+            ->whereIn('minimum_role', $allowedRoles);
 
         if ($request->filled('category')) {
             $query->whereHas('category', fn ($q) => $q->where('slug', $request->string('category')));
