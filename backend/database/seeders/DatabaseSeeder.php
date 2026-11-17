@@ -26,6 +26,8 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
+        $this->call(ErpDocumentationCategorySeeder::class);
+
         User::factory()->create([
             'full_name' => 'Test User',
             'username' => 'admin',
