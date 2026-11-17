@@ -52,6 +52,7 @@ class User extends Authenticatable
             'acceptance.view', 'return.view',
             'po.view', 'po.create', 'po.edit',
             'master.view',
+            'documentation.view',
         ],
         'ADMIN' => [
             'delivery.view', 'delivery.create', 'delivery.submit', 'delivery.deliver', 'delivery.cancel_draft',
@@ -61,6 +62,7 @@ class User extends Authenticatable
             'po.view', 'po.create', 'po.edit', 'po.activate', 'po.cancel', 'po.close',
             'master.view', 'master.manage',
             'report.view',
+            'documentation.view', 'documentation.manage', 'documentation.publish',
         ],
         'OWNER' => [
             'delivery.view', 'delivery.create', 'delivery.submit', 'delivery.deliver',
@@ -71,11 +73,16 @@ class User extends Authenticatable
             'report.view',
             'po.view', 'po.create', 'po.edit', 'po.activate', 'po.cancel', 'po.close',
             'master.view', 'master.manage',
+            'documentation.view', 'documentation.manage',
         ],
     ];
 
     public function hasPermission(string $permission): bool
     {
+        if (in_array($this->role, ['DEV', 'DEV ADMIN'], true)) {
+            return true;
+        }
+
         return in_array($permission, self::PERMISSIONS[$this->role] ?? [], true);
     }
 }
