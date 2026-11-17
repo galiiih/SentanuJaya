@@ -575,7 +575,7 @@ class PuffyAiService
                         'asOf' => now()->toIso8601String(),
                     ];
             }
-        } catch (\\Throwable $e) {
+        } catch (\Throwable $e) {
             Log::error("Puffy tool execution error for {$toolName}: ".$e->getMessage(), [
                 'exception' => get_class($e),
             ]);
