@@ -128,6 +128,26 @@ class PuffySecurityAndStreamTest extends TestCase
         $this->assertEquals('Informasi Operasional Sentanu Jaya', $unknown['title']);
     }
 
+    public function test_operational_risk_summary_returns_all_five_indicators_when_all_counts_are_zero(): void
+    {
+        $result = app(PuffyAiService::class)->executeTool('get_operational_risk_summary');
+
+        $this->assertTrue($result['hasData']);
+        $this->assertSame('Ringkasan Kondisi Operasional', $result['title']);
+        $this->assertCount(5, $result['table']['rows']);
+        $this->assertSame([
+            'Customer PO OPEN',
+            'Work Order berjalan',
+            'Surat Jalan aktif',
+            'Invoice outstanding',
+            'Material stok minimum',
+        ], array_column($result['table']['rows'], 0));
+        foreach ($result['table']['rows'] as $row) {
+            $this->assertSame('0', $row[1]);
+        }
+        $this->assertSame(5, count($result['metrics']));
+    }
+
     public function test_puffy_detect_tool_intent_mapping(): void
     {
         $aiService = app(PuffyAiService::class);
