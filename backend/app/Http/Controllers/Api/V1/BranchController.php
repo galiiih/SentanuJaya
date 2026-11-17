@@ -108,6 +108,12 @@ class BranchController extends BaseApiController
             return $this->sendError('Cannot delete branch with assigned workers.', [], 409);
         }
 
+        // Warehouses belong to a branch. The database FK cascades branch deletion
+        // to warehouses, so block deletion to protect inventory history.
+        if ($item->warehouses()->exists()) {
+            return $this->sendError('Cannot delete branch that still has warehouses. Move or remove the warehouses first.', [], 409);
+        }
+
         $item->delete();
         return $this->sendResponse(null, 'Branch deleted successfully.');
     }
