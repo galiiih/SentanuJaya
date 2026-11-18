@@ -39,6 +39,8 @@ test.describe('isolated login intro and sidebar', () => {
     await expect(page).toHaveURL(/\/dashboard$/);
     await expect(page.locator('aside.sidebar').first()).toBeVisible();
     await expect(page.locator('.app-shell')).not.toHaveClass(/app-shell--intro/);
+    // DOM changes during login must not enqueue duplicate Three.js CDN scripts.
+    expect(await page.locator('script[src*="three.min.js"]').count()).toBeLessThanOrEqual(1);
   });
 
   test('mobile intro targets the existing mobile menu trigger', async ({ page }) => {
