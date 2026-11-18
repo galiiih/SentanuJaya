@@ -26,7 +26,7 @@ test.describe('Sentanu Jaya ERP customer master E2E', () => {
     await expect(page.getByText('Daftar Cabang')).toBeVisible();
     await page.getByRole('button', { name: 'Tambah Cabang', exact: true }).click();
 
-    const form = page.locator('.modal form');
+    const form = page.getByRole('dialog').locator('form');
     await expect(form).toBeVisible();
     const companySelect = form.locator('select').first();
     await expect.poll(() => companySelect.locator('option').count()).toBeGreaterThan(1);
@@ -41,7 +41,7 @@ test.describe('Sentanu Jaya ERP customer master E2E', () => {
     await form.locator('input[placeholder="Head Office"]').fill(name);
     await form.getByRole('button', { name: 'Simpan Data' }).click();
 
-    await expect(page.locator('.modal')).toBeHidden();
+    await expect(page.getByRole('dialog')).toBeHidden();
     await expect(page.getByText(code, { exact: true })).toBeVisible();
     await expect(page.getByText(name, { exact: true })).toBeVisible();
   });
