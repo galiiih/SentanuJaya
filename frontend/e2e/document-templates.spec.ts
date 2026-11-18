@@ -3,6 +3,7 @@ import { test, expect, type Page } from '@playwright/test';
 test.use({ viewport: { width: 1280, height: 800 } });
 
 async function login(page: Page, email = 'admin@sentanu.local', password = 'password123') {
+  page.on('pageerror', (error) => console.error('[Browser pageerror]', error.stack ?? error.message));
   await page.goto('/login');
   await page.locator('#login-email').fill(email);
   await page.locator('#login-password').fill(password);
@@ -25,7 +26,7 @@ test.describe('Sentanu Jaya Document Templates & GrapesJS E2E', () => {
     const suffix = Date.now();
     const templateName = `Test Invoice E2E ${suffix}`;
 
-    await page.getByRole('button', { name: /\+ Unggah \/ Buat Template/i }).click();
+    await page.getByRole('button', { name: /Unggah \/ Buat Template/i }).click();
     const modal = page.locator('.fixed.inset-0').first();
     await expect(modal).toBeVisible();
 
@@ -76,7 +77,7 @@ test.describe('Sentanu Jaya Document Templates & GrapesJS E2E', () => {
     const suffix = Date.now();
     const templateName = `Visual Template ${suffix}`;
 
-    await page.getByRole('button', { name: /\+ Unggah \/ Buat Template/i }).click();
+    await page.getByRole('button', { name: /Unggah \/ Buat Template/i }).click();
     const modal = page.locator('.fixed.inset-0').first();
     await modal.locator('input[type="text"]').fill(templateName);
     await modal.locator('select').first().selectOption('surat_jalan');
@@ -124,7 +125,7 @@ test.describe('Sentanu Jaya Document Templates & GrapesJS E2E', () => {
     const t2Name = `Inv Beta ${suffix}`;
 
     // Create T1
-    await page.getByRole('button', { name: /\+ Unggah \/ Buat Template/i }).click();
+    await page.getByRole('button', { name: /Unggah \/ Buat Template/i }).click();
     let modal = page.locator('.fixed.inset-0').first();
     await modal.locator('input[type="text"]').fill(t1Name);
     await modal.locator('select').first().selectOption('invoice');
@@ -133,7 +134,7 @@ test.describe('Sentanu Jaya Document Templates & GrapesJS E2E', () => {
     await expect(modal).toBeHidden({ timeout: 10000 });
 
     // Create T2
-    await page.getByRole('button', { name: /\+ Unggah \/ Buat Template/i }).click();
+    await page.getByRole('button', { name: /Unggah \/ Buat Template/i }).click();
     modal = page.locator('.fixed.inset-0').first();
     await modal.locator('input[type="text"]').fill(t2Name);
     await modal.locator('select').first().selectOption('invoice');
