@@ -334,6 +334,30 @@ class MasterDataApiTest extends TestCase
             'is_active' => true,
         ]);
 
+        $customer = Customer::create([
+            'company_id' => $company->id,
+            'code' => 'BR-GUARD-CUST',
+            'name' => 'Branch Guard Customer',
+            'type' => 'REGULAR',
+        ]);
+
+        \App\Models\DeliveryOrder::create([
+            'company_id' => $company->id,
+            'branch_id' => $branch->id,
+            'sj_number' => 'SJ-BR-GUARD',
+            'customer_id' => $customer->id,
+            'delivery_date' => now()->toDateString(),
+        ]);
+
+        \App\Models\Invoice::create([
+            'company_id' => $company->id,
+            'branch_id' => $branch->id,
+            'customer_id' => $customer->id,
+            'invoice_number' => 'INV-BR-GUARD',
+            'invoice_date' => now()->toDateString(),
+            'due_date' => now()->toDateString(),
+        ]);
+
         $this->deleteJson('/api/v1/branches/' . $branch->id)
             ->assertStatus(409)
             ->assertJsonPath('success', false);
