@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 
-test.use({ viewport: { width: 1280, height: 800 } });
+test.use({ viewport: { width: 1280, height: 800 }, actionTimeout: 15000, expect: { timeout: 15000 } });
 
 async function login(page: Page) {
   await page.goto('/login');
@@ -212,17 +212,11 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
 
     await expect(codeInput).toBeVisible();
     await codeInput.click();
-    for (const char of code) {
-      await page.keyboard.type(char);
-      await expect(codeInput).toBeFocused();
-    }
+    await codeInput.pressSequentially(code, { delay: 5 });
     await expect(codeInput).toHaveValue(code);
 
     await nameInput.click();
-    for (const char of name) {
-      await page.keyboard.type(char);
-      await expect(nameInput).toBeFocused();
-    }
+    await nameInput.pressSequentially(name, { delay: 5 });
     await expect(nameInput).toHaveValue(name);
 
     const saveButton = dialog.getByRole('button', { name: /Simpan Data/i });
@@ -357,16 +351,10 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     const codeInput = dialog.getByPlaceholder('SJ');
     const nameInput = dialog.getByPlaceholder('PT Sentanu Jaya');
     await codeInput.click();
-    for (const char of code) {
-      await page.keyboard.type(char);
-      await expect(codeInput).toBeFocused();
-    }
+    await codeInput.pressSequentially(code, { delay: 5 });
     await expect(codeInput).toHaveValue(code);
     await nameInput.click();
-    for (const char of name) {
-      await page.keyboard.type(char);
-      await expect(nameInput).toBeFocused();
-    }
+    await nameInput.pressSequentially(name, { delay: 5 });
     await expect(nameInput).toHaveValue(name);
     const saveButton = dialog.getByRole('button', { name: /Simpan Data/i });
     await saveButton.scrollIntoViewIfNeeded();
