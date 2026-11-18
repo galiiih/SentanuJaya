@@ -24,7 +24,7 @@ test.describe('Sentanu Jaya ERP customer master E2E', () => {
     await page.goto('/master');
 
     await page.getByRole('button', { name: 'Cabang', exact: true }).click();
-    await expect(page.getByText('Daftar Cabang')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Tambah Cabang', exact: true })).toBeVisible();
     await page.getByRole('button', { name: 'Tambah Cabang', exact: true }).click();
 
     const form = page.getByRole('dialog').locator('form');
