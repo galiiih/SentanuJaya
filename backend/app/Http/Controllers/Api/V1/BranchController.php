@@ -109,9 +109,11 @@ class BranchController extends BaseApiController
             || $item->custodyLocations()->exists()
             || $item->goodsReceipts()->exists()
             || $item->warehouses()->exists()
+            || $item->deliveryOrders()->exists()
+            || $item->invoices()->exists()
         ) {
             return $this->sendError(
-                'Cabang tidak dapat dihapus karena masih memiliki pekerja, lokasi custody, transaksi penerimaan barang, atau gudang. Nonaktifkan cabang jika sudah tidak digunakan.',
+                'Cabang tidak dapat dihapus karena masih memiliki pekerja, lokasi custody, transaksi penerimaan barang, gudang, Surat Jalan, atau invoice. Nonaktifkan cabang jika sudah tidak digunakan.',
                 [],
                 409
             );
