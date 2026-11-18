@@ -18,8 +18,11 @@
   position: relative !important;
   width: 100% !important;
   max-width: 44rem !important;
-  max-height: 88vh !important;
+  max-height: calc(100dvh - 3rem) !important;
+  overflow-x: hidden !important;
   overflow-y: auto !important;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
   
   /* EXACT MATCH TO USER'S .glass-card CSS SPEC */
   background: rgba(15, 23, 42, 0.45) !important;
@@ -32,7 +35,7 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.5),
     inset 0 -1px 0 rgba(255, 255, 255, 0.1),
     inset 0 0 20px 10px rgba(255, 255, 255, 0.25) !important;
-  padding: 2rem !important;
+  padding: 2rem 2rem 2.5rem !important;
   color: #F8FAFC !important;
 }
 
