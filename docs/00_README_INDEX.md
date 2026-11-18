@@ -37,6 +37,13 @@ Laporan fase lama disimpan di `archive/phase-reports/`; laporan STEP di `archive
 
 Untuk status terkini, gunakan GitHub Actions pada commit yang diperiksa dan jalankan test suite yang relevan. Jangan menyalin status PASS dari laporan lama ke status proyek saat ini.
 
+## Server Ubuntu dan operasional produksi
+
+- [Indeks dokumentasi server](server/README.md) — inventaris host, deployment, backup/recovery, keamanan jaringan, dan runbook.
+- [Integrasi Nanu AI ke 9Router dan Ollama](nanu-ai/9router-ollama-integration.md) — endpoint LAN, konfigurasi environment, prasyarat, verifikasi aman, dan status yang belum terverifikasi.
+
+Dokumen server adalah snapshot operasional bertanggal, bukan live monitoring. Jangan commit secret atau menganggap status snapshot masih berlaku tanpa pemeriksaan terbaru.
+
 ## Referensi bisnis asli
 
 - `DAFTAR TAGIHAN CUSTOMER.pdf`
