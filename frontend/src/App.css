@@ -520,6 +520,8 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   /* Flatten the modal shell so its normal width/centering cannot clip an A4 page. */
   .modal-backdrop, .glass-modal-overlay { position: static !important; display: block !important; inset: auto !important; padding: 0 !important; overflow: visible !important; background: #fff !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
   .modal, .glass-modal { position: static !important; display: block !important; width: 100% !important; max-width: none !important; max-height: none !important; height: auto !important; margin: 0 !important; padding: 0 !important; border: 0 !important; border-radius: 0 !important; box-shadow: none !important; overflow: visible !important; background: #fff !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+  .glass-modal .modal__header, .glass-modal .confirmation-dialog__body { display: none !important; }
+  .glass-modal > div:has(.print-document) { margin: 0 !important; }
   .print-document { display: block !important; position: static !important; width: 100% !important; max-width: 182mm !important; margin: 0 auto !important; color: #111827 !important; background: #fff !important; font: 10pt/1.4 Arial, sans-serif !important; }
   .no-print, button { display: none !important; }
   .print-doc-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0f172a; padding-bottom: 12px; margin-bottom: 20px; }
