@@ -104,8 +104,17 @@ class BranchController extends BaseApiController
             return $this->sendError('Branch not found.', [], 404);
         }
 
-        if ($item->workers()->exists()) {
-            return $this->sendError('Cannot delete branch with assigned workers.', [], 409);
+        if (
+            $item->workers()->exists()
+            || $item->custodyLocations()->exists()
+            || $item->goodsReceipts()->exists()
+            || $item->warehouses()->exists()
+        ) {
+            return $this->sendError(
+                'Cabang tidak dapat dihapus karena masih memiliki pekerja, lokasi custody, transaksi penerimaan barang, atau gudang. Nonaktifkan cabang jika sudah tidak digunakan.',
+                [],
+                409
+            );
         }
 
         $item->delete();
