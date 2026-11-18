@@ -3,6 +3,7 @@ import { test, expect, type Page } from '@playwright/test';
 test.use({ viewport: { width: 1280, height: 800 } });
 
 async function login(page: Page) {
+  page.on('pageerror', (error) => console.error('[Browser pageerror]', error.stack ?? error.message));
   await page.goto('/login');
   await page.locator('#login-email').fill('admin@sentanu.local');
   await page.locator('#login-password').fill('password123');
