@@ -24,18 +24,26 @@ function flat(){
     el.setAttribute('role','img');el.setAttribute('aria-label','Sentanu Jaya');
   });
 }
-function boot(){
-  flat();
-  loadThree(function(){
-    document.querySelectorAll('[data-sentanu-logo]').forEach(function(el){
-      if(el.__sj3)return;el.__sj3=true;
-      try{instances.push(make(el))}catch(e){/* tanpa WebGL: logo datar tetap tampil */}
-    });
+var threeLoading=false,threeFailed=false;
+function mountLogos(nodes){
+  nodes.forEach(function(el){
+    if(el.__sj3)return;
+    el.__sj3=true;
+    try{instances.push(make(el))}catch(e){/* tanpa WebGL: logo datar tetap tampil */}
   });
 }
-function loadThree(cb){
-  if(window.THREE)return cb();
-  var s=document.createElement('script');s.src=THREE_URL;s.onload=cb;document.head.appendChild(s);
+function boot(){
+  flat();
+  if(window.THREE){mountLogos(document.querySelectorAll('[data-sentanu-logo]'));return;}
+  loadThree();
+}
+function loadThree(){
+  if(window.THREE||threeLoading||threeFailed)return;
+  threeLoading=true;
+  var s=document.createElement('script');s.src=THREE_URL;s.async=true;
+  s.onload=function(){threeLoading=false;if(window.THREE)boot();else threeFailed=true;};
+  s.onerror=function(){threeLoading=false;threeFailed=true;};
+  document.head.appendChild(s);
 }
 
 function decode(b64){var bin=atob(b64),u=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return new Uint16Array(u.buffer)}
@@ -146,7 +154,21 @@ function make(el){
 window.SentanuLogo={replay:function(){instances.forEach(function(i){i.replay()})}};
 function initObserver(){
   if(window.MutationObserver){
-    new MutationObserver(function(){ boot(); }).observe(document.body, {childList:true, subtree:true});
+    var scheduled=false;
+    new MutationObserver(function(mutations){
+      var hasLogo=false;
+      for(var i=0;i<mutations.length&&!hasLogo;i++){
+        var nodes=mutations[i].addedNodes;
+        for(var j=0;j<nodes.length;j++){
+          var node=nodes[j];
+          if(node.nodeType!==1)continue;
+          if((node.matches&&node.matches('[data-sentanu-logo]'))||(node.querySelector&&node.querySelector('[data-sentanu-logo]'))){hasLogo=true;break;}
+        }
+      }
+      if(!hasLogo||scheduled)return;
+      scheduled=true;
+      requestAnimationFrame(function(){scheduled=false;boot();});
+    }).observe(document.body,{childList:true,subtree:true});
   }
 }
 if(document.readyState==='loading'){
