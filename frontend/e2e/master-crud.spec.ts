@@ -3,6 +3,7 @@ import { test, expect, type Page } from '@playwright/test';
 // Focused auth + customer-list smoke coverage. The full keyboard/create/persist/delete
 // interaction is exercised in functional.spec.ts to avoid duplicate records and brittle legacy selectors.
 async function login(page: Page) {
+  page.on('pageerror', (error) => console.error('[Browser pageerror]', error.stack ?? error.message));
   await page.goto('/login');
   await page.locator('#login-email').fill('admin@sentanu.local');
   await page.locator('#login-password').fill('password123');
