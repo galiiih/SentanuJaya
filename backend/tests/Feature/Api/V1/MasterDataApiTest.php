@@ -320,14 +320,14 @@ class MasterDataApiTest extends TestCase
             'is_active' => true,
         ]);
 
-        \\App\\Models\\CustodyLocation::create([
+        \App\Models\CustodyLocation::create([
             'branch_id' => $branch->id,
             'code' => 'LOC-GUARD',
             'name' => 'Custody Guard Location',
             'is_active' => true,
         ]);
 
-        \\App\\Models\\Warehouse::create([
+        \App\Models\Warehouse::create([
             'branch_id' => $branch->id,
             'code' => 'WH-GUARD',
             'name' => 'Guard Warehouse',
