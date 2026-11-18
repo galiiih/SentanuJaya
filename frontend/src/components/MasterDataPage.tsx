@@ -27,6 +27,14 @@ const masterApi = {
     update: (id: string, payload: any) => axios.patch(`/api/v1/companies/${id}`, payload).then(r => r.data.data),
     remove: (id: string) => axios.delete(`/api/v1/companies/${id}`).then(r => r.data.data),
   },
+  branches: {
+    icon: Building2,
+    label: 'Cabang',
+    list: () => axios.get('/api/v1/branches', { params: { per_page: 200 } }).then(r => r.data.data.data || r.data.data),
+    create: (payload: any) => axios.post('/api/v1/branches', payload).then(r => r.data.data),
+    update: (id: string, payload: any) => axios.patch('/api/v1/branches/' + id, payload).then(r => r.data.data),
+    remove: (id: string) => axios.delete('/api/v1/branches/' + id).then(r => r.data.data),
+  },
   customers: {
     icon: Building2,
     label: 'Customer',
@@ -178,6 +186,8 @@ export function MasterDataPage() {
     const defaultCompanyId = companies[0]?.id || '';
     if (tab === 'companies') {
       setFormData({ code: '', name: '', address: '', phone: '', email: '' });
+    } else if (tab === 'branches') {
+      setFormData({ company_id: defaultCompanyId, code: '', name: '', address: '', is_active: true });
     } else if (tab === 'customers') {
       setFormData({ company_id: defaultCompanyId, code: '', name: '', legal_name: '', npwp: '', tax_status: 'NON_PKP', address: '', phone: '', email: '' });
     } else if (tab === 'customer_contacts') {
@@ -268,6 +278,15 @@ export function MasterDataPage() {
           { id: 'email', header: 'Email', cell: (row: any) => row.email || '-' },
           ...actionColumn
         ];
+      case 'branches':
+        return [
+          { id: 'company', header: 'Perusahaan', cell: (row: any) => row.company?.name || companies.find((company) => company.id === row.company_id)?.name || '-' },
+          { id: 'code', header: 'Kode Cabang', cell: (row: any) => row.code || '-' },
+          { id: 'name', header: 'Nama Cabang', cell: (row: any) => row.name || '-' },
+          { id: 'address', header: 'Alamat', cell: (row: any) => row.address || '-' },
+          { id: 'status', header: 'Status', cell: (row: any) => row.is_active ? 'Aktif' : 'Nonaktif' },
+          ...actionColumn
+        ];
       case 'customers':
         return [
           { id: 'code', header: 'Kode Customer', cell: (row: any) => row.code || '-' },
@@ -338,7 +357,7 @@ export function MasterDataPage() {
     <div className="space-y-6">
       <PageHeader
         title="Master Data & Referensi"
-        description="Kelola referensi sistem, pelanggan, item barang, kontak, price list, satuan, material, dan supplier secara terpusat."
+        description="Kelola perusahaan, cabang operasional, pelanggan, item barang, kontak, price list, satuan, material, dan supplier secara terpusat."
         action={
           isAdminOrOwner ? (
             <Button onClick={openCreate} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
@@ -395,6 +414,33 @@ export function MasterDataPage() {
                 </FormField>
                 <FormField label="Email">
                   <Input type="email" value={formData.email || ''} onChange={e => setFormData({ ...formData, email: e.target.value })} placeholder="contact@sentanujaya.co.id" />
+                </FormField>
+              </>
+            )}
+
+            {/* Branches */}
+            {tab === 'branches' && (
+              <>
+                <FormField label="Perusahaan" required>
+                  <Select value={formData.company_id || ''} onChange={e => setFormData({ ...formData, company_id: e.target.value })} required>
+                    <option value="">-- Pilih Perusahaan --</option>
+                    {companies.map(company => <option key={company.id} value={company.id}>{company.code} — {company.name}</option>)}
+                  </Select>
+                </FormField>
+                <FormField label="Kode Cabang" required hint="Kode harus unik di seluruh perusahaan.">
+                  <Input value={formData.code || ''} onChange={e => setFormData({ ...formData, code: e.target.value })} placeholder="SJ-HO" maxLength={50} required />
+                </FormField>
+                <FormField label="Nama Cabang" required>
+                  <Input value={formData.name || ''} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="Head Office" maxLength={255} required />
+                </FormField>
+                <FormField label="Alamat Cabang">
+                  <Textarea value={formData.address || ''} onChange={e => setFormData({ ...formData, address: e.target.value })} placeholder="Alamat lengkap cabang" rows={3} />
+                </FormField>
+                <FormField label="Status Cabang" required>
+                  <Select value={formData.is_active === false ? '0' : '1'} onChange={e => setFormData({ ...formData, is_active: e.target.value === '1' })} required>
+                    <option value="1">Aktif</option>
+                    <option value="0">Nonaktif</option>
+                  </Select>
                 </FormField>
               </>
             )}
