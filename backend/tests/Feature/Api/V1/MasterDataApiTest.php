@@ -304,6 +304,44 @@ class MasterDataApiTest extends TestCase
     }
 
     /** @test */
+    public function test_branch_delete_is_blocked_when_operational_references_exist()
+    {
+        $company = Company::create([
+            'code' => 'BR-GUARD-COMPANY',
+            'name' => 'Branch Guard Company',
+            'timezone' => 'Asia/Jakarta',
+            'currency' => 'IDR',
+        ]);
+
+        $branch = Branch::create([
+            'company_id' => $company->id,
+            'code' => 'BR-GUARD',
+            'name' => 'Branch Guard',
+            'is_active' => true,
+        ]);
+
+        \\App\\Models\\CustodyLocation::create([
+            'branch_id' => $branch->id,
+            'code' => 'LOC-GUARD',
+            'name' => 'Custody Guard Location',
+            'is_active' => true,
+        ]);
+
+        \\App\\Models\\Warehouse::create([
+            'branch_id' => $branch->id,
+            'code' => 'WH-GUARD',
+            'name' => 'Guard Warehouse',
+            'is_active' => true,
+        ]);
+
+        $this->deleteJson('/api/v1/branches/' . $branch->id)
+            ->assertStatus(409)
+            ->assertJsonPath('success', false);
+
+        $this->assertDatabaseHas('branches', ['id' => $branch->id]);
+    }
+
+    /** @test */
     public function test_all_simple_masters_crud()
     {
         // Color
