@@ -38,4 +38,14 @@ class Branch extends Model
     {
         return $this->hasMany(Warehouse::class);
     }
+
+    public function deliveryOrders()
+    {
+        return $this->hasMany(DeliveryOrder::class);
+    }
+
+    public function invoices()
+    {
+        return $this->hasMany(Invoice::class);
+    }
 }
