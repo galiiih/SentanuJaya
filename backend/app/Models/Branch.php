@@ -12,6 +12,8 @@ class Branch extends Model
 
     protected $fillable = ['company_id', 'code', 'name', 'address', 'is_active'];
 
+    protected $casts = ['is_active' => 'boolean'];
+
     public function company()
     {
         return $this->belongsTo(Company::class);
@@ -20,5 +22,20 @@ class Branch extends Model
     public function workers()
     {
         return $this->hasMany(Worker::class);
+    }
+
+    public function custodyLocations()
+    {
+        return $this->hasMany(CustodyLocation::class);
+    }
+
+    public function goodsReceipts()
+    {
+        return $this->hasMany(GoodsReceipt::class);
+    }
+
+    public function warehouses()
+    {
+        return $this->hasMany(Warehouse::class);
     }
 }
