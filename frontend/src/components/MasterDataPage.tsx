@@ -407,7 +407,7 @@ export function MasterDataPage() {
         description="Kelola referensi sistem, pelanggan, item barang, kontak, price list, satuan, material, dan supplier secara terpusat."
         action={
           isAdminOrOwner ? (
-            <Button onClick={openCreate} disabled={needsReferenceOptions && (referencesLoading || !!referencesError)} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            <Button onClick={openCreate} disabled={(needsReferenceOptions && (referencesLoading || !!referencesError)) || (tab === 'branches' && companies.length === 0) || (tab === 'warehouses' && branches.length === 0)} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
               <Plus size={16} /> Tambah {masterApi[tab].label}
             </Button>
           ) : undefined
@@ -416,6 +416,12 @@ export function MasterDataPage() {
 
       {error && <Alert tone="danger">{error}</Alert>}
       {referencesError && <Alert tone="danger">Gagal memuat data referensi: {referencesError} <Button variant="ghost" onClick={loadReferences}>Coba lagi</Button></Alert>}
+      {tab === 'branches' && !referencesLoading && companies.length === 0 && (
+        <Alert tone="warning">Belum ada data perusahaan. Buat data Perusahaan terlebih dahulu sebelum menambahkan Cabang.</Alert>
+      )}
+      {tab === 'warehouses' && !referencesLoading && branches.length === 0 && (
+        <Alert tone="warning">Belum ada data cabang. Urutannya: buat Perusahaan, tambahkan Cabang pada tab Cabang, lalu kembali ke tab Gudang untuk membuat gudang dan menghubungkannya ke cabang.</Alert>
+      )}
       <Toast open={!!notice} message={notice} onClose={() => setNotice('')} tone="success" />
 
       {/* Navigation Tabs */}
