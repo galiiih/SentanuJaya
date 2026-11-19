@@ -104,14 +104,21 @@ class BranchController extends BaseApiController
             return $this->sendError('Branch not found.', [], 404);
         }
 
-        if ($item->workers()->exists()) {
-            return $this->sendError('Cannot delete branch with assigned workers.', [], 409);
-        }
+        // Preserve operational history: a branch with any dependent records
+        // must be deactivated instead of deleted.
+        $hasOperationalRecords = $item->workers()->exists()
+            || $item->custodyLocations()->exists()
+            || $item->goodsReceipts()->exists()
+            || $item->warehouses()->exists()
+            || $item->deliveryOrders()->exists()
+            || $item->invoices()->exists();
 
-        // Warehouses belong to a branch. The database FK cascades branch deletion
-        // to warehouses, so block deletion to protect inventory history.
-        if ($item->warehouses()->exists()) {
-            return $this->sendError('Cannot delete branch that still has warehouses. Move or remove the warehouses first.', [], 409);
+        if ($hasOperationalRecords) {
+            return $this->sendError(
+                'Cabang tidak dapat dihapus karena masih memiliki pekerja, lokasi custody, transaksi penerimaan barang, gudang, Surat Jalan, atau invoice. Nonaktifkan cabang jika sudah tidak digunakan.',
+                [],
+                409
+            );
         }
 
         $item->delete();
