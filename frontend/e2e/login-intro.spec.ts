@@ -88,8 +88,11 @@ test.describe('login intro animation', () => {
 
   test('desktop sidebar collapses and expands without losing accessible navigation labels', async ({ page }) => {
     await submitLogin(page);
-    await page.getByRole('button', { name: 'Lewati animasi pembuka' }).click();
-    await expect(page.getByTestId('login-intro')).toBeHidden({ timeout: 1500 });
+    // The intro veil intentionally covers the viewport during the flight animation,
+    // so a pointer click can be intercepted even though the skip button is visible.
+    // Escape is the supported keyboard dismissal and avoids a timing-dependent click.
+    await page.keyboard.press('Escape');
+    await expect(page.getByTestId('login-intro')).toBeHidden({ timeout: 5000 });
 
     const sidebar = page.locator('#main-sidebar-navigation');
     const collapse = page.getByRole('button', { name: 'Ciutkan sidebar' });
