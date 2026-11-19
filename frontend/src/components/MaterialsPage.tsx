@@ -39,6 +39,7 @@ export function MaterialsPage() {
   const [warehouses, setWarehouseList] = useState<any[]>([]);
   const [suppliers, setSupplierList] = useState<any[]>([]);
   const [lowStocks, setLowStocks] = useState<any[]>([]);
+  const activeWarehouses = warehouses.filter((warehouse: any) => warehouse.is_active !== false);
 
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
@@ -99,9 +100,13 @@ export function MaterialsPage() {
         stockApi.lowStock().catch(() => []),
       ]);
 
-      const rawMat = matRes.data?.data?.data || matRes.data?.data || [];
-      const rawStock = stockRes.data?.data?.data || stockRes.data?.data || stockRes.data || [];
-      const stocksList = Array.isArray(rawStock) ? rawStock : [];
+      const asRows = (value: any): any[] => {
+        if (Array.isArray(value)) return value;
+        if (Array.isArray(value?.data)) return value.data;
+        return [];
+      };
+      const rawMat = asRows(matRes.data?.data?.data ?? matRes.data?.data);
+      const stocksList = asRows(stockRes);
       setStocks(stocksList);
 
       const stockMap = new Map<string, number>();
@@ -123,11 +128,14 @@ export function MaterialsPage() {
         minimum_stock: m.minimum_stock ?? m.min_stock ?? 0,
         avg_cost: m.avg_cost ?? 0,
       })));
-      setReceipts(recRes.data || []);
-      setMovements(movRes.data || []);
-      setWarehouseList(whRes.data || []);
-      setSupplierList(supRes.data || []);
-      setLowStocks(lowRes || []);
+      // list() returns a paginated object { data: [...] }, not a raw array.
+      // Normalize every list before storing it; otherwise .map() on warehouse
+      // selectors receives an object and the inventory screen can crash.
+      setReceipts(asRows(recRes));
+      setMovements(asRows(movRes));
+      setWarehouseList(asRows(whRes));
+      setSupplierList(asRows(supRes));
+      setLowStocks(asRows(lowRes));
     } catch (err) {
       setError(apiError(err));
     }
@@ -260,6 +268,14 @@ export function MaterialsPage() {
       
       <Toast open={Boolean(notice)} message={notice} onClose={() => setNotice('')} />
       {error && <Alert tone="danger">{error}</Alert>}
+      {warehouses.length === 0 && (
+        <Alert tone="warning">
+          Belum ada gudang yang terdaftar. Buat terlebih dahulu melalui <strong>Master Data → Cabang</strong>, kemudian <strong>Master Data → Gudang</strong> dengan memilih cabang tersebut. Setelah gudang aktif dibuat, pilihan gudang akan muncul di formulir penerimaan dan penyesuaian stok.
+        </Alert>
+      )}
+      {warehouses.length > 0 && activeWarehouses.length === 0 && (
+        <Alert tone="warning">Semua gudang saat ini nonaktif. Aktifkan salah satu gudang melalui Master Data → Gudang agar transaksi stok dapat dilakukan.</Alert>
+      )}
 
       {lowStocks.length > 0 && (
         <div style={{ marginBottom: '1rem' }}>
@@ -292,7 +308,7 @@ export function MaterialsPage() {
         <Card>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
             <h3 style={{ fontWeight: 600, fontSize: '1.1rem' }}>Saldo Stok Material Gudang</h3>
-            <Button onClick={() => setReceiptModalOpen(true)}>
+            <Button onClick={() => setReceiptModalOpen(true)} disabled={activeWarehouses.length === 0}>
               <Plus className="w-4 h-4 mr-2" /> Penerimaan Material Baru
             </Button>
           </div>
@@ -392,7 +408,7 @@ export function MaterialsPage() {
               <FormField label="Gudang" required>
                 <Select value={adjForm.warehouse_id} onChange={(e) => setAdjForm({ ...adjForm, warehouse_id: e.target.value })} required>
                   <option value="">Pilih Gudang...</option>
-                  {warehouses.map((w: any) => <option key={w.id} value={w.id}>{w.name}</option>)}
+                  {activeWarehouses.map((w: any) => <option key={w.id} value={w.id}>{w.code} — {w.name}{w.branch?.name ? ` (${w.branch.name})` : ''}</option>)}
                 </Select>
               </FormField>
               <FormField label="Material" required>
@@ -413,7 +429,7 @@ export function MaterialsPage() {
               <FormField label="Alasan / Keterangan (Wajib)" required>
                 <Textarea value={adjForm.reason} onChange={(e) => setAdjForm({ ...adjForm, reason: e.target.value })} placeholder="Alasan koreksi stok..." required />
               </FormField>
-              <Button type="submit">Simpan Adjustment</Button>
+              <Button type="submit" disabled={activeWarehouses.length === 0}>Simpan Adjustment</Button>
             </form>
           </Card>
 
@@ -539,7 +555,7 @@ export function MaterialsPage() {
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', paddingTop: '1rem' }}>
               <Button type="button" variant="secondary" onClick={() => setReceiptModalOpen(false)}>Batal</Button>
-              <Button type="submit">Simpan Draft Penerimaan</Button>
+              <Button type="submit" disabled={activeWarehouses.length === 0}>Simpan Draft Penerimaan</Button>
             </div>
           </form>
         </Modal>
