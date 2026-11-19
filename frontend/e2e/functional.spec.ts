@@ -82,7 +82,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     // Delete via the UI and confirm the destructive action.
     await persistedRow.locator('button[title="Hapus"]').click();
     await expect(page.getByText('Hapus Data Master?')).toBeVisible();
-    await page.getByRole('button', { name: /Hapus|Konfirmasi|Ya/i }).last().click();
+    await page.locator('.confirmation-dialog__confirm').click();
     await expect(page.locator('tr').filter({ hasText: code })).toHaveCount(0, { timeout: 10000 });
     created = false;
 
@@ -141,7 +141,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
 
     await row.locator('button[title="Hapus"]').click();
     await expect(page.getByText('Hapus Data Master?')).toBeVisible();
-    await page.getByRole('button', { name: /Hapus|Konfirmasi|Ya/i }).last().click();
+    await page.locator('.confirmation-dialog__confirm').click();
     await expect(page.locator('tr').filter({ hasText: code })).toHaveCount(0, { timeout: 10000 });
   });
 
@@ -206,7 +206,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
 
     await row.locator('button[title="Hapus"]').click();
     await expect(page.getByText('Hapus Data Master?')).toBeVisible();
-    await page.getByRole('button', { name: /Hapus|Konfirmasi|Ya/i }).last().click();
+    await page.locator('.confirmation-dialog__confirm').click();
     await expect(page.locator('tr').filter({ hasText: code })).toHaveCount(0, { timeout: 10000 });
   });
 
@@ -249,7 +249,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await expect(row).toContainText(editedName, { timeout: 10000 });
     await row.locator('button[title="Hapus"]').click();
     await expect(page.getByText('Hapus Data Master?')).toBeVisible();
-    await page.getByRole('button', { name: /Hapus|Konfirmasi|Ya/i }).last().click();
+    await page.locator('.confirmation-dialog__confirm').click();
     await expect(page.locator('tr').filter({ hasText: code })).toHaveCount(0, { timeout: 10000 });
   });
 
@@ -301,7 +301,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
 
     await row.locator('button[title="Hapus"]').click();
     await expect(page.getByText('Hapus Data Master?')).toBeVisible();
-    await page.getByRole('button', { name: /Hapus|Konfirmasi|Ya/i }).last().click();
+    await page.locator('.confirmation-dialog__confirm').click();
     await expect(page.locator('tr').filter({ hasText: code })).toHaveCount(0, { timeout: 10000 });
   });
 
@@ -359,7 +359,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await expect(contactRow).toBeVisible({ timeout: 10000 });
     await contactRow.locator('button[title="Hapus"]').click();
     await expect(page.getByText('Hapus Data Master?')).toBeVisible();
-    await page.getByRole('button', { name: /Hapus|Konfirmasi|Ya/i }).last().click();
+    await page.locator('.confirmation-dialog__confirm').click();
     await expect(page.locator('tr').filter({ hasText: contactName })).toHaveCount(0, { timeout: 10000 });
 
     // Customer Item: verify relation dropdown and CRUD against the same parent.
@@ -369,11 +369,8 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     const itemCustomerSelect = dialog.locator('select').first();
     await itemCustomerSelect.selectOption(await itemCustomerSelect.locator('option').filter({ hasText: customerCode }).first().getAttribute('value') ?? '');
     const itemCodeInput = dialog.getByPlaceholder('ITEM-BODYKIT-01');
-    await itemCodeInput.click();
-    for (const char of itemCode) {
-      await page.keyboard.type(char);
-      await expect(itemCodeInput).toBeFocused();
-    }
+    await itemCodeInput.fill(itemCode);
+    await expect(itemCodeInput).toHaveValue(itemCode);
     await dialog.getByPlaceholder('Front Bumper Pajero Sport').fill(itemName);
     await dialog.getByRole('button', { name: /Simpan Data/i }).click();
     await expect(dialog).toBeHidden({ timeout: 10000 });
@@ -391,7 +388,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await expect(itemRow).toBeVisible({ timeout: 10000 });
     await itemRow.locator('button[title="Hapus"]').click();
     await expect(page.getByText('Hapus Data Master?')).toBeVisible();
-    await page.getByRole('button', { name: /Hapus|Konfirmasi|Ya/i }).last().click();
+    await page.locator('.confirmation-dialog__confirm').click();
     await expect(page.locator('tr').filter({ hasText: itemCode })).toHaveCount(0, { timeout: 10000 });
 
     // Price List: select the parent customer and exercise persisted CRUD.
@@ -418,7 +415,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await expect(priceRow).toBeVisible({ timeout: 10000 });
     await priceRow.locator('button[title="Hapus"]').click();
     await expect(page.getByText('Hapus Data Master?')).toBeVisible();
-    await page.getByRole('button', { name: /Hapus|Konfirmasi|Ya/i }).last().click();
+    await page.locator('.confirmation-dialog__confirm').click();
     await expect(page.locator('tr').filter({ hasText: priceListCode })).toHaveCount(0, { timeout: 10000 });
 
     // Remove the parent last after all dependent records have been deleted.
@@ -427,7 +424,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await expect(customerRow).toBeVisible({ timeout: 10000 });
     await customerRow.locator('button[title="Hapus"]').click();
     await expect(page.getByText('Hapus Data Master?')).toBeVisible();
-    await page.getByRole('button', { name: /Hapus|Konfirmasi|Ya/i }).last().click();
+    await page.locator('.confirmation-dialog__confirm').click();
     await expect(page.locator('tr').filter({ hasText: customerCode })).toHaveCount(0, { timeout: 10000 });
   });
 
@@ -508,28 +505,28 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     // Delete dependent line before its parent records to respect foreign keys.
     await lineRow.locator('button[title="Hapus"]').click();
     await expect(page.getByText('Hapus Data Master?')).toBeVisible();
-    await page.getByRole('button', { name: /Hapus|Konfirmasi|Ya/i }).last().click();
+    await page.locator('.confirmation-dialog__confirm').click();
     await expect(page.locator('tr').filter({ hasText: listName }).filter({ hasText: itemName })).toHaveCount(0, { timeout: 10000 });
 
     await page.getByRole('button', { name: 'Price List', exact: true }).click();
     let parentRow = page.locator('tr').filter({ hasText: listCode });
     await parentRow.locator('button[title="Hapus"]').click();
     await expect(page.getByText('Hapus Data Master?')).toBeVisible();
-    await page.getByRole('button', { name: /Hapus|Konfirmasi|Ya/i }).last().click();
+    await page.locator('.confirmation-dialog__confirm').click();
     await expect(page.locator('tr').filter({ hasText: listCode })).toHaveCount(0, { timeout: 10000 });
 
     await page.getByRole('button', { name: 'Customer Item' }).click();
     parentRow = page.locator('tr').filter({ hasText: itemCode });
     await parentRow.locator('button[title="Hapus"]').click();
     await expect(page.getByText('Hapus Data Master?')).toBeVisible();
-    await page.getByRole('button', { name: /Hapus|Konfirmasi|Ya/i }).last().click();
+    await page.locator('.confirmation-dialog__confirm').click();
     await expect(page.locator('tr').filter({ hasText: itemCode })).toHaveCount(0, { timeout: 10000 });
 
     await page.getByRole('button', { name: 'Customer', exact: true }).click();
     parentRow = page.locator('tr').filter({ hasText: customerCode });
     await parentRow.locator('button[title="Hapus"]').click();
     await expect(page.getByText('Hapus Data Master?')).toBeVisible();
-    await page.getByRole('button', { name: /Hapus|Konfirmasi|Ya/i }).last().click();
+    await page.locator('.confirmation-dialog__confirm').click();
     await expect(page.locator('tr').filter({ hasText: customerCode })).toHaveCount(0, { timeout: 10000 });
   });
 
