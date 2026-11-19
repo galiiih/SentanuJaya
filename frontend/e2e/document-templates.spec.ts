@@ -47,7 +47,7 @@ test.describe('Sentanu Jaya Document Templates & GrapesJS E2E', () => {
     await row.getByRole('button', { name: /HTML Editor/i }).click();
 
     // Verify HTML editor modal is open
-    const editorModal = page.locator('.glass-modal-overlay').first();
+    const editorModal = page.locator('.fixed.inset-0').first();
     await expect(editorModal).toBeVisible();
     await expect(editorModal.getByText('HTML Source Editor')).toBeVisible();
 
@@ -85,6 +85,9 @@ test.describe('Sentanu Jaya Document Templates & GrapesJS E2E', () => {
     await modal.locator('textarea').fill('<html><body><h2>Surat Jalan ' + suffix + '</h2></body></html>');
     await modal.getByRole('button', { name: /Simpan Template/i }).click();
     await expect(modal).toBeHidden({ timeout: 10000 });
+
+    // The template was created under Surat Jalan; switch from the default Invoice tab.
+    await page.getByRole('button', { name: /Template Surat Jalan/i }).click();
 
     // Open Visual Editor
     const row = page.locator('tr').filter({ hasText: templateName });
@@ -142,16 +145,18 @@ test.describe('Sentanu Jaya Document Templates & GrapesJS E2E', () => {
     await modal.getByRole('button', { name: /Simpan Template/i }).click();
     await expect(modal).toBeHidden({ timeout: 10000 });
 
+    // Accept native confirmation dialogs before triggering activation.
+    page.on('dialog', dialog => dialog.accept());
+
     // Activate T1
     let row1 = page.locator('tr').filter({ hasText: t1Name });
     await row1.getByRole('button', { name: /Aktifkan/i }).click();
-    await page.on('dialog', dialog => dialog.accept());
-    await expect(row1.getByText('Aktif')).toBeVisible();
+    await expect(row1.getByText('Aktif', { exact: true })).toBeVisible();
 
     // Activate T2 - should become active, T1 should become inactive (exclusive)
     let row2 = page.locator('tr').filter({ hasText: t2Name });
     await row2.getByRole('button', { name: /Aktifkan/i }).click();
-    await expect(row2.getByText('Aktif')).toBeVisible();
-    await expect(row1.getByText('Aktif')).toHaveCount(0);
+    await expect(row2.getByText('Aktif', { exact: true })).toBeVisible();
+    await expect(row1.getByText('Aktif', { exact: true })).toHaveCount(0);
   });
 });
