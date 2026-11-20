@@ -476,6 +476,8 @@ function CustodyPage() {
 
 function LoginPage() {
   const { isAuthenticated, login, user, getCurrentUser } = useAuth();
+  const { language } = useLanguage();
+  const en = language === 'en';
   const navigate = useNavigate();
   const location = useLocation();
   const [email, setEmail] = useState('');
@@ -486,14 +488,16 @@ function LoginPage() {
   if (isAuthenticated) return <Navigate to={user?.must_change_password ? '/change-password' : '/dashboard'} replace />;
   const submit = async (event: React.FormEvent) => {
     event.preventDefault(); setError(''); setLoading(true);
-    try { markLoginIntro(); await login(email, password); navigate(getCurrentUser()?.must_change_password ? '/change-password' : destination, { replace: true }); } catch (reason) { clearLoginIntro(); setError(reason instanceof Error ? reason.message : 'Login gagal.'); } finally { setLoading(false); }
+    try { markLoginIntro(); await login(email, password); navigate(getCurrentUser()?.must_change_password ? '/change-password' : destination, { replace: true }); } catch (reason) { clearLoginIntro(); setError(reason instanceof Error ? reason.message : (en ? 'Login failed.' : 'Login gagal.')); } finally { setLoading(false); }
   };
-  return <main className="auth-page"><Card className="auth-card"><div className="auth-brand"><div data-sentanu-logo data-loop="true" style={{ width: '36px', height: '36px', flexShrink: 0 }} /><div><strong>SENTANU JAYA</strong><span>ERP WORKSHOP</span></div></div><div className="auth-copy"><h1>Masuk ke Sentanu Jaya ERP</h1><p>Gunakan akun yang terdaftar untuk mengakses lingkungan pengembangan.</p></div>{error && <Alert tone="danger">{error}</Alert>}<form className="auth-form" onSubmit={submit}><FormField label="Email" htmlFor="login-email" required><Input id="login-email" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} required /></FormField><FormField label="Password" htmlFor="login-password" required><Input id="login-password" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></FormField><Button type="submit" loading={loading}>Login</Button></form><p className="auth-note">Forgot password belum tersedia.</p></Card></main>;
+  return <main className="auth-page"><Card className="auth-card"><div className="auth-brand"><div data-sentanu-logo data-loop="true" style={{ width: '36px', height: '36px', flexShrink: 0 }} /><div><strong>SENTANU JAYA</strong><span>ERP WORKSHOP</span></div></div><div className="auth-copy"><h1>{en ? 'Sign in to Sentanu Jaya ERP' : 'Masuk ke Sentanu Jaya ERP'}</h1><p>{en ? 'Use your registered account to access the development environment.' : 'Gunakan akun yang terdaftar untuk mengakses lingkungan pengembangan.'}</p></div>{error && <Alert tone="danger">{error}</Alert>}<form className="auth-form" onSubmit={submit}><FormField label="Email" htmlFor="login-email" required><Input id="login-email" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} required /></FormField><FormField label="Password" htmlFor="login-password" required><Input id="login-password" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></FormField><Button type="submit" loading={loading}>Login</Button></form><p className="auth-note">{en ? 'Password recovery is not available yet.' : 'Forgot password belum tersedia.'}</p></Card></main>;
 }
 
 
 function PasswordChangePage() {
   const { user, changePassword, logout } = useAuth();
+  const { language } = useLanguage();
+  const en = language === 'en';
   const navigate = useNavigate();
   const [currentPassword, setCurrentPassword] = useState('');
   const [password, setPassword] = useState('');
@@ -502,22 +506,22 @@ function PasswordChangePage() {
   const [loading, setLoading] = useState(false);
   const submit = async (event: React.FormEvent) => {
     event.preventDefault(); setError('');
-    if (password !== confirmation) { setError('Konfirmasi password tidak sama.'); return; }
+    if (password !== confirmation) { setError(en ? 'Password confirmation does not match.' : 'Konfirmasi password tidak sama.'); return; }
     setLoading(true);
     try { await changePassword(currentPassword, password, confirmation); navigate('/dashboard', { replace: true }); }
-    catch (reason) { setError(reason instanceof Error ? reason.message : 'Gagal memperbarui password.'); }
+    catch (reason) { setError(reason instanceof Error ? reason.message : (en ? 'Failed to update password.' : 'Gagal memperbarui password.')); }
     finally { setLoading(false); }
   };
   return <main className="auth-page"><Card className="auth-card">
-    <div className="auth-brand"><div data-sentanu-logo style={{ width: '36px', height: '36px', flexShrink: 0 }} /><div><strong>SENTANU JAYA</strong><span>KEAMANAN AKUN</span></div></div>
-    <div className="auth-copy"><h1>Ganti Password</h1><p>Halo {user?.name}, password sementara harus diganti sebelum Anda dapat menggunakan aplikasi. Gunakan minimal 12 karakter.</p></div>
+    <div className="auth-brand"><div data-sentanu-logo style={{ width: '36px', height: '36px', flexShrink: 0 }} /><div><strong>SENTANU JAYA</strong><span>{en ? 'ACCOUNT SECURITY' : 'KEAMANAN AKUN'}</span></div></div>
+    <div className="auth-copy"><h1>{en ? 'Change Password' : 'Ganti Password'}</h1><p>{en ? `Hello ${user?.name}, you must change your temporary password before using the application. Use at least 12 characters.` : `Halo ${user?.name}, password sementara harus diganti sebelum Anda dapat menggunakan aplikasi. Gunakan minimal 12 karakter.`}</p></div>
     {error && <Alert tone="danger">{error}</Alert>}
     <form className="auth-form" onSubmit={submit}>
-      <FormField label="Password sementara saat ini" htmlFor="current-password" required><Input id="current-password" type="password" autoComplete="current-password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} required /></FormField>
-      <FormField label="Password baru" htmlFor="new-password" required><Input id="new-password" type="password" autoComplete="new-password" minLength={12} value={password} onChange={(event) => setPassword(event.target.value)} required /></FormField>
-      <FormField label="Konfirmasi password baru" htmlFor="confirm-password" required><Input id="confirm-password" type="password" autoComplete="new-password" minLength={12} value={confirmation} onChange={(event) => setConfirmation(event.target.value)} required /></FormField>
-      <Button type="submit" loading={loading}>Simpan Password Baru</Button>
-      <Button type="button" variant="ghost" onClick={() => void logout().then(() => navigate('/login', { replace: true }))}>Keluar</Button>
+      <FormField label={en ? 'Current temporary password' : 'Password sementara saat ini'} htmlFor="current-password" required><Input id="current-password" type="password" autoComplete="current-password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} required /></FormField>
+      <FormField label={en ? 'New password' : 'Password baru'} htmlFor="new-password" required><Input id="new-password" type="password" autoComplete="new-password" minLength={12} value={password} onChange={(event) => setPassword(event.target.value)} required /></FormField>
+      <FormField label={en ? 'Confirm new password' : 'Konfirmasi password baru'} htmlFor="confirm-password" required><Input id="confirm-password" type="password" autoComplete="new-password" minLength={12} value={confirmation} onChange={(event) => setConfirmation(event.target.value)} required /></FormField>
+      <Button type="submit" loading={loading}>{en ? 'Save New Password' : 'Simpan Password Baru'}</Button>
+      <Button type="button" variant="ghost" onClick={() => void logout().then(() => navigate('/login', { replace: true }))}>{en ? 'Log out' : 'Keluar'}</Button>
     </form>
   </Card></main>;
 }
