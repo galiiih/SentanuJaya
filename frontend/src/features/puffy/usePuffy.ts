@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useLanguage } from "../../i18n";
 import { PUFFY_BASE_URL, PUFFY_MOCK } from "./config";
 import { mockPuffyResponse } from "./mock";
 import { readSSE } from "./sse";
@@ -13,14 +14,23 @@ export interface PuffyApi {
   onUi?: (ui: UiHint) => void;
 }
 
-const httpMessage = (s: number) =>
-  s === 401 ? "Sesi berakhir. Silakan login ulang."
-  : s === 403 ? "Kamu tidak punya izin untuk data ini."
-  : s === 404 ? "Layanan Puffy belum tersedia di server (endpoint /puffy/chat belum ada)."
-  : s === 429 ? "Terlalu banyak permintaan. Coba lagi sebentar lagi."
-  : `Server bermasalah (${s}). Coba lagi.`;
+const httpMessage = (status: number, language: "id" | "en") => {
+  if (language === "en") {
+    return status === 401 ? "Your session has expired. Please sign in again."
+      : status === 403 ? "You do not have permission to access this data."
+      : status === 404 ? "The Nanu service is not available on this server (the /puffy/chat endpoint is missing)."
+      : status === 429 ? "Too many requests. Please try again shortly."
+      : `The server encountered an error (${status}). Please try again.`;
+  }
+  return status === 401 ? "Sesi berakhir. Silakan login ulang."
+    : status === 403 ? "Kamu tidak punya izin untuk data ini."
+    : status === 404 ? "Layanan Nanu belum tersedia di server (endpoint /puffy/chat belum ada)."
+    : status === 429 ? "Terlalu banyak permintaan. Coba lagi sebentar lagi."
+    : `Server bermasalah (${status}). Coba lagi.`;
+};
 
 export function usePuffy(api: PuffyApi) {
+  const { language } = useLanguage();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [busy, setBusy] = useState(false);
   const [mood, setMoodState] = useState<Mood>("neutral");
@@ -86,7 +96,7 @@ export function usePuffy(api: PuffyApi) {
     abortRef.current = ac;
     try {
       const res = await post("/chat", { message: clean, conversation_id: convRef.current, page_context: ctx }, ac.signal);
-      if (!res.ok) throw new Error(httpMessage(res.status));
+      if (!res.ok) throw new Error(httpMessage(res.status, language));
 
       let gotResult = false;
       for await (const ev of readSSE(res)) {
@@ -118,7 +128,7 @@ export function usePuffy(api: PuffyApi) {
         if (abortRef.current === ac) setMood("neutral"); // dihentikan manual
         return;
       }
-      patch(aId, (m) => ({ ...m, error: e instanceof Error ? e.message : "Terjadi kesalahan." }));
+      patch(aId, (m) => ({ ...m, error: e instanceof Error ? e.message : (language === "en" ? "An unexpected error occurred." : "Terjadi kesalahan.") }));
       setMood("sad", 3200);
     } finally {
       patch(aId, (m) => ({ ...m, streaming: false, status: undefined }));
@@ -127,7 +137,7 @@ export function usePuffy(api: PuffyApi) {
         setBusy(false);
       }
     }
-  }, [patch, post, setMood]);
+  }, [language, patch, post, setMood]);
 
   const stop = useCallback(() => abortRef.current?.abort(), []);
 
@@ -143,7 +153,7 @@ export function usePuffy(api: PuffyApi) {
     setMood(value === "up" ? "love" : "sad");
     if (!msg.serverId) return;
     try { await post("/feedback", { message_id: msg.serverId, value }); } catch { /* best-effort */ }
-  }, [patch, post, setMood]);
+  }, [language, patch, post, setMood]);
 
   const runAction = useCallback(async (msg: AssistantMessage, action: PendingAction, decision: "confirm" | "cancel") => {
     const set = (s: ActionState) => patch(msg.id, (m) => ({ ...m, actions: { ...m.actions, [action.id]: s } }));
@@ -153,19 +163,27 @@ export function usePuffy(api: PuffyApi) {
       let payload: { message?: string; success?: boolean } = {};
       try { payload = await res.json(); } catch { /* response body may be empty */ }
       if (!res.ok || payload.success === false) {
-        const fallback = res.status === 403 ? "Kamu tidak memiliki izin untuk tindakan ini."
-          : res.status === 404 ? "Draft aksi tidak ditemukan atau bukan milik akun ini."
-          : res.status === 409 ? "Aksi sudah diproses atau data sumber berubah. Muat ulang data lalu buat draft baru."
-          : res.status === 410 ? "Draft aksi sudah kedaluwarsa. Ajukan ulang tindakan dari Nanu."
-          : res.status === 422 ? "Data tidak memenuhi aturan ERP untuk tindakan ini."
-          : res.status >= 500 ? "Server gagal memproses tindakan. Periksa status transaksi sebelum mencoba lagi."
-          : `Tindakan gagal diproses (HTTP ${res.status}).`;
+        const fallback = language === "en"
+          ? (res.status === 403 ? "You are not authorized to perform this action."
+            : res.status === 404 ? "The action draft was not found or does not belong to this account."
+            : res.status === 409 ? "The action was already processed or the source data changed. Refresh the data and create a new draft."
+            : res.status === 410 ? "The action draft has expired. Submit the action again through Nanu."
+            : res.status === 422 ? "The data does not meet ERP validation rules."
+            : res.status >= 500 ? "The server could not process the action. Check the transaction status before retrying."
+            : `The action failed (HTTP ${res.status}).`)
+          : (res.status === 403 ? "Kamu tidak memiliki izin untuk tindakan ini."
+            : res.status === 404 ? "Draft aksi tidak ditemukan atau bukan milik akun ini."
+            : res.status === 409 ? "Aksi sudah diproses atau data sumber berubah. Muat ulang data lalu buat draft baru."
+            : res.status === 410 ? "Draft aksi sudah kedaluwarsa. Ajukan ulang tindakan dari Nanu."
+            : res.status === 422 ? "Data tidak memenuhi aturan ERP untuk tindakan ini."
+            : res.status >= 500 ? "Server gagal memproses tindakan. Periksa status transaksi sebelum mencoba lagi."
+            : `Tindakan gagal diproses (HTTP ${res.status}).`);
         throw new Error(payload.message || fallback);
       }
       set(decision === "confirm" ? "done" : "cancelled");
       if (decision === "confirm") setMood("excited");
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Tindakan gagal diproses.";
+      const message = error instanceof Error ? error.message : (language === "en" ? "The action could not be processed." : "Tindakan gagal diproses.");
       patch(msg.id, (m) => ({ ...m, error: message }));
       set("failed");
       setMood("sad");
