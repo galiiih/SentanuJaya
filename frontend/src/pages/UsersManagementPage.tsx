@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { apiError } from '../services/api';
 import { useAuth } from '../auth';
+import { useLanguage } from '../i18n';
 import {
   Button,
   Card,
@@ -30,6 +31,8 @@ const userApi = {
 
 export default function UsersManagementPage() {
   const { user } = useAuth();
+  const { language } = useLanguage();
+  const en = language === 'en';
   const isOwner = user?.role === 'OWNER';
   const [users, setUsers] = useState<UserRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -91,10 +94,10 @@ export default function UsersManagementPage() {
         const payload: any = { name, email, role, is_active: isActive };
         if (password.trim()) payload.password = password;
         await userApi.update(editingUser.id, payload);
-        setSuccess('Pengguna berhasil diperbarui.');
+        setSuccess((en ? 'User updated successfully.' : 'Pengguna berhasil diperbarui.'));
       } else {
         await userApi.create({ name, email, password, role, is_active: isActive });
-        setSuccess('Pengguna baru berhasil ditambahkan.');
+        setSuccess((en ? 'New user created successfully.' : 'Pengguna baru berhasil ditambahkan.'));
       }
       setShowModal(false);
       loadUsers();
@@ -104,12 +107,12 @@ export default function UsersManagementPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Nonaktifkan akun pengguna ini? Riwayat transaksi akan tetap tersimpan.')) return;
+    if (!confirm((en ? 'Deactivate this user account? Transaction history will be retained.' : 'Nonaktifkan akun pengguna ini? Riwayat transaksi akan tetap tersimpan.'))) return;
     setError(null);
     setSuccess(null);
     try {
       await userApi.delete(id);
-      setSuccess('Akun pengguna berhasil dinonaktifkan. Riwayat transaksi tetap tersimpan.');
+      setSuccess((en ? 'User account deactivated. Transaction history has been retained.' : 'Akun pengguna berhasil dinonaktifkan. Riwayat transaksi tetap tersimpan.'));
       loadUsers();
     } catch (err: unknown) {
       setError(apiError(err));
@@ -119,11 +122,11 @@ export default function UsersManagementPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Manajemen Pengguna & Hak Akses"
-        description="Kelola akun login sistem: ADMIN, OWNER, dan STAFF beserta status aktifnya. Persetujuan dan pembuatan akun baru hanya dapat dilakukan Owner."
+        title={en ? 'User & Access Management' : 'Manajemen Pengguna & Hak Akses'}
+        description={en ? 'Manage system login accounts for ADMIN, OWNER, and STAFF, including account status. Only the Owner can approve and create new accounts.' : 'Kelola akun login sistem: ADMIN, OWNER, dan STAFF beserta status aktifnya. Persetujuan dan pembuatan akun baru hanya dapat dilakukan Owner.'}
         action={isOwner ? (
           <Button variant="primary" onClick={handleOpenCreate}>
-            + Tambah Pengguna Baru
+            {en ? '+ Add New User' : '+ Tambah Pengguna Baru'}
           </Button>
         ) : undefined}
       />
@@ -133,19 +136,19 @@ export default function UsersManagementPage() {
 
       <Card>
         {loading ? (
-          <div className="p-8 text-center text-[var(--color-text-muted)]">Memuat daftar pengguna...</div>
+          <div className="p-8 text-center text-[var(--color-text-muted)]">{en ? 'Loading users...' : 'Memuat daftar pengguna...'}</div>
         ) : users.length === 0 ? (
-          <div className="p-8 text-center text-[var(--color-text-muted)]">Belum ada pengguna terdaftar.</div>
+          <div className="p-8 text-center text-[var(--color-text-muted)]">{en ? 'No users have been registered.' : 'Belum ada pengguna terdaftar.'}</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-[var(--color-border)] text-sm">
               <thead>
                 <tr>
-                  <th className="px-6 py-3 text-left font-semibold">Nama Lengkap</th>
+                  <th className="px-6 py-3 text-left font-semibold">{en ? 'Full Name' : 'Nama Lengkap'}</th>
                   <th className="px-6 py-3 text-left font-semibold">Email / Username</th>
-                  <th className="px-6 py-3 text-left font-semibold">Role / Hak Akses</th>
+                  <th className="px-6 py-3 text-left font-semibold">{en ? 'Role / Access' : 'Role / Hak Akses'}</th>
                   <th className="px-6 py-3 text-left font-semibold">Status</th>
-                  <th className="px-6 py-3 text-right font-semibold">Aksi</th>
+                  <th className="px-6 py-3 text-right font-semibold">{en ? 'Actions' : 'Aksi'}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--color-border)]">
@@ -165,15 +168,15 @@ export default function UsersManagementPage() {
                       <span className={`inline-flex px-2.5 py-1 text-xs rounded-md font-bold ${
                         u.is_active ? 'bg-emerald-600 text-white shadow-sm' : 'bg-red-600 text-white shadow-sm'
                       }`}>
-                        {u.is_active ? 'Aktif' : 'Nonaktif'}
+                        {u.is_active ? (en ? 'Active' : 'Aktif') : (en ? 'Inactive' : 'Nonaktif')}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right space-x-2">
                       <Button variant="secondary" onClick={() => handleOpenEdit(u)} style={{ padding: '4px 10px', fontSize: '12px' }}>
-                        Edit
+                        {en ? 'Edit' : 'Edit'}
                       </Button>
                       <Button variant="danger" onClick={() => handleDelete(u.id)} style={{ padding: '4px 10px', fontSize: '12px' }}>
-                        Hapus
+                        {en ? 'Delete' : 'Hapus'}
                       </Button>
                     </td>
                   </tr>
@@ -186,17 +189,17 @@ export default function UsersManagementPage() {
 
       <Modal
         open={showModal}
-        title={editingUser ? 'Edit Pengguna Sistem' : 'Tambah Pengguna Baru'}
+        title={editingUser ? (en ? 'Edit System User' : 'Edit Pengguna Sistem') : (en ? 'Add New User' : 'Tambah Pengguna Baru')}
         onClose={() => setShowModal(false)}
       >
         <form onSubmit={handleSubmit} className="space-y-4">
-          <FormField label="Nama Lengkap" required>
+          <FormField label={en ? 'Full Name' : 'Nama Lengkap'} required>
             <Input
               type="text"
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Nama Pengguna"
+              placeholder={en ? 'User name' : 'Nama Pengguna'}
             />
           </FormField>
 
@@ -210,7 +213,7 @@ export default function UsersManagementPage() {
             />
           </FormField>
 
-          <FormField label={`Password ${editingUser ? '(Kosongkan jika tidak diubah)' : ''}`} required={!editingUser}>
+          <FormField label={`Password ${editingUser ? (en ? '(Leave blank to keep unchanged)' : '(Kosongkan jika tidak diubah)') : ''}`} required={!editingUser}>
             <Input
               type="password"
               {...(!editingUser ? { required: true } : {})}
@@ -221,7 +224,7 @@ export default function UsersManagementPage() {
           </FormField>
 
           <div className="grid grid-cols-2 gap-4">
-            <FormField label="Role / Hak Akses" required>
+            <FormField label={en ? 'Role / Access' : 'Role / Hak Akses'} required>
               <Select
                 value={role}
                 onChange={(e) => setRole(e.target.value as 'ADMIN' | 'OWNER' | 'STAFF')}
@@ -232,23 +235,23 @@ export default function UsersManagementPage() {
               </Select>
             </FormField>
 
-            <FormField label="Status Akun" required>
+            <FormField label={en ? 'Account Status' : 'Status Akun'} required>
               <Select
                 value={isActive ? '1' : '0'}
                 onChange={(e) => setIsActive(e.target.value === '1')}
               >
-                <option value="1">Aktif</option>
-                <option value="0">Nonaktif</option>
+                <option value="1">{en ? 'Active' : 'Aktif'}</option>
+                <option value="0">{en ? 'Inactive' : 'Nonaktif'}</option>
               </Select>
             </FormField>
           </div>
 
           <div className="flex justify-end space-x-3 pt-4 border-t border-[var(--color-border)]">
             <Button type="button" variant="secondary" onClick={() => setShowModal(false)}>
-              Batal
+              {en ? 'Cancel' : 'Batal'}
             </Button>
             <Button type="submit" variant="primary">
-              Simpan
+              {en ? 'Save' : 'Simpan'}
             </Button>
           </div>
         </form>
