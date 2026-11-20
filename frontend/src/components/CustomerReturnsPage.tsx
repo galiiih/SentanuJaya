@@ -55,7 +55,7 @@ export function CustomerReturnsPage() {
     { id: 'customer', header: 'Customer', cell: (r) => r.customer?.name || '-' },
     { id: 'date', header: tr('Tanggal', 'Date'), cell: (r) => r.return_date },
     { id: 'status', header: 'Status', cell: (r) => <StatusBadge status={r.status} /> },
-    { id: 'actions', header: tr('Aksi', 'Actions'), cell: (r) => r.status === 'DRAFT' && canPost ? <Button onClick={() => void post(r.id)} disabled={loading}><Send size={14} /> Posting</Button> : '-' },
+    { id: 'actions', header: tr('Aksi', 'Actions'), cell: (r) => r.status === 'DRAFT' && canPost ? <Button onClick={() => void post(r.id)} disabled={loading}><Send size={14} /> {tr('Posting', 'Post')}</Button> : '-' },
   ];
   return <>
     <PageHeader title={tr('Retur Barang Customer', 'Customer Returns')} description={tr('Catat pengembalian barang setelah diterima customer. Posting mengembalikan barang ke custody tanpa mengubah invoice atau pembayaran.', 'Record goods returned after customer delivery. Posting returns the goods to custody without changing invoices or payments.')} action={canCreate ? <Button onClick={openCreate} disabled={loading}><Plus size={16} /> {tr('Buat Retur', 'Create Return')}</Button> : undefined} />
@@ -73,7 +73,7 @@ export function CustomerReturnsPage() {
           </div>
         </div>)}
         <p className="text-muted">{tr('Server memvalidasi jumlah berdasarkan penerimaan customer yang sudah diposting dan retur sebelumnya.', 'The server validates quantities against posted customer receipts and previous returns.')}</p>
-        <div className="modal__actions"><Button variant="ghost" onClick={() => setOpen(false)}{tr('Batal', 'Cancel')}</Button><Button onClick={() => void save()} loading={loading}{tr('Simpan Draft', 'Save Draft')}</Button></div>
+        <div className="modal__actions"><Button variant="ghost" onClick={() => setOpen(false)}>{tr('Batal', 'Cancel')}</Button><Button onClick={() => void save()} loading={loading}>{tr('Simpan Draft', 'Save Draft')}</Button></div>
       </div>
     </Modal>}
   </>;
