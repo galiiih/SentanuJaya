@@ -97,7 +97,7 @@ class NanuOperationalRiskSummaryTest extends TestCase
             static function (string $token): void {},
         );
 
-        $this->assertStringContainsString('Saya hanya dapat membantu operasional Sentanu Jaya ERP', $result['reply']);
+        $this->assertStringContainsString('aku fokus membantu operasional dan penggunaan Sentanu Jaya ERP', $result['reply']);
     }
 
     public function test_nanu_out_of_scope_response_uses_active_english_language(): void
