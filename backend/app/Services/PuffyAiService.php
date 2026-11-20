@@ -835,7 +835,7 @@ class PuffyAiService
         if ($hasTerm('kirim', 'dikirim', 'dikirimkan', 'pengiriman')) {
             return $hasTerm('hari ini', 'today') ? 'get_today_delivery_summary' : 'get_delivery_summary';
         }
-        if ($hasTerm('risiko operasional', 'risiko operasionalnya', 'risiko dari data')) {
+        if ($hasTerm('risiko operasional', 'risiko operasionalnya', 'risiko dari data', 'operational risk', 'operational risks', 'risk summary')) {
             return 'get_operational_risk_summary';
         }
         if ($hasTerm('custody', 'saldo custody', 'lokasi barang', 'workshop') && ! $hasTerm('kirim', 'dikirim', 'dikirimkan', 'pengiriman', 'kirim kembali')) {
