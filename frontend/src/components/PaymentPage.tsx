@@ -253,7 +253,7 @@ export function PaymentPage() {
                           <td className="align-right">{fmt(a.amount_due)}</td>
                           <td className="align-right">
                             <Input type="number" value={a.amount} onChange={(e) => setAllocAmount(i, e.target.value)}
-                              min={0} max={a.amount_due} step={0.01} style={{ width: '140px', textAlign: 'right' }} />
+                              min={0} max={a.amount_due} step={0.01} placeholder="0" inputMode="decimal" style={{ width: '140px', textAlign: 'right' }} />
                           </td>
                           <td><Button variant="ghost" onClick={() => payFull(i)}>{t.payment.payFull}</Button></td>
                         </tr>
