@@ -399,17 +399,21 @@ export function NumericInput({
     const comma = normalized.lastIndexOf(',');
     const dot = normalized.lastIndexOf('.');
     if (comma >= 0 && dot >= 0) {
-      // The last punctuation is the decimal separator; the other is grouping.
+      // With both separators, the last one is decimal and the other is grouping.
       const decimal = comma > dot ? ',' : '.';
       normalized = normalized
         .replace(decimal === ',' ? /\\./g : /,/g, '')
         .replace(decimal, '.');
     } else if (comma >= 0) {
-      // Indonesian input convention: comma is decimal; dots are grouping.
+      // Indonesian convention: comma is decimal; dots are grouping.
       normalized = normalized.replace(/\\./g, '').replace(',', '.');
-    } else {
-      const dots = (normalized.match(/\\./g) || []).length;
-      if (dots > 1) normalized = normalized.replace(/\\./g, '');
+    } else if (dot >= 0) {
+      const dotCount = (normalized.match(/\\./g) || []).length;
+      const trailingDigits = normalized.length - normalized.lastIndexOf('.') - 1;
+      // "1.234" is a grouped integer in id-ID; "1.23" remains a decimal.
+      if (dotCount > 1 || (locale.toLowerCase().startsWith('id') && trailingDigits === 3 && normalized.indexOf('.') <= 3)) {
+        normalized = normalized.replace(/\\./g, '');
+      }
     }
 
     const negative = normalized.startsWith('-') ? '-' : '';
