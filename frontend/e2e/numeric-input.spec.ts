@@ -5,7 +5,7 @@ async function login(page: Page) {
   await page.locator('#login-email').fill('admin@sentanu.local');
   await page.locator('#login-password').fill('password123');
   await page.getByRole('button', { name: 'Login' }).click();
-  await expect(page).toHaveURL(/\\/dashboard$/, { timeout: 15000 });
+  await expect(page).toHaveURL(/\/dashboard$/, { timeout: 15000 });
 }
 
 test.describe('Formatted numeric inputs', () => {
