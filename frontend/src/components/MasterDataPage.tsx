@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Plus, Edit, Trash2, Users, Layers, Package, Tag, Building2, BookOpen, Wrench, FileSpreadsheet } from 'lucide-react';
 import { apiError, type Customer, type CustomerItem } from '../services/api';
 import { useAuth } from '../auth';
+import { useLanguage } from '../i18n';
 import axios from 'axios';
 import {
   Alert,
@@ -112,6 +113,24 @@ const masterApi = {
 
 type MasterKey = keyof typeof masterApi;
 
+const getMasterLabel = (key: MasterKey, english: boolean): string => {
+  if (!english) return getMasterLabel(key, en);
+  const labels: Record<MasterKey, string> = {
+    companies: 'Company',
+    branches: 'Branch',
+    customers: 'Customers',
+    customer_contacts: 'Customer Contacts',
+    customer_items: 'Customer Items',
+    price_lists: 'Price Lists',
+    price_list_lines: 'Price List Lines',
+    uoms: 'Units of Measure',
+    materials: 'Materials',
+    warehouses: 'Warehouses',
+    suppliers: 'Suppliers',
+  };
+  return labels[key];
+};
+
 // Display quantities without meaningless trailing decimal zeros while preserving
 // fractional stock thresholds (e.g. 1.000 -> 1 and 1.500 -> 1,5).
 const formatStockQuantity = (value: unknown): string => {
@@ -123,6 +142,9 @@ const formatStockQuantity = (value: unknown): string => {
 
 export function MasterDataPage() {
   const { user } = useAuth();
+  const { language } = useLanguage();
+  const en = language === 'en';
+  const tr = (id: string, english: string) => en ? english : id;
   const isAdminOrOwner = user?.role === 'ADMIN' || user?.role === 'OWNER';
   const [tab, setTab] = useState<MasterKey>('customers');
   const [data, setData] = useState<any[]>([]);
@@ -259,10 +281,10 @@ export function MasterDataPage() {
     try {
       if (editingItem) {
         await masterApi[tab].update(editingItem.id, tab === 'price_list_lines' ? { ...formData, unit_price: Number(formData.unit_price || 0) } : tab === 'materials' ? { ...formData, minimum_stock: Number(formData.minimum_stock ?? formData.min_stock ?? 0) } : formData);
-        setNotice('Data master berhasil diperbarui.');
+        setNotice(tr('Data master berhasil diperbarui.', 'Master data updated successfully.'));
       } else {
         await masterApi[tab].create(tab === 'price_list_lines' ? { ...formData, unit_price: Number(formData.unit_price || 0) } : tab === 'materials' ? { ...formData, minimum_stock: Number(formData.minimum_stock ?? formData.min_stock ?? 0) } : formData);
-        setNotice('Data master berhasil ditambahkan.');
+        setNotice(tr('Data master berhasil ditambahkan.', 'Master data created successfully.'));
       }
       setModalOpen(false);
       // Finish refreshing the table before the save flow settles so callers see
@@ -278,12 +300,12 @@ export function MasterDataPage() {
   const handleDelete = (row: any) => {
     setConfirmState({
       open: true,
-      title: 'Hapus Data Master?',
-      description: `Apakah Anda yakin ingin menghapus ${row.name || row.code || 'data ini'}?`,
+      title: tr('Hapus Data Master?', 'Delete Master Data?'),
+      description: `${tr('Apakah Anda yakin ingin menghapus', 'Are you sure you want to delete')} ${row.name || row.code || tr('data ini', 'this record')}?`,
       onConfirm: async () => {
         try {
           await masterApi[tab].remove(row.id);
-          setNotice('Data master berhasil dihapus.');
+          setNotice(tr('Data master berhasil dihapus.', 'Master data deleted successfully.'));
           setConfirmState(s => ({ ...s, open: false }));
           loadData();
         } catch (err: any) {
@@ -298,11 +320,11 @@ export function MasterDataPage() {
     const isAdminOrOwner = user?.role === 'ADMIN' || user?.role === 'OWNER';
     const actionColumn = isAdminOrOwner ? [{
       id: 'actions',
-      header: 'Aksi',
+      header: tr('Aksi', 'Actions'),
       cell: (row: any) => (
         <div style={{ display: 'flex', gap: '0.5rem' }}>
           <Button variant="ghost" onClick={() => openEdit(row)} title="Edit" aria-label="Edit"><Edit size={16} /></Button>
-          <Button variant="ghost" onClick={() => handleDelete(row)} title="Hapus" aria-label="Hapus" style={{ color: 'var(--color-danger)' }}><Trash2 size={16} /></Button>
+          <Button variant="ghost" onClick={() => handleDelete(row)} title={tr('Hapus', 'Delete')} aria-label={tr('Hapus', 'Delete')} style={{ color: 'var(--color-danger)' }}><Trash2 size={16} /></Button>
         </div>
       )
     }] : [];
@@ -310,25 +332,25 @@ export function MasterDataPage() {
     switch (tab) {
       case 'companies':
         return [
-          { id: 'code', header: 'Kode', cell: (row: any) => row.code || '-' },
-          { id: 'name', header: 'Nama Perusahaan', cell: (row: any) => row.name || '-' },
-          { id: 'phone', header: 'Telepon', cell: (row: any) => row.phone || '-' },
+          { id: 'code', header: tr('Kode', 'Code'), cell: (row: any) => row.code || '-' },
+          { id: 'name', header: tr('Nama Perusahaan', 'Company Name'), cell: (row: any) => row.name || '-' },
+          { id: 'phone', header: tr('Telepon', 'Phone'), cell: (row: any) => row.phone || '-' },
           { id: 'email', header: 'Email', cell: (row: any) => row.email || '-' },
           ...actionColumn
         ];
       case 'branches':
         return [
-          { id: 'company', header: 'Perusahaan', cell: (row: any) => row.company?.name || companies.find(company => company.id === row.company_id)?.name || '-' },
-          { id: 'code', header: 'Kode Cabang', cell: (row: any) => row.code || '-' },
-          { id: 'name', header: 'Nama Cabang', cell: (row: any) => row.name || '-' },
-          { id: 'address', header: 'Alamat', cell: (row: any) => row.address || '-' },
-          { id: 'is_active', header: 'Status', cell: (row: any) => row.is_active ? 'Aktif' : 'Nonaktif' },
+          { id: 'company', header: tr('Perusahaan', 'Company'), cell: (row: any) => row.company?.name || companies.find(company => company.id === row.company_id)?.name || '-' },
+          { id: 'code', header: tr('Kode Cabang', 'Branch Code'), cell: (row: any) => row.code || '-' },
+          { id: 'name', header: tr('Nama Cabang', 'Branch Name'), cell: (row: any) => row.name || '-' },
+          { id: 'address', header: tr('Alamat', 'Address'), cell: (row: any) => row.address || '-' },
+          { id: 'is_active', header: 'Status', cell: (row: any) => row.is_active ? tr('Aktif', 'Active') : tr('Nonaktif', 'Inactive') },
           ...actionColumn
         ];
       case 'customers':
         return [
-          { id: 'code', header: 'Kode Customer', cell: (row: any) => row.code || '-' },
-          { id: 'name', header: 'Nama Customer', cell: (row: any) => row.name || '-' },
+          { id: 'code', header: tr('Kode Customer', 'Customer Code'), cell: (row: any) => row.code || '-' },
+          { id: 'name', header: tr('Nama Customer', 'Customer Name'), cell: (row: any) => row.name || '-' },
           { id: 'phone', header: 'Telepon', cell: (row: any) => row.phone || '-' },
           { id: 'email', header: 'Email', cell: (row: any) => row.email || '-' },
           ...actionColumn
@@ -336,60 +358,60 @@ export function MasterDataPage() {
       case 'customer_contacts':
         return [
           { id: 'customer', header: 'Customer', cell: (row: any) => row.customer?.name || '-' },
-          { id: 'name', header: 'Nama Kontak', cell: (row: any) => row.name || '-' },
-          { id: 'title', header: 'Jabatan', cell: (row: any) => row.title || '-' },
+          { id: 'name', header: tr('Nama Kontak', 'Contact Name'), cell: (row: any) => row.name || '-' },
+          { id: 'title', header: tr('Jabatan', 'Position'), cell: (row: any) => row.title || '-' },
           { id: 'phone', header: 'Telepon', cell: (row: any) => row.phone || '-' },
           ...actionColumn
         ];
       case 'customer_items':
         return [
-          { id: 'code', header: 'Kode Item', cell: (row: any) => row.code || '-' },
-          { id: 'name', header: 'Nama Barang / Part', cell: (row: any) => row.name || '-' },
-          { id: 'vehicle', header: 'Model Kendaraan', cell: (row: any) => row.vehicle_model || '-' },
-          { id: 'type', header: 'Tipe Part', cell: (row: any) => row.part_type || '-' },
+          { id: 'code', header: tr('Kode Item', 'Item Code'), cell: (row: any) => row.code || '-' },
+          { id: 'name', header: tr('Nama Barang / Part', 'Item / Part Name'), cell: (row: any) => row.name || '-' },
+          { id: 'vehicle', header: tr('Model Kendaraan', 'Vehicle Model'), cell: (row: any) => row.vehicle_model || '-' },
+          { id: 'type', header: tr('Tipe Part', 'Part Type'), cell: (row: any) => row.part_type || '-' },
           ...actionColumn
         ];
       case 'price_lists':
         return [
-          { id: 'code', header: 'Kode Price List', cell: (row: any) => row.code || '-' },
-          { id: 'name', header: 'Nama Price List', cell: (row: any) => row.name || '-' },
-          { id: 'customer', header: 'Customer', cell: (row: any) => row.customer?.name || 'Umum' },
-          { id: 'date', header: 'Tanggal Efektif', cell: (row: any) => row.effective_date || '-' },
+          { id: 'code', header: tr('Kode Price List', 'Price List Code'), cell: (row: any) => row.code || '-' },
+          { id: 'name', header: tr('Nama Price List', 'Price List Name'), cell: (row: any) => row.name || '-' },
+          { id: 'customer', header: 'Customer', cell: (row: any) => row.customer?.name || tr('Umum', 'General') },
+          { id: 'date', header: tr('Tanggal Efektif', 'Effective Date'), cell: (row: any) => row.effective_date || '-' },
           ...actionColumn
         ];
       case 'price_list_lines':
         return [
           { id: 'price_list', header: 'Price List', cell: (row: any) => row.price_list?.name || '-' },
           { id: 'item', header: 'Customer Item', cell: (row: any) => row.customer_item?.name || '-' },
-          { id: 'price', header: 'Harga Satuan (IDR)', cell: (row: any) => row.unit_price ? `Rp ${Number(row.unit_price).toLocaleString('id-ID')}` : '-' },
+          { id: 'price', header: tr('Harga Satuan (IDR)', 'Unit Price (IDR)'), cell: (row: any) => row.unit_price ? `Rp ${Number(row.unit_price).toLocaleString('id-ID')}` : '-' },
           ...actionColumn
         ];
       case 'uoms':
         return [
-          { id: 'code', header: 'Kode Satuan', cell: (row: any) => row.code || '-' },
-          { id: 'name', header: 'Nama Satuan', cell: (row: any) => row.name || '-' },
+          { id: 'code', header: tr('Kode Satuan', 'Unit Code'), cell: (row: any) => row.code || '-' },
+          { id: 'name', header: tr('Nama Satuan', 'Unit Name'), cell: (row: any) => row.name || '-' },
           ...actionColumn
         ];
       case 'materials':
         return [
           { id: 'code', header: 'Kode SKU', cell: (row: any) => row.code || '-' },
-          { id: 'name', header: 'Nama Material / Cat', cell: (row: any) => row.name || '-' },
-          { id: 'unit', header: 'Satuan', cell: (row: any) => row.unit || '-' },
-          { id: 'min_stock', header: 'Minimum Stok', cell: (row: any) => formatStockQuantity(row.minimum_stock ?? row.min_stock) },
+          { id: 'name', header: tr('Nama Material / Cat', 'Material / Paint Name'), cell: (row: any) => row.name || '-' },
+          { id: 'unit', header: tr('Satuan', 'Unit'), cell: (row: any) => row.unit || '-' },
+          { id: 'min_stock', header: tr('Minimum Stok', 'Minimum Stock'), cell: (row: any) => formatStockQuantity(row.minimum_stock ?? row.min_stock) },
           ...actionColumn
         ];
       case 'warehouses':
         return [
-          { id: 'code', header: 'Kode Gudang', cell: (row: any) => row.code || '-' },
-          { id: 'name', header: 'Nama Gudang', cell: (row: any) => row.name || '-' },
+          { id: 'code', header: tr('Kode Gudang', 'Warehouse Code'), cell: (row: any) => row.code || '-' },
+          { id: 'name', header: tr('Nama Gudang', 'Warehouse Name'), cell: (row: any) => row.name || '-' },
           { id: 'branch', header: 'Cabang', cell: (row: any) => row.branch?.name || '-' },
           { id: 'is_active', header: 'Status', cell: (row: any) => row.is_active ? 'Aktif' : 'Nonaktif' },
           ...actionColumn
         ];
       case 'suppliers':
         return [
-          { id: 'code', header: 'Kode Supplier', cell: (row: any) => row.code || '-' },
-          { id: 'name', header: 'Nama Supplier', cell: (row: any) => row.name || '-' },
+          { id: 'code', header: tr('Kode Supplier', 'Supplier Code'), cell: (row: any) => row.code || '-' },
+          { id: 'name', header: tr('Nama Supplier', 'Supplier Name'), cell: (row: any) => row.name || '-' },
           { id: 'phone', header: 'Telepon', cell: (row: any) => row.phone || '-' },
           { id: 'email', header: 'Email', cell: (row: any) => row.email || '-' },
           ...actionColumn
@@ -404,24 +426,24 @@ export function MasterDataPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Master Data & Referensi"
-        description="Kelola referensi sistem, pelanggan, item barang, kontak, price list, satuan, material, dan supplier secara terpusat."
+        title={tr('Master Data & Referensi', 'Master Data & References')}
+        description={tr('Kelola referensi sistem, pelanggan, item barang, kontak, price list, satuan, material, dan supplier secara terpusat.', 'Manage system references, customers, customer items, contacts, price lists, units, materials, and suppliers in one place.')}
         action={
           isAdminOrOwner ? (
             <Button onClick={openCreate} disabled={(needsReferenceOptions && (referencesLoading || !!referencesError)) || (tab === 'branches' && companies.length === 0) || (tab === 'warehouses' && branches.length === 0)} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-              <Plus size={16} /> Tambah {masterApi[tab].label}
+              <Plus size={16} /> {tr('Tambah', 'Add')} {getMasterLabel(tab, en)}
             </Button>
           ) : undefined
         }
       />
 
       {error && <Alert tone="danger">{error}</Alert>}
-      {referencesError && <Alert tone="danger">Gagal memuat data referensi: {referencesError} <Button variant="ghost" onClick={loadReferences}>Coba lagi</Button></Alert>}
+      {referencesError && <Alert tone="danger">{tr('Gagal memuat data referensi:', 'Failed to load reference data:')} {referencesError} <Button variant="ghost" onClick={loadReferences}{tr('Coba lagi', 'Try again')}</Button></Alert>}
       {tab === 'branches' && !referencesLoading && companies.length === 0 && (
-        <Alert tone="warning">Belum ada data perusahaan. Buat data Perusahaan terlebih dahulu sebelum menambahkan Cabang.</Alert>
+        <Alert tone="warning">{tr('Belum ada data perusahaan. Buat data Perusahaan terlebih dahulu sebelum menambahkan Cabang.', 'No company data exists. Create a Company before adding a Branch.')}</Alert>
       )}
       {tab === 'warehouses' && !referencesLoading && branches.length === 0 && (
-        <Alert tone="warning">Belum ada data cabang. Urutannya: buat Perusahaan, tambahkan Cabang pada tab Cabang, lalu kembali ke tab Gudang untuk membuat gudang dan menghubungkannya ke cabang.</Alert>
+        <Alert tone="warning">{tr('Belum ada data cabang. Urutannya: buat Perusahaan, tambahkan Cabang pada tab Cabang, lalu kembali ke tab Gudang untuk membuat gudang dan menghubungkannya ke cabang.', 'No branch data exists. First create a Company, add a Branch under the Branch tab, then return to Warehouses to create and assign a warehouse.')}</Alert>
       )}
       <Toast open={!!notice} message={notice} onClose={() => setNotice('')} tone="success" />
 
@@ -444,7 +466,7 @@ export function MasterDataPage() {
       </div>
 
       <Card title={`Daftar ${masterApi[tab].label}`}>
-        <DataTable columns={getColumnsForTab()} rows={data} emptyTitle="Belum ada data master" emptyDescription={`Belum ada data pada tabel ${masterApi[tab].label}. Klik tombol Tambah untuk membuat baru.`} />
+        <DataTable columns={getColumnsForTab()} rows={data} emptyTitle={tr('Belum ada data master', 'No master data yet')} emptyDescription={`Belum ada data pada tabel ${masterApi[tab].label}. Klik tombol Tambah untuk membuat baru.`} />
       </Card>
 
       {/* Clean Single-Column Vertical Stacked Form Modal (Matching Reference Design) */}
@@ -455,16 +477,16 @@ export function MasterDataPage() {
             {/* Companies */}
             {tab === 'companies' && (
               <>
-                <FormField label="Kode Perusahaan" required>
+                <FormField label={tr('Kode Perusahaan', 'Company Code')} required>
                   <Input value={formData.code || ''} onChange={e => setFormData({ ...formData, code: e.target.value })} placeholder="SJ" required />
                 </FormField>
-                <FormField label="Nama Perusahaan" required>
+                <FormField label={tr('Nama Perusahaan', 'Company Name')} required>
                   <Input value={formData.name || ''} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="PT Sentanu Jaya" required />
                 </FormField>
-                <FormField label="Alamat">
+                <FormField label={tr('Alamat', 'Address')}>
                   <Textarea value={formData.address || ''} onChange={e => setFormData({ ...formData, address: e.target.value })} placeholder="Jl. Industri Utama No. 1" rows={3} />
                 </FormField>
-                <FormField label="Telepon">
+                <FormField label={tr('Telepon', 'Phone')}>
                   <Input value={formData.phone || ''} onChange={e => setFormData({ ...formData, phone: e.target.value })} placeholder="021-5551234" />
                 </FormField>
                 <FormField label="Email">
@@ -476,25 +498,25 @@ export function MasterDataPage() {
             {/* Branches */}
             {tab === 'branches' && (
               <>
-                <FormField label="Perusahaan" required>
+                <FormField label={tr('Perusahaan', 'Company')} required>
                   <Select value={formData.company_id || ''} onChange={e => setFormData({ ...formData, company_id: e.target.value })} required>
-                    <option value="">-- Pilih Perusahaan --</option>
+                    <option value="">{tr('-- Pilih Perusahaan --', '-- Select Company --')}</option>
                     {companies.map(company => <option key={company.id} value={company.id}>{company.code} — {company.name}</option>)}
                   </Select>
                 </FormField>
-                <FormField label="Kode Cabang" required>
+                <FormField label={tr('Kode Cabang', 'Branch Code')} required>
                   <Input value={formData.code || ''} onChange={e => setFormData({ ...formData, code: e.target.value })} placeholder="BR-001" required />
                 </FormField>
-                <FormField label="Nama Cabang" required>
-                  <Input value={formData.name || ''} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="Cabang Utama" required />
+                <FormField label={tr('Nama Cabang', 'Branch Name')} required>
+                  <Input value={formData.name || ''} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder={tr('Cabang Utama', 'Main Branch')} required />
                 </FormField>
                 <FormField label="Alamat">
-                  <Textarea value={formData.address || ''} onChange={e => setFormData({ ...formData, address: e.target.value })} placeholder="Alamat cabang" rows={3} />
+                  <Textarea value={formData.address || ''} onChange={e => setFormData({ ...formData, address: e.target.value })} placeholder={tr('Alamat cabang', 'Branch address')} rows={3} />
                 </FormField>
-                <FormField label="Status Aktif">
+                <FormField label={tr('Status Aktif', 'Active Status')}>
                   <Select value={formData.is_active !== false ? 'true' : 'false'} onChange={e => setFormData({ ...formData, is_active: e.target.value === 'true' })}>
-                    <option value="true">Aktif</option>
-                    <option value="false">Nonaktif</option>
+                    <option value="true">{tr('Aktif', 'Active')}</option>
+                    <option value="false">{tr('Nonaktif', 'Inactive')}</option>
                   </Select>
                 </FormField>
               </>
@@ -503,32 +525,32 @@ export function MasterDataPage() {
             {/* Customer */}
             {tab === 'customers' && (
               <>
-                <FormField label="Kode Customer" required hint="Contoh: CUST-001">
+                <FormField label={tr('Kode Customer', 'Customer Code')} required hint={tr('Contoh: CUST-001', 'Example: CUST-001')}>
                   <Input value={formData.code || ''} onChange={e => setFormData({ ...formData, code: e.target.value })} placeholder="CUST-001" required />
                 </FormField>
-                <FormField label="Nama Perusahaan / Customer" required>
+                <FormField label={tr('Nama Perusahaan / Customer', 'Company / Customer Name')} required>
                   <Input value={formData.name || ''} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="PT Sentanu Maju" required />
                 </FormField>
-                <FormField label="Nama Legal (Akta)">
+                <FormField label={tr('Nama Legal (Akta)', 'Legal Name (Deed)')}>
                   <Input value={formData.legal_name || ''} onChange={e => setFormData({ ...formData, legal_name: e.target.value })} placeholder="PT Sentanu Maju Sejahtera" />
                 </FormField>
                 <FormField label="NPWP">
                   <Input value={formData.npwp || ''} onChange={e => setFormData({ ...formData, npwp: e.target.value })} placeholder="01.234.567.8-901.000" />
                 </FormField>
-                <FormField label="Kondisi / Status Pajak" required>
+                <FormField label={tr('Kondisi / Status Pajak', 'Tax Condition / Status')} required>
                   <Select value={formData.tax_condition ?? 3} onChange={e => setFormData({ ...formData, tax_condition: Number(e.target.value) })} required>
                     <option value={1}>1. Tanpa PPN, Tanpa PPh (Non-PKP / Bebas)</option>
                     <option value={2}>2. PPh 2.5% Tanpa PPN</option>
                     <option value={3}>3. PPN 11% + PPh 2% (Standar PKP)</option>
                   </Select>
                 </FormField>
-                <FormField label="Nomor Telepon">
+                <FormField label={tr('Nomor Telepon', 'Phone Number')}>
                   <Input value={formData.phone || ''} onChange={e => setFormData({ ...formData, phone: e.target.value })} placeholder="021-5551234" />
                 </FormField>
-                <FormField label="Email Perusahaan">
+                <FormField label={tr('Email Perusahaan', 'Company Email')}>
                   <Input type="email" value={formData.email || ''} onChange={e => setFormData({ ...formData, email: e.target.value })} placeholder="info@sentanumaju.co.id" />
                 </FormField>
-                <FormField label="Alamat Lengkap">
+                <FormField label={tr('Alamat Lengkap', 'Full Address')}>
                   <Textarea value={formData.address || ''} onChange={e => setFormData({ ...formData, address: e.target.value })} placeholder="Jl. Industri Raya No. 12, Jakarta" rows={3} />
                 </FormField>
               </>
@@ -537,19 +559,19 @@ export function MasterDataPage() {
             {/* Customer Contact */}
             {tab === 'customer_contacts' && (
               <>
-                <FormField label="Pilih Customer" required>
+                <FormField label={tr('Pilih Customer', 'Select Customer')} required>
                   <Select value={formData.customer_id || ''} onChange={e => setFormData({ ...formData, customer_id: e.target.value })} required>
-                    <option value="">-- Pilih Customer --</option>
+                    <option value="">{tr('-- Pilih Customer --', '-- Select Customer --')}</option>
                     {customers.map(c => <option key={c.id} value={c.id}>{c.code} — {c.name}</option>)}
                   </Select>
                 </FormField>
-                <FormField label="Nama Kontak" required>
+                <FormField label={tr('Nama Kontak', 'Contact Name')} required>
                   <Input value={formData.name || ''} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="Bapak Budi" required />
                 </FormField>
-                <FormField label="Jabatan / Title">
+                <FormField label={tr('Jabatan / Title', 'Position / Title')}>
                   <Input value={formData.title || ''} onChange={e => setFormData({ ...formData, title: e.target.value })} placeholder="Purchasing Manager" />
                 </FormField>
-                <FormField label="Nomor Telepon / HP">
+                <FormField label={tr('Nomor Telepon / HP', 'Phone / Mobile Number')}>
                   <Input value={formData.phone || ''} onChange={e => setFormData({ ...formData, phone: e.target.value })} placeholder="08123456789" />
                 </FormField>
                 <FormField label="Email">
@@ -567,16 +589,16 @@ export function MasterDataPage() {
                     {customers.map(c => <option key={c.id} value={c.id}>{c.code} — {c.name}</option>)}
                   </Select>
                 </FormField>
-                <FormField label="Kode Item" required>
+                <FormField label={tr('Kode Item', 'Item Code')} required>
                   <Input value={formData.code || ''} onChange={e => setFormData({ ...formData, code: e.target.value })} placeholder="ITEM-BODYKIT-01" required />
                 </FormField>
-                <FormField label="Nama Barang / Part" required>
+                <FormField label={tr('Nama Barang / Part', 'Item / Part Name')} required>
                   <Input value={formData.name || ''} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="Front Bumper Pajero Sport" required />
                 </FormField>
-                <FormField label="Model Kendaraan">
+                <FormField label={tr('Model Kendaraan', 'Vehicle Model')}>
                   <Input value={formData.vehicle_model || ''} onChange={e => setFormData({ ...formData, vehicle_model: e.target.value })} placeholder="Mitsubishi Pajero Sport 2024" />
                 </FormField>
-                <FormField label="Tipe Part">
+                <FormField label={tr('Tipe Part', 'Part Type')}>
                   <Input value={formData.part_type || ''} onChange={e => setFormData({ ...formData, part_type: e.target.value })} placeholder="Bodykit / Accessories" />
                 </FormField>
               </>
@@ -585,10 +607,10 @@ export function MasterDataPage() {
             {/* Price Lists */}
             {tab === 'price_lists' && (
               <>
-                <FormField label="Kode Price List" required>
+                <FormField label={tr('Kode Price List', 'Price List Code')} required>
                   <Input value={formData.code || ''} onChange={e => setFormData({ ...formData, code: e.target.value })} placeholder="PL-2024-01" required />
                 </FormField>
-                <FormField label="Nama Price List" required>
+                <FormField label={tr('Nama Price List', 'Price List Name')} required>
                   <Input value={formData.name || ''} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="Kontrak Harga 2024" required />
                 </FormField>
                 <FormField label="Pilih Customer" required>
@@ -597,7 +619,7 @@ export function MasterDataPage() {
                     {customers.map(c => <option key={c.id} value={c.id}>{c.code} — {c.name}</option>)}
                   </Select>
                 </FormField>
-                <FormField label="Tanggal Efektif">
+                <FormField label={tr('Tanggal Efektif', 'Effective Date')}>
                   <Input type="date" value={formData.effective_date || ''} onChange={e => setFormData({ ...formData, effective_date: e.target.value })} />
                 </FormField>
               </>
@@ -606,19 +628,19 @@ export function MasterDataPage() {
             {/* Price List Lines */}
             {tab === 'price_list_lines' && (
               <>
-                <FormField label="Pilih Price List" required>
+                <FormField label={tr('Pilih Price List', 'Select Price List')} required>
                   <Select value={formData.price_list_id || ''} onChange={e => setFormData({ ...formData, price_list_id: e.target.value })} required>
-                    <option value="">-- Pilih Price List --</option>
+                    <option value="">{tr('-- Pilih Price List --', '-- Select Price List --')}</option>
                     {priceLists.map(pl => <option key={pl.id} value={pl.id}>{pl.code} — {pl.name}</option>)}
                   </Select>
                 </FormField>
-                <FormField label="Pilih Customer Item" required>
+                <FormField label={tr('Pilih Customer Item', 'Select Customer Item')} required>
                   <Select value={formData.customer_item_id || ''} onChange={e => setFormData({ ...formData, customer_item_id: e.target.value })} required>
-                    <option value="">-- Pilih Item Barang --</option>
+                    <option value="">{tr('-- Pilih Item Barang --', '-- Select Item --')}</option>
                     {customerItems.map(item => <option key={item.id} value={item.id}>{item.code} — {item.name}</option>)}
                   </Select>
                 </FormField>
-                <FormField label="Harga Satuan (IDR)" required>
+                <FormField label={tr('Harga Satuan (IDR)', 'Unit Price (IDR)')} required>
                   <NumericInput maximumFractionDigits={2} value={formData.unit_price ?? ''} onValueChange={raw => setFormData({ ...formData, unit_price: raw })} placeholder="1500000" required />
                 </FormField>
               </>
@@ -627,16 +649,16 @@ export function MasterDataPage() {
             {/* UOM */}
             {tab === 'uoms' && (
               <>
-                <FormField label="Kode Satuan" required>
+                <FormField label={tr('Kode Satuan', 'Unit Code')} required>
                   <Input value={formData.code || ''} onChange={e => setFormData({ ...formData, code: e.target.value })} placeholder="PCS" required />
                 </FormField>
-                <FormField label="Nama Satuan" required>
+                <FormField label={tr('Nama Satuan', 'Unit Name')} required>
                   <Input value={formData.name || ''} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="Pieces / Buah" required />
                 </FormField>
-                <FormField label="Kategori" required>
+                <FormField label={tr('Kategori', 'Category')} required>
                   <Input value={formData.category || 'GENERAL'} onChange={e => setFormData({ ...formData, category: e.target.value })} placeholder="GENERAL / QUANTITY / WEIGHT" required />
                 </FormField>
-                <FormField label="Desimal">
+                <FormField label={tr('Desimal', 'Decimal Places')}>
                   <Input type="number" value={formData.decimal_places ?? 0} onChange={e => setFormData({ ...formData, decimal_places: Number(e.target.value) })} placeholder="0" />
                 </FormField>
               </>
@@ -645,19 +667,19 @@ export function MasterDataPage() {
             {/* Materials */}
             {tab === 'materials' && (
               <>
-                <FormField label="Kode SKU Material" required>
+                <FormField label={tr('Kode SKU Material', 'Material SKU Code')} required>
                   <Input value={formData.code || ''} onChange={e => setFormData({ ...formData, code: e.target.value })} placeholder="CAT-PU-BLK" required />
                 </FormField>
-                <FormField label="Nama Material / Cat" required>
+                <FormField label={tr('Nama Material / Cat', 'Material / Paint Name')} required>
                   <Input value={formData.name || ''} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="Cat Polyurethane Hitam Glossy" required />
                 </FormField>
                 <FormField label="Kategori" required>
                   <Input value={formData.category || 'GENERAL'} onChange={e => setFormData({ ...formData, category: e.target.value })} placeholder="GENERAL / RAW_MATERIAL / PAINT" required />
                 </FormField>
-                <FormField label="Satuan (Unit)" required>
+                <FormField label={tr('Satuan (Unit)', 'Unit of Measure')} required>
                   <Input value={formData.unit || 'LITER'} onChange={e => setFormData({ ...formData, unit: e.target.value })} placeholder="LITER / CAN / PCS" required />
                 </FormField>
-                <FormField label="Minimum Stok">
+                <FormField label={tr('Minimum Stok', 'Minimum Stock')}>
                   <NumericInput maximumFractionDigits={3} value={formData.minimum_stock ?? formData.min_stock ?? ''} onValueChange={raw => setFormData({ ...formData, minimum_stock: raw, min_stock: raw })} placeholder="5" />
                 </FormField>
               </>
@@ -666,19 +688,19 @@ export function MasterDataPage() {
             {/* Warehouses */}
             {tab === 'warehouses' && (
               <>
-                <FormField label="Cabang" required>
+                <FormField label={tr('Cabang', 'Branch')} required>
                   <Select value={formData.branch_id || ''} onChange={e => setFormData({ ...formData, branch_id: e.target.value })} required>
-                    <option value="">-- Pilih Cabang --</option>
+                    <option value="">{tr('-- Pilih Cabang --', '-- Select Branch --')}</option>
                     {branches.map(b => <option key={b.id} value={b.id}>{b.code} — {b.name}</option>)}
                   </Select>
                 </FormField>
-                <FormField label="Kode Gudang" required>
+                <FormField label={tr('Kode Gudang', 'Warehouse Code')} required>
                   <Input value={formData.code || ''} onChange={e => setFormData({ ...formData, code: e.target.value })} placeholder="WH-001" required />
                 </FormField>
-                <FormField label="Nama Gudang" required>
-                  <Input value={formData.name || ''} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="Gudang Utama Sentanu Jaya" required />
+                <FormField label={tr('Nama Gudang', 'Warehouse Name')} required>
+                  <Input value={formData.name || ''} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder={tr('Gudang Utama Sentanu Jaya', 'Sentanu Jaya Main Warehouse')} required />
                 </FormField>
-                <FormField label="Status Aktif">
+                <FormField label={tr('Status Aktif', 'Active Status')}>
                   <Select value={formData.is_active !== false ? 'true' : 'false'} onChange={e => setFormData({ ...formData, is_active: e.target.value === 'true' })}>
                     <option value="true">Aktif</option>
                     <option value="false">Nonaktif</option>
