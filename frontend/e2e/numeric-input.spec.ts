@@ -45,12 +45,14 @@ test.describe('Formatted numeric inputs', () => {
 
     // Quantity supports fractional values and enforces the original minimum.
     await quantity.fill('0');
+    expect(await quantity.evaluate((input: HTMLInputElement) => input.validity.valid)).toBeFalsy();
     await quantity.blur();
+    await quantity.fill('.');
     expect(await quantity.evaluate((input: HTMLInputElement) => input.validity.valid)).toBeFalsy();
     await quantity.fill('2,5');
+    expect(await quantity.evaluate((input: HTMLInputElement) => input.validity.valid)).toBeTruthy();
     await quantity.blur();
     await expect(quantity).toHaveValue('2,5');
-    expect(await quantity.evaluate((input: HTMLInputElement) => input.validity.valid)).toBeTruthy();
     await quantity.fill('');
     await expect(quantity).toHaveValue('');
   });
