@@ -58,7 +58,9 @@ type DeliveryDraftForm = {
 
 export function DeliveryPage() {
   const { hasPermission } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const en = language === 'en';
+  const tr = (id: string, english: string) => en ? english : id;
 
   const [deliveryOrders, setDeliveryOrders] = useState<DeliveryOrderRecord[]>([]);
   const [activePos, setActivePos] = useState<CustomerPo[]>([]);
@@ -702,7 +704,7 @@ export function DeliveryPage() {
               </div>
 
               {doAcceptances.length === 0 ? (
-                <p style={{ fontSize: '0.875rem', color: 'var(--color-muted)' }}>Belum ada penerimaan customer untuk surat jalan ini.</p>
+                <p style={{ fontSize: '0.875rem', color: 'var(--color-muted)' }}>{tr('Belum ada penerimaan customer untuk surat jalan ini.', 'No customer acceptance has been recorded for this Delivery Order.')}</p>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                   {doAcceptances.map((acc) => (
@@ -775,12 +777,12 @@ export function DeliveryPage() {
             </header>
             <div className="print-meta-grid">
               <div><strong>Kepada</strong><span>{detailRecord.customer?.name || '-'}</span><strong>Alamat Pengiriman</strong><span>{detailRecord.shipping_address || '-'}</span></div>
-              <div><strong>No. Surat Jalan</strong><span>{detailRecord.sj_number}</span><strong>Tanggal</strong><span>{detailRecord.delivery_date}</span><strong>No. PO Customer</strong><span>{detailRecord.customer_po?.po_number || detailRecord.customer_po_number || '-'}</span><strong>Status</strong><span>{detailRecord.status}</span></div>
+              <div><strong>{tr('No. Surat Jalan', 'Delivery Order No.')}</strong><span>{detailRecord.sj_number}</span><strong>{tr('Tanggal', 'Date')}</strong><span>{detailRecord.delivery_date}</span><strong>{tr('No. PO Customer', 'Customer PO No.')}</strong><span>{detailRecord.customer_po?.po_number || detailRecord.customer_po_number || '-'}</span><strong>{tr('Status', 'Status')}</strong><span>{detailRecord.status}</span></div>
             </div>
-            <table className="print-table"><thead><tr><th>No.</th><th>Nama Barang</th><th>Warna</th><th>Keterangan</th><th className="print-right">Qty</th><th>Satuan</th></tr></thead>
+            <table className="print-table"><thead><tr><th>No.</th><th>{tr('Nama Barang', 'Item Name')}</th><th>{tr('Warna', 'Color')}</th><th>{tr('Keterangan', 'Description')}</th><th className="print-right">Qty</th><th>{tr('Satuan', 'Unit')}</th></tr></thead>
               <tbody>{detailRecord.lines.map((line, index) => <tr key={line.id}><td>{index + 1}</td><td>{line.customer_item?.name || line.customer_item_id}</td><td>{line.color_code || '-'}</td><td>{line.notes || '-'}</td><td className="print-right">{line.quantity}</td><td>pcs</td></tr>)}</tbody>
             </table>
-            {detailRecord.notes && <p className="print-note"><strong>Catatan:</strong> {detailRecord.notes}</p>}
+            {detailRecord.notes && <p className="print-note"><strong>{tr('Catatan:', 'Notes:')}</strong> {detailRecord.notes}</p>}
             <div className="print-shipping-meta"><span><strong>Pengemudi:</strong> {detailRecord.driver_name || '-'}</span><span><strong>No. Kendaraan:</strong> {detailRecord.vehicle_plate || '-'}</span></div>
             <footer className="print-signatures"><div>Pengirim,<br/><br/><br/><br/>________________________</div><div>Penerima,<br/><br/><br/><br/>________________________</div></footer>
             <div className="print-footer">Mohon periksa jumlah dan kondisi barang saat diterima. Dokumen dicetak dari Sentanu Jaya ERP.</div>
@@ -804,7 +806,7 @@ export function DeliveryPage() {
               <Input
                 value={acceptanceNotes}
                 onChange={(e) => setAcceptanceNotes(e.target.value)}
-                placeholder="Catatan penerimaan..."
+                placeholder={tr('Catatan penerimaan...', 'Acceptance notes...')}
               />
             </FormField>
 
