@@ -73,6 +73,7 @@ const id: PuffyStrings = {
   asOf: "per",
   quips: ["Hehe, geli!", "Mau lihat data apa hari ini?", "Aku lagi jaga angka-angkamu 💗", "Coba tanya: stok material menipis?"],
   suggestions: [
+    { text: "Ringkasan risiko operasional", permission: permissions.dashboardView },
     { text: "Hari ini kirim berapa?", permission: permissions.deliveryView },
     { text: "Barang masuk hari ini", permission: permissions.custodyView },
     { text: "Stok material menipis", permission: permissions.materialView },
@@ -116,6 +117,7 @@ const en: PuffyStrings = {
   asOf: "as of",
   quips: ["Hehe, that tickles!", "What data shall we look at today?", "I am keeping your numbers safe 💗", "Try asking: low material stock?"],
   suggestions: [
+    { text: "Operational risk summary", permission: permissions.dashboardView },
     { text: "How many deliveries today?", permission: permissions.deliveryView },
     { text: "Goods received today", permission: permissions.custodyView },
     { text: "Low material stock", permission: permissions.materialView },
