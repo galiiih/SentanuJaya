@@ -318,8 +318,13 @@ function AuthenticatedLayout() {
 
 function Dashboard() {
   const { user, hasPermission } = useAuth();
+  const { language } = useLanguage();
+  const en = language === 'en';
+  const tr = (id: string, english: string) => en ? english : id;
   const navigate = useNavigate();
-  const greeting = `Good morning${user?.name ? `, ${user.name}` : ''}. Ini ringkasan operasional Sentanu Jaya hari ini.`;
+  const greeting = en
+    ? `Here is today’s Sentanu Jaya operational overview${user?.name ? `, ${user.name}` : ''}.`
+    : `Selamat pagi${user?.name ? `, ${user.name}` : ''}. Ini ringkasan operasional Sentanu Jaya hari ini.`;
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -342,9 +347,9 @@ function Dashboard() {
 
   const quickActions = (
     <div className="page-header__actions">
-      {hasPermission(permissions.custodyView) && <Button onClick={() => navigate('/custody')}><Plus size={16} /> Terima Barang</Button>}
-      {hasPermission(permissions.invoiceView) && <Button variant="secondary" onClick={() => navigate('/invoicing')}><Receipt size={16} /> Buat Invoice</Button>}
-      <Button variant="ghost" onClick={() => void loadSummary()} loading={loading}>Muat ulang</Button>
+      {hasPermission(permissions.custodyView) && <Button onClick={() => navigate('/custody')}><Plus size={16} /> {tr('Terima Barang', 'Receive Goods')}</Button>}
+      {hasPermission(permissions.invoiceView) && <Button variant="secondary" onClick={() => navigate('/invoicing')}><Receipt size={16} /> {tr('Buat Invoice', 'Create Invoice')}</Button>}
+      <Button variant="ghost" onClick={() => void loadSummary()} loading={loading}>{tr('Muat ulang', 'Refresh')}</Button>
     </div>
   );
 
@@ -369,17 +374,17 @@ function Dashboard() {
   return <>
     <PageHeader title="Dashboard" description={greeting} action={quickActions} />
     {error && <Alert tone="danger">{error}</Alert>}
-    <section className="kpi-grid" aria-label="Ringkasan operasional">
-      <KpiCard label="Custody active" value={<>{custodyCount}<small> pcs</small></>} detail="Barang customer di workshop" icon={<Package size={18} />} />
-      <KpiCard label="PO Aktif" value={<>{op.active_customer_pos ?? 0}<small> PO</small></>} detail="Customer Purchase Order" icon={<Boxes size={18} />} tone="info" />
-      <KpiCard label="Siap ditagihkan" value={<>{uninvoicedCount}<small> SJ</small></>} detail="SJ belum diinvoice" icon={<FileCheck size={18} />} tone="info" />
-      <KpiCard label="Tagihan berjalan (AR)" value={currency.format(arOutstanding)} detail="Nilai outstanding invoice POSTED" icon={<CircleDollarSign size={18} />} tone="success" />
+    <section className="kpi-grid" aria-label={tr('Ringkasan operasional', 'Operational summary')}>
+      <KpiCard label={tr('Custody active', 'Active Custody')} value={<>{custodyCount}<small> pcs</small></>} detail={tr('Barang customer di workshop', 'Customer goods in the workshop')} icon={<Package size={18} />} />
+      <KpiCard label={tr('PO Aktif', 'Open POs')} value={<>{op.active_customer_pos ?? 0}<small> PO</small></>} detail="Customer Purchase Order" icon={<Boxes size={18} />} tone="info" />
+      <KpiCard label={tr('Siap ditagihkan', 'Ready to Invoice')} value={<>{uninvoicedCount}<small> SJ</small></>} detail={tr('SJ belum diinvoice', 'Delivery Orders not yet invoiced')} icon={<FileCheck size={18} />} tone="info" />
+      <KpiCard label={tr('Tagihan berjalan (AR)', 'Accounts Receivable')} value={currency.format(arOutstanding)} detail={tr('Nilai outstanding invoice POSTED', 'Outstanding balance of posted invoices')} icon={<CircleDollarSign size={18} />} tone="success" />
     </section>
     <div className="dashboard-grid">
-      <Card title="Production overview" action={<span className="card__meta">{totalUnits} unit aktif</span>}>{totalUnits === 0 ? <p className="chart-note">Belum ada data produksi.</p> : <><div className="production-summary"><p>Work order per tahap produksi</p><strong>{totalUnits} <span>unit</span></strong></div><div className="production-bar" aria-label="Distribusi unit aktif berdasarkan tahap produksi">{productionStages.map(([label, value, tone]) => <div key={label} className={`production-bar__segment production-bar__segment--${tone}`} style={{ width: `${Math.max(5, Number(value) / 1.2)}%` }} title={`${label}: ${value} unit`}><span>{label}</span></div>)}</div><div className="production-legend">{productionStages.map(([label, value, tone]) => <span key={label}><i className={`status-dot status-dot--${tone}`} />{label} <strong>{value}</strong></span>)}</div></>}</Card>
-      <Card title="Financial Summary" action={<Button variant="ghost" onClick={() => navigate('/invoicing')}>Lihat invoice</Button>}><div className="alert-item"><div><strong>Total Invoice Periode Ini</strong><span>Rp {Number(fin.total_invoice_period ?? 0).toLocaleString('id-ID')}</span></div><div><strong>Total Pembayaran (POSTED)</strong><span>Rp {Number(fin.total_payment_posted ?? 0).toLocaleString('id-ID')}</span></div></div></Card>
-      <Card title="Revenue & Financial Trend" className="dashboard-grid__wide" action={<span className="card__meta">{trendData.length ? 'Data aktual' : 'Belum ada data'}</span>}>{trendData.length === 0 ? <p className="chart-note">Belum ada data transaksi untuk ditampilkan.</p> : <div className="chart-container"><ResponsiveContainer width="100%" height={220}><BarChart data={trendData} barGap={2}><CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" /><XAxis dataKey="period" tick={{ fontSize: 11, fill: 'var(--color-text-muted)' }} /><YAxis tick={{ fontSize: 11, fill: 'var(--color-text-muted)' }} tickFormatter={(v: number) => `${(v / 1000000).toFixed(0)}jt`} /><Tooltip formatter={(v) => `Rp ${Number(v).toLocaleString('id-ID')}`} /><Legend wrapperStyle={{ fontSize: 12 }} /><Bar dataKey="revenue" name="Revenue" fill="var(--color-info)" radius={[3, 3, 0, 0]} /><Bar dataKey="payments" name="Pembayaran" fill="var(--color-warning)" radius={[3, 3, 0, 0]} /><Bar dataKey="net" name="Net" fill="var(--color-success)" radius={[3, 3, 0, 0]} /></BarChart></ResponsiveContainer></div>}</Card>
-      <Card title="Aktivitas terbaru" className="dashboard-grid__wide" action={<Button variant="ghost" onClick={() => void loadSummary()}>Muat ulang</Button>}>{recentActivity.length === 0 ? <p className="chart-note">Belum ada aktivitas transaksi.</p> : <ul className="activity-list">{recentActivity.map((act, i) => <li key={i}><time>{new Date(act.timestamp).toLocaleDateString('id-ID')}</time><span className="activity-list__icon"><CheckCircle2 size={16} /></span><div><strong>{act.description}</strong><span>{act.type}</span></div><StatusBadge status={act.status} /></li>)}</ul>}</Card>
+      <Card title={tr('Production overview', 'Production Overview')} action={<span className="card__meta">{totalUnits} {tr('unit aktif', 'active units')}</span>}>{totalUnits === 0 ? <p className="chart-note">{tr('Belum ada data produksi.', 'No production data yet.')}</p> : <><div className="production-summary"><p>{tr('Work order per tahap produksi', 'Work orders by production stage')}</p><strong>{totalUnits} <span>{tr('unit', 'units')}</span></strong></div><div className="production-bar" aria-label="Distribusi unit aktif berdasarkan tahap produksi">{productionStages.map(([label, value, tone]) => <div key={label} className={`production-bar__segment production-bar__segment--${tone}`} style={{ width: `${Math.max(5, Number(value) / 1.2)}%` }} title={`${label}: ${value} unit`}><span>{label}</span></div>)}</div><div className="production-legend">{productionStages.map(([label, value, tone]) => <span key={label}><i className={`status-dot status-dot--${tone}`} />{label} <strong>{value}</strong></span>)}</div></>}</Card>
+      <Card title={tr('Financial Summary', 'Financial Summary')} action={<Button variant="ghost" onClick={() => navigate('/invoicing')}>{tr('Lihat invoice', 'View invoices')}</Button>}><div className="alert-item"><div><strong>{tr('Total Invoice Periode Ini', 'Total Invoices This Period')}</strong><span>Rp {Number(fin.total_invoice_period ?? 0).toLocaleString('id-ID')}</span></div><div><strong>{tr('Total Pembayaran (POSTED)', 'Total Posted Payments')}</strong><span>Rp {Number(fin.total_payment_posted ?? 0).toLocaleString('id-ID')}</span></div></div></Card>
+      <Card title={tr('Revenue & Financial Trend', 'Revenue & Financial Trend')} className="dashboard-grid__wide" action={<span className="card__meta">{trendData.length ? tr('Data aktual', 'Live data') : tr('Belum ada data', 'No data')}</span>}>{trendData.length === 0 ? <p className="chart-note">{tr('Belum ada data transaksi untuk ditampilkan.', 'No transaction data to display.')}</p> : <div className="chart-container"><ResponsiveContainer width="100%" height={220}><BarChart data={trendData} barGap={2}><CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" /><XAxis dataKey="period" tick={{ fontSize: 11, fill: 'var(--color-text-muted)' }} /><YAxis tick={{ fontSize: 11, fill: 'var(--color-text-muted)' }} tickFormatter={(v: number) => `${(v / 1000000).toFixed(0)}jt`} /><Tooltip formatter={(v) => `Rp ${Number(v).toLocaleString('id-ID')}`} /><Legend wrapperStyle={{ fontSize: 12 }} /><Bar dataKey="revenue" name="Revenue" fill="var(--color-info)" radius={[3, 3, 0, 0]} /><Bar dataKey="payments" name={tr('Pembayaran', 'Payments')} fill="var(--color-warning)" radius={[3, 3, 0, 0]} /><Bar dataKey="net" name="Net" fill="var(--color-success)" radius={[3, 3, 0, 0]} /></BarChart></ResponsiveContainer></div>}</Card>
+      <Card title={tr('Aktivitas terbaru', 'Recent Activity')} className="dashboard-grid__wide" action={<Button variant="ghost" onClick={() => void loadSummary()}>Muat ulang</Button>}>{recentActivity.length === 0 ? <p className="chart-note"{tr('Belum ada aktivitas transaksi.', 'No recent transaction activity.')}</p> : <ul className="activity-list">{recentActivity.map((act, i) => <li key={i}><time>{new Date(act.timestamp).toLocaleDateString(en ? 'en-US' : 'id-ID')}</time><span className="activity-list__icon"><CheckCircle2 size={16} /></span><div><strong>{act.description}</strong><span>{act.type}</span></div><StatusBadge status={act.status} /></li>)}</ul>}</Card>
     </div>
   </>;
 }
