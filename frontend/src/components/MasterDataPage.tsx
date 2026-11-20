@@ -659,7 +659,7 @@ export function MasterDataPage() {
                   <Input value={formData.category || 'GENERAL'} onChange={e => setFormData({ ...formData, category: e.target.value })} placeholder="GENERAL / QUANTITY / WEIGHT" required />
                 </FormField>
                 <FormField label={tr('Desimal', 'Decimal Places')}>
-                  <Input type="number" value={formData.decimal_places ?? 0} onChange={e => setFormData({ ...formData, decimal_places: Number(e.target.value) })} placeholder="0" />
+                  <NumericInput min={0} max={6} maximumFractionDigits={0} value={formData.decimal_places ?? 0} onValueChange={raw => setFormData({ ...formData, decimal_places: raw })} placeholder="0" />
                 </FormField>
               </>
             )}
