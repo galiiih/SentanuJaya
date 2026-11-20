@@ -51,6 +51,8 @@ test.describe('Formatted numeric inputs', () => {
     await quantity.blur();
     await quantity.fill('.');
     expect(await quantity.evaluate((input: HTMLInputElement) => input.validity.valid)).toBeFalsy();
+    await quantity.fill('0,5');
+    expect(await quantity.evaluate((input: HTMLInputElement) => input.validity.valid)).toBeFalsy();
     await quantity.fill('2,5');
     expect(await quantity.evaluate((input: HTMLInputElement) => input.validity.valid)).toBeTruthy();
     await quantity.blur();
