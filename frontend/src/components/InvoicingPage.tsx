@@ -445,7 +445,7 @@ export function InvoicingPage() {
               <div className="print-doc-type">INVOICE</div>
             </header>
             <div className="print-meta-grid">
-              <div><strong>Kepada</strong><span>{detail.customer?.name || '-'}</span><strong>Alamat Pengiriman</strong><span>{detail.delivery_links?.[0]?.delivery_order?.shipping_address || '-'}</span></div>
+              <div><strong>{tr('Kepada', 'Bill To')}</strong><span>{detail.customer?.name || '-'}</span><strong>{tr('Alamat Pengiriman', 'Shipping Address')}</strong><span>{detail.delivery_links?.[0]?.delivery_order?.shipping_address || '-'}</span></div>
               <div><strong>{tr('No. Invoice', 'Invoice No.')}</strong><span>{detail.invoice_number}</span><strong>{tr('Tanggal', 'Date')}</strong><span>{detail.invoice_date}</span><strong>{tr('Jatuh Tempo', 'Due Date')}</strong><span>{detail.due_date || '-'}</span><strong>{tr('No. PO Customer', 'Customer PO No.')}</strong><span>{detail.delivery_links?.[0]?.delivery_order?.customer_po?.po_number || detail.delivery_links?.[0]?.delivery_order?.customer_po_number || '-'}</span></div>
             </div>
             <table className="print-table"><thead><tr><th>No.</th><th>{tr('Deskripsi', 'Description')}</th><th>{tr('Warna', 'Color')}</th><th className="print-right">Qty</th><th className="print-right">{tr('Harga Satuan', 'Unit Price')}</th><th className="print-right">{tr('Jumlah', 'Amount')}</th></tr></thead>
