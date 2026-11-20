@@ -25,6 +25,7 @@ import {
   type DataTableColumn,
   FormField,
   Input,
+  NumericInput,
   Modal,
   PageHeader,
   Select,
@@ -600,12 +601,12 @@ export function DeliveryPage() {
                           <td>{line.color_code || '-'}</td>
                           <td className="align-right font-mono">{line.po_remaining} pcs</td>
                           <td>
-                            <Input
-                              type="number"
-                              min="0"
+                            <NumericInput
+                              min={0}
                               max={line.po_remaining}
+                              maximumFractionDigits={3}
                               value={line.quantity}
-                              onChange={(e) => updateLineQty(idx, e.target.value)}
+                              onValueChange={(raw) => updateLineQty(idx, raw)}
                               disabled={line.po_remaining <= 0}
                             />
                             {fieldErrors[`lines.${idx}.quantity`] && (
@@ -826,32 +827,30 @@ export function DeliveryPage() {
                         <td><strong>{line.item_name}</strong></td>
                         <td className="align-right font-mono">{line.delivered_quantity} pcs</td>
                         <td>
-                          <Input
-                            type="number"
-                            min="0"
+                          <NumericInput
+                            min={0}
                             max={line.delivered_quantity}
+                            maximumFractionDigits={3}
                             value={line.quantity_ok}
-                            onChange={(e) => {
-                              const val = e.target.value;
+                            onValueChange={(raw) => {
                               setAcceptanceLines((prev) => {
                                 const newLines = [...prev];
-                                newLines[idx] = { ...newLines[idx], quantity_ok: val };
+                                newLines[idx] = { ...newLines[idx], quantity_ok: raw };
                                 return newLines;
                               });
                             }}
                           />
                         </td>
                         <td>
-                          <Input
-                            type="number"
-                            min="0"
+                          <NumericInput
+                            min={0}
                             max={line.delivered_quantity}
+                            maximumFractionDigits={3}
                             value={line.quantity_rejected}
-                            onChange={(e) => {
-                              const val = e.target.value;
+                            onValueChange={(raw) => {
                               setAcceptanceLines((prev) => {
                                 const newLines = [...prev];
-                                newLines[idx] = { ...newLines[idx], quantity_rejected: val };
+                                newLines[idx] = { ...newLines[idx], quantity_rejected: raw };
                                 return newLines;
                               });
                             }}
