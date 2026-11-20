@@ -232,7 +232,7 @@ export function MasterDataPage() {
     } else if (tab === 'price_lists') {
       setFormData({ code: '', name: '', customer_id: customers[0]?.id || '', effective_date: new Date().toISOString().split('T')[0], is_active: true });
     } else if (tab === 'price_list_lines') {
-      setFormData({ price_list_id: priceLists[0]?.id || '', customer_item_id: customerItems[0]?.id || '', unit_price: 0 });
+      setFormData({ price_list_id: priceLists[0]?.id || '', customer_item_id: customerItems[0]?.id || '', unit_price: '' });
     } else if (tab === 'uoms') {
       setFormData({ code: '', name: '', category: 'GENERAL', decimal_places: 0 });
     } else if (tab === 'materials') {
@@ -257,10 +257,10 @@ export function MasterDataPage() {
     setError('');
     try {
       if (editingItem) {
-        await masterApi[tab].update(editingItem.id, formData);
+        await masterApi[tab].update(editingItem.id, tab === 'price_list_lines' ? { ...formData, unit_price: Number(formData.unit_price || 0) } : formData);
         setNotice('Data master berhasil diperbarui.');
       } else {
-        await masterApi[tab].create(formData);
+        await masterApi[tab].create(tab === 'price_list_lines' ? { ...formData, unit_price: Number(formData.unit_price || 0) } : formData);
         setNotice('Data master berhasil ditambahkan.');
       }
       setModalOpen(false);
@@ -618,7 +618,7 @@ export function MasterDataPage() {
                   </Select>
                 </FormField>
                 <FormField label="Harga Satuan (IDR)" required>
-                  <Input type="number" value={formData.unit_price || 0} onChange={e => setFormData({ ...formData, unit_price: Number(e.target.value) })} placeholder="1500000" required />
+                  <Input type="number" min="0" step="0.01" value={formData.unit_price ?? ''} onChange={e => setFormData({ ...formData, unit_price: e.target.value })} placeholder="1500000" required />
                 </FormField>
               </>
             )}
