@@ -311,7 +311,7 @@ export function MaterialsPage() {
           <Package className="w-4 h-4 mr-2" /> {tr('Daftar Stok Material', 'Material Stock List')}
         </Button>
         <Button variant={activeTab === 'receipts' ? 'primary' : 'secondary'} onClick={() => setActiveTab('receipts')}>
-          <FileText className="w-4 h-4 mr-2" /> Penerimaan Material
+          <FileText className="w-4 h-4 mr-2" /> {tr('Penerimaan Material', 'Material Receipts')}
         </Button>
         <Button variant={activeTab === 'cards' ? 'primary' : 'secondary'} onClick={() => setActiveTab('cards')}>
           <ArrowLeftRight className="w-4 h-4 mr-2" /> Stock Card (Mutasi)
@@ -329,7 +329,7 @@ export function MaterialsPage() {
               <Plus className="w-4 h-4 mr-2" /> {tr('Penerimaan Material Baru', 'New Material Receipt')}
             </Button>
           </div>
-          <DataTable columns={materialColumns} rows={materials} searchText={(m) => `${m.sku} ${m.name} ${m.category}`} emptyTitle={tr('Belum ada material', 'No materials yet')} emptyDescription="Data material gudang Sentanu Jaya." />
+          <DataTable columns={materialColumns} rows={materials} searchText={(m) => `${m.sku} ${m.name} ${m.category}`} emptyTitle={tr('Belum ada material', 'No materials yet')} emptyDescription={tr('Data material gudang Sentanu Jaya.', 'Sentanu Jaya warehouse material data.')} />
         </Card>
       )}
 
@@ -386,13 +386,13 @@ export function MaterialsPage() {
                 <table className="w-full text-left text-sm border-collapse">
                   <thead>
                     <tr className="border-b bg-muted/50">
-                      <th className="p-3">Tanggal</th>
-                      <th className="p-3">Tipe</th>
+                      <th className="p-3">{tr('Tanggal', 'Date')}</th>
+                      <th className="p-3">{tr('Tipe', 'Type')}</th>
                       <th className="p-3">{tr('Material', 'Material')}</th>
                       <th className="p-3">{tr('Gudang', 'Warehouse')}</th>
-                      <th className="p-3">Masuk</th>
-                      <th className="p-3">Keluar</th>
-                      <th className="p-3">Saldo Akhir</th>
+                      <th className="p-3">{tr('Masuk', 'In')}</th>
+                      <th className="p-3">{tr('Keluar', 'Out')}</th>
+                      <th className="p-3">{tr('Saldo Akhir', 'Ending Balance')}</th>
                       <th className="p-3">{tr('Keterangan', 'Description')}</th>
                     </tr>
                   </thead>
@@ -453,15 +453,15 @@ export function MaterialsPage() {
           <Card>
             <h3 className="font-semibold text-lg mb-4">{tr('Stock Opname & Rekonsiliasi Fisik', 'Physical Stock Count & Reconciliation')}</h3>
             <form onSubmit={handleStockOpname} className="space-y-4">
-              <FormField label="Gudang" required>
+              <FormField label={tr('Gudang', 'Warehouse')} required>
                 <Select value={opnameForm.warehouse_id} onChange={(e) => setOpnameForm({ ...opnameForm, warehouse_id: e.target.value })} required>
-                  <option value="">Pilih Gudang...</option>
+                  <option value="">{tr('Pilih Gudang...', 'Select warehouse...')}</option>
                   {warehouses.map((w: any) => <option key={w.id} value={w.id}>{w.name}</option>)}
                 </Select>
               </FormField>
-              <FormField label="Material" required>
+              <FormField label={tr('Material', 'Material')} required>
                 <Select value={opnameForm.material_id} onChange={(e) => setOpnameForm({ ...opnameForm, material_id: e.target.value })} required>
-                  <option value="">Pilih Material...</option>
+                  <option value="">{tr('Pilih Material...', 'Select material...')}</option>
                   {materials.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
                 </Select>
               </FormField>
@@ -488,9 +488,9 @@ export function MaterialsPage() {
                   {warehouses.map((w: any) => <option key={w.id} value={w.id}>{w.name}</option>)}
                 </Select>
               </FormField>
-              <FormField label="Supplier">
+              <FormField label={tr('Supplier', 'Supplier')}>
                 <Select value={receiptForm.supplier_id} onChange={(e) => setReceiptForm({ ...receiptForm, supplier_id: e.target.value })}>
-                  <option value="">Pilih Supplier...</option>
+                  <option value="">{tr('Pilih Supplier...', 'Select supplier...')}</option>
                   {suppliers.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </Select>
               </FormField>
@@ -508,7 +508,7 @@ export function MaterialsPage() {
               <h4 style={{ fontWeight: 600, marginBottom: '0.75rem' }}>{tr('Baris Material Diterima', 'Received Material Lines')}</h4>
               {receiptForm.lines.map((line, idx) => {
                 const selectedMat = materials.find((m: any) => m.id === line.material_id);
-                const unitLabel = selectedMat?.unit || 'Satuan';
+                const unitLabel = selectedMat?.unit || tr('Satuan', 'Unit');
                 const subtotal = (Number(line.quantity_received) || 0) * (Number(line.unit_cost) || 0);
 
                 return (
@@ -571,8 +571,8 @@ export function MaterialsPage() {
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', paddingTop: '1rem' }}>
-              <Button type="button" variant="secondary" onClick={() => setReceiptModalOpen(false)}{tr('Batal', 'Cancel')}</Button>
-              <Button type="submit" disabled={activeWarehouses.length === 0}{tr('Simpan Draft Penerimaan', 'Save Receipt Draft')}</Button>
+              <Button type="button" variant="secondary" onClick={() => setReceiptModalOpen(false)}>{tr('Batal', 'Cancel')}</Button>
+              <Button type="submit" disabled={activeWarehouses.length === 0}>{tr('Simpan Draft Penerimaan', 'Save Receipt Draft')}</Button>
             </div>
           </form>
         </Modal>
@@ -583,10 +583,10 @@ export function MaterialsPage() {
         <Modal open={Boolean(receiptDetail)} title={`${tr('Detail Penerimaan:', 'Receipt Details:')} ${receiptDetail.receipt_number}`} onClose={() => setReceiptDetail(null)}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', fontSize: '0.875rem' }}>
-              <div><strong>Status:</strong> <StatusBadge status={receiptDetail.status === 'POSTED' ? 'success' : receiptDetail.status === 'DRAFT' ? 'warning' : 'neutral'} label={receiptDetail.status} /></div>
-              <div><strong>Tanggal:</strong> {receiptDetail.receipt_date}</div>
+              <div><strong>{tr('Status:', 'Status:')}</strong> <StatusBadge status={receiptDetail.status === 'POSTED' ? 'success' : receiptDetail.status === 'DRAFT' ? 'warning' : 'neutral'} label={receiptDetail.status} /></div>
+              <div><strong>{tr('Tanggal:', 'Date:')}</strong> {receiptDetail.receipt_date}</div>
               <div><strong>{tr('Gudang:', 'Warehouse:')}</strong> {receiptDetail.warehouse?.name || '-'}</div>
-              <div><strong>Supplier:</strong> {receiptDetail.supplier?.name || 'Umum'}</div>
+              <div><strong>{tr('Supplier:', 'Supplier:')}</strong> {receiptDetail.supplier?.name || 'Umum'}</div>
             </div>
             {receiptDetail.notes && <p style={{ fontSize: '0.875rem' }}><strong>{tr('Catatan:', 'Notes:')}</strong> {receiptDetail.notes}</p>}
 
@@ -597,7 +597,7 @@ export function MaterialsPage() {
                   <tr style={{ borderBottom: '1px solid var(--border)', background: 'rgba(255,255,255,0.03)' }}>
                     <th style={{ padding: '0.5rem' }}>{tr('Material', 'Material')}</th>
                     <th style={{ padding: '0.5rem' }}>{tr('Jumlah', 'Quantity')}</th>
-                    <th style={{ padding: '0.5rem' }}>Harga Unit</th>
+                    <th style={{ padding: '0.5rem' }}>{tr('Harga Unit', 'Unit Price')}</th>
                     <th style={{ padding: '0.5rem' }}>Subtotal</th>
                   </tr>
                 </thead>
@@ -617,11 +617,11 @@ export function MaterialsPage() {
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', paddingTop: '1rem' }}>
               {receiptDetail.status === 'DRAFT' && (
                 <>
-                  <Button variant="primary" onClick={() => handlePostReceipt(receiptDetail.id)}>Post Transaksi</Button>
-                  <Button variant="danger" onClick={() => handleCancelReceipt(receiptDetail.id)}{tr('Batalkan Draft', 'Cancel Draft')}</Button>
+                  <Button variant="primary" onClick={() => handlePostReceipt(receiptDetail.id)}>{tr('Post Transaksi', 'Post Receipt')}</Button>
+                  <Button variant="danger" onClick={() => handleCancelReceipt(receiptDetail.id)}>{tr('Batalkan Draft', 'Cancel Draft')}</Button>
                 </>
               )}
-              <Button variant="secondary" onClick={() => setReceiptDetail(null)}>Tutup</Button>
+              <Button variant="secondary" onClick={() => setReceiptDetail(null)}>{tr('Tutup', 'Close')}</Button>
             </div>
           </div>
         </Modal>
