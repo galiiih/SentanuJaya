@@ -460,9 +460,10 @@ export function NumericInput({
 
   // Keep native form validation synchronized even when a legacy value is
   // populated externally and the user submits without focusing this field.
+  const validationMessage = constraintMessage(rawValue);
   useEffect(() => {
-    inputRef.current?.setCustomValidity(constraintMessage(rawValue));
-  }, [rawValue, min, max, language]);
+    inputRef.current?.setCustomValidity(validationMessage);
+  }, [validationMessage]);
 
   const displayValue = () => {
     if (!rawValue || rawValue === '-') return rawValue;
