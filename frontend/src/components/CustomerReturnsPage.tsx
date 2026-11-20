@@ -1,3 +1,4 @@
+import { getLocalDateInputValue } from '../utils/date';
 import { useEffect, useMemo, useState } from 'react';
 import { Plus, Send } from 'lucide-react';
 import { useAuth, permissions } from '../auth';
@@ -13,7 +14,7 @@ export function CustomerReturnsPage() {
   const [orders, setOrders] = useState<DeliveryOrderRecord[]>([]);
   const [returns, setReturns] = useState<CustomerReturnRecord[]>([]);
   const [selectedId, setSelectedId] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(getLocalDateInputValue());
   const [quantities, setQuantities] = useState<Record<string, string>>({});
   const [reasons, setReasons] = useState<Record<string, string>>({});
   const [open, setOpen] = useState(false);
@@ -34,7 +35,7 @@ export function CustomerReturnsPage() {
 
   const canCreate = hasPermission(permissions.returnCreate);
   const canPost = hasPermission(permissions.returnPost);
-  const openCreate = () => { setSelectedId(''); setQuantities({}); setReasons({}); setDate(new Date().toISOString().slice(0, 10)); setError(''); setOpen(true); };
+  const openCreate = () => { setSelectedId(''); setQuantities({}); setReasons({}); setDate(getLocalDateInputValue()); setError(''); setOpen(true); };
   const save = async () => {
     if (!selected) { setError(tr('Pilih Surat Jalan terlebih dahulu.', 'Select a Delivery Order first.')); return; }
     const overLimit = selected.lines.find((line) => Number(quantities[line.id] || 0) > Number(line.quantity));
