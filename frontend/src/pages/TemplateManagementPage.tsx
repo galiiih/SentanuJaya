@@ -80,7 +80,7 @@ export default function TemplateManagementPage() {
     setEditingTemplate(tpl);
     setEditName(tpl.name);
     setEditContent(tpl.content || '');
-    setPreviewHtml(tpl.content || '<p>No HTML content.</p>');
+    setPreviewHtml(tpl.content || `<p>${tr('Konten HTML belum tersedia.', 'No HTML content.')}</p>`);
   };
 
   const handleSaveEdit = async () => {
@@ -487,7 +487,7 @@ export default function TemplateManagementPage() {
                       onClick={() => handleRestoreVersion(versionTemplate.id, ver.version)}
                       className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-xs font-semibold shadow transition"
                     >
-                      Pulihkan Versi Ini
+                      {tr('Pulihkan Versi Ini', 'Restore This Version')}
                     </button>
                   </div>
                 ))}
