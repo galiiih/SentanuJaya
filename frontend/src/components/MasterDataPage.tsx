@@ -733,8 +733,8 @@ export function MasterDataPage() {
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.75rem', borderTop: '1px solid var(--color-border)', paddingTop: '1.25rem' }}>
-            <Button type="button" variant="ghost" onClick={() => setModalOpen(false)}>Batal</Button>
-            <Button type="submit" loading={saving}>Simpan Data</Button>
+            <Button type="button" variant="ghost" onClick={() => setModalOpen(false)}>{tr('Batal', 'Cancel')}</Button>
+            <Button type="submit" loading={saving}>{tr('Simpan Data', 'Save Data')}</Button>
           </div>
         </form>
       </Modal>
