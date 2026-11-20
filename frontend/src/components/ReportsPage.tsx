@@ -1,12 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
 import { FileText, Download, RefreshCw, DollarSign, Activity, Package } from 'lucide-react';
 import { reportApi, apiError } from '../services/api';
+import { useLanguage } from '../i18n';
 import { Alert, Button, Card, FormField, Input, StatusBadge } from './ui';
 
 
 const fmt = (n: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
 
 export function ReportsPage() {
+  const { language } = useLanguage();
+  const en = language === 'en';
+  const tr = (id: string, english: string) => en ? english : id;
   const [activeTab, setActiveTab] = useState<'financial' | 'receivables' | 'operational' | 'custody'>('financial');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -88,15 +92,15 @@ export function ReportsPage() {
     <div className="page-container">
       <div className="page-header">
         <div>
-          <h1 className="page-title">Advanced Reporting & Analytics</h1>
-          <p className="page-subtitle">Laporan resmi keuangan, piutang, operasional, dan kustodi material.</p>
+          <h1 className="page-title">{tr('Advanced Reporting & Analytics', 'Advanced Reporting & Analytics')}</h1>
+          <p className="page-subtitle">{tr('Laporan resmi keuangan, piutang, operasional, dan kustodi material.', 'Official financial, receivables, operational, and customer-goods custody reports.')}</p>
         </div>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
           <Button variant="secondary" onClick={() => loadReport()} loading={loading}>
-            <RefreshCw size={16} style={{ marginRight: 6 }} /> Muat Ulang
+            <RefreshCw size={16} style={{ marginRight: 6 }} /> {tr('Muat Ulang', 'Refresh')}
           </Button>
           <Button variant="primary" onClick={exportCsv}>
-            <Download size={16} style={{ marginRight: 6 }} /> Ekspor CSV
+            <Download size={16} style={{ marginRight: 6 }} /> {tr('Ekspor CSV', 'Export CSV')}
           </Button>
         </div>
       </div>
@@ -118,23 +122,23 @@ export function ReportsPage() {
         </Button>
       </div>
 
-      <Card title="Filter Periode & Parameter">
+      <Card title={tr('Filter Periode & Parameter', 'Period & Parameter Filters')}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', alignItems: 'end' }}>
-          <FormField label="Tanggal Mulai">
+          <FormField label={tr('Tanggal Mulai', 'Start Date')}>
             <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
           </FormField>
-          <FormField label="Tanggal Akhir">
+          <FormField label={tr('Tanggal Akhir', 'End Date')}>
             <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
           </FormField>
           <div>
             <Button variant="primary" onClick={() => loadReport()} style={{ width: '100%' }}>
-              Terapkan Filter
+              {tr('Terapkan Filter', 'Apply Filters')}
             </Button>
           </div>
         </div>
       </Card>
 
-      {loading && <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-muted)' }}>Memuat data laporan...</p>}
+      {loading && <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-muted)' }}{tr('Memuat data laporan...', 'Loading report data...')}</p>}
 
       {!loading && activeTab === 'financial' && financialData && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginTop: '1.25rem' }}>
@@ -155,21 +159,21 @@ export function ReportsPage() {
               </div>
             </Card>
           </div>
-          <Card title="Daftar Faktur (Invoice) & Pembayaran">
+          <Card title={tr('Daftar Faktur (Invoice) & Pembayaran', 'Invoices & Payments')}>
             {financialData.invoices?.length === 0 && financialData.payments?.length === 0 ? (
-              <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', padding: '1rem', textAlign: 'center' }}>Tidak ada transaksi keuangan pada periode ini.</p>
+              <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', padding: '1rem', textAlign: 'center' }}>{tr('Tidak ada transaksi keuangan pada periode ini.', 'No financial transactions for this period.')}</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                 <div>
-                  <h4 style={{ fontWeight: 600, marginBottom: '0.75rem', fontSize: '0.95rem' }}>Faktur (Invoices) Posted</h4>
+                  <h4 style={{ fontWeight: 600, marginBottom: '0.75rem', fontSize: '0.95rem' }}>{tr('Faktur (Invoices) Posted', 'Posted Invoices')}</h4>
                   <div style={{ overflowX: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
                       <thead>
                         <tr style={{ borderBottom: '1px solid var(--color-border)', color: 'var(--color-text-secondary)' }}>
-                          <th style={{ padding: '0.5rem' }}>No. Invoice</th>
-                          <th style={{ padding: '0.5rem' }}>Tanggal</th>
-                          <th style={{ padding: '0.5rem', textAlign: 'right' }}>Total</th>
-                          <th style={{ padding: '0.5rem', textAlign: 'right' }}>Due</th>
+                          <th style={{ padding: '0.5rem' }}}>{tr('No. Invoice', 'Invoice Number')}</th>
+                          <th style={{ padding: '0.5rem' }}}>{tr('Tanggal', 'Date')}</th>
+                          <th style={{ padding: '0.5rem', textAlign: 'right' }}}>Total</th>
+                          <th style={{ padding: '0.5rem', textAlign: 'right' }}}>Due</th>
                           <th style={{ padding: '0.5rem', textAlign: 'center' }}>Status</th>
                         </tr>
                       </thead>
@@ -188,15 +192,15 @@ export function ReportsPage() {
                   </div>
                 </div>
                 <div>
-                  <h4 style={{ fontWeight: 600, marginBottom: '0.75rem', fontSize: '0.95rem' }}>Pembayaran (Payments) Posted</h4>
+                  <h4 style={{ fontWeight: 600, marginBottom: '0.75rem', fontSize: '0.95rem' }}>{tr('Pembayaran (Payments) Posted', 'Posted Payments')}</h4>
                   <div style={{ overflowX: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
                       <thead>
                         <tr style={{ borderBottom: '1px solid var(--color-border)', color: 'var(--color-text-secondary)' }}>
-                          <th style={{ padding: '0.5rem' }}>No. Pembayaran</th>
+                          <th style={{ padding: '0.5rem' }}}>{tr('No. Pembayaran', 'Payment Number')}</th>
                           <th style={{ padding: '0.5rem' }}>Tanggal</th>
-                          <th style={{ padding: '0.5rem' }}>Metode</th>
-                          <th style={{ padding: '0.5rem', textAlign: 'right' }}>Jumlah</th>
+                          <th style={{ padding: '0.5rem' }}}>{tr('Metode', 'Method')}</th>
+                          <th style={{ padding: '0.5rem', textAlign: 'right' }}}>{tr('Jumlah', 'Amount')}</th>
                           <th style={{ padding: '0.5rem', textAlign: 'center' }}>Status</th>
                         </tr>
                       </thead>
@@ -205,7 +209,7 @@ export function ReportsPage() {
                           <tr key={pay.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
                             <td style={{ padding: '0.5rem', fontWeight: 500 }}>{pay.payment_number}</td>
                             <td style={{ padding: '0.5rem', color: 'var(--color-text-secondary)' }}>{pay.payment_date}</td>
-                            <td style={{ padding: '0.5rem' }}>{pay.payment_method ?? 'Transfer'}</td>
+                            <td style={{ padding: '0.5rem' }}>{pay.payment_method ?? (en ? 'Transfer' : 'Transfer')}</td>
                             <td style={{ padding: '0.5rem', textAlign: 'right', fontWeight: 600, color: 'var(--color-success)' }}>{fmt(pay.amount)}</td>
                             <td style={{ padding: '0.5rem', textAlign: 'center' }}><StatusBadge status={pay.status} /></td>
                           </tr>
@@ -223,23 +227,23 @@ export function ReportsPage() {
       {!loading && activeTab === 'receivables' && receivablesData && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginTop: '1.25rem' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
-            <Card title="Total Outstanding Piutang">
+            <Card title={tr('Total Outstanding Piutang', 'Total Outstanding Receivables')}>
               <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--color-warning)' }}>
                 {fmt(receivablesData.total_outstanding ?? 0)}
               </div>
             </Card>
           </div>
-          <Card title="Ringkasan Piutang Per Customer">
+          <Card title={tr('Ringkasan Piutang Per Customer', 'Receivables by Customer')}>
             {receivablesData.receivables?.length === 0 ? (
-              <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', padding: '1rem', textAlign: 'center' }}>Tidak ada piutang outstanding.</p>
+              <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', padding: '1rem', textAlign: 'center' }}>{tr('Tidak ada piutang outstanding.', 'No outstanding receivables.')}</p>
             ) : (
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
                   <thead>
                     <tr style={{ borderBottom: '1px solid var(--color-border)', color: 'var(--color-text-secondary)' }}>
                       <th style={{ padding: '0.5rem' }}>Customer</th>
-                      <th style={{ padding: '0.5rem', textAlign: 'right' }}>Total Billed</th>
-                      <th style={{ padding: '0.5rem', textAlign: 'right' }}>Total Paid</th>
+                      <th style={{ padding: '0.5rem', textAlign: 'right' }}}>Total Billed</th>
+                      <th style={{ padding: '0.5rem', textAlign: 'right' }}}>Total Paid</th>
                       <th style={{ padding: '0.5rem', textAlign: 'right' }}>Outstanding</th>
                     </tr>
                   </thead>
@@ -267,7 +271,7 @@ export function ReportsPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginTop: '1.25rem' }}>
           <Card title="Active Customer POs">
             {operationalData.active_customer_pos?.length === 0 ? (
-              <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', padding: '1rem', textAlign: 'center' }}>Tidak ada PO aktif.</p>
+              <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', padding: '1rem', textAlign: 'center' }}>{tr('Tidak ada PO aktif.', 'No active Customer POs.')}</p>
             ) : (
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
@@ -298,17 +302,17 @@ export function ReportsPage() {
 
       {!loading && activeTab === 'custody' && custodyData && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginTop: '1.25rem' }}>
-          <Card title="Ledger Kustodi Barang Customer (STB)">
+          <Card title={tr('Ledger Kustodi Barang Customer (STB)', 'Customer Goods Custody Ledger (Goods Receipt)')}>
             {custodyData.custody_balances?.length === 0 ? (
-              <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', padding: '1rem', textAlign: 'center' }}>Tidak ada saldo kustodi.</p>
+              <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', padding: '1rem', textAlign: 'center' }}>{tr('Tidak ada saldo kustodi.', 'No custody balances.')}</p>
             ) : (
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
                   <thead>
                     <tr style={{ borderBottom: '1px solid var(--color-border)', color: 'var(--color-text-secondary)' }}>
                       <th style={{ padding: '0.5rem' }}>Customer</th>
-                      <th style={{ padding: '0.5rem' }}>Material / Barang</th>
-                      <th style={{ padding: '0.5rem', textAlign: 'right' }}>Saldo Qty</th>
+                      <th style={{ padding: '0.5rem' }}}>{tr('Material / Barang', 'Material / Item')}</th>
+                      <th style={{ padding: '0.5rem', textAlign: 'right' }}}>{tr('Saldo Qty', 'Balance Qty')}</th>
                     </tr>
                   </thead>
                   <tbody>
