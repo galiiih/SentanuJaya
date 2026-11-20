@@ -641,7 +641,7 @@ export function MasterDataPage() {
                   </Select>
                 </FormField>
                 <FormField label={tr('Harga Satuan (IDR)', 'Unit Price (IDR)')} required>
-                  <NumericInput maximumFractionDigits={2} value={formData.unit_price ?? ''} onValueChange={raw => setFormData({ ...formData, unit_price: raw })} placeholder="1500000" required />
+                  <NumericInput min={0} maximumFractionDigits={2} value={formData.unit_price ?? ''} onValueChange={raw => setFormData({ ...formData, unit_price: raw })} placeholder="1500000" required />
                 </FormField>
               </>
             )}
@@ -680,7 +680,7 @@ export function MasterDataPage() {
                   <Input value={formData.unit || 'LITER'} onChange={e => setFormData({ ...formData, unit: e.target.value })} placeholder="LITER / CAN / PCS" required />
                 </FormField>
                 <FormField label={tr('Minimum Stok', 'Minimum Stock')}>
-                  <NumericInput maximumFractionDigits={3} value={formData.minimum_stock ?? formData.min_stock ?? ''} onValueChange={raw => setFormData({ ...formData, minimum_stock: raw, min_stock: raw })} placeholder="5" />
+                  <NumericInput min={0} maximumFractionDigits={3} value={formData.minimum_stock ?? formData.min_stock ?? ''} onValueChange={raw => setFormData({ ...formData, minimum_stock: raw, min_stock: raw })} placeholder="5" />
                 </FormField>
               </>
             )}
