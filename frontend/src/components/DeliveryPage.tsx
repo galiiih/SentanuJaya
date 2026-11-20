@@ -330,17 +330,17 @@ export function DeliveryPage() {
       const ok = Number(line.quantity_ok);
       const rej = Number(line.quantity_rejected);
       if (!Number.isFinite(ok) || !Number.isFinite(rej) || ok < 0 || rej < 0) {
-        setError(`${line.item_name}: kuantitas OK dan reject harus berupa angka nol atau lebih.`);
+        setError(tr(`${line.item_name}: kuantitas OK dan reject harus berupa angka nol atau lebih.`, `${line.item_name}: accepted and rejected quantities must be zero or greater.`));
         setSaving(false);
         return;
       }
       if (ok + rej <= 0) {
-        setError(`${line.item_name}: jumlah kuantitas OK dan reject harus lebih dari 0.`);
+        setError(tr(`${line.item_name}: jumlah kuantitas OK dan reject harus lebih dari 0.`, `${line.item_name}: the total accepted and rejected quantity must be greater than 0.`));
         setSaving(false);
         return;
       }
       if (ok + rej > line.delivered_quantity) {
-        setError(`${t.delivery.overAcceptanceError} (${line.item_name}: ${ok + rej} > ${line.delivered_quantity})`);
+        setError(tr(`${t.delivery.overAcceptanceError} (${line.item_name}: ${ok + rej} > ${line.delivered_quantity})`, `Accepted and rejected quantities cannot exceed the delivered quantity (${line.item_name}: ${ok + rej} > ${line.delivered_quantity}).`));
         setSaving(false);
         return;
       }
