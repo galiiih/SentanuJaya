@@ -460,6 +460,7 @@ export function NumericInput({
       className={`input ${className}`}
       value={displayValue()}
       onFocus={(event) => {
+        event.currentTarget.setCustomValidity(constraintMessage(rawValue));
         setFocused(true);
         onFocus?.(event);
       }}
