@@ -106,7 +106,7 @@ export function CustomerPoPage() {
         customer_item_id: '',
         color_code: '',
         quantity: '1',
-        unit_price: '0',
+        unit_price: '',
         notes: '',
       },
     ],
@@ -221,7 +221,7 @@ export function CustomerPoPage() {
           customer_item_id: '',
           color_code: '',
           quantity: '1',
-          unit_price: '0',
+          unit_price: '',
           notes: '',
         },
       ],
@@ -756,7 +756,9 @@ export function CustomerPoPage() {
                       <Input
                         type="number"
                         min="0"
+                        step="0.01"
                         value={line.unit_price}
+                        placeholder="0"
                         onChange={(e) => updateLine(idx, 'unit_price', e.target.value)}
                       />
                     </FormField>
