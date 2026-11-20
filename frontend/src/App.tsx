@@ -174,15 +174,15 @@ function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => 
 
   const isCollapsed = collapsed;
   return (
-    <aside id="main-sidebar-navigation" className={`sidebar${isCollapsed ? ' sidebar--collapsed' : ''}${mobileOpen ? ' sidebar--mobile-open' : ''}`} aria-label="Navigasi utama" onMouseDown={(event) => event.stopPropagation()}>
+    <aside id="main-sidebar-navigation" className={`sidebar${isCollapsed ? ' sidebar--collapsed' : ''}${mobileOpen ? ' sidebar--mobile-open' : ''}`} aria-label={language === 'en' ? 'Main navigation' : 'Navigasi utama'} onMouseDown={(event) => event.stopPropagation()}>
       <div className="sidebar__brand">
         <div data-sentanu-logo data-loop="true" data-hold={logoHold} style={{ width: '36px', height: '36px', flexShrink: 0 }} />
         <div className="sidebar__brand-copy"><strong>SENTANU JAYA</strong><span>ERP WORKSHOP</span></div>
       </div>
       <div className="sidebar__toggle-row">
-        <button type="button" className="icon-button sidebar__collapse" onClick={() => { hideTooltip(); setCollapsed((value) => !value); }} aria-label={collapsed ? 'Perlebar sidebar' : 'Ciutkan sidebar'} aria-controls="main-sidebar-navigation" aria-expanded={!collapsed} title={collapsed ? 'Perlebar sidebar' : 'Ciutkan sidebar'}>{collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}</button>
+        <button type="button" className="icon-button sidebar__collapse" onClick={() => { hideTooltip(); setCollapsed((value) => !value); }} aria-label={collapsed ? (language === 'en' ? 'Expand sidebar' : 'Perlebar sidebar') : (language === 'en' ? 'Collapse sidebar' : 'Ciutkan sidebar')} aria-controls="main-sidebar-navigation" aria-expanded={!collapsed} title={collapsed ? (language === 'en' ? 'Expand sidebar' : 'Perlebar sidebar') : (language === 'en' ? 'Collapse sidebar' : 'Ciutkan sidebar')}>{collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}</button>
       </div>
-      <nav className="sidebar__nav" aria-label="Navigasi utama" onScroll={hideTooltip}>
+      <nav className="sidebar__nav" aria-label={language === 'en' ? 'Main navigation' : 'Navigasi utama'} onScroll={hideTooltip}>
         {navSections.map((section) => {
           const visibleItems = section.items.filter((item) => hasPermission(item.permission));
           if (!visibleItems.length) return null;
@@ -206,6 +206,7 @@ function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => 
 }
 
 function ThemeSwitcher() {
+  const { language } = useLanguage();
   const [theme, setTheme] = useState(() => localStorage.getItem('sentanu_theme') || 'light');
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -217,8 +218,8 @@ function ThemeSwitcher() {
       type="button"
       className="icon-button"
       onClick={toggle}
-      title={theme === 'light' ? 'Ganti ke Tema Gelap' : 'Ganti ke Tema Terang'}
-      aria-label="Ganti Tema"
+      title={theme === 'light' ? (language === 'en' ? 'Switch to dark theme' : 'Ganti ke Tema Gelap') : (language === 'en' ? 'Switch to light theme' : 'Ganti ke Tema Terang')}
+      aria-label={language === 'en' ? 'Switch theme' : 'Ganti Tema'}
     >
       {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
     </button>
@@ -263,23 +264,26 @@ function AuthenticatedLayout() {
     return () => window.removeEventListener('keydown', closeOnEscape);
   }, [mobileNavOpen]);
   const location = useLocation();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const en = language === 'en';
   const pageKey = routePages[location.pathname] ?? 'dashboard';
   const pageTitle = t.pages[`${pageKey}Title` as keyof typeof t.pages] || 'Dashboard';
 
   const breadcrumbMap: Record<string, string[]> = {
     '/dashboard': ['Workspace', 'Dashboard'],
-    '/custody': ['Workspace', 'Operasional', 'Penitindahan STB'],
-    '/customer-po': ['Workspace', 'Operasional', 'Customer PO'],
-    '/delivery': ['Workspace', 'Operasional', 'Delivery'],
+    '/custody': ['Workspace', en ? 'Operations' : 'Operasional', en ? 'Customer Goods Custody' : 'Penitipan Barang Customer'],
+    '/customer-po': ['Workspace', en ? 'Operations' : 'Operasional', 'Customer PO'],
+    '/delivery': ['Workspace', en ? 'Operations' : 'Operasional', en ? 'Delivery Orders' : 'Surat Jalan'],
+    '/customer-returns': ['Workspace', en ? 'Operations' : 'Operasional', en ? 'Customer Returns' : 'Retur Customer'],
     '/invoicing': ['Workspace', 'Finance & Billing', 'Invoice'],
-    '/payments': ['Workspace', 'Finance & Billing', 'Pembayaran'],
-    '/reports': ['Workspace', 'Finance & Billing', 'Laporan'],
-    '/templates': ['Workspace', 'Finance & Billing', 'Template Dokumen'],
-    '/materials': ['Workspace', 'Inventaris', 'Material'],
-    '/master': ['Workspace', 'Inventaris', 'Master Data'],
+    '/payments': ['Workspace', 'Finance & Billing', en ? 'Payments' : 'Pembayaran'],
+    '/reports': ['Workspace', 'Finance & Billing', en ? 'Reports' : 'Laporan'],
+    '/templates': ['Workspace', 'Finance & Billing', en ? 'Document Templates' : 'Template Dokumen'],
+    '/materials': ['Workspace', en ? 'Inventory' : 'Inventaris', en ? 'Materials' : 'Material'],
+    '/master': ['Workspace', en ? 'Inventory' : 'Inventaris', 'Master Data'],
     '/knowledge': ['Workspace', 'Nanu Knowledge'],
-    '/users': ['Workspace', 'Inventaris', 'Manajemen Pengguna'],
+    '/documentation': ['Workspace', en ? 'Help & Documentation' : 'Bantuan & Dokumentasi'],
+    '/users': ['Workspace', en ? 'Inventory' : 'Inventaris', en ? 'User Management' : 'Manajemen Pengguna'],
   };
   const breadcrumbItems = breadcrumbMap[location.pathname] || ['Workspace', pageTitle];
 
@@ -299,7 +303,7 @@ function AuthenticatedLayout() {
             <span className="header-divider" />
             <LanguageSwitcher />
             <span className="header-divider" />
-            <button className="icon-button" aria-label="Notifikasi" disabled title="Fitur notifikasi belum tersedia"><Bell size={19} /></button>
+            <button className="icon-button" aria-label={language === 'en' ? 'Notifications' : 'Notifikasi'} disabled title={language === 'en' ? 'Notifications are not available yet' : 'Fitur notifikasi belum tersedia'}><Bell size={19} /></button>
 
           </div>
         </header>
