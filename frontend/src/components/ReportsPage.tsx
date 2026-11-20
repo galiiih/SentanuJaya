@@ -280,7 +280,7 @@ export function ReportsPage() {
                     <tr style={{ borderBottom: '1px solid var(--color-border)', color: 'var(--color-text-secondary)' }}>
                       <th style={{ padding: '0.5rem' }}>No. PO</th>
                       <th style={{ padding: '0.5rem' }}>Customer</th>
-                      <th style={{ padding: '0.5rem' }}>Tanggal</th>
+                      <th style={{ padding: '0.5rem' }}>{tr('Tanggal', 'Date')}</th>
                       <th style={{ padding: '0.5rem', textAlign: 'center' }}>Status</th>
                     </tr>
                   </thead>
