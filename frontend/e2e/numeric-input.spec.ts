@@ -43,10 +43,14 @@ test.describe('Formatted numeric inputs', () => {
     await unitPrice.blur();
     await expect(unitPrice).toHaveValue('1.234.567,89');
 
-    // Quantity supports fractional values and remains independently controlled.
+    // Quantity supports fractional values and enforces the original minimum.
+    await quantity.fill('0');
+    await quantity.blur();
+    expect(await quantity.evaluate((input: HTMLInputElement) => input.validity.valid)).toBeFalsy();
     await quantity.fill('2,5');
     await quantity.blur();
     await expect(quantity).toHaveValue('2,5');
+    expect(await quantity.evaluate((input: HTMLInputElement) => input.validity.valid)).toBeTruthy();
     await quantity.fill('');
     await expect(quantity).toHaveValue('');
   });
