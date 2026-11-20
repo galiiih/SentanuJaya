@@ -1,3 +1,4 @@
+import { getLocalDateInputValue } from './utils/date';
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import {
@@ -435,7 +436,7 @@ function CustodyPage() {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [editorOpen, setEditorOpen] = useState(false);
-  const [draft, setDraft] = useState({ company_id: '', branch_id: '', customer_id: '', received_date: new Date().toISOString().slice(0, 10), delivered_by_name: '', vehicle_plate: '', notes: '', customer_item_id: '', quantity_received: '1', condition: 'GOOD' as Condition, custody_location_id: '', color_code: '', damage_description: '' });
+  const [draft, setDraft] = useState({ company_id: '', branch_id: '', customer_id: '', received_date: getLocalDateInputValue(), delivered_by_name: '', vehicle_plate: '', notes: '', customer_item_id: '', quantity_received: '1', condition: 'GOOD' as Condition, custody_location_id: '', color_code: '', damage_description: '' });
 
   const load = async (showLoading = true) => {
     if (showLoading) setLoading(true); setError('');
