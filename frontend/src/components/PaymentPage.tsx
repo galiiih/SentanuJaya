@@ -38,6 +38,16 @@ export function PaymentPage() {
   const { hasPermission } = useAuth();
   const { t, language } = useLanguage();
   const formatCurrency = (value: number) => fmt(value, language === 'en' ? 'en-US' : 'id-ID');
+  const formatMethod = (value: string) => {
+    const labels: Record<string, [string, string]> = {
+      BANK_TRANSFER: ['Transfer Bank', 'Bank Transfer'],
+      CASH: ['Tunai', 'Cash'],
+      GIRO: ['Giro', 'Giro'],
+      CHECK: ['Cek', 'Check'],
+    };
+    const pair = labels[value];
+    return pair ? pair[language === 'en' ? 1 : 0] : value.replaceAll('_', ' ');
+  };
 
   const [payments, setPayments] = useState<PaymentRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -217,7 +227,7 @@ export function PaymentPage() {
             </FormField>
             <FormField label={t.payment.method} required>
               <Select value={method} onChange={(e) => setMethod(e.target.value)}>
-                {METHODS.map(m => <option key={m} value={m}>{m.replace('_', ' ')}</option>)}
+                {METHODS.map(m => <option key={m} value={m}>{formatMethod(m)}</option>)}
               </Select>
             </FormField>
             <FormField label={t.payment.referenceNo}>
@@ -263,7 +273,7 @@ export function PaymentPage() {
                     </tbody>
                     <tfoot>
                       <tr>
-                        <td colSpan={3} className="align-right" style={{ fontWeight: 'bold' }}>Total:</td>
+                        <td colSpan={3} className="align-right" style={{ fontWeight: 'bold' }}>{language === 'en' ? 'Total:' : 'Jumlah:'}</td>
                         <td className="align-right" style={{ fontWeight: 'bold' }}>{formatCurrency(totalAllocated)}</td>
                         <td></td>
                       </tr>
@@ -298,7 +308,7 @@ export function PaymentPage() {
             <div className="dashboard-grid">
               <FormField label={t.common.customer}><p>{detail.customer?.name ?? '-'}</p></FormField>
               <FormField label={t.payment.paymentDate}><p>{detail.payment_date}</p></FormField>
-              <FormField label={t.payment.method}><p>{detail.method.replace('_', ' ')}</p></FormField>
+              <FormField label={t.payment.method}><p>{formatMethod(detail.method)}</p></FormField>
               <FormField label={t.payment.amount}><p>{formatCurrency(detail.amount)}</p></FormField>
               <FormField label={t.payment.referenceNo}><p>{detail.reference_no || '-'}</p></FormField>
               <FormField label={t.common.status}><StatusBadge status={detail.status} /></FormField>
