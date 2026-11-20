@@ -5,12 +5,13 @@ import { useLanguage } from '../i18n';
 import { Alert, Button, Card, FormField, Input, StatusBadge } from './ui';
 
 
-const fmt = (n: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
+const fmt = (n: number, locale = 'id-ID') => new Intl.NumberFormat(locale, { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
 
 export function ReportsPage() {
   const { language } = useLanguage();
   const en = language === 'en';
   const tr = (id: string, english: string) => en ? english : id;
+  const formatCurrency = (value: number) => fmt(value, en ? 'en-US' : 'id-ID');
   const [activeTab, setActiveTab] = useState<'financial' | 'receivables' | 'operational' | 'custody'>('financial');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -145,17 +146,17 @@ export function ReportsPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
             <Card title="Total Revenue (Posted)">
               <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--color-success)' }}>
-                {fmt(financialData.total_revenue ?? financialData.total_invoice_amount ?? 0)}
+                {formatCurrency(financialData.total_revenue ?? financialData.total_invoice_amount ?? 0)}
               </div>
             </Card>
             <Card title="Total Invoiced">
               <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>
-                {fmt(financialData.total_invoice_amount ?? 0)}
+                {formatCurrency(financialData.total_invoice_amount ?? 0)}
               </div>
             </Card>
             <Card title="Total Payments">
               <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--color-info)' }}>
-                {fmt(financialData.total_payment_amount ?? 0)}
+                {formatCurrency(financialData.total_payment_amount ?? 0)}
               </div>
             </Card>
           </div>
@@ -182,8 +183,8 @@ export function ReportsPage() {
                           <tr key={inv.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
                             <td style={{ padding: '0.5rem', fontWeight: 500 }}>{inv.invoice_number}</td>
                             <td style={{ padding: '0.5rem', color: 'var(--color-text-secondary)' }}>{inv.invoice_date}</td>
-                            <td style={{ padding: '0.5rem', textAlign: 'right', fontWeight: 600 }}>{fmt(inv.total_amount)}</td>
-                            <td style={{ padding: '0.5rem', textAlign: 'right' }}>{fmt(inv.amount_due)}</td>
+                            <td style={{ padding: '0.5rem', textAlign: 'right', fontWeight: 600 }}>{formatCurrency(inv.total_amount)}</td>
+                            <td style={{ padding: '0.5rem', textAlign: 'right' }}>{formatCurrency(inv.amount_due)}</td>
                             <td style={{ padding: '0.5rem', textAlign: 'center' }}><StatusBadge status={inv.status} /></td>
                           </tr>
                         ))}
@@ -210,7 +211,7 @@ export function ReportsPage() {
                             <td style={{ padding: '0.5rem', fontWeight: 500 }}>{pay.payment_number}</td>
                             <td style={{ padding: '0.5rem', color: 'var(--color-text-secondary)' }}>{pay.payment_date}</td>
                             <td style={{ padding: '0.5rem' }}>{pay.payment_method ?? (en ? 'Transfer' : 'Transfer')}</td>
-                            <td style={{ padding: '0.5rem', textAlign: 'right', fontWeight: 600, color: 'var(--color-success)' }}>{fmt(pay.amount)}</td>
+                            <td style={{ padding: '0.5rem', textAlign: 'right', fontWeight: 600, color: 'var(--color-success)' }}>{formatCurrency(pay.amount)}</td>
                             <td style={{ padding: '0.5rem', textAlign: 'center' }}><StatusBadge status={pay.status} /></td>
                           </tr>
                         ))}
@@ -229,7 +230,7 @@ export function ReportsPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
             <Card title={tr('Total Outstanding Piutang', 'Total Outstanding Receivables')}>
               <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--color-warning)' }}>
-                {fmt(receivablesData.total_outstanding ?? 0)}
+                {formatCurrency(receivablesData.total_outstanding ?? 0)}
               </div>
             </Card>
           </div>
@@ -254,9 +255,9 @@ export function ReportsPage() {
                           <div>{c.customer_name}</div>
                           <div style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)' }}>{c.customer_code}</div>
                         </td>
-                        <td style={{ padding: '0.5rem', textAlign: 'right', fontWeight: 600 }}>{fmt(c.total_billed)}</td>
-                        <td style={{ padding: '0.5rem', textAlign: 'right', color: 'var(--color-success)' }}>{fmt(c.total_paid)}</td>
-                        <td style={{ padding: '0.5rem', textAlign: 'right', fontWeight: 700, color: 'var(--color-warning)' }}>{fmt(c.outstanding)}</td>
+                        <td style={{ padding: '0.5rem', textAlign: 'right', fontWeight: 600 }}>{formatCurrency(c.total_billed)}</td>
+                        <td style={{ padding: '0.5rem', textAlign: 'right', color: 'var(--color-success)' }}>{formatCurrency(c.total_paid)}</td>
+                        <td style={{ padding: '0.5rem', textAlign: 'right', fontWeight: 700, color: 'var(--color-warning)' }}>{formatCurrency(c.outstanding)}</td>
                       </tr>
                     ))}
                   </tbody>
