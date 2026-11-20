@@ -4,8 +4,12 @@ import type { DocumentTemplateRecord, DocumentTemplateVersionRecord } from '../s
 import VisualEditorModal from '../components/VisualEditorModal';
 import { PageHeader, Button, Card, DataTable, type DataTableColumn } from '../components/ui';
 import { Plus } from 'lucide-react';
+import { useLanguage } from '../i18n';
 
 export default function TemplateManagementPage() {
+  const { language } = useLanguage();
+  const en = language === 'en';
+  const tr = (id: string, english: string) => en ? english : id;
   const [templates, setTemplates] = useState<DocumentTemplateRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -61,7 +65,7 @@ export default function TemplateManagementPage() {
       if (uploadContent) formData.append('content', uploadContent);
 
       await documentTemplateApi.create(formData);
-      setSuccessMsg('Template berhasil diunggah/dibuat.');
+      setSuccessMsg(tr('Template berhasil diunggah/dibuat.', 'Template uploaded/created successfully.'));
       setShowUploadModal(false);
       setUploadName('');
       setUploadFile(null);
@@ -76,7 +80,7 @@ export default function TemplateManagementPage() {
     setEditingTemplate(tpl);
     setEditName(tpl.name);
     setEditContent(tpl.content || '');
-    setPreviewHtml(tpl.content || '<p>Tidak ada konten HTML.</p>');
+    setPreviewHtml(tpl.content || '<p>No HTML content.</p>');
   };
 
   const handleSaveEdit = async () => {
@@ -88,7 +92,7 @@ export default function TemplateManagementPage() {
         name: editName,
         content: editContent,
       });
-      setSuccessMsg('Template berhasil diperbarui (versi snapshot baru disimpan).');
+      setSuccessMsg(tr('Template berhasil diperbarui (versi snapshot baru disimpan).', 'Template updated successfully (a new version snapshot was saved).'));
       setEditingTemplate(null);
       await loadTemplates();
     } catch (err: unknown) {
@@ -110,12 +114,12 @@ export default function TemplateManagementPage() {
   };
 
   const handleRestoreVersion = async (tplId: number, versionNum: number) => {
-    if (!confirm(`Pulihkan template ke versi v${versionNum}? Snapshot baru akan dibuat untuk merekam pemulihan ini.`)) return;
+    if (!confirm(`${tr('Pulihkan template ke versi', 'Restore template to version')} v${versionNum}? ${tr('Snapshot baru akan dibuat untuk merekam pemulihan ini.', 'A new snapshot will be created to record this restoration.')}`)) return;
     setError(null);
     setSuccessMsg(null);
     try {
       await documentTemplateApi.restore(tplId, versionNum);
-      setSuccessMsg(`Template berhasil dipulihkan ke versi v${versionNum}.`);
+      setSuccessMsg(`${tr('Template berhasil dipulihkan ke versi', 'Template restored to version')} v${versionNum}.`);
       setVersionTemplate(null);
       await loadTemplates();
     } catch (err: unknown) {
@@ -124,12 +128,12 @@ export default function TemplateManagementPage() {
   };
 
   const handleActivate = async (id: number) => {
-    if (!confirm('Aktifkan template ini sebagai template utama?')) return;
+    if (!confirm(tr('Aktifkan template ini sebagai template utama?', 'Activate this template as the primary template?'))) return;
     setError(null);
     setSuccessMsg(null);
     try {
       await documentTemplateApi.activate(id);
-      setSuccessMsg('Template berhasil diaktifkan.');
+      setSuccessMsg(tr('Template berhasil diaktifkan.', 'Template activated successfully.'));
       await loadTemplates();
     } catch (err: unknown) {
       setError(apiError(err));
@@ -137,12 +141,12 @@ export default function TemplateManagementPage() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Hapus template draft ini?')) return;
+    if (!confirm(tr('Hapus template draft ini?', 'Delete this draft template?'))) return;
     setError(null);
     setSuccessMsg(null);
     try {
       await documentTemplateApi.delete(id);
-      setSuccessMsg('Template berhasil dihapus.');
+      setSuccessMsg(tr('Template berhasil dihapus.', 'Template deleted successfully.'));
       await loadTemplates();
     } catch (err: unknown) {
       setError(apiError(err));
@@ -154,13 +158,13 @@ export default function TemplateManagementPage() {
   const columns: DataTableColumn<DocumentTemplateRecord & { id: string }>[] = [
     {
       id: 'name',
-      header: 'Nama Template',
+      header: tr('Nama Template', 'Template Name'),
       cell: (tpl) => (
         <span className="font-medium text-slate-900 dark:text-slate-100 flex items-center space-x-2">
           <span>{tpl.name}</span>
           {tpl.is_active && (
             <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300">
-              Aktif
+              {tr('Aktif', 'Active')}
             </span>
           )}
         </span>
@@ -173,12 +177,12 @@ export default function TemplateManagementPage() {
     },
     {
       id: 'version',
-      header: 'Versi',
+      header: tr('Versi', 'Version'),
       cell: (tpl) => (
         <button
           onClick={() => handleOpenVersions(tpl)}
           className="underline hover:text-indigo-600 dark:hover:text-indigo-400 font-medium"
-          title="Klik untuk melihat riwayat versi"
+          title={tr('Klik untuk melihat riwayat versi', 'Click to view version history')}
         >
           v{tpl.version} 📋
         </button>
@@ -199,7 +203,7 @@ export default function TemplateManagementPage() {
     },
     {
       id: 'actions',
-      header: 'Aksi',
+      header: tr('Aksi', 'Actions'),
       align: 'right',
       cell: (tpl) => (
         <div className="flex justify-end space-x-2">
@@ -230,7 +234,7 @@ export default function TemplateManagementPage() {
               onClick={() => handleActivate(tpl.id)}
               className="px-2.5 py-1 bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 rounded hover:bg-emerald-100 transition font-medium text-xs"
             >
-              Aktifkan
+              {tr('Aktifkan', 'Activate')}
             </button>
           )}
           {!tpl.is_active && (
@@ -238,7 +242,7 @@ export default function TemplateManagementPage() {
               onClick={() => handleDelete(tpl.id)}
               className="px-2.5 py-1 bg-red-50 text-red-600 dark:bg-red-950 dark:text-red-300 rounded hover:bg-red-100 transition font-medium text-xs"
             >
-              Hapus
+              {tr('Hapus', 'Delete')}
             </button>
           )}
         </div>
@@ -254,11 +258,11 @@ export default function TemplateManagementPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Manajemen Template & HTML Editor"
-        description="Kelola template cetak Surat Jalan dan Invoice dengan editor HTML aman, GrapesJS visual builder, & version history."
+        title={tr('Manajemen Template & HTML Editor', 'Template Management & HTML Editor')}
+        description={tr('Kelola template cetak Surat Jalan dan Invoice dengan editor HTML aman, GrapesJS visual builder, & version history.', 'Manage Delivery Order and Invoice print templates with a secure HTML editor, GrapesJS visual builder, and version history.')}
         action={
           <Button onClick={() => setShowUploadModal(true)}>
-            <Plus size={16} /> Unggah / Buat Template
+            <Plus size={16} /> {tr('Unggah / Buat Template', 'Upload / Create Template')}
           </Button>
         }
       />
@@ -274,7 +278,7 @@ export default function TemplateManagementPage() {
             activeTab === 'invoice' ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400'
           }`}
         >
-          Template Invoice ({templates.filter((t) => t.document_type === 'invoice').length})
+          {tr('Template Invoice (', 'Invoice Templates (')}{templates.filter((t) => t.document_type === 'invoice').length})
         </button>
         <button
           onClick={() => setActiveTab('surat_jalan')}
@@ -282,20 +286,20 @@ export default function TemplateManagementPage() {
             activeTab === 'surat_jalan' ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400' : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400'
           }`}
         >
-          Template Surat Jalan ({templates.filter((t) => t.document_type === 'surat_jalan').length})
+          {tr('Template Surat Jalan (', 'Delivery Order Templates (')}{templates.filter((t) => t.document_type === 'surat_jalan').length})
         </button>
       </div>
 
       <Card>
         {loading ? (
-          <div className="p-8 text-center text-slate-500">Memuat template...</div>
+          <div className="p-8 text-center text-slate-500">{tr('Memuat template...', 'Loading templates...')}</div>
         ) : (
           <DataTable
             columns={columns}
             rows={tableRows}
             searchText={(tpl) => `${tpl.name} ${tpl.format} ${tpl.status}`}
-            emptyTitle="Belum ada template"
-            emptyDescription="Belum ada template untuk kategori ini. Klik tombol Unggah / Buat Template untuk mulai."
+            emptyTitle={tr('Belum ada template', 'No templates yet')}
+            emptyDescription={tr('Belum ada template untuk kategori ini. Klik tombol Unggah / Buat Template untuk mulai.', 'There are no templates in this category. Select Upload / Create Template to get started.')}
           />
         )}
       </Card>
@@ -305,32 +309,32 @@ export default function TemplateManagementPage() {
         <div className="glass-modal-overlay">
           <div className="glass-modal">
             <div className="modal__header">
-              <h2>Unggah / Buat Template Baru</h2>
+              <h2>{tr('Unggah / Buat Template Baru', 'Upload / Create New Template')}</h2>
             </div>
             <form onSubmit={handleUploadSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold mb-1">Nama Template</label>
+                <label className="block text-xs font-semibold mb-1">{tr('Nama Template', 'Template Name')}</label>
                 <input
                   type="text"
                   required
                   value={uploadName}
                   onChange={(e) => setUploadName(e.target.value)}
-                  placeholder="Contoh: Template Invoice Standar"
+                  placeholder={tr('Contoh: Template Invoice Standar', 'e.g. Standard Invoice Template')}
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold mb-1">Jenis Dokumen</label>
+                  <label className="block text-xs font-semibold mb-1">{tr('Jenis Dokumen', 'Document Type')}</label>
                   <select
                     value={uploadType}
                     onChange={(e) => setUploadType(e.target.value as 'invoice' | 'surat_jalan')}
                   >
                     <option value="invoice">Invoice</option>
-                    <option value="surat_jalan">Surat Jalan</option>
+                    <option value="surat_jalan">{tr('Surat Jalan', 'Delivery Order')}</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold mb-1">Format</label>
+                  <label className="block text-xs font-semibold mb-1">{tr('Format', 'Format')}</label>
                   <select
                     value={uploadFormat}
                     onChange={(e) => setUploadFormat(e.target.value as 'html' | 'docx' | 'xlsx')}
@@ -344,7 +348,7 @@ export default function TemplateManagementPage() {
 
               {uploadFormat === 'html' && (
                 <div>
-                  <label className="block text-xs font-semibold mb-1">Konten HTML (Opsional jika unggah file)</label>
+                  <label className="block text-xs font-semibold mb-1">{tr('Konten HTML (Opsional jika unggah file)', 'HTML Content (Optional when uploading a file)')}</label>
                   <textarea
                     rows={5}
                     value={uploadContent}
@@ -355,7 +359,7 @@ export default function TemplateManagementPage() {
               )}
 
               <div>
-                <label className="block text-xs font-semibold mb-1">File Template (Opsional)</label>
+                <label className="block text-xs font-semibold mb-1">{tr('File Template (Opsional)', 'Template File (Optional)')}</label>
                 <input
                   type="file"
                   onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
@@ -365,10 +369,10 @@ export default function TemplateManagementPage() {
 
               <div className="flex justify-end space-x-3 pt-4 border-t border-slate-200 dark:border-slate-800">
                 <Button variant="secondary" type="button" onClick={() => setShowUploadModal(false)}>
-                  Batal
+                  {tr('Batal', 'Cancel')}
                 </Button>
                 <Button type="submit">
-                  Simpan Template
+                  {tr('Simpan Template', 'Save Template')}
                 </Button>
               </div>
             </form>
