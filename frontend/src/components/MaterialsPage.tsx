@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLanguage } from '../i18n';
 import axios from 'axios';
 import { Plus, Eye, CheckCircle2, FileText, ArrowLeftRight, Package, AlertTriangle } from 'lucide-react';
 import {
@@ -30,6 +31,9 @@ import {
 } from './ui';
 
 export function MaterialsPage() {
+  const { language } = useLanguage();
+  const en = language === 'en';
+  const tr = (id: string, english: string) => en ? english : id;
   const [activeTab, setActiveTab] = useState<'stocks' | 'receipts' | 'cards' | 'adjust'>('stocks');
 
   // Data states
@@ -176,7 +180,7 @@ export function MaterialsPage() {
   const handlePostReceipt = (id: string) => {
     setConfirmState({
       open: true,
-      title: 'Post Penerimaan Material',
+      title: 'Post {tr('Penerimaan Material', 'Material Receipts')}',
       description: 'Apakah Anda yakin ingin memposting penerimaan ini? Stok di gudang akan bertambah dan transaksi akan dikunci.',
       tone: 'primary',
       onConfirm: async () => {
@@ -249,7 +253,7 @@ export function MaterialsPage() {
         quantity,
         reason: `${opnameForm.reason} (System: ${currentStock}, Physical: ${opnameForm.physical_qty})`,
       });
-      setNotice(`Stock opname berhasil direkonsiliasi (${type} ${quantity}).`);
+      setNotice(`${tr('Stock opname berhasil direkonsiliasi', 'Stock count reconciled')} (${type} ${quantity}).`);
       loadData();
     } catch (err) {
       setError(apiError(err));
@@ -258,18 +262,18 @@ export function MaterialsPage() {
 
   const materialColumns: DataTableColumn<Material>[] = [
     { id: 'sku', header: 'SKU', cell: (row) => row.sku, sortValue: (row) => row.sku },
-    { id: 'name', header: 'Nama Material', cell: (row) => row.name, sortValue: (row) => row.name },
-    { id: 'category', header: 'Kategori', cell: (row) => row.category, sortValue: (row) => row.category },
-    { id: 'quantity_on_hand', header: 'Stok Aktual', cell: (row) => `${row.quantity_on_hand} ${row.unit}`, sortValue: (row) => row.quantity_on_hand },
-    { id: 'minimum_stock', header: 'Minimum', cell: (row) => `${row.minimum_stock} ${row.unit}`, sortValue: (row) => row.minimum_stock },
+    { id: 'name', header: tr('Nama Material', 'Material Name'), cell: (row) => row.name, sortValue: (row) => row.name },
+    { id: 'category', header: tr('Kategori', 'Category'), cell: (row) => row.category, sortValue: (row) => row.category },
+    { id: 'quantity_on_hand', header: tr('Stok Aktual', 'Current Stock'), cell: (row) => `${row.quantity_on_hand} ${row.unit}`, sortValue: (row) => row.quantity_on_hand },
+    { id: 'minimum_stock', header: tr('Minimum', 'Minimum'), cell: (row) => `${row.minimum_stock} ${row.unit}`, sortValue: (row) => row.minimum_stock },
     {
       id: 'status',
       header: 'Status',
       cell: (row) => (
         row.quantity_on_hand <= row.minimum_stock ? (
-          <StatusBadge status="warning" label="Stok Rendah" />
+          <StatusBadge status="warning" label={tr('Stok Rendah', 'Low Stock')} />
         ) : (
-          <StatusBadge status="success" label="Aman" />
+          <StatusBadge status="success" label={tr('Aman', 'Healthy')} />
         )
       ),
     },
@@ -277,17 +281,17 @@ export function MaterialsPage() {
 
   return (
     <>
-      <PageHeader title="Inventaris & Gudang Material" description="Kelola penerimaan material Sentanu Jaya, mutasi stok, adjustment, dan opname secara akurat." />
+      <PageHeader title={tr('Inventaris & Gudang Material', 'Material Inventory & Warehouse')} description={tr('Kelola penerimaan material Sentanu Jaya, mutasi stok, adjustment, dan opname secara akurat.', 'Manage Sentanu Jaya material receipts, stock movements, adjustments, and physical stock counts accurately.')} />
       
       <Toast open={Boolean(notice)} message={notice} onClose={() => setNotice('')} />
       {error && <Alert tone="danger">{error}</Alert>}
       {warehouses.length === 0 && (
         <Alert tone="warning">
-          Belum ada gudang yang terdaftar. Buat terlebih dahulu melalui <strong>Master Data → Cabang</strong>, kemudian <strong>Master Data → Gudang</strong> dengan memilih cabang tersebut. Setelah gudang aktif dibuat, pilihan gudang akan muncul di formulir penerimaan dan penyesuaian stok.
+          {tr('Belum ada gudang yang terdaftar. Buat terlebih dahulu melalui Master Data → Cabang, kemudian Master Data → Gudang dengan memilih cabang tersebut.', 'No warehouses are registered. First create a Branch under Master Data, then create a Warehouse and assign it to that branch.')} Setelah gudang aktif dibuat, pilihan gudang akan muncul di formulir penerimaan dan penyesuaian stok.
         </Alert>
       )}
       {warehouses.length > 0 && activeWarehouses.length === 0 && (
-        <Alert tone="warning">Semua gudang saat ini nonaktif. Aktifkan salah satu gudang melalui Master Data → Gudang agar transaksi stok dapat dilakukan.</Alert>
+        <Alert tone="warning">{tr('Semua gudang saat ini nonaktif. Aktifkan salah satu gudang melalui Master Data → Gudang agar transaksi stok dapat dilakukan.', 'All warehouses are currently inactive. Activate a warehouse under Master Data → Warehouses to enable stock transactions.')}</Alert>
       )}
 
       {lowStocks.length > 0 && (
@@ -295,7 +299,7 @@ export function MaterialsPage() {
           <Alert tone="warning">
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <AlertTriangle size={18} />
-              <span>Terdapat {lowStocks.length} material dengan stok di bawah minimum! Harap lakukan penerimaan material.</span>
+              <span>{tr(`Terdapat ${lowStocks.length} material dengan stok di bawah minimum! Harap lakukan penerimaan material.`, `${lowStocks.length} materials are below minimum stock. Please arrange a material receipt.`)}</span>
             </div>
           </Alert>
         </div>
@@ -304,7 +308,7 @@ export function MaterialsPage() {
       {/* Tabs */}
       <div className="flex gap-2 mb-6 border-b pb-3 flex-wrap">
         <Button variant={activeTab === 'stocks' ? 'primary' : 'secondary'} onClick={() => setActiveTab('stocks')}>
-          <Package className="w-4 h-4 mr-2" /> Daftar Stok Material
+          <Package className="w-4 h-4 mr-2" /> {tr('Daftar Stok Material', 'Material Stock List')}
         </Button>
         <Button variant={activeTab === 'receipts' ? 'primary' : 'secondary'} onClick={() => setActiveTab('receipts')}>
           <FileText className="w-4 h-4 mr-2" /> Penerimaan Material
@@ -313,33 +317,33 @@ export function MaterialsPage() {
           <ArrowLeftRight className="w-4 h-4 mr-2" /> Stock Card (Mutasi)
         </Button>
         <Button variant={activeTab === 'adjust' ? 'primary' : 'secondary'} onClick={() => setActiveTab('adjust')}>
-          <CheckCircle2 className="w-4 h-4 mr-2" /> Stock Adjustment & Opname
+          <CheckCircle2 className="w-4 h-4 mr-2" /> Stock Adjustment & Stock Count
         </Button>
       </div>
 
       {activeTab === 'stocks' && (
         <Card>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <h3 style={{ fontWeight: 600, fontSize: '1.1rem' }}>Saldo Stok Material Gudang</h3>
+            <h3 style={{ fontWeight: 600, fontSize: '1.1rem' }}>{tr('Saldo Stok Material Gudang', 'Warehouse Material Stock Balance')}</h3>
             <Button onClick={() => setReceiptModalOpen(true)} disabled={activeWarehouses.length === 0}>
-              <Plus className="w-4 h-4 mr-2" /> Penerimaan Material Baru
+              <Plus className="w-4 h-4 mr-2" /> {tr('Penerimaan Material Baru', 'New Material Receipt')}
             </Button>
           </div>
-          <DataTable columns={materialColumns} rows={materials} searchText={(m) => `${m.sku} ${m.name} ${m.category}`} emptyTitle="Belum ada material" emptyDescription="Data material gudang Sentanu Jaya." />
+          <DataTable columns={materialColumns} rows={materials} searchText={(m) => `${m.sku} ${m.name} ${m.category}`} emptyTitle={tr('Belum ada material', 'No materials yet')} emptyDescription="Data material gudang Sentanu Jaya." />
         </Card>
       )}
 
       {activeTab === 'receipts' && (
         <Card>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <h3 style={{ fontWeight: 600, fontSize: '1.1rem' }}>Daftar Penerimaan Material (Material Receipts)</h3>
+            <h3 style={{ fontWeight: 600, fontSize: '1.1rem' }}>{tr('Daftar Penerimaan Material (Material Receipts)', 'Material Receipts')}</h3>
             <Button onClick={() => setReceiptModalOpen(true)}>
-              <Plus className="w-4 h-4 mr-2" /> Buat Penerimaan
+              <Plus className="w-4 h-4 mr-2" /> {tr('Buat Penerimaan', 'Create Receipt')}
             </Button>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             {receipts.length === 0 ? (
-              <p style={{ color: 'var(--muted-foreground)', textAlign: 'center', padding: '1.5rem' }}>Belum ada transaksi penerimaan material.</p>
+              <p style={{ color: 'var(--muted-foreground)', textAlign: 'center', padding: '1.5rem' }}>{tr('Belum ada transaksi penerimaan material.', 'No material receipt transactions yet.')}</p>
             ) : (
               receipts.map((rec) => (
                 <div key={rec.id} style={{ padding: '1rem', border: '1px solid var(--border)', borderRadius: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--card)', flexWrap: 'wrap', gap: '1rem' }}>
@@ -349,18 +353,18 @@ export function MaterialsPage() {
                       <StatusBadge status={rec.status === 'POSTED' ? 'success' : rec.status === 'DRAFT' ? 'warning' : 'neutral'} label={rec.status} />
                     </div>
                     <p style={{ fontSize: '0.875rem', color: 'var(--muted-foreground)', marginTop: '0.25rem' }}>
-                      Gudang: {rec.warehouse?.name || '-'} | Supplier: {rec.supplier?.name || 'Umum'} | Tanggal: {rec.receipt_date}
+                      {tr('Gudang:', 'Warehouse:')} {rec.warehouse?.name || '-'} | {tr('Supplier:', 'Supplier:')} {rec.supplier?.name || (en ? 'General' : 'Umum')} | {tr('Tanggal:', 'Date:')} {rec.receipt_date}
                     </p>
                     {rec.notes && <p style={{ fontSize: '0.75rem', fontStyle: 'italic', marginTop: '0.25rem' }}>{rec.notes}</p>}
                   </div>
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
                     <Button variant="secondary" onClick={() => materialReceiptApi.get(rec.id).then(setReceiptDetail)}>
-                      <Eye className="w-4 h-4 mr-1" /> Detail
+                      <Eye className="w-4 h-4 mr-1" /> {tr('Detail', 'Details')}
                     </Button>
                     {rec.status === 'DRAFT' && (
                       <>
                         <Button variant="primary" onClick={() => handlePostReceipt(rec.id)}>Post</Button>
-                        <Button variant="danger" onClick={() => handleCancelReceipt(rec.id)}>Batal</Button>
+                        <Button variant="danger" onClick={() => handleCancelReceipt(rec.id)}>{tr('Batal', 'Cancel')}</Button>
                       </>
                     )}
                   </div>
@@ -373,10 +377,10 @@ export function MaterialsPage() {
 
       {activeTab === 'cards' && (
         <Card>
-          <h3 className="font-semibold text-lg mb-4">Riwayat Mutasi Stok (Stock Card)</h3>
+          <h3 className="font-semibold text-lg mb-4">{tr('Riwayat Mutasi Stok (Stock Card)', 'Stock Movement History (Stock Card)')}</h3>
           <div className="space-y-2">
             {movements.length === 0 ? (
-              <p className="text-muted-foreground text-center py-6">Belum ada mutasi stok tercatat.</p>
+              <p className="text-muted-foreground text-center py-6">{tr('Belum ada mutasi stok tercatat.', 'No stock movements recorded yet.')}</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm border-collapse">
@@ -384,12 +388,12 @@ export function MaterialsPage() {
                     <tr className="border-b bg-muted/50">
                       <th className="p-3">Tanggal</th>
                       <th className="p-3">Tipe</th>
-                      <th className="p-3">Material</th>
-                      <th className="p-3">Gudang</th>
+                      <th className="p-3">{tr('Material', 'Material')}</th>
+                      <th className="p-3">{tr('Gudang', 'Warehouse')}</th>
                       <th className="p-3">Masuk</th>
                       <th className="p-3">Keluar</th>
                       <th className="p-3">Saldo Akhir</th>
-                      <th className="p-3">Keterangan</th>
+                      <th className="p-3">{tr('Keterangan', 'Description')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -416,38 +420,38 @@ export function MaterialsPage() {
       {activeTab === 'adjust' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card>
-            <h3 className="font-semibold text-lg mb-4">Form Stock Adjustment (Koreksi Stok)</h3>
+            <h3 className="font-semibold text-lg mb-4">{tr('Form Stock Adjustment (Koreksi Stok)', 'Stock Adjustment Form')}</h3>
             <form onSubmit={handleStockAdjust} className="space-y-4">
-              <FormField label="Gudang" required>
+              <FormField label={tr('Gudang', 'Warehouse')} required>
                 <Select value={adjForm.warehouse_id} onChange={(e) => setAdjForm({ ...adjForm, warehouse_id: e.target.value })} required>
-                  <option value="">Pilih Gudang...</option>
+                  <option value="">{tr('Pilih Gudang...', 'Select warehouse...')}</option>
                   {activeWarehouses.map((w: any) => <option key={w.id} value={w.id}>{w.code} — {w.name}{w.branch?.name ? ` (${w.branch.name})` : ''}</option>)}
                 </Select>
               </FormField>
-              <FormField label="Material" required>
+              <FormField label={tr('Material', 'Material')} required>
                 <Select value={adjForm.material_id} onChange={(e) => setAdjForm({ ...adjForm, material_id: e.target.value })} required>
-                  <option value="">Pilih Material...</option>
+                  <option value="">{tr('Pilih Material...', 'Select material...')}</option>
                   {materials.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
                 </Select>
               </FormField>
-              <FormField label="Jenis Adjustment" required>
+              <FormField label={tr('Jenis Adjustment', 'Adjustment Type')} required>
                 <Select value={adjForm.type} onChange={(e) => setAdjForm({ ...adjForm, type: e.target.value as 'IN' | 'OUT' })} required>
-                  <option value="IN">IN (Penambahan)</option>
-                  <option value="OUT">OUT (Pengurangan)</option>
+                  <option value="IN">IN (Increase)</option>
+                  <option value="OUT">OUT (Decrease)</option>
                 </Select>
               </FormField>
-              <FormField label="Kuantitas" required>
+              <FormField label={tr('Kuantitas', 'Quantity')} required>
                 <NumericInput value={adjForm.quantity} maximumFractionDigits={0} placeholder="Contoh: 10" onValueChange={(raw) => setAdjForm({ ...adjForm, quantity: raw })} required />
               </FormField>
-              <FormField label="Alasan / Keterangan (Wajib)" required>
-                <Textarea value={adjForm.reason} onChange={(e) => setAdjForm({ ...adjForm, reason: e.target.value })} placeholder="Alasan koreksi stok..." required />
+              <FormField label={tr('Alasan / Keterangan (Wajib)', 'Reason / Description (Required)')} required>
+                <Textarea value={adjForm.reason} onChange={(e) => setAdjForm({ ...adjForm, reason: e.target.value })} placeholder={tr('Alasan koreksi stok...', 'Reason for stock adjustment...')} required />
               </FormField>
-              <Button type="submit" disabled={activeWarehouses.length === 0}>Simpan Adjustment</Button>
+              <Button type="submit" disabled={activeWarehouses.length === 0}>{tr('Simpan Adjustment', 'Save Adjustment')}</Button>
             </form>
           </Card>
 
           <Card>
-            <h3 className="font-semibold text-lg mb-4">Stock Opname & Rekonsiliasi Fisik</h3>
+            <h3 className="font-semibold text-lg mb-4">{tr('Stock Opname & Rekonsiliasi Fisik', 'Physical Stock Count & Reconciliation')}</h3>
             <form onSubmit={handleStockOpname} className="space-y-4">
               <FormField label="Gudang" required>
                 <Select value={opnameForm.warehouse_id} onChange={(e) => setOpnameForm({ ...opnameForm, warehouse_id: e.target.value })} required>
@@ -461,13 +465,13 @@ export function MaterialsPage() {
                   {materials.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
                 </Select>
               </FormField>
-              <FormField label="Jumlah Stok Fisik Hitung" required>
-                <NumericInput value={opnameForm.physical_qty} maximumFractionDigits={0} placeholder="Contoh: 0" onValueChange={(raw) => setOpnameForm({ ...opnameForm, physical_qty: raw })} required />
+              <FormField label={tr('Jumlah Stok Fisik Hitung', 'Counted Physical Stock')} required>
+                <NumericInput value={opnameForm.physical_qty} maximumFractionDigits={0} placeholder={tr('Contoh: 0', 'e.g. 0')} onValueChange={(raw) => setOpnameForm({ ...opnameForm, physical_qty: raw })} required />
               </FormField>
-              <FormField label="Catatan / Alasan Opname">
+              <FormField label={tr('Catatan / Alasan Opname', 'Stock Count Notes / Reason')}>
                 <Textarea value={opnameForm.reason} onChange={(e) => setOpnameForm({ ...opnameForm, reason: e.target.value })} />
               </FormField>
-              <Button type="submit">Proses Stock Opname</Button>
+              <Button type="submit">{tr('Proses Stock Opname', 'Process Stock Count')}</Button>
             </form>
           </Card>
         </div>
@@ -475,7 +479,7 @@ export function MaterialsPage() {
 
       {/* Modal Create Receipt */}
       {receiptModalOpen && (
-        <Modal open={receiptModalOpen} title="Buat Penerimaan Material Baru (Material Receipt)" onClose={() => setReceiptModalOpen(false)}>
+        <Modal open={receiptModalOpen} title={tr('Buat Penerimaan Material Baru (Material Receipt)', 'Create New Material Receipt')} onClose={() => setReceiptModalOpen(false)}>
           <form onSubmit={handleCreateReceipt} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
               <FormField label="Gudang" required>
@@ -492,16 +496,16 @@ export function MaterialsPage() {
               </FormField>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-              <FormField label="Tanggal Penerimaan" required>
+              <FormField label={tr('Tanggal Penerimaan', 'Receipt Date')} required>
                 <Input type="date" value={receiptForm.receipt_date} onChange={(e) => setReceiptForm({ ...receiptForm, receipt_date: e.target.value })} required />
               </FormField>
-              <FormField label="Catatan">
-                <Input value={receiptForm.notes} onChange={(e) => setReceiptForm({ ...receiptForm, notes: e.target.value })} placeholder="Catatan penerimaan..." />
+              <FormField label={tr('Catatan', 'Notes')}>
+                <Input value={receiptForm.notes} onChange={(e) => setReceiptForm({ ...receiptForm, notes: e.target.value })} placeholder={tr('Catatan penerimaan...', 'Receipt notes...')} />
               </FormField>
             </div>
 
             <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1rem' }}>
-              <h4 style={{ fontWeight: 600, marginBottom: '0.75rem' }}>Baris Material Diterima</h4>
+              <h4 style={{ fontWeight: 600, marginBottom: '0.75rem' }}>{tr('Baris Material Diterima', 'Received Material Lines')}</h4>
               {receiptForm.lines.map((line, idx) => {
                 const selectedMat = materials.find((m: any) => m.id === line.material_id);
                 const unitLabel = selectedMat?.unit || 'Satuan';
@@ -510,7 +514,7 @@ export function MaterialsPage() {
                 return (
                   <div key={idx} style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border)', borderRadius: '0.5rem', padding: '1rem', marginBottom: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem' }}>
-                      <FormField label="Nama Material" required>
+                      <FormField label={tr('Nama Material', 'Material Name')} required>
                         <Select value={line.material_id} onChange={(e) => {
                           const newLines = [...receiptForm.lines];
                           newLines[idx].material_id = e.target.value;
@@ -530,7 +534,7 @@ export function MaterialsPage() {
                       </FormField>
 
                       <FormField label="Harga Satuan (Rp)" required>
-                        <NumericInput maximumFractionDigits={2} placeholder="Contoh: 85000" value={line.unit_cost} onValueChange={(raw) => {
+                        <NumericInput maximumFractionDigits={2} placeholder={tr('Contoh: 85000', 'e.g. 85000')} value={line.unit_cost} onValueChange={(raw) => {
                           const newLines = [...receiptForm.lines];
                           newLines[idx].unit_cost = raw;
                           setReceiptForm({ ...receiptForm, lines: newLines });
@@ -541,7 +545,7 @@ export function MaterialsPage() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
                       <div style={{ flex: 1, minWidth: '200px' }}>
                         <FormField label="Catatan">
-                          <Input placeholder="Catatan opsional per baris..." value={line.notes} onChange={(e) => {
+                          <Input placeholder={tr('Catatan opsional per baris...', 'Optional line notes...')} value={line.notes} onChange={(e) => {
                             const newLines = [...receiptForm.lines];
                             newLines[idx].notes = e.target.value;
                             setReceiptForm({ ...receiptForm, lines: newLines });
@@ -555,20 +559,20 @@ export function MaterialsPage() {
                         <Button type="button" variant="danger" onClick={() => {
                           const newLines = receiptForm.lines.filter((_, i) => i !== idx);
                           setReceiptForm({ ...receiptForm, lines: newLines });
-                        }}>Hapus</Button>
+                        }}>{tr('Hapus', 'Remove')}</Button>
                       </div>
                     </div>
                   </div>
                 );
               })}
               <Button type="button" variant="secondary" onClick={() => setReceiptForm({ ...receiptForm, lines: [...receiptForm.lines, { material_id: '', quantity_received: '', unit_cost: '', notes: '' }] })}>
-                + Tambah Baris Material
+                + {tr('Tambah Baris Material', 'Add Material Line')}
               </Button>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', paddingTop: '1rem' }}>
-              <Button type="button" variant="secondary" onClick={() => setReceiptModalOpen(false)}>Batal</Button>
-              <Button type="submit" disabled={activeWarehouses.length === 0}>Simpan Draft Penerimaan</Button>
+              <Button type="button" variant="secondary" onClick={() => setReceiptModalOpen(false)}{tr('Batal', 'Cancel')}</Button>
+              <Button type="submit" disabled={activeWarehouses.length === 0}{tr('Simpan Draft Penerimaan', 'Save Receipt Draft')}</Button>
             </div>
           </form>
         </Modal>
@@ -576,23 +580,23 @@ export function MaterialsPage() {
 
       {/* Modal Receipt Detail */}
       {receiptDetail && (
-        <Modal open={Boolean(receiptDetail)} title={`Detail Penerimaan: ${receiptDetail.receipt_number}`} onClose={() => setReceiptDetail(null)}>
+        <Modal open={Boolean(receiptDetail)} title={`${tr('Detail Penerimaan:', 'Receipt Details:')} ${receiptDetail.receipt_number}`} onClose={() => setReceiptDetail(null)}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', fontSize: '0.875rem' }}>
               <div><strong>Status:</strong> <StatusBadge status={receiptDetail.status === 'POSTED' ? 'success' : receiptDetail.status === 'DRAFT' ? 'warning' : 'neutral'} label={receiptDetail.status} /></div>
               <div><strong>Tanggal:</strong> {receiptDetail.receipt_date}</div>
-              <div><strong>Gudang:</strong> {receiptDetail.warehouse?.name || '-'}</div>
+              <div><strong>{tr('Gudang:', 'Warehouse:')}</strong> {receiptDetail.warehouse?.name || '-'}</div>
               <div><strong>Supplier:</strong> {receiptDetail.supplier?.name || 'Umum'}</div>
             </div>
-            {receiptDetail.notes && <p style={{ fontSize: '0.875rem' }}><strong>Catatan:</strong> {receiptDetail.notes}</p>}
+            {receiptDetail.notes && <p style={{ fontSize: '0.875rem' }}><strong>{tr('Catatan:', 'Notes:')}</strong> {receiptDetail.notes}</p>}
 
             <div>
-              <h4 style={{ fontWeight: 600, marginBottom: '0.5rem' }}>Item Material</h4>
+              <h4 style={{ fontWeight: 600, marginBottom: '0.5rem' }}>{tr('Item Material', 'Material Items')}</h4>
               <table style={{ width: '100%', fontSize: '0.875rem', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid var(--border)', background: 'rgba(255,255,255,0.03)' }}>
-                    <th style={{ padding: '0.5rem' }}>Material</th>
-                    <th style={{ padding: '0.5rem' }}>Jumlah</th>
+                    <th style={{ padding: '0.5rem' }}>{tr('Material', 'Material')}</th>
+                    <th style={{ padding: '0.5rem' }}>{tr('Jumlah', 'Quantity')}</th>
                     <th style={{ padding: '0.5rem' }}>Harga Unit</th>
                     <th style={{ padding: '0.5rem' }}>Subtotal</th>
                   </tr>
@@ -614,7 +618,7 @@ export function MaterialsPage() {
               {receiptDetail.status === 'DRAFT' && (
                 <>
                   <Button variant="primary" onClick={() => handlePostReceipt(receiptDetail.id)}>Post Transaksi</Button>
-                  <Button variant="danger" onClick={() => handleCancelReceipt(receiptDetail.id)}>Batalkan Draft</Button>
+                  <Button variant="danger" onClick={() => handleCancelReceipt(receiptDetail.id)}{tr('Batalkan Draft', 'Cancel Draft')}</Button>
                 </>
               )}
               <Button variant="secondary" onClick={() => setReceiptDetail(null)}>Tutup</Button>
