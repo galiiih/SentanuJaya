@@ -253,7 +253,7 @@ export function PaymentPage() {
                           <td className="align-right">{fmt(outstanding.invoices.find(inv => inv.id === a.invoice_id)?.total_amount ?? 0)}</td>
                           <td className="align-right">{fmt(a.amount_due)}</td>
                           <td className="align-right">
-                            <NumericInput value={a.amount} maximumFractionDigits={2} onValueChange={(raw) => setAllocAmount(i, raw)}
+                            <NumericInput min={0} max={a.amount_due} value={a.amount} maximumFractionDigits={2} onValueChange={(raw) => setAllocAmount(i, raw)}
                               placeholder="0" style={{ width: '140px', textAlign: 'right' }} />
                           </td>
                           <td><Button variant="ghost" onClick={() => payFull(i)}>{t.payment.payFull}</Button></td>
