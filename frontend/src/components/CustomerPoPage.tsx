@@ -22,6 +22,7 @@ import {
   type DataTableColumn,
   FormField,
   Input,
+  NumericInput,
   Modal,
   PageHeader,
   Select,
@@ -744,22 +745,19 @@ export function CustomerPoPage() {
                       required
                       error={fieldErrors[`lines.${idx}.quantity`]}
                     >
-                      <Input
-                        type="number"
-                        min="1"
+                      <NumericInput
                         value={line.quantity}
-                        onChange={(e) => updateLine(idx, 'quantity', e.target.value)}
+                        maximumFractionDigits={3}
+                        onValueChange={(raw) => updateLine(idx, 'quantity', raw)}
                       />
                     </FormField>
 
                     <FormField label={t.common.unitPrice}>
-                      <Input
-                        type="number"
-                        min="0"
-                        step="0.01"
+                      <NumericInput
                         value={line.unit_price}
+                        maximumFractionDigits={2}
                         placeholder="0"
-                        onChange={(e) => updateLine(idx, 'unit_price', e.target.value)}
+                        onValueChange={(raw) => updateLine(idx, 'unit_price', raw)}
                       />
                     </FormField>
                   </div>
