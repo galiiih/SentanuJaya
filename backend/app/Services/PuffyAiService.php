@@ -916,7 +916,9 @@ class PuffyAiService
         $learnedGuidance = $this->learningService->findRelevantGuidance($userMessage, $role);
         $combinedGuidance = implode("\n\n", array_filter([$knowledgeGuidance, $learnedGuidance]));
         if ($combinedGuidance) {
-            $systemPrompt .= "\n\n[Panduan Knowledge & Intent]: {$combinedGuidance}";
+            $systemPrompt .= $language === 'en'
+                ? "\n\n[Knowledge & Intent Guidance]: {$combinedGuidance}"
+                : "\n\n[Panduan Knowledge & Intent]: {$combinedGuidance}";
         }
 
         $messages = [
