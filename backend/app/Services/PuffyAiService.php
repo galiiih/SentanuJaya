@@ -638,10 +638,14 @@ class PuffyAiService
                 'exception' => get_class($e),
             ]);
 
+            $isEnglish = ($params['_language'] ?? 'id') === 'en';
+
             return [
                 'tool' => $toolName,
-                'title' => 'Pemeriksaan Data Gagal',
-                'summary' => 'Pemeriksaan database ERP gagal. Angka indikator tidak dapat dipastikan; silakan coba kembali atau hubungi administrator.',
+                'title' => $isEnglish ? 'Data Check Failed' : 'Pemeriksaan Data Gagal',
+                'summary' => $isEnglish
+                    ? 'The ERP database check failed. Indicator values cannot be confirmed; please try again or contact an administrator.'
+                    : 'Pemeriksaan database ERP gagal. Angka indikator tidak dapat dipastikan; silakan coba kembali atau hubungi administrator.',
                 'hasData' => false,
                 'status' => 'failed',
                 'source' => 'ERP Database',
@@ -807,7 +811,7 @@ class PuffyAiService
                 'type' => 'function',
                 'function' => [
                     'name' => 'get_operational_risk_summary',
-                    'description' => 'Menganalisis indikator risiko operasional dari PO open, Work Order berjalan, Surat Jalan, invoice outstanding, dan stok material minimum.',
+                    'description' => 'Menganalisis risiko operasional Sentanu Jaya ERP: Customer PO terbuka, Work Order berjalan/terlambat, Surat Jalan tertunda, invoice outstanding, dan stok minimum. Analyzes open Customer POs, active/overdue work orders, pending Delivery Orders, outstanding invoices, and low material stock.',
                     'parameters' => [
                         'type' => 'object',
                         'properties' => new \stdClass,
