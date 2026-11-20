@@ -45,4 +45,38 @@ class NanuOperationalRiskSummaryTest extends TestCase
         $this->assertSame('Ringkasan Risiko Operasional', $result['title']);
         $this->assertSame(['Indikator', 'Jumlah', 'Status', 'Keterangan'], $result['table']['columns']);
     }
+
+    public function test_nanu_operational_risk_chat_uses_active_english_language(): void
+    {
+        $statuses = [];
+
+        $result = app(PuffyAiService::class)->agenticChat(
+            'Show the operational risk summary',
+            null,
+            ['language' => 'en', 'user_name' => 'Test User', 'role' => 'ADMIN', 'title' => 'Dashboard', 'route' => '/dashboard'],
+            static function (string $message, ?array $ui = null) use (&$statuses): void {
+                $statuses[] = $message;
+            },
+            static function (array $toolResult): void {},
+            static function (string $token): void {},
+        );
+
+        $this->assertSame('Operational Risk Summary', $result['tool_result']['title']);
+        $this->assertStringContainsString('Operational review completed', $result['reply']);
+        $this->assertContains('Analyzing operational risks…', $statuses);
+    }
+
+    public function test_nanu_out_of_scope_response_uses_active_english_language(): void
+    {
+        $result = app(PuffyAiService::class)->agenticChat(
+            'What is the weather today?',
+            null,
+            ['language' => 'en', 'user_name' => 'Test User', 'role' => 'ADMIN', 'title' => 'Dashboard', 'route' => '/dashboard'],
+            static function (string $message, ?array $ui = null): void {},
+            static function (?array $toolResult): void {},
+            static function (string $token): void {},
+        );
+
+        $this->assertStringContainsString('I can help with Sentanu Jaya ERP operations', $result['reply']);
+    }
 }
