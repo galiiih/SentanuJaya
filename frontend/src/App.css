@@ -821,7 +821,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 }
 .login-intro__skip:hover { color: var(--color-text); }
 .login-intro__skip:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
-.login-intro--wave .login-intro__skip { opacity: 0; pointer-events: none; }
+/* Keep the skip control interactive until the intro is dismissed. */
 @keyframes login-intro-logo-in { from { opacity: 0; scale: .6; } to { opacity: 1; scale: 1; } }
 @keyframes login-intro-logo-out { to { opacity: 0; } }
 @keyframes login-intro-flat-spin { to { transform: rotateY(360deg); } }
