@@ -133,7 +133,7 @@ export function KnowledgeManagementPage() {
             Nanu AI Knowledge Management
           </h1>
           <p className="text-sm text-[var(--muted-foreground)] mt-1">
-            Kelola basis pengetahuan resmi Nanu AI dan tinjau pengajuan koreksi/kandidat dari pengguna.
+            {en ? 'Manage Nanu AI’s official knowledge base and review user-submitted corrections and candidates.' : 'Kelola basis pengetahuan resmi Nanu AI dan tinjau pengajuan koreksi/kandidat dari pengguna.'}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -238,9 +238,9 @@ export function KnowledgeManagementPage() {
                 onChange={(e) => setCandidateStatusFilter(e.target.value)}
               >
                 <option value="">{en ? 'All statuses' : 'Semua Status'}</option>
-                <option value="pending_review">Pending Review</option>
-                <option value="approved">Approved</option>
-                <option value="rejected">Rejected</option>
+                <option value="pending_review">{en ? 'Pending review' : 'Menunggu review'}</option>
+                <option value="approved">{en ? 'Approved' : 'Disetujui'}</option>
+                <option value="rejected">{en ? 'Rejected' : 'Ditolak'}</option>
               </Select>
             </div>
             <span className="text-xs text-[var(--muted-foreground)]">{en ? 'Total candidates: ' : 'Total Kandidat: '}{candidateList.length}</span>
@@ -283,7 +283,7 @@ export function KnowledgeManagementPage() {
                         </td>
                         <td className="p-4 align-top text-xs">
                           <div className="font-medium text-[var(--foreground)]">{c.submitter?.name || 'User'}</div>
-                          <div className="text-[var(--muted-foreground)]">{new Date(c.created_at).toLocaleDateString('id-ID')}</div>
+                          <div className="text-[var(--muted-foreground)]">{new Date(c.created_at).toLocaleDateString(dateLocale)}</div>
                         </td>
                         <td className="p-4 align-top">
                           <span className={`px-2.5 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1 ${
@@ -403,7 +403,7 @@ export function KnowledgeManagementPage() {
               <option value="general">General</option>
               <option value="materials">Materials & Inventory</option>
               <option value="customer-po">Customer PO</option>
-              <option value="delivery">Surat Jalan / Delivery</option>
+              <option value="delivery">{en ? 'Delivery Order' : 'Surat Jalan / Delivery'}</option>
               <option value="invoicing">Invoicing & Billing</option>
               <option value="production">Production</option>
             </Select>
