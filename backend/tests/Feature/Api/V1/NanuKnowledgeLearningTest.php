@@ -236,4 +236,35 @@ class NanuKnowledgeLearningTest extends TestCase
         $this->postJson('/api/v1/nanu/candidates/fake-id/review', ['status' => 'approved'])->assertStatus(401);
         $this->getJson('/api/v1/nanu/official')->assertStatus(401);
     }
+
+    public function test_reviewing_a_candidate_twice_does_not_publish_duplicate_knowledge(): void
+    {
+        $staff = User::factory()->create(['role' => 'STAFF']);
+        $admin = User::factory()->create(['role' => 'ADMIN']);
+        $service = new NanuKnowledgeLearningService();
+
+        $candidate = $service->submitCandidate(
+            $staff->id,
+            'DUPLICATE_REVIEW_GUARD',
+            'Verified answer.',
+            'Testing',
+            'Duplicate Review Guard'
+        );
+
+        $service->reviewCandidate($candidate->id, $admin->id, 'approved');
+        try {
+            $service->reviewCandidate($candidate->id, $admin->id, 'approved');
+            $this->fail('A reviewed candidate must not be approved twice.');
+        } catch (\\Illuminate\\Validation\\ValidationException $exception) {
+            $this->assertArrayHasKey('candidate', $exception->errors());
+        }
+
+        $this->assertDatabaseCount('nanu_knowledge_base', 1);
+        $this->assertDatabaseHas('nanu_knowledge_base', [
+            'question_pattern' => 'DUPLICATE_REVIEW_GUARD',
+            'is_published' => true,
+        ]);
+    }
+
+
 }
