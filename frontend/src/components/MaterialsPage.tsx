@@ -162,7 +162,7 @@ export function MaterialsPage() {
           unit_cost: Number(line.unit_cost || 0),
         })),
       });
-      setNotice('Penerimaan material (Draft) berhasil dibuat.');
+      setNotice(tr('Penerimaan material (Draft) berhasil dibuat.', 'Material receipt draft created successfully.'));
       setReceiptModalOpen(false);
       setReceiptForm({
         warehouse_id: '',
@@ -186,7 +186,7 @@ export function MaterialsPage() {
       onConfirm: async () => {
         try {
           await materialReceiptApi.post(id);
-          setNotice('Penerimaan material berhasil diposting dan stok telah diperbarui.');
+          setNotice(tr('Penerimaan material berhasil diposting dan stok telah diperbarui.', 'Material receipt posted and stock updated successfully.'));
           setReceiptDetail(null);
           loadData();
         } catch (err) {
@@ -199,13 +199,13 @@ export function MaterialsPage() {
   const handleCancelReceipt = (id: string) => {
     setConfirmState({
       open: true,
-      title: 'Batalkan Penerimaan Material',
-      description: 'Batalkan draft penerimaan material ini?',
+      title: tr('Batalkan Penerimaan Material', 'Cancel Material Receipt'),
+      description: tr('Batalkan draft penerimaan material ini?', 'Cancel this material receipt draft?'),
       tone: 'danger',
       onConfirm: async () => {
         try {
           await materialReceiptApi.cancel(id);
-          setNotice('Penerimaan material dibatalkan.');
+          setNotice(tr('Penerimaan material dibatalkan.', 'Material receipt cancelled.'));
           setReceiptDetail(null);
           loadData();
         } catch (err) {
@@ -239,7 +239,7 @@ export function MaterialsPage() {
     }
     const diff = physicalQty - Number(currentStock);
     if (diff === 0) {
-      setError('Kuantitas fisik sama dengan stok sistem. Tidak ada adjustment yang diperlukan.');
+      setError(tr('Kuantitas fisik sama dengan stok sistem. Tidak ada adjustment yang diperlukan.', 'The counted quantity matches system stock. No adjustment is required.'));
       return;
     }
     const type = diff > 0 ? 'IN' : 'OUT';
@@ -525,7 +525,7 @@ export function MaterialsPage() {
                         </Select>
                       </FormField>
 
-                      <FormField label={`Kuantitas (${unitLabel})`} required>
+                      <FormField label={`${tr('Kuantitas', 'Quantity')} (${unitLabel})`} required>
                         <NumericInput maximumFractionDigits={3} placeholder="Contoh: 10 atau 2,5" value={line.quantity_received} onValueChange={(raw) => {
                           const newLines = [...receiptForm.lines];
                           newLines[idx].quantity_received = raw;
