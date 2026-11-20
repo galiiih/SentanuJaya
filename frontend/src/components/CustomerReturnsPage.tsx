@@ -37,6 +37,11 @@ export function CustomerReturnsPage() {
   const openCreate = () => { setSelectedId(''); setQuantities({}); setReasons({}); setDate(new Date().toISOString().slice(0, 10)); setError(''); setOpen(true); };
   const save = async () => {
     if (!selected) { setError(tr('Pilih Surat Jalan terlebih dahulu.', 'Select a Delivery Order first.')); return; }
+    const overLimit = selected.lines.find((line) => Number(quantities[line.id] || 0) > Number(line.quantity));
+    if (overLimit) {
+      setError(tr(`Kuantitas retur tidak boleh melebihi jumlah yang dikirim (${overLimit.quantity}).`, `Return quantity cannot exceed the delivered quantity (${overLimit.quantity}).`));
+      return;
+    }
     const lines = selected.lines.filter((line) => Number(quantities[line.id] || 0) > 0).map((line) => ({ delivery_order_line_id: line.id, quantity: Number(quantities[line.id]), reason: reasons[line.id] || undefined }));
     if (!lines.length) { setError(tr('Isi minimal satu kuantitas retur.', 'Enter at least one return quantity.')); return; }
     setLoading(true); setError('');
