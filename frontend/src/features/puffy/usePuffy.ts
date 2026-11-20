@@ -153,7 +153,7 @@ export function usePuffy(api: PuffyApi) {
     setMood(value === "up" ? "love" : "sad");
     if (!msg.serverId) return;
     try { await post("/feedback", { message_id: msg.serverId, value }); } catch { /* best-effort */ }
-  }, [language, patch, post, setMood]);
+  }, [patch, post, setMood]);
 
   const runAction = useCallback(async (msg: AssistantMessage, action: PendingAction, decision: "confirm" | "cancel") => {
     const set = (s: ActionState) => patch(msg.id, (m) => ({ ...m, actions: { ...m.actions, [action.id]: s } }));
@@ -188,7 +188,7 @@ export function usePuffy(api: PuffyApi) {
       set("failed");
       setMood("sad");
     }
-  }, [patch, post, setMood]);
+  }, [language, patch, post, setMood]);
 
   return { messages, busy, mood, fx, setMood, send, stop, retry, feedback, runAction };
 }
