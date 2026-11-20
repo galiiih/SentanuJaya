@@ -387,7 +387,7 @@ export default function TemplateManagementPage() {
             <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
               <div>
                 <h2 className="text-lg font-bold text-slate-900">HTML Source Editor: {editingTemplate.name}</h2>
-                <p className="text-xs text-slate-600">Versi saat ini: v{editingTemplate.version} | Format: HTML</p>
+                <p className="text-xs text-slate-600">{tr('Versi saat ini:', 'Current version:')} v{editingTemplate.version} | Format: HTML</p>
               </div>
               <button
                 onClick={() => setEditingTemplate(null)}
@@ -421,12 +421,12 @@ export default function TemplateManagementPage() {
 
               {/* Secure Sandboxed iframe preview pane (sandbox="allow-scripts" without allow-same-origin) */}
               <div className="flex flex-col p-4 space-y-3 bg-slate-100">
-                <span className="text-xs font-semibold text-slate-600">Live Sandboxed Preview (Zero Origin Access)</span>
+                <span className="text-xs font-semibold text-slate-600">{tr('Live Sandboxed Preview (Zero Origin Access)', 'Live Sandboxed Preview (Zero Origin Access)')}</span>
                 <div className="flex-1 bg-white border border-slate-300 rounded shadow-inner overflow-hidden">
                   <iframe
                     srcDoc={previewHtml}
                     sandbox="allow-scripts"
-                    title="Template Preview"
+                    title={tr('Pratinjau Template', 'Template Preview')}
                     className="w-full h-full border-0"
                   />
                 </div>
@@ -438,13 +438,13 @@ export default function TemplateManagementPage() {
                 onClick={() => setEditingTemplate(null)}
                 className="px-4 py-2 border border-slate-300 rounded-lg text-sm text-slate-700 hover:bg-slate-100 font-medium"
               >
-                Tutup
+                {tr('Tutup', 'Close')}
               </button>
               <button
                 onClick={handleSaveEdit}
                 className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 shadow"
               >
-                Simpan Perubahan (v{editingTemplate.version + 1})
+                {tr('Simpan Perubahan', 'Save Changes')} (v{editingTemplate.version + 1})
               </button>
             </div>
           </div>
@@ -457,8 +457,8 @@ export default function TemplateManagementPage() {
           <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full p-6 space-y-4 glass-modal">
             <div className="flex justify-between items-center border-b pb-3">
               <div>
-                <h2 className="text-lg font-bold text-slate-900">Riwayat Versi: {versionTemplate.name}</h2>
-                <p className="text-xs text-slate-500">Pilih versi snapshot sebelumnya untuk dipulihkan</p>
+                <h2 className="text-lg font-bold text-slate-900">{tr('Riwayat Versi:', 'Version History:')} {versionTemplate.name}</h2>
+                <p className="text-xs text-slate-500">{tr('Pilih versi snapshot sebelumnya untuk dipulihkan', 'Select a previous version snapshot to restore')}</p>
               </div>
               <button
                 onClick={() => setVersionTemplate(null)}
@@ -469,19 +469,19 @@ export default function TemplateManagementPage() {
             </div>
 
             {loadingVersions ? (
-              <div className="py-8 text-center text-slate-500">Memuat riwayat versi...</div>
+              <div className="py-8 text-center text-slate-500">{tr('Memuat riwayat versi...', 'Loading version history...')}</div>
             ) : versionsList.length === 0 ? (
-              <div className="py-8 text-center text-slate-500">Belum ada riwayat snapshot tersimpan.</div>
+              <div className="py-8 text-center text-slate-500">{tr('Belum ada riwayat snapshot tersimpan.', 'No saved version snapshots yet.')}</div>
             ) : (
               <div className="max-h-96 overflow-y-auto divide-y divide-slate-100">
                 {versionsList.map((ver) => (
                   <div key={ver.id} className="py-3 flex justify-between items-center hover:bg-slate-50 px-3 rounded">
                     <div>
                       <div className="flex items-center space-x-2">
-                        <span className="font-bold text-sm text-indigo-600">Versi v{ver.version}</span>
+                        <span className="font-bold text-sm text-indigo-600">{tr('Versi', 'Version')} v{ver.version}</span>
                         <span className="text-xs text-slate-500">({ver.name})</span>
                       </div>
-                      <div className="text-xs text-slate-400 mt-0.5">Dibuat pada: {ver.created_at}</div>
+                      <div className="text-xs text-slate-400 mt-0.5">{tr('Dibuat pada:', 'Created: ')}{ver.created_at}</div>
                     </div>
                     <button
                       onClick={() => handleRestoreVersion(versionTemplate.id, ver.version)}
