@@ -67,6 +67,7 @@ import {
   type DataTableColumn,
   FormField,
   Input,
+  NumericInput,
   KpiCard,
   PageHeader,
   Select,
