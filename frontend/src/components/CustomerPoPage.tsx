@@ -105,7 +105,7 @@ export function CustomerPoPage() {
       {
         customer_item_id: '',
         color_code: '',
-        quantity: '1',
+        quantity: '',
         unit_price: '',
         notes: '',
       },
@@ -220,7 +220,7 @@ export function CustomerPoPage() {
         {
           customer_item_id: '',
           color_code: '',
-          quantity: '1',
+          quantity: '',
           unit_price: '',
           notes: '',
         },
