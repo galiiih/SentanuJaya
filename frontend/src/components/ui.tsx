@@ -59,8 +59,36 @@ const statusTone: Record<string, 'success' | 'warning' | 'danger' | 'info' | 'ne
 };
 
 export function StatusBadge({ status, label }: { status: string; label?: string }) {
+  const { language } = useLanguage();
   const tone = statusTone[status] ?? 'neutral';
-  return <span className={`status-badge status-badge--${tone}`}>{label ?? status.replaceAll('_', ' ')}</span>;
+  const localizedStatus: Record<string, string> = language === 'en' ? {
+    IN_PROGRESS: 'In Progress',
+    PARTIALLY_PAID: 'Partially Paid',
+    QC_PASS: 'QC Passed',
+    UNINVOICED: 'Not Invoiced',
+  } : {
+    ACCEPTED: 'Diterima',
+    AMAN: 'Aman',
+    COMPLETED: 'Selesai',
+    CONFIRMED: 'Dikonfirmasi',
+    DELIVERED: 'Terkirim',
+    DRAFT: 'Draft',
+    IN_PROGRESS: 'Sedang Berjalan',
+    INVOICED: 'Sudah Ditagihkan',
+    PAID: 'Lunas',
+    PARTIALLY_PAID: 'Dibayar Sebagian',
+    PENDING: 'Menunggu',
+    POSTED: 'Diposting',
+    QC_PASS: 'Lulus QC',
+    READY: 'Siap',
+    REJECT: 'Ditolak',
+    REJECTED: 'Ditolak',
+    CANCELLED: 'Dibatalkan',
+    CRITICAL: 'Kritis',
+    UNINVOICED: 'Belum Ditagihkan',
+  };
+  const displayStatus = label ?? localizedStatus[status] ?? status.replaceAll('_', ' ');
+  return <span className={`status-badge status-badge--${tone}`}>{displayStatus}</span>;
 }
 
 export function Breadcrumb({ items }: { items: string[] }) {
