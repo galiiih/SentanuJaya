@@ -32,6 +32,12 @@ test.describe('Formatted numeric inputs', () => {
     await unitPrice.focus();
     await expect(unitPrice).toHaveValue('1234.56');
 
+    // A single three-digit dot group is interpreted as an Indonesian thousands separator.
+    await unitPrice.fill('1.234');
+    await unitPrice.blur();
+    await unitPrice.focus();
+    await expect(unitPrice).toHaveValue('1234');
+
     // Indonesian thousands separators are parsed as grouping, not decimal fractions.
     await unitPrice.fill('1.234.567,89');
     await unitPrice.blur();
