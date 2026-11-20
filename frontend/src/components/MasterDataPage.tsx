@@ -383,7 +383,7 @@ export function MasterDataPage() {
         return [
           { id: 'price_list', header: 'Price List', cell: (row: any) => row.price_list?.name || '-' },
           { id: 'item', header: 'Customer Item', cell: (row: any) => row.customer_item?.name || '-' },
-          { id: 'price', header: tr('Harga Satuan (IDR)', 'Unit Price (IDR)'), cell: (row: any) => row.unit_price ? `Rp ${Number(row.unit_price).toLocaleString('id-ID')}` : '-' },
+          { id: 'price', header: tr('Harga Satuan (IDR)', 'Unit Price (IDR)'), cell: (row: any) => row.unit_price ? `Rp ${Number(row.unit_price).toLocaleString(en ? 'en-US' : 'id-ID')}` : '-' },
           ...actionColumn
         ];
       case 'uoms':
