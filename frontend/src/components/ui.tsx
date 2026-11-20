@@ -37,6 +37,7 @@ export function Card({ children, className = '', title, action }: CardProps) {
 }
 
 const statusTone: Record<string, 'success' | 'warning' | 'danger' | 'info' | 'neutral'> = {
+  ACTIVE: 'success',
   ACCEPTED: 'success',
   AMAN: 'success',
   COMPLETED: 'success',
@@ -44,11 +45,13 @@ const statusTone: Record<string, 'success' | 'warning' | 'danger' | 'info' | 'ne
   DELIVERED: 'info',
   DRAFT: 'neutral',
   IN_PROGRESS: 'info',
+  OPEN: 'info',
   INVOICED: 'info',
   PAID: 'success',
   PARTIALLY_PAID: 'warning',
   PENDING: 'warning',
   POSTED: 'info',
+  SUBMITTED: 'info',
   QC_PASS: 'success',
   READY: 'success',
   REJECT: 'danger',
@@ -56,17 +59,32 @@ const statusTone: Record<string, 'success' | 'warning' | 'danger' | 'info' | 'ne
   CANCELLED: 'neutral',
   CRITICAL: 'danger',
   UNINVOICED: 'warning',
+  OVERDUE: 'danger',
+  INACTIVE: 'neutral',
+  CLOSED: 'success',
 };
 
 export function StatusBadge({ status, label }: { status: string; label?: string }) {
   const { language } = useLanguage();
   const tone = statusTone[status] ?? 'neutral';
   const localizedStatus: Record<string, string> = language === 'en' ? {
+    ACTIVE: 'Active',
+    CLOSED: 'Closed',
+    INACTIVE: 'Inactive',
+    OPEN: 'Open',
+    OVERDUE: 'Overdue',
+    SUBMITTED: 'Submitted',
     IN_PROGRESS: 'In Progress',
     PARTIALLY_PAID: 'Partially Paid',
     QC_PASS: 'QC Passed',
     UNINVOICED: 'Not Invoiced',
   } : {
+    ACTIVE: 'Aktif',
+    CLOSED: 'Ditutup',
+    INACTIVE: 'Tidak Aktif',
+    OPEN: 'Terbuka',
+    OVERDUE: 'Terlambat',
+    SUBMITTED: 'Diajukan',
     ACCEPTED: 'Diterima',
     AMAN: 'Aman',
     COMPLETED: 'Selesai',
