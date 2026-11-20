@@ -1,3 +1,4 @@
+import { getLocalDateInputValue } from '../utils/date';
 import { useState, useEffect } from 'react';
 import { useLanguage } from '../i18n';
 import axios from 'axios';
@@ -55,7 +56,7 @@ export function MaterialsPage() {
   const [receiptForm, setReceiptForm] = useState({
     warehouse_id: '',
     supplier_id: '',
-    receipt_date: new Date().toISOString().split('T')[0],
+    receipt_date: getLocalDateInputValue(),
     notes: '',
     lines: [{ material_id: '', quantity_received: '', unit_cost: '', notes: '' }],
   });
@@ -167,7 +168,7 @@ export function MaterialsPage() {
       setReceiptForm({
         warehouse_id: '',
         supplier_id: '',
-        receipt_date: new Date().toISOString().split('T')[0],
+        receipt_date: getLocalDateInputValue(),
         notes: '',
         lines: [{ material_id: '', quantity_received: '', unit_cost: '', notes: '' }],
       });
