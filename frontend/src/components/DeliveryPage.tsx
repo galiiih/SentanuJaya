@@ -358,7 +358,7 @@ export function DeliveryPage() {
           reject_reason: l.reject_reason || undefined,
         })),
       });
-      setNotice('Penerimaan customer berhasil dibuat.');
+      setNotice(tr('Penerimaan customer berhasil dibuat.', 'Customer acceptance recorded successfully.'));
       setAcceptanceModalOpen(false);
       await loadAcceptances(detailRecord.id);
       await loadData();
@@ -645,10 +645,10 @@ export function DeliveryPage() {
 
       {/* Detail Modal */}
       {detailRecord && (
-        <Modal open={Boolean(detailRecord)} title={`Surat Jalan — ${detailRecord.sj_number}`} onClose={() => setDetailRecord(null)}>
+        <Modal open={Boolean(detailRecord)} title={`${tr('Surat Jalan', 'Delivery Order')} — ${detailRecord.sj_number}`} onClose={() => setDetailRecord(null)}>
           <div className="confirmation-dialog__body no-print" style={{ maxHeight: '80vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
-              <Button onClick={() => window.print()}><Printer size={16} /> Cetak Surat Jalan</Button>
+              <Button onClick={() => window.print()}><Printer size={16} /> {tr('Cetak Surat Jalan', 'Print Delivery Order')}</Button>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', marginBottom: '1rem' }}>
               <div>
@@ -671,7 +671,7 @@ export function DeliveryPage() {
 
             {/* Line items table */}
             <div style={{ marginTop: '1rem', marginBottom: '1.5rem' }}>
-              <h4 style={{ marginBottom: '0.5rem' }}>Baris Pengiriman (Delivered Lines)</h4>
+              <h4 style={{ marginBottom: '0.5rem' }}>{tr('Baris Pengiriman (Delivered Lines)', 'Delivered Lines')}</h4>
               <div className="data-table__scroll">
                 <table>
                   <thead>
@@ -760,7 +760,7 @@ export function DeliveryPage() {
               </Button>
             </div>
           </div>
-          <section className="print-document" aria-label="Dokumen cetak Surat Jalan">
+          <section className="print-document" aria-label={tr('Dokumen cetak Surat Jalan', 'Printed Delivery Order')}>
             <header className="print-doc-header">
               <div className="print-brand-lockup">
                 <div data-sentanu-logo aria-label="Logo Sentanu Jaya" style={{ width: '14mm', height: '17mm', flexShrink: 0 }} />
@@ -773,19 +773,19 @@ export function DeliveryPage() {
                   <div className="print-subtitle">BODY KIT & ACCESSORIES PAINTING</div>
                 </div>
               </div>
-              <div className="print-doc-type">SURAT JALAN</div>
+              <div className="print-doc-type">{tr('SURAT JALAN', 'DELIVERY ORDER')}</div>
             </header>
             <div className="print-meta-grid">
-              <div><strong>Kepada</strong><span>{detailRecord.customer?.name || '-'}</span><strong>Alamat Pengiriman</strong><span>{detailRecord.shipping_address || '-'}</span></div>
+              <div><strong>{tr('Kepada', 'To')}</strong><span>{detailRecord.customer?.name || '-'}</span><strong>{tr('Alamat Pengiriman', 'Shipping Address')}</strong><span>{detailRecord.shipping_address || '-'}</span></div>
               <div><strong>{tr('No. Surat Jalan', 'Delivery Order No.')}</strong><span>{detailRecord.sj_number}</span><strong>{tr('Tanggal', 'Date')}</strong><span>{detailRecord.delivery_date}</span><strong>{tr('No. PO Customer', 'Customer PO No.')}</strong><span>{detailRecord.customer_po?.po_number || detailRecord.customer_po_number || '-'}</span><strong>{tr('Status', 'Status')}</strong><span>{detailRecord.status}</span></div>
             </div>
             <table className="print-table"><thead><tr><th>No.</th><th>{tr('Nama Barang', 'Item Name')}</th><th>{tr('Warna', 'Color')}</th><th>{tr('Keterangan', 'Description')}</th><th className="print-right">Qty</th><th>{tr('Satuan', 'Unit')}</th></tr></thead>
               <tbody>{detailRecord.lines.map((line, index) => <tr key={line.id}><td>{index + 1}</td><td>{line.customer_item?.name || line.customer_item_id}</td><td>{line.color_code || '-'}</td><td>{line.notes || '-'}</td><td className="print-right">{line.quantity}</td><td>pcs</td></tr>)}</tbody>
             </table>
             {detailRecord.notes && <p className="print-note"><strong>{tr('Catatan:', 'Notes:')}</strong> {detailRecord.notes}</p>}
-            <div className="print-shipping-meta"><span><strong>Pengemudi:</strong> {detailRecord.driver_name || '-'}</span><span><strong>No. Kendaraan:</strong> {detailRecord.vehicle_plate || '-'}</span></div>
-            <footer className="print-signatures"><div>Pengirim,<br/><br/><br/><br/>________________________</div><div>Penerima,<br/><br/><br/><br/>________________________</div></footer>
-            <div className="print-footer">Mohon periksa jumlah dan kondisi barang saat diterima. Dokumen dicetak dari Sentanu Jaya ERP.</div>
+            <div className="print-shipping-meta"><span><strong>{tr('Pengemudi:', 'Driver:')}</strong> {detailRecord.driver_name || '-'}</span><span><strong>{tr('No. Kendaraan:', 'Vehicle Plate:')}</strong> {detailRecord.vehicle_plate || '-'}</span></div>
+            <footer className="print-signatures"><div>{tr('Pengirim,', 'Sender,')}<br/><br/><br/><br/>________________________</div><div>{tr('Penerima,', 'Recipient,')}<br/><br/><br/><br/>________________________</div></footer>
+            <div className="print-footer">{tr('Mohon periksa jumlah dan kondisi barang saat diterima. Dokumen dicetak dari Sentanu Jaya ERP.', 'Please verify the quantity and condition of the goods upon receipt. This document was printed from Sentanu Jaya ERP.')}</div>
           </section>
         </Modal>
       )}
@@ -811,13 +811,13 @@ export function DeliveryPage() {
             </FormField>
 
             <div style={{ marginTop: '1rem' }}>
-              <h4 style={{ marginBottom: '0.5rem' }}>Baris Penerimaan</h4>
+              <h4 style={{ marginBottom: '0.5rem' }}>{tr('Baris Penerimaan', 'Acceptance Lines')}</h4>
               <div className="data-table__scroll">
                 <table>
                   <thead>
                     <tr>
                       <th>{t.common.item}</th>
-                      <th className="align-right">Dikirim</th>
+                      <th className="align-right">{tr('Dikirim', 'Delivered')}</th>
                       <th className="align-right" style={{ width: '110px' }}>{t.delivery.qtyOk}</th>
                       <th className="align-right" style={{ width: '110px' }}>{t.delivery.qtyRejected}</th>
                       <th>{t.delivery.rejectReason}</th>
