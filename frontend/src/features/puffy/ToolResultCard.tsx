@@ -1,5 +1,6 @@
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis } from "recharts";
 import type { PuffyStrings } from "./strings";
+import { useLanguage } from "../../i18n";
 import type { ActionState, PendingAction, ToolResult } from "./types";
 
 const dateFmt = new Intl.DateTimeFormat("id-ID", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Jakarta" });
@@ -18,6 +19,7 @@ interface CardProps {
 
 /** Kartu hasil tool: angka dan tabel dirender dari data backend, bukan dari teks model. */
 export function ToolResultCard({ result, s, actionState, onAction }: CardProps) {
+  const { language } = useLanguage();
   const { metrics, table, chart } = result;
   return (
     <div className="puffy-result">
@@ -75,7 +77,7 @@ export function ToolResultCard({ result, s, actionState, onAction }: CardProps) 
         </>
       )}
 
-      <p className="puffy-result__source">{s.asOf} {formatAsOf(result.asOf)} · {result.source}</p>
+      <p className="puffy-result__source">{s.asOf} {formatAsOf(result.asOf, language === "en" ? "en-US" : "id-ID")} · {result.source}</p>
 
       {result.action && onAction && (
         <ActionConfirm action={result.action} state={actionState ?? "pending"} s={s} onDecision={(d) => onAction(result.action!, d)} />
