@@ -138,7 +138,7 @@ export function ReportsPage() {
         </div>
       </Card>
 
-      {loading && <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-muted)' }}{tr('Memuat data laporan...', 'Loading report data...')}</p>}
+      {loading && <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-muted)' }}>{tr('Memuat data laporan...', 'Loading report data...')}</p>}
 
       {!loading && activeTab === 'financial' && financialData && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginTop: '1.25rem' }}>
@@ -170,10 +170,10 @@ export function ReportsPage() {
                     <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
                       <thead>
                         <tr style={{ borderBottom: '1px solid var(--color-border)', color: 'var(--color-text-secondary)' }}>
-                          <th style={{ padding: '0.5rem' }}}>{tr('No. Invoice', 'Invoice Number')}</th>
-                          <th style={{ padding: '0.5rem' }}}>{tr('Tanggal', 'Date')}</th>
-                          <th style={{ padding: '0.5rem', textAlign: 'right' }}}>Total</th>
-                          <th style={{ padding: '0.5rem', textAlign: 'right' }}}>Due</th>
+                          <th style={{ padding: '0.5rem' }}>{tr('No. Invoice', 'Invoice Number')}</th>
+                          <th style={{ padding: '0.5rem' }}>{tr('Tanggal', 'Date')}</th>
+                          <th style={{ padding: '0.5rem', textAlign: 'right' }}>Total</th>
+                          <th style={{ padding: '0.5rem', textAlign: 'right' }}>Due</th>
                           <th style={{ padding: '0.5rem', textAlign: 'center' }}>Status</th>
                         </tr>
                       </thead>
@@ -197,10 +197,10 @@ export function ReportsPage() {
                     <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
                       <thead>
                         <tr style={{ borderBottom: '1px solid var(--color-border)', color: 'var(--color-text-secondary)' }}>
-                          <th style={{ padding: '0.5rem' }}}>{tr('No. Pembayaran', 'Payment Number')}</th>
-                          <th style={{ padding: '0.5rem' }}>Tanggal</th>
-                          <th style={{ padding: '0.5rem' }}}>{tr('Metode', 'Method')}</th>
-                          <th style={{ padding: '0.5rem', textAlign: 'right' }}}>{tr('Jumlah', 'Amount')}</th>
+                          <th style={{ padding: '0.5rem' }}>{tr('No. Pembayaran', 'Payment Number')}</th>
+                          <th style={{ padding: '0.5rem' }}>{tr('Tanggal', 'Date')}</th>
+                          <th style={{ padding: '0.5rem' }}>{tr('Metode', 'Method')}</th>
+                          <th style={{ padding: '0.5rem', textAlign: 'right' }}>{tr('Jumlah', 'Amount')}</th>
                           <th style={{ padding: '0.5rem', textAlign: 'center' }}>Status</th>
                         </tr>
                       </thead>
@@ -242,8 +242,8 @@ export function ReportsPage() {
                   <thead>
                     <tr style={{ borderBottom: '1px solid var(--color-border)', color: 'var(--color-text-secondary)' }}>
                       <th style={{ padding: '0.5rem' }}>Customer</th>
-                      <th style={{ padding: '0.5rem', textAlign: 'right' }}}>Total Billed</th>
-                      <th style={{ padding: '0.5rem', textAlign: 'right' }}}>Total Paid</th>
+                      <th style={{ padding: '0.5rem', textAlign: 'right' }}>Total Billed</th>
+                      <th style={{ padding: '0.5rem', textAlign: 'right' }}>Total Paid</th>
                       <th style={{ padding: '0.5rem', textAlign: 'right' }}>Outstanding</th>
                     </tr>
                   </thead>
@@ -311,8 +311,8 @@ export function ReportsPage() {
                   <thead>
                     <tr style={{ borderBottom: '1px solid var(--color-border)', color: 'var(--color-text-secondary)' }}>
                       <th style={{ padding: '0.5rem' }}>Customer</th>
-                      <th style={{ padding: '0.5rem' }}}>{tr('Material / Barang', 'Material / Item')}</th>
-                      <th style={{ padding: '0.5rem', textAlign: 'right' }}}>{tr('Saldo Qty', 'Balance Qty')}</th>
+                      <th style={{ padding: '0.5rem' }}>{tr('Material / Barang', 'Material / Item')}</th>
+                      <th style={{ padding: '0.5rem', textAlign: 'right' }}>{tr('Saldo Qty', 'Balance Qty')}</th>
                     </tr>
                   </thead>
                   <tbody>
