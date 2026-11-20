@@ -28,12 +28,15 @@ import {
   ConfirmationDialog,
 } from './ui';
 
-const fmt = (n: number) =>
-  new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
+const fmt = (n: number, locale = 'id-ID') =>
+  new Intl.NumberFormat(locale, { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
 
 export function InvoicingPage() {
   const { hasPermission } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const en = language === 'en';
+  const tr = (id: string, english: string) => en ? english : id;
+  const formatCurrency = (value: number) => formatCurrency(value, en ? 'en-US' : 'id-ID');
 
   /* ── Invoice List ── */
   const [invoices, setInvoices] = useState<InvoiceRecord[]>([]);
@@ -173,8 +176,8 @@ export function InvoicingPage() {
     { id: 'invoice_number', header: t.invoice.invoiceNumber, cell: (r) => r.invoice_number, sortValue: (r) => r.invoice_number },
     { id: 'customer', header: t.common.customer, cell: (r) => r.customer?.name ?? '-', sortValue: (r) => r.customer?.name ?? '' },
     { id: 'invoice_date', header: t.invoice.invoiceDate, cell: (r) => r.invoice_date, sortValue: (r) => r.invoice_date },
-    { id: 'total', header: t.invoice.totalNet, cell: (r) => fmt(r.total_amount), sortValue: (r) => r.total_amount, align: 'right' },
-    { id: 'amount_due', header: t.invoice.amountDue, cell: (r) => fmt(r.amount_due), sortValue: (r) => r.amount_due, align: 'right' },
+    { id: 'total', header: t.invoice.totalNet, cell: (r) => formatCurrency(r.total_amount), sortValue: (r) => r.total_amount, align: 'right' },
+    { id: 'amount_due', header: t.invoice.amountDue, cell: (r) => formatCurrency(r.amount_due), sortValue: (r) => r.amount_due, align: 'right' },
     { id: 'status', header: t.common.status, cell: (r) => <StatusBadge status={r.status} />, sortValue: (r) => r.status },
     {
       id: 'actions', header: '',
@@ -272,7 +275,7 @@ export function InvoicingPage() {
                       </div>
                       <strong>
                         {d.lines?.length
-                          ? fmt(d.lines.reduce((sum, line: any) => {
+                          ? formatCurrency(d.lines.reduce((sum, line: any) => {
                               const qtyOk = (line.acceptance_lines || line.acceptanceLines || []).reduce((acc: number, al: any) => {
                                 return acc + ((al.acceptance?.status === 'POSTED') ? Number(al.quantity_ok || 0) : 0);
                               }, 0);
@@ -345,7 +348,7 @@ export function InvoicingPage() {
           <>
           <div className="confirmation-dialog__body no-print">
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
-              <Button onClick={() => window.print()}><Printer size={16} /> Cetak Invoice</Button>
+              <Button onClick={() => window.print()}><Printer size={16} /> {tr('Cetak Invoice', 'Print Invoice')}</Button>
             </div>
             <div className="dashboard-grid">
               <FormField label={t.common.customer}><p>{detail.customer?.name ?? '-'}</p></FormField>
@@ -354,12 +357,12 @@ export function InvoicingPage() {
               <FormField label={t.common.status}><StatusBadge status={detail.status} /></FormField>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(8rem, 1fr))', gap: '0.75rem', margin: '1rem 0' }}>
-              <Card><div className="stat-label">{t.invoice.dpp}</div><div className="stat-value">{fmt(detail.dpp)}</div></Card>
-              <Card><div className="stat-label">{t.invoice.ppn}</div><div className="stat-value">{fmt(detail.ppn_amount)}</div></Card>
-              <Card><div className="stat-label">{t.invoice.pph}</div><div className="stat-value">{fmt(detail.pph_amount)}</div></Card>
-              <Card><div className="stat-label">{t.invoice.totalNet}</div><div className="stat-value">{fmt(detail.total_amount)}</div></Card>
-              <Card><div className="stat-label">{t.invoice.amountPaid}</div><div className="stat-value">{fmt(detail.amount_paid)}</div></Card>
-              <Card><div className="stat-label">{t.invoice.amountDue}</div><div className="stat-value" style={{ color: detail.amount_due > 0 ? 'var(--danger)' : 'var(--success)' }}>{fmt(detail.amount_due)}</div></Card>
+              <Card><div className="stat-label">{t.invoice.dpp}</div><div className="stat-value">{formatCurrency(detail.dpp)}</div></Card>
+              <Card><div className="stat-label">{t.invoice.ppn}</div><div className="stat-value">{formatCurrency(detail.ppn_amount)}</div></Card>
+              <Card><div className="stat-label">{t.invoice.pph}</div><div className="stat-value">{formatCurrency(detail.pph_amount)}</div></Card>
+              <Card><div className="stat-label">{t.invoice.totalNet}</div><div className="stat-value">{formatCurrency(detail.total_amount)}</div></Card>
+              <Card><div className="stat-label">{t.invoice.amountPaid}</div><div className="stat-value">{formatCurrency(detail.amount_paid)}</div></Card>
+              <Card><div className="stat-label">{t.invoice.amountDue}</div><div className="stat-value" style={{ color: detail.amount_due > 0 ? 'var(--danger)' : 'var(--success)' }}>{formatCurrency(detail.amount_due)}</div></Card>
             </div>
 
             {/* Line items */}
@@ -374,8 +377,8 @@ export function InvoicingPage() {
                         <tr key={l.id}>
                           <td>{l.description}</td>
                           <td className="align-right">{l.quantity}</td>
-                          <td className="align-right">{fmt(l.unit_price_snapshot)}</td>
-                          <td className="align-right">{fmt(l.subtotal)}</td>
+                          <td className="align-right">{formatCurrency(l.unit_price_snapshot)}</td>
+                          <td className="align-right">{formatCurrency(l.subtotal)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -395,7 +398,7 @@ export function InvoicingPage() {
                       {detail.delivery_links.map(l => (
                         <tr key={l.id}>
                           <td>{l.delivery_order?.sj_number ?? l.delivery_order_id}</td>
-                          <td className="align-right">{fmt(l.amount_billed)}</td>
+                          <td className="align-right">{formatCurrency(l.amount_billed)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -407,7 +410,7 @@ export function InvoicingPage() {
             {/* Allocations (payments) */}
             {detail.allocations && detail.allocations.length > 0 && (
               <>
-                <h4 style={{ margin: '1rem 0 0.5rem', fontSize: '0.8rem', fontWeight: 700 }}>Payments</h4>
+                <h4 style={{ margin: '1rem 0 0.5rem', fontSize: '0.8rem', fontWeight: 700 }}>{tr('Pembayaran', 'Payments')}</h4>
                 <div className="data-table__scroll">
                   <table>
                     <thead><tr><th>Payment</th><th className="align-right">{t.payment?.amount ?? 'Amount'}</th></tr></thead>
@@ -415,7 +418,7 @@ export function InvoicingPage() {
                       {detail.allocations.map(a => (
                         <tr key={a.id}>
                           <td>{a.invoice?.invoice_number ?? a.payment_id}</td>
-                          <td className="align-right">{fmt(a.allocated_amount)}</td>
+                          <td className="align-right">{formatCurrency(a.allocated_amount)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -443,21 +446,21 @@ export function InvoicingPage() {
             </header>
             <div className="print-meta-grid">
               <div><strong>Kepada</strong><span>{detail.customer?.name || '-'}</span><strong>Alamat Pengiriman</strong><span>{detail.delivery_links?.[0]?.delivery_order?.shipping_address || '-'}</span></div>
-              <div><strong>No. Invoice</strong><span>{detail.invoice_number}</span><strong>Tanggal</strong><span>{detail.invoice_date}</span><strong>Jatuh Tempo</strong><span>{detail.due_date || '-'}</span><strong>No. PO Customer</strong><span>{detail.delivery_links?.[0]?.delivery_order?.customer_po?.po_number || detail.delivery_links?.[0]?.delivery_order?.customer_po_number || '-'}</span></div>
+              <div><strong>{tr('No. Invoice', 'Invoice No.')}</strong><span>{detail.invoice_number}</span><strong>{tr('Tanggal', 'Date')}</strong><span>{detail.invoice_date}</span><strong>{tr('Jatuh Tempo', 'Due Date')}</strong><span>{detail.due_date || '-'}</span><strong>{tr('No. PO Customer', 'Customer PO No.')}</strong><span>{detail.delivery_links?.[0]?.delivery_order?.customer_po?.po_number || detail.delivery_links?.[0]?.delivery_order?.customer_po_number || '-'}</span></div>
             </div>
-            <table className="print-table"><thead><tr><th>No.</th><th>Deskripsi</th><th>Warna</th><th className="print-right">Qty</th><th className="print-right">Harga Satuan</th><th className="print-right">Jumlah</th></tr></thead>
-              <tbody>{(detail.lines || []).map((line, index) => <tr key={line.id}><td>{index + 1}</td><td>{line.description}</td><td>{line.delivery_order_line?.color_code || '-'}</td><td className="print-right">{line.quantity}</td><td className="print-right">{fmt(line.unit_price_snapshot)}</td><td className="print-right">{fmt(line.subtotal)}</td></tr>)}</tbody>
+            <table className="print-table"><thead><tr><th>No.</th><th>{tr('Deskripsi', 'Description')}</th><th>{tr('Warna', 'Color')}</th><th className="print-right">Qty</th><th className="print-right">{tr('Harga Satuan', 'Unit Price')}</th><th className="print-right">{tr('Jumlah', 'Amount')}</th></tr></thead>
+              <tbody>{(detail.lines || []).map((line, index) => <tr key={line.id}><td>{index + 1}</td><td>{line.description}</td><td>{line.delivery_order_line?.color_code || '-'}</td><td className="print-right">{line.quantity}</td><td className="print-right">{formatCurrency(line.unit_price_snapshot)}</td><td className="print-right">{formatCurrency(line.subtotal)}</td></tr>)}</tbody>
             </table>
             <div className="print-totals">
-              <div><span>DPP / Subtotal</span><strong>{fmt(detail.dpp)}</strong></div>
-              <div><span>PPN</span><strong>{fmt(detail.ppn_amount)}</strong></div>
-              <div><span>PPh</span><strong>{fmt(detail.pph_amount)}</strong></div>
-              <div className="print-grand-total"><span>Total Tagihan</span><strong>{fmt(detail.total_amount)}</strong></div>
-              <div><span>Sudah Dibayar</span><strong>{fmt(detail.amount_paid)}</strong></div>
-              <div><span>Sisa Tagihan</span><strong>{fmt(detail.amount_due)}</strong></div>
+              <div><span>DPP / Subtotal</span><strong>{formatCurrency(detail.dpp)}</strong></div>
+              <div><span>PPN</span><strong>{formatCurrency(detail.ppn_amount)}</strong></div>
+              <div><span>PPh</span><strong>{formatCurrency(detail.pph_amount)}</strong></div>
+              <div className="print-grand-total"><span>Total Tagihan</span><strong>{formatCurrency(detail.total_amount)}</strong></div>
+              <div><span>Sudah Dibayar</span><strong>{formatCurrency(detail.amount_paid)}</strong></div>
+              <div><span>Sisa Tagihan</span><strong>{formatCurrency(detail.amount_due)}</strong></div>
             </div>
             {detail.delivery_links?.length ? <p className="print-note">Referensi Surat Jalan: {detail.delivery_links.map(link => link.delivery_order?.sj_number || link.delivery_order_id).join(', ')}</p> : null}
-            {detail.notes ? <p className="print-note"><strong>Catatan:</strong> {detail.notes}</p> : null}
+            {detail.notes ? <p className="print-note"><strong>{tr('Catatan:', 'Notes:')}</strong> {detail.notes}</p> : null}
             <footer className="print-signatures"><div>Hormat kami,<br/><br/><br/><br/>________________________</div><div>Penerima,<br/><br/><br/><br/>________________________</div></footer>
             <div className="print-footer">Dokumen dicetak dari Sentanu Jaya ERP.</div>
           </section>
