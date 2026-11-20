@@ -1,3 +1,4 @@
+import { getLocalDateInputValue } from '../utils/date';
 import { useState, useEffect } from 'react';
 import { Plus, Eye, Edit, CheckCircle, XCircle, Archive } from 'lucide-react';
 import { useAuth, permissions } from '../auth';
@@ -99,7 +100,7 @@ export function CustomerPoPage() {
     company_id: '',
     customer_id: '',
     po_number: '',
-    po_date: new Date().toISOString().slice(0, 10),
+    po_date: getLocalDateInputValue(),
     expected_delivery_date: '',
     notes: '',
     lines: [
