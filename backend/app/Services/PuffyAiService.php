@@ -931,11 +931,13 @@ class PuffyAiService
         $messages[] = ['role' => 'user', 'content' => $userMessage];
         $lowerUserMsg = strtolower($userMessage);
         $isHowTo = str_contains($lowerUserMsg, 'bagaimana') || str_contains($lowerUserMsg, 'cara') || str_contains($lowerUserMsg, 'panduan') || str_contains($lowerUserMsg, 'langkah') || str_contains($lowerUserMsg, 'how to');
-        $isOutOfScope = preg_match('/(?<!\pL)(presiden|cuaca|politik|olahraga|hiburan|payroll|deployment|vps)(?!\pL)/u', $lowerUserMsg) === 1
+        $isOutOfScope = preg_match('/(?<!\pL)(presiden|cuaca|politik|olahraga|hiburan|payroll|deployment|vps|president|weather|politics|sports|entertainment)(?!\pL)/u', $lowerUserMsg) === 1
             || str_contains($lowerUserMsg, 'job costing')
             || str_contains($lowerUserMsg, 'overhead produksi')
+            || str_contains($lowerUserMsg, 'production overhead')
             || str_contains($lowerUserMsg, 'di luar data erp')
-            || str_contains($lowerUserMsg, 'di luar erp');
+            || str_contains($lowerUserMsg, 'di luar erp')
+            || str_contains($lowerUserMsg, 'outside erp');
         $isActivationRequest = preg_match('/\b(aktifkan|aktivasi|aktifasi|activate)\b/u', $lowerUserMsg) === 1;
         $tools = $isHowTo ? [] : $this->getToolDefinitions();
         if (! $isActivationRequest) {
@@ -945,8 +947,10 @@ class PuffyAiService
         }
 
         if ($isOutOfScope) {
-            $onStatus('Menyiapkan jawaban…', ['route' => $route]);
-            $finalReply = 'Maaf ya, aku fokus membantu operasional dan penggunaan Sentanu Jaya ERP. Untuk pertanyaan di luar data atau fitur ERP, sebaiknya gunakan sumber atau tim yang sesuai.';
+            $onStatus($language === 'en' ? 'Preparing a response…' : 'Menyiapkan jawaban…', ['route' => $route]);
+            $finalReply = $language === 'en'
+                ? 'I can help with Sentanu Jaya ERP operations and app usage. For topics outside ERP data or features, please consult an appropriate source or team.'
+                : 'Maaf ya, aku fokus membantu operasional dan penggunaan Sentanu Jaya ERP. Untuk pertanyaan di luar data atau fitur ERP, sebaiknya gunakan sumber atau tim yang sesuai.';
             foreach (explode(' ', $finalReply) as $word) {
                 $onToken($word.' ');
                 usleep(15000);
@@ -977,18 +981,18 @@ class PuffyAiService
             'get_payment_summary',
         ], true)) {
             $status = match ($detectedBeforeProvider) {
-                'get_today_delivery_summary' => ['Memeriksa pengiriman hari ini…', ['route' => '/delivery', 'target' => 'delivery-summary']],
-                'get_goods_received_summary' => ['Memeriksa barang masuk…', ['route' => '/goods-receipts', 'target' => 'goods-receipt-summary']],
-                'get_custody_summary' => ['Memeriksa custody barang customer…', ['route' => '/custody', 'target' => 'custody-summary']],
-                'get_acceptance_summary' => ['Memeriksa customer acceptance…', ['route' => '/delivery', 'target' => 'delivery-summary']],
-                'get_operational_risk_summary' => ['Menganalisis risiko operasional…', ['route' => '/dashboard', 'target' => 'kpi']],
-                'get_customer_po_summary' => ['Memeriksa Customer PO…', ['route' => '/customer-po', 'target' => 'customer-po-summary']],
-                'get_production_progress_summary' => ['Memeriksa progres produksi…', ['route' => '/dashboard', 'target' => 'kpi']],
-                'get_delivery_summary' => ['Memeriksa surat jalan…', ['route' => '/delivery', 'target' => 'delivery-summary']],
-                'get_invoice_summary' => ['Memeriksa invoice…', ['route' => '/invoicing', 'target' => 'invoice-summary']],
-                'get_invoice_tax_summary' => ['Memeriksa pajak invoice…', ['route' => '/invoicing', 'target' => 'invoice-summary']],
-                'get_payment_summary' => ['Memeriksa pembayaran…', ['route' => '/payments', 'target' => 'payment-summary']],
-                default => ['Memeriksa stok material…', ['route' => '/materials', 'target' => 'material-stock-summary']],
+                'get_today_delivery_summary' => [$language === 'en' ? 'Checking today’s deliveries…' : 'Memeriksa pengiriman hari ini…', ['route' => '/delivery', 'target' => 'delivery-summary']],
+                'get_goods_received_summary' => [$language === 'en' ? 'Checking received goods…' : 'Memeriksa barang masuk…', ['route' => '/goods-receipts', 'target' => 'goods-receipt-summary']],
+                'get_custody_summary' => [$language === 'en' ? 'Checking customer-owned goods custody…' : 'Memeriksa custody barang customer…', ['route' => '/custody', 'target' => 'custody-summary']],
+                'get_acceptance_summary' => [$language === 'en' ? 'Checking customer acceptance…' : 'Memeriksa customer acceptance…', ['route' => '/delivery', 'target' => 'delivery-summary']],
+                'get_operational_risk_summary' => [$language === 'en' ? 'Analyzing operational risks…' : 'Menganalisis risiko operasional…', ['route' => '/dashboard', 'target' => 'kpi']],
+                'get_customer_po_summary' => [$language === 'en' ? 'Checking Customer POs…' : 'Memeriksa Customer PO…', ['route' => '/customer-po', 'target' => 'customer-po-summary']],
+                'get_production_progress_summary' => [$language === 'en' ? 'Checking production progress…' : 'Memeriksa progres produksi…', ['route' => '/dashboard', 'target' => 'kpi']],
+                'get_delivery_summary' => [$language === 'en' ? 'Checking delivery orders…' : 'Memeriksa surat jalan…', ['route' => '/delivery', 'target' => 'delivery-summary']],
+                'get_invoice_summary' => [$language === 'en' ? 'Checking invoices…' : 'Memeriksa invoice…', ['route' => '/invoicing', 'target' => 'invoice-summary']],
+                'get_invoice_tax_summary' => [$language === 'en' ? 'Checking invoice taxes…' : 'Memeriksa pajak invoice…', ['route' => '/invoicing', 'target' => 'invoice-summary']],
+                'get_payment_summary' => [$language === 'en' ? 'Checking payments…' : 'Memeriksa pembayaran…', ['route' => '/payments', 'target' => 'payment-summary']],
+                default => [$language === 'en' ? 'Checking material stock…' : 'Memeriksa stok material…', ['route' => '/materials', 'target' => 'material-stock-summary']],
             };
             $onStatus($status[0], $status[1]);
             $executedToolResult = $this->executeTool($detectedBeforeProvider, ['_language' => $pageContext['language'] ?? 'id']);
@@ -1011,11 +1015,11 @@ class PuffyAiService
         $executedToolResult = null;
 
         if ($isHowTo) {
-            $onStatus('Menyusun panduan operasional…', ['route' => $route]);
+            $onStatus($language === 'en' ? 'Preparing operational guidance…' : 'Menyusun panduan operasional…', ['route' => $route]);
             $learnedGuide = $this->learningService->findRelevantGuidance($userMessage, $role);
             $guideText = $learnedGuide ?: $this->knowledgeService->findRelevantGuidance($userMessage);
             if (! $guideText) {
-                $guideText = 'Aku bisa bantu menjelaskan langkahnya. Sebutkan nama modul atau dokumen yang ingin kamu proses, misalnya material, Customer PO, surat jalan, invoice, atau pembayaran, supaya panduannya tepat.';
+                $guideText = $language === 'en' ? 'I can walk you through the process. Tell me which module or document you are working with, such as Materials, Customer PO, Delivery Order, Invoice, or Payment, so I can give you accurate steps.' : 'Aku bisa bantu menjelaskan langkahnya. Sebutkan nama modul atau dokumen yang ingin kamu proses, misalnya material, Customer PO, surat jalan, invoice, atau pembayaran, supaya panduannya tepat.';
             }
             $finalReply = $guideText;
             foreach (explode(' ', $finalReply) as $word) {
@@ -1031,7 +1035,7 @@ class PuffyAiService
 
         while ($iteration < $maxIterations) {
             $iteration++;
-            $onStatus("Memproses analisis agen AI (Iterasi {$iteration})…", ['route' => $route]);
+            $onStatus($language === 'en' ? "Processing AI analysis (iteration {$iteration})…" : "Memproses analisis agen AI (Iterasi {$iteration})…", ['route' => $route]);
 
             // Buffer tokens during intermediate tool-seeking iterations to avoid double streaming
             $iterationTokens = '';
@@ -1062,7 +1066,7 @@ class PuffyAiService
                         break;
                     }
 
-                    $onStatus("Menjalankan tool ERP: {$toolName}…", ['route' => $route, 'target' => 'table']);
+                    $onStatus($language === 'en' ? "Running ERP tool: {$toolName}…" : "Menjalankan tool ERP: {$toolName}…", ['route' => $route, 'target' => 'table']);
                     $toolArgs['_authenticated_user_id'] = $pageContext['user_id'] ?? null;
                     $toolArgs['_language'] = $pageContext['language'] ?? 'id';
                     $executedToolResult = $this->executeTool($toolName, $toolArgs);
@@ -1084,8 +1088,8 @@ class PuffyAiService
             }
 
             if ($detected && ! $executedToolResult) {
-                $onStatus("Menjalankan tool ERP (fallback): {$detected}…", ['route' => $route, 'target' => 'table']);
-                $executedToolResult = $this->executeTool($detected);
+                $onStatus($language === 'en' ? "Running ERP tool (fallback): {$detected}…" : "Menjalankan tool ERP (fallback): {$detected}…", ['route' => $route, 'target' => 'table']);
+                $executedToolResult = $this->executeTool($detected, ['_language' => $language]);
                 $onToolResult($executedToolResult);
                 $messages[] = [
                     'role' => 'assistant',
@@ -1100,8 +1104,8 @@ class PuffyAiService
             }
 
             if (! empty($responsePayload['provider_error']) && ! $executedToolResult) {
-                $specificMsg = $responsePayload['error_message'] ?? 'Maaf, aku belum bisa terhubung ke model AI saat ini. Coba lagi sebentar ya.';
-                $finalReply = "Maaf, {$specificMsg}";
+                $specificMsg = $responsePayload['error_message'] ?? ($language === 'en' ? 'I cannot connect to the AI model right now. Please try again shortly.' : 'Maaf, aku belum bisa terhubung ke model AI saat ini. Coba lagi sebentar ya.');
+                $finalReply = $language === 'en' ? $specificMsg : "Maaf, {$specificMsg}";
                 foreach (explode(' ', $finalReply) as $word) {
                     $onToken($word.' ');
                     usleep(15000);
