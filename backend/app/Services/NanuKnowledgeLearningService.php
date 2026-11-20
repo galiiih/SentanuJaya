@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\NanuKnowledgeBase;
 use App\Models\NanuKnowledgeCandidate;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class NanuKnowledgeLearningService
 {
