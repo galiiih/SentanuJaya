@@ -1,3 +1,4 @@
+import { getLocalDateInputValue } from '../utils/date';
 import { useState, useEffect, useRef } from 'react';
 import { Plus, Edit, Trash2, Users, Layers, Package, Tag, Building2, BookOpen, Wrench, FileSpreadsheet } from 'lucide-react';
 import { apiError, type Customer, type CustomerItem } from '../services/api';
@@ -253,7 +254,7 @@ export function MasterDataPage() {
     } else if (tab === 'customer_items') {
       setFormData({ customer_id: customers[0]?.id || '', code: '', name: '', vehicle_model: '', part_type: '' });
     } else if (tab === 'price_lists') {
-      setFormData({ code: '', name: '', customer_id: customers[0]?.id || '', effective_date: new Date().toISOString().split('T')[0], is_active: true });
+      setFormData({ code: '', name: '', customer_id: customers[0]?.id || '', effective_date: getLocalDateInputValue(), is_active: true });
     } else if (tab === 'price_list_lines') {
       setFormData({ price_list_id: priceLists[0]?.id || '', customer_item_id: customerItems[0]?.id || '', unit_price: '' });
     } else if (tab === 'uoms') {
