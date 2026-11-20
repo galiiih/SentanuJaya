@@ -432,10 +432,14 @@ export function NumericInput({
     return negative + integer + (normalized.includes('.') ? '.' + fraction : '');
   };
 
+  const inputRef = useRef<HTMLInputElement>(null);
+
   const constraintMessage = (raw: string): string => {
-    if (raw === '' || raw === '-' || raw === '.' || raw === '-.') return '';
+    if (raw === '') return '';
+    if (raw === '-' || raw === '.' || raw === '-.' || !Number.isFinite(Number(raw))) {
+      return language === 'en' ? 'Enter a valid number.' : 'Masukkan angka yang valid.';
+    }
     const numeric = Number(raw);
-    if (!Number.isFinite(numeric)) return '';
     if (min !== undefined && numeric < Number(min)) {
       return language === 'en' ? `Value must be at least ${min}.` : `Nilai minimal ${min}.`;
     }
@@ -444,6 +448,12 @@ export function NumericInput({
     }
     return '';
   };
+
+  // Keep native form validation synchronized even when a legacy value is
+  // populated externally and the user submits without focusing this field.
+  useEffect(() => {
+    inputRef.current?.setCustomValidity(constraintMessage(rawValue));
+  }, [rawValue, min, max, language]);
 
   const displayValue = () => {
     if (!rawValue || rawValue === '-') return rawValue;
@@ -455,6 +465,7 @@ export function NumericInput({
   return (
     <input
       {...props}
+      ref={inputRef}
       type="text"
       inputMode="decimal"
       className={`input ${className}`}
