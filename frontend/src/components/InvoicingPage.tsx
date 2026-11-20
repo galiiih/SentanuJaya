@@ -36,7 +36,7 @@ export function InvoicingPage() {
   const { t, language } = useLanguage();
   const en = language === 'en';
   const tr = (id: string, english: string) => en ? english : id;
-  const formatCurrency = (value: number) => formatCurrency(value, en ? 'en-US' : 'id-ID');
+  const formatCurrency = (value: number) => fmt(value, en ? 'en-US' : 'id-ID');
 
   /* ── Invoice List ── */
   const [invoices, setInvoices] = useState<InvoiceRecord[]>([]);
@@ -452,12 +452,12 @@ export function InvoicingPage() {
               <tbody>{(detail.lines || []).map((line, index) => <tr key={line.id}><td>{index + 1}</td><td>{line.description}</td><td>{line.delivery_order_line?.color_code || '-'}</td><td className="print-right">{line.quantity}</td><td className="print-right">{formatCurrency(line.unit_price_snapshot)}</td><td className="print-right">{formatCurrency(line.subtotal)}</td></tr>)}</tbody>
             </table>
             <div className="print-totals">
-              <div><span>DPP / Subtotal</span><strong>{formatCurrency(detail.dpp)}</strong></div>
+              <div><span>DPP / {tr('Subtotal', 'Subtotal')}</span><strong>{formatCurrency(detail.dpp)}</strong></div>
               <div><span>PPN</span><strong>{formatCurrency(detail.ppn_amount)}</strong></div>
               <div><span>PPh</span><strong>{formatCurrency(detail.pph_amount)}</strong></div>
-              <div className="print-grand-total"><span>Total Tagihan</span><strong>{formatCurrency(detail.total_amount)}</strong></div>
-              <div><span>Sudah Dibayar</span><strong>{formatCurrency(detail.amount_paid)}</strong></div>
-              <div><span>Sisa Tagihan</span><strong>{formatCurrency(detail.amount_due)}</strong></div>
+              <div className="print-grand-total"><span>{tr('Total Tagihan', 'Invoice Total')}</span><strong>{formatCurrency(detail.total_amount)}</strong></div>
+              <div><span>{tr('Sudah Dibayar', 'Paid to Date')}</span><strong>{formatCurrency(detail.amount_paid)}</strong></div>
+              <div><span>{tr('Sisa Tagihan', 'Balance Due')}</span><strong>{formatCurrency(detail.amount_due)}</strong></div>
             </div>
             {detail.delivery_links?.length ? <p className="print-note">Referensi Surat Jalan: {detail.delivery_links.map(link => link.delivery_order?.sj_number || link.delivery_order_id).join(', ')}</p> : null}
             {detail.notes ? <p className="print-note"><strong>{tr('Catatan:', 'Notes:')}</strong> {detail.notes}</p> : null}
