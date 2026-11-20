@@ -11,6 +11,7 @@ import {
   DataTable,
   FormField,
   Input,
+  NumericInput,
   Select,
   Textarea,
   Modal,
@@ -618,7 +619,7 @@ export function MasterDataPage() {
                   </Select>
                 </FormField>
                 <FormField label="Harga Satuan (IDR)" required>
-                  <Input type="number" min="0" step="0.01" value={formData.unit_price ?? ''} onChange={e => setFormData({ ...formData, unit_price: e.target.value })} placeholder="1500000" required />
+                  <NumericInput maximumFractionDigits={2} value={formData.unit_price ?? ''} onValueChange={raw => setFormData({ ...formData, unit_price: raw })} placeholder="1500000" required />
                 </FormField>
               </>
             )}
@@ -657,7 +658,7 @@ export function MasterDataPage() {
                   <Input value={formData.unit || 'LITER'} onChange={e => setFormData({ ...formData, unit: e.target.value })} placeholder="LITER / CAN / PCS" required />
                 </FormField>
                 <FormField label="Minimum Stok">
-                  <Input type="number" min="0" step="0.001" value={formData.minimum_stock ?? formData.min_stock ?? ''} onChange={e => setFormData({ ...formData, minimum_stock: e.target.value, min_stock: e.target.value })} placeholder="5" />
+                  <NumericInput maximumFractionDigits={3} value={formData.minimum_stock ?? formData.min_stock ?? ''} onValueChange={raw => setFormData({ ...formData, minimum_stock: raw, min_stock: raw })} placeholder="5" />
                 </FormField>
               </>
             )}
