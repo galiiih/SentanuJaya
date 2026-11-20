@@ -497,13 +497,18 @@ class PuffyAiService
                         ->selectRaw('material_id, SUM(quantity_on_hand) as current_stock')
                         ->groupBy('material_id')
                         ->pluck('current_stock', 'material_id');
-                    $lowStockCount = Material::query()->get()->filter(function (Material $material) use ($stockByMaterial): bool {
-                        $reorderLevel = (float) ($material->reorder_level ?? 0);
-                        $threshold = $reorderLevel > 0 ? $reorderLevel : (float) ($material->minimum_stock ?? 0);
-                        $currentStock = (float) ($stockByMaterial[$material->id] ?? 0);
+                    $lowStockCount = Material::query()
+                        ->where('is_active', true)
+                        ->get()
+                        ->filter(function (Material $material) use ($stockByMaterial): bool {
+                            $reorderLevel = (float) ($material->reorder_level ?? 0);
+                            $minimumStock = (float) ($material->minimum_stock ?? 0);
+                            $threshold = $reorderLevel > 0 ? $reorderLevel : $minimumStock;
+                            $currentStock = (float) ($stockByMaterial[$material->id] ?? 0);
 
-                        return $currentStock <= $threshold;
-                    })->count();
+                            // A zero threshold means no minimum-stock policy is configured.
+                            return $threshold > 0 && $currentStock <= $threshold;
+                        })->count();
 
                     $indicators = $isEnglish ? [
                         [
