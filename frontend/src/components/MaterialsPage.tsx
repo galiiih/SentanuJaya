@@ -101,7 +101,10 @@ export function MaterialsPage() {
         stockApi.list({ per_page: 200 }).catch(() => ({ data: [] })),
         materialReceiptApi.list({ per_page: 100 }).catch(() => ({ data: [] })),
         stockApi.movements({ per_page: 100 }).catch(() => ({ data: [] })),
-        warehouseApi.list().catch(() => ({ data: [] })),
+        warehouseApi.list().catch((err) => {
+          setError(`${tr('Daftar gudang gagal dimuat', 'Warehouses could not be loaded')}: ${apiError(err)}`);
+          return { data: [] };
+        }),
         supplierApi.list().catch(() => ({ data: [] })),
         stockApi.lowStock().catch(() => []),
       ]);
@@ -139,7 +142,14 @@ export function MaterialsPage() {
       // selectors receives an object and the inventory screen can crash.
       setReceipts(asRows(recRes));
       setMovements(asRows(movRes));
-      setWarehouseList(asRows(whRes));
+      const loadedWarehouses = asRows(whRes);
+      setWarehouseList(loadedWarehouses);
+      const defaultWarehouseId = loadedWarehouses.find((warehouse: any) => warehouse.is_active !== false)?.id ?? '';
+      if (defaultWarehouseId) {
+        setReceiptForm((current) => current.warehouse_id ? current : { ...current, warehouse_id: defaultWarehouseId });
+        setAdjForm((current) => current.warehouse_id ? current : { ...current, warehouse_id: defaultWarehouseId });
+        setOpnameForm((current) => current.warehouse_id ? current : { ...current, warehouse_id: defaultWarehouseId });
+      }
       setSupplierList(asRows(supRes));
       setLowStocks(asRows(lowRes));
     } catch (err) {
