@@ -438,7 +438,7 @@ export function MasterDataPage() {
       />
 
       {error && <Alert tone="danger">{error}</Alert>}
-      {referencesError && <Alert tone="danger">{tr('Gagal memuat data referensi:', 'Failed to load reference data:')} {referencesError} <Button variant="ghost" onClick={loadReferences}{tr('Coba lagi', 'Try again')}</Button></Alert>}
+      {referencesError && <Alert tone="danger">{tr('Gagal memuat data referensi:', 'Failed to load reference data:')} {referencesError} <Button variant="ghost" onClick={loadReferences}>{tr('Coba lagi', 'Try again')}</Button></Alert>}
       {tab === 'branches' && !referencesLoading && companies.length === 0 && (
         <Alert tone="warning">{tr('Belum ada data perusahaan. Buat data Perusahaan terlebih dahulu sebelum menambahkan Cabang.', 'No company data exists. Create a Company before adding a Branch.')}</Alert>
       )}
@@ -459,18 +459,18 @@ export function MasterDataPage() {
               onClick={() => setTab(key)}
               style={{ display: 'flex', gap: '0.375rem', alignItems: 'center' }}
             >
-              <Icon size={16} /> {masterApi[key].label}
+              <Icon size={16} /> {getMasterLabel(key, en)}
             </Button>
           );
         })}
       </div>
 
-      <Card title={`Daftar ${masterApi[tab].label}`}>
-        <DataTable columns={getColumnsForTab()} rows={data} emptyTitle={tr('Belum ada data master', 'No master data yet')} emptyDescription={`Belum ada data pada tabel ${masterApi[tab].label}. Klik tombol Tambah untuk membuat baru.`} />
+      <Card title={`Daftar ${getMasterLabel(tab, en)}`}>
+        <DataTable columns={getColumnsForTab()} rows={data} emptyTitle={tr('Belum ada data master', 'No master data yet')} emptyDescription={`${tr('Belum ada data pada tabel', 'No data in the')} ${getMasterLabel(tab, en)} ${tr('Klik tombol Tambah untuk membuat baru.', 'table yet. Select Add to create a new record.')}`} />
       </Card>
 
       {/* Clean Single-Column Vertical Stacked Form Modal (Matching Reference Design) */}
-      <Modal open={modalOpen} title={editingItem ? `Edit ${masterApi[tab].label}` : `Tambah ${masterApi[tab].label}`} onClose={() => setModalOpen(false)}>
+      <Modal open={modalOpen} title={editingItem ? `Edit ${getMasterLabel(tab, en)}` : `Tambah ${getMasterLabel(tab, en)}`} onClose={() => setModalOpen(false)}>
         <form onSubmit={handleSave}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             
@@ -510,7 +510,7 @@ export function MasterDataPage() {
                 <FormField label={tr('Nama Cabang', 'Branch Name')} required>
                   <Input value={formData.name || ''} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder={tr('Cabang Utama', 'Main Branch')} required />
                 </FormField>
-                <FormField label="Alamat">
+                <FormField label={tr('Alamat', 'Address')}>
                   <Textarea value={formData.address || ''} onChange={e => setFormData({ ...formData, address: e.target.value })} placeholder={tr('Alamat cabang', 'Branch address')} rows={3} />
                 </FormField>
                 <FormField label={tr('Status Aktif', 'Active Status')}>
@@ -539,9 +539,9 @@ export function MasterDataPage() {
                 </FormField>
                 <FormField label={tr('Kondisi / Status Pajak', 'Tax Condition / Status')} required>
                   <Select value={formData.tax_condition ?? 3} onChange={e => setFormData({ ...formData, tax_condition: Number(e.target.value) })} required>
-                    <option value={1}>1. Tanpa PPN, Tanpa PPh (Non-PKP / Bebas)</option>
-                    <option value={2}>2. PPh 2.5% Tanpa PPN</option>
-                    <option value={3}>3. PPN 11% + PPh 2% (Standar PKP)</option>
+                    <option value={1}>1. {tr('Tanpa PPN, Tanpa PPh (Non-PKP / Bebas)', 'No VAT, No Withholding Tax (Non-Taxable)')}</option>
+                    <option value={2}>2. {tr('PPh 2.5% Tanpa PPN', '2.5% Withholding Tax, No VAT')}</option>
+                    <option value={3}>3. {tr('PPN 11% + PPh 2% (Standar PKP)', '11% VAT + 2% Withholding Tax (Standard Taxable Entity)')}</option>
                   </Select>
                 </FormField>
                 <FormField label={tr('Nomor Telepon', 'Phone Number')}>
@@ -583,9 +583,9 @@ export function MasterDataPage() {
             {/* Customer Item */}
             {tab === 'customer_items' && (
               <>
-                <FormField label="Pilih Customer" required>
+                <FormField label={tr('Pilih Customer', 'Select Customer')} required>
                   <Select value={formData.customer_id || ''} onChange={e => setFormData({ ...formData, customer_id: e.target.value })} required>
-                    <option value="">-- Pilih Customer --</option>
+                    <option value="">{tr('-- Pilih Customer --', '-- Select Customer --')}</option>
                     {customers.map(c => <option key={c.id} value={c.id}>{c.code} — {c.name}</option>)}
                   </Select>
                 </FormField>
@@ -613,9 +613,9 @@ export function MasterDataPage() {
                 <FormField label={tr('Nama Price List', 'Price List Name')} required>
                   <Input value={formData.name || ''} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="Kontrak Harga 2024" required />
                 </FormField>
-                <FormField label="Pilih Customer" required>
+                <FormField label={tr('Pilih Customer', 'Select Customer')} required>
                   <Select value={formData.customer_id || ''} onChange={e => setFormData({ ...formData, customer_id: e.target.value })} required>
-                    <option value="">-- Pilih Customer --</option>
+                    <option value="">{tr('-- Pilih Customer --', '-- Select Customer --')}</option>
                     {customers.map(c => <option key={c.id} value={c.id}>{c.code} — {c.name}</option>)}
                   </Select>
                 </FormField>
@@ -712,10 +712,10 @@ export function MasterDataPage() {
             {/* Suppliers */}
             {tab === 'suppliers' && (
               <>
-                <FormField label="Kode Supplier" required>
+                <FormField label={tr('Kode Supplier', 'Supplier Code')} required>
                   <Input value={formData.code || ''} onChange={e => setFormData({ ...formData, code: e.target.value })} placeholder="SUP-001" required />
                 </FormField>
-                <FormField label="Nama Supplier" required>
+                <FormField label={tr('Nama Supplier', 'Supplier Name')} required>
                   <Input value={formData.name || ''} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="PT Warna Abadi Kimia" required />
                 </FormField>
                 <FormField label="Nomor Telepon">
@@ -724,7 +724,7 @@ export function MasterDataPage() {
                 <FormField label="Email">
                   <Input type="email" value={formData.email || ''} onChange={e => setFormData({ ...formData, email: e.target.value })} placeholder="sales@warnabadi.com" />
                 </FormField>
-                <FormField label="Alamat Supplier">
+                <FormField label={tr('Alamat Supplier', 'Supplier Address')}>
                   <Textarea value={formData.address || ''} onChange={e => setFormData({ ...formData, address: e.target.value })} placeholder="Jl. Kimia Raya No. 5, Cikarang" rows={3} />
                 </FormField>
               </>
