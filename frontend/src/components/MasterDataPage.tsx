@@ -236,7 +236,7 @@ export function MasterDataPage() {
     } else if (tab === 'uoms') {
       setFormData({ code: '', name: '', category: 'GENERAL', decimal_places: 0 });
     } else if (tab === 'materials') {
-      setFormData({ code: '', name: '', category: 'GENERAL', unit: 'LITER', minimum_stock: 0, min_stock: 0 });
+      setFormData({ code: '', name: '', category: 'GENERAL', unit: 'LITER', minimum_stock: '', min_stock: '' });
     } else if (tab === 'warehouses') {
       setFormData({ branch_id: branches[0]?.id || '', code: '', name: '', is_active: true });
     } else if (tab === 'suppliers') {
@@ -257,10 +257,10 @@ export function MasterDataPage() {
     setError('');
     try {
       if (editingItem) {
-        await masterApi[tab].update(editingItem.id, tab === 'price_list_lines' ? { ...formData, unit_price: Number(formData.unit_price || 0) } : formData);
+        await masterApi[tab].update(editingItem.id, tab === 'price_list_lines' ? { ...formData, unit_price: Number(formData.unit_price || 0) } : tab === 'materials' ? { ...formData, minimum_stock: Number(formData.minimum_stock ?? formData.min_stock ?? 0) } : formData);
         setNotice('Data master berhasil diperbarui.');
       } else {
-        await masterApi[tab].create(tab === 'price_list_lines' ? { ...formData, unit_price: Number(formData.unit_price || 0) } : formData);
+        await masterApi[tab].create(tab === 'price_list_lines' ? { ...formData, unit_price: Number(formData.unit_price || 0) } : tab === 'materials' ? { ...formData, minimum_stock: Number(formData.minimum_stock ?? formData.min_stock ?? 0) } : formData);
         setNotice('Data master berhasil ditambahkan.');
       }
       setModalOpen(false);
@@ -657,7 +657,7 @@ export function MasterDataPage() {
                   <Input value={formData.unit || 'LITER'} onChange={e => setFormData({ ...formData, unit: e.target.value })} placeholder="LITER / CAN / PCS" required />
                 </FormField>
                 <FormField label="Minimum Stok">
-                  <Input type="number" value={formData.minimum_stock ?? formData.min_stock ?? 0} onChange={e => setFormData({ ...formData, minimum_stock: Number(e.target.value), min_stock: Number(e.target.value) })} placeholder="5" />
+                  <Input type="number" min="0" step="0.001" value={formData.minimum_stock ?? formData.min_stock ?? ''} onChange={e => setFormData({ ...formData, minimum_stock: e.target.value, min_stock: e.target.value })} placeholder="5" />
                 </FormField>
               </>
             )}
