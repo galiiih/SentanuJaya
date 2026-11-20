@@ -74,10 +74,14 @@ test.describe('Formatted numeric inputs', () => {
     const inputs = page.locator('input[inputmode="decimal"]');
     await expect(inputs).toHaveCount(2);
     await expect(inputs.nth(0)).not.toHaveValue('');
-    // Existing numeric values are retained in the form and displayed using id-ID grouping.
+    // Prefilled legacy values receive min/max validation before the user edits them.
+    await inputs.nth(0).focus();
+    const legacyQuantity = Number(await inputs.nth(0).inputValue());
+    expect(await inputs.nth(0).evaluate((input: HTMLInputElement) => input.validity.valid)).toBe(legacyQuantity >= 1);
     await inputs.nth(0).blur();
     await expect(inputs.nth(0)).not.toHaveValue('');
     await expect(inputs.nth(1)).not.toHaveValue('');
+    expect(await inputs.nth(1).evaluate((input: HTMLInputElement) => input.validity.valid)).toBeTruthy();
   });
 
   test('uses English numeric grouping when the interface language is English', async ({ page }) => {
