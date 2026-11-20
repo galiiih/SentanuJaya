@@ -326,11 +326,11 @@ export function KnowledgeManagementPage() {
         {selectedCandidate && (
           <div className="space-y-4 text-sm">
             <div>
-              <span className="text-xs text-[var(--muted-foreground)] block font-medium">Judul / Modul</span>
-              <p className="font-semibold text-[var(--foreground)]">{selectedCandidate.title || '{en ? 'Untitled' : 'Tanpa Judul'}'} ({selectedCandidate.module})</p>
+              <span className="text-xs text-[var(--muted-foreground)] block font-medium">{en ? 'Title / Module' : 'Judul / Modul'}</span>
+              <p className="font-semibold text-[var(--foreground)]">{selectedCandidate.title || (en ? 'Untitled' : 'Tanpa Judul')} ({selectedCandidate.module})</p>
             </div>
             <div>
-              <span className="text-xs text-[var(--muted-foreground)] block font-medium">Pertanyaan</span>
+              <span className="text-xs text-[var(--muted-foreground)] block font-medium">{en ? 'Question' : 'Pertanyaan'}</span>
               <p className="bg-[var(--surface)] p-3 rounded-lg text-[var(--foreground)]">{selectedCandidate.question}</p>
             </div>
             <div>
@@ -342,7 +342,7 @@ export function KnowledgeManagementPage() {
               <Textarea
                 value={reviewNotes}
                 onChange={(e) => setReviewNotes(e.target.value)}
-                placeholder="Tambahkan catatan alasan approval / rejection..."
+                placeholder={en ? 'Add notes explaining the approval or rejection...' : 'Tambahkan catatan alasan approval / rejection...'}
                 rows={3}
               />
             </div>
@@ -434,7 +434,7 @@ export function KnowledgeManagementPage() {
               variant="secondary"
               onClick={() => setShowSubmitModal(false)}
             >
-              Batal
+              {en ? 'Cancel' : 'Batal'}
             </Button>
             <Button
               type="submit"
