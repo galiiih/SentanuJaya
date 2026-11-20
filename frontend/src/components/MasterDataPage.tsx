@@ -200,7 +200,7 @@ export function MasterDataPage() {
         }
       });
       if (failures.length) {
-        setReferencesError(`Gagal memuat: ${failures.join(', ')}. Silakan coba lagi.`);
+        setReferencesError(`${tr('Gagal memuat:', 'Failed to load:')} ${failures.join(', ')}. ${tr('Silakan coba lagi.', 'Please try again.')}`);
       }
     } finally {
       setReferencesLoading(false);
@@ -404,8 +404,8 @@ export function MasterDataPage() {
         return [
           { id: 'code', header: tr('Kode Gudang', 'Warehouse Code'), cell: (row: any) => row.code || '-' },
           { id: 'name', header: tr('Nama Gudang', 'Warehouse Name'), cell: (row: any) => row.name || '-' },
-          { id: 'branch', header: 'Cabang', cell: (row: any) => row.branch?.name || '-' },
-          { id: 'is_active', header: 'Status', cell: (row: any) => row.is_active ? 'Aktif' : 'Nonaktif' },
+          { id: 'branch', header: tr('Cabang', 'Branch'), cell: (row: any) => row.branch?.name || '-' },
+          { id: 'is_active', header: 'Status', cell: (row: any) => row.is_active ? tr('Aktif', 'Active') : tr('Nonaktif', 'Inactive') },
           ...actionColumn
         ];
       case 'suppliers':
@@ -702,8 +702,8 @@ export function MasterDataPage() {
                 </FormField>
                 <FormField label={tr('Status Aktif', 'Active Status')}>
                   <Select value={formData.is_active !== false ? 'true' : 'false'} onChange={e => setFormData({ ...formData, is_active: e.target.value === 'true' })}>
-                    <option value="true">Aktif</option>
-                    <option value="false">Nonaktif</option>
+                    <option value="true">{tr('Aktif', 'Active')}</option>
+                    <option value="false">{tr('Nonaktif', 'Inactive')}</option>
                   </Select>
                 </FormField>
               </>
