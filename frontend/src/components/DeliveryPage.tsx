@@ -34,6 +34,13 @@ import {
   Toast,
 } from './ui';
 
+const getLocalDateInputValue = (date = new Date()) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 type DeliveryLineForm = {
   customer_item_id: string;
   customer_po_line_id: string;
@@ -82,7 +89,7 @@ export function DeliveryPage() {
   // Customer Acceptance states
   const [doAcceptances, setDoAcceptances] = useState<AcceptanceRecord[]>([]);
   const [acceptanceModalOpen, setAcceptanceModalOpen] = useState(false);
-  const [acceptanceDate, setAcceptanceDate] = useState<string>(new Date().toISOString().slice(0, 10));
+  const [acceptanceDate, setAcceptanceDate] = useState<string>(getLocalDateInputValue());
   const [acceptanceNotes, setAcceptanceNotes] = useState<string>('');
   const [acceptanceLines, setAcceptanceLines] = useState<
     {
@@ -114,7 +121,7 @@ export function DeliveryPage() {
     branch_id: '',
     customer_id: '',
     customer_po_id: '',
-    delivery_date: new Date().toISOString().slice(0, 10),
+    delivery_date: getLocalDateInputValue(),
     shipping_address: '',
     driver_name: '',
     vehicle_plate: '',
@@ -313,7 +320,7 @@ export function DeliveryPage() {
       reject_reason: '',
     }));
     setAcceptanceLines(lines);
-    setAcceptanceDate(new Date().toISOString().slice(0, 10));
+    setAcceptanceDate(getLocalDateInputValue());
     setAcceptanceNotes('');
     setFieldErrors({});
     setError('');
