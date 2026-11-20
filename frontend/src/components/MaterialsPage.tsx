@@ -317,7 +317,7 @@ export function MaterialsPage() {
           <ArrowLeftRight className="w-4 h-4 mr-2" /> Stock Card (Mutasi)
         </Button>
         <Button variant={activeTab === 'adjust' ? 'primary' : 'secondary'} onClick={() => setActiveTab('adjust')}>
-          <CheckCircle2 className="w-4 h-4 mr-2" /> {tr('Stock Adjustment & Stock Count', 'Stock Adjustment & Stock Count')}
+          <CheckCircle2 className="w-4 h-4 mr-2" /> {tr('Penyesuaian Stok & Opname', 'Stock Adjustment & Stock Count')}
         </Button>
       </div>
 
@@ -363,7 +363,7 @@ export function MaterialsPage() {
                     </Button>
                     {rec.status === 'DRAFT' && (
                       <>
-                        <Button variant="primary" onClick={() => handlePostReceipt(rec.id)}>{tr('Post', 'Post')}</Button>
+                        <Button variant="primary" onClick={() => handlePostReceipt(rec.id)}>{tr('Posting', 'Post')}</Button>
                         <Button variant="danger" onClick={() => handleCancelReceipt(rec.id)}>{tr('Batal', 'Cancel')}</Button>
                       </>
                     )}
