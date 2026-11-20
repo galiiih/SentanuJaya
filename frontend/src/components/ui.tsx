@@ -383,6 +383,8 @@ export function NumericInput({
   className = '',
   onBlur,
   onFocus,
+  min,
+  max,
   ...props
 }: NumericInputProps) {
   const [focused, setFocused] = useState(false);
@@ -430,6 +432,19 @@ export function NumericInput({
     return negative + integer + (normalized.includes('.') ? '.' + fraction : '');
   };
 
+  const constraintMessage = (raw: string): string => {
+    if (raw === '' || raw === '-' || raw === '.' || raw === '-.') return '';
+    const numeric = Number(raw);
+    if (!Number.isFinite(numeric)) return '';
+    if (min !== undefined && numeric < Number(min)) {
+      return language === 'en' ? `Value must be at least ${min}.` : `Nilai minimal ${min}.`;
+    }
+    if (max !== undefined && numeric > Number(max)) {
+      return language === 'en' ? `Value must not exceed ${max}.` : `Nilai maksimal ${max}.`;
+    }
+    return '';
+  };
+
   const displayValue = () => {
     if (!rawValue || rawValue === '-') return rawValue;
     const parsed = Number(rawValue);
@@ -451,9 +466,11 @@ export function NumericInput({
       onChange={(event) => {
         const raw = parseInput(event.target.value);
         const numeric = raw === '' || raw === '-' || raw === '.' || raw === '-.' ? null : Number(raw);
+        event.currentTarget.setCustomValidity(constraintMessage(raw));
         onValueChange(raw, numeric !== null && Number.isFinite(numeric) ? numeric : null);
       }}
       onBlur={(event) => {
+        event.currentTarget.setCustomValidity(constraintMessage(rawValue));
         setFocused(false);
         onBlur?.(event);
       }}
