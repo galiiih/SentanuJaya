@@ -70,4 +70,22 @@ test.describe('Formatted numeric inputs', () => {
     await expect(inputs.nth(1)).not.toHaveValue('');
   });
 
+  test('uses English numeric grouping when the interface language is English', async ({ page }) => {
+    await login(page);
+    await page.getByRole('button', { name: 'EN', exact: true }).click();
+    await page.goto('/customer-po');
+    await page.getByRole('button', { name: /New PO/i }).click();
+
+    const unitPrice = page.locator('input[inputmode="decimal"]').nth(1);
+    await unitPrice.fill('1,234');
+    await unitPrice.blur();
+    await expect(unitPrice).toHaveValue('1,234');
+    await unitPrice.focus();
+    await expect(unitPrice).toHaveValue('1234');
+
+    await unitPrice.fill('1,234.56');
+    await unitPrice.blur();
+    await expect(unitPrice).toHaveValue('1,234.56');
+  });
+
 });
