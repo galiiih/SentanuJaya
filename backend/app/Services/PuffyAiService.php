@@ -1126,7 +1126,7 @@ class PuffyAiService
             // deterministic summary as the final answer instead of allowing
             // the model to restate numbers, dates, or statuses inaccurately.
             if ($executedToolResult) {
-                $finalReply = $executedToolResult['summary'] ?? 'Permintaan telah diproses berdasarkan data ERP Sentanu Jaya.';
+                $finalReply = $executedToolResult['summary'] ?? ($language === 'en' ? 'Your request has been processed using Sentanu Jaya ERP data.' : 'Permintaan telah diproses berdasarkan data ERP Sentanu Jaya.');
                 foreach (explode(' ', $finalReply) as $word) {
                     $onToken($word.' ');
                     usleep(15000);
