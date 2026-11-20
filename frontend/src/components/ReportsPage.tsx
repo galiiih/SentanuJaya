@@ -103,7 +103,7 @@ export function ReportsPage() {
     <div className="page-container">
       <div className="page-header">
         <div>
-          <h1 className="page-title">{tr('Advanced Reporting & Analytics', 'Advanced Reporting & Analytics')}</h1>
+          <h1 className="page-title">{tr('Pelaporan & Analitik Lanjutan', 'Advanced Reporting & Analytics')}</h1>
           <p className="page-subtitle">{tr('Laporan resmi keuangan, piutang, operasional, dan kustodi material.', 'Official financial, receivables, operational, and customer-goods custody reports.')}</p>
         </div>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -120,16 +120,16 @@ export function ReportsPage() {
 
       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.25rem', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.75rem' }}>
         <Button variant={activeTab === 'financial' ? 'primary' : 'ghost'} onClick={() => setActiveTab('financial')}>
-          <DollarSign size={16} style={{ marginRight: 6 }} /> Financial Report
+          <DollarSign size={16} style={{ marginRight: 6 }} /> {tr('Laporan Keuangan', 'Financial Report')}
         </Button>
         <Button variant={activeTab === 'receivables' ? 'primary' : 'ghost'} onClick={() => setActiveTab('receivables')}>
-          <FileText size={16} style={{ marginRight: 6 }} /> Receivables Report
+          <FileText size={16} style={{ marginRight: 6 }} /> {tr('Laporan Piutang', 'Receivables Report')}
         </Button>
         <Button variant={activeTab === 'operational' ? 'primary' : 'ghost'} onClick={() => setActiveTab('operational')}>
-          <Activity size={16} style={{ marginRight: 6 }} /> Operational Report
+          <Activity size={16} style={{ marginRight: 6 }} /> {tr('Laporan Operasional', 'Operational Report')}
         </Button>
         <Button variant={activeTab === 'custody' ? 'primary' : 'ghost'} onClick={() => setActiveTab('custody')}>
-          <Package size={16} style={{ marginRight: 6 }} /> Custody Report
+          <Package size={16} style={{ marginRight: 6 }} /> {tr('Laporan Kustodi', 'Custody Report')}
         </Button>
       </div>
 
