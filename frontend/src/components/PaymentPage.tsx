@@ -32,11 +32,12 @@ const METHODS = ['BANK_TRANSFER', 'CASH', 'GIRO', 'CHECK'] as const;
 
 type AllocationRow = { invoice_id: string; invoice_number: string; amount_due: number; amount: string };
 
-const fmt = (n: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
+const fmt = (n: number, locale = 'id-ID') => new Intl.NumberFormat(locale, { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
 
 export function PaymentPage() {
   const { hasPermission } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const formatCurrency = (value: number) => fmt(value, language === 'en' ? 'en-US' : 'id-ID');
 
   const [payments, setPayments] = useState<PaymentRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -166,7 +167,7 @@ export function PaymentPage() {
     { id: 'customer', header: t.common.customer, cell: (row) => row.customer?.name ?? '-', sortValue: (row) => row.customer?.name ?? '' },
     { id: 'payment_date', header: t.payment.paymentDate, cell: (row) => row.payment_date, sortValue: (row) => row.payment_date },
     { id: 'method', header: t.payment.method, cell: (row) => row.method.replace('_', ' ') },
-    { id: 'amount', header: t.payment.amount, cell: (row) => fmt(row.amount), sortValue: (row) => row.amount, align: 'right' },
+    { id: 'amount', header: t.payment.amount, cell: (row) => formatCurrency(row.amount), sortValue: (row) => row.amount, align: 'right' },
     { id: 'reference_no', header: t.payment.referenceNo, cell: (row) => row.reference_no || '-' },
     { id: 'status', header: t.common.status, cell: (row) => <StatusBadge status={row.status} />, sortValue: (row) => row.status },
     {
@@ -229,9 +230,9 @@ export function PaymentPage() {
           {outstanding && (
             <>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', margin: '1rem 0' }}>
-                <Card><div className="stat-label">{t.payment.totalBilled}</div><div className="stat-value">{fmt(outstanding.total_billed)}</div></Card>
-                <Card><div className="stat-label">{t.payment.totalPaid}</div><div className="stat-value">{fmt(outstanding.total_paid)}</div></Card>
-                <Card><div className="stat-label">{t.payment.totalOutstanding}</div><div className="stat-value" style={{ color: outstanding.total_outstanding > 0 ? 'var(--danger)' : 'var(--success)' }}>{fmt(outstanding.total_outstanding)}</div></Card>
+                <Card><div className="stat-label">{t.payment.totalBilled}</div><div className="stat-value">{formatCurrency(outstanding.total_billed)}</div></Card>
+                <Card><div className="stat-label">{t.payment.totalPaid}</div><div className="stat-value">{formatCurrency(outstanding.total_paid)}</div></Card>
+                <Card><div className="stat-label">{t.payment.totalOutstanding}</div><div className="stat-value" style={{ color: outstanding.total_outstanding > 0 ? 'var(--danger)' : 'var(--success)' }}>{formatCurrency(outstanding.total_outstanding)}</div></Card>
               </div>
 
               {allocations.length > 0 ? (
@@ -250,8 +251,8 @@ export function PaymentPage() {
                       {allocations.map((a, i) => (
                         <tr key={a.invoice_id}>
                           <td>{a.invoice_number}</td>
-                          <td className="align-right">{fmt(outstanding.invoices.find(inv => inv.id === a.invoice_id)?.total_amount ?? 0)}</td>
-                          <td className="align-right">{fmt(a.amount_due)}</td>
+                          <td className="align-right">{formatCurrency(outstanding.invoices.find(inv => inv.id === a.invoice_id)?.total_amount ?? 0)}</td>
+                          <td className="align-right">{formatCurrency(a.amount_due)}</td>
                           <td className="align-right">
                             <NumericInput min={0} max={a.amount_due} value={a.amount} maximumFractionDigits={2} onValueChange={(raw) => setAllocAmount(i, raw)}
                               placeholder="0" style={{ width: '140px', textAlign: 'right' }} />
@@ -263,7 +264,7 @@ export function PaymentPage() {
                     <tfoot>
                       <tr>
                         <td colSpan={3} className="align-right" style={{ fontWeight: 'bold' }}>Total:</td>
-                        <td className="align-right" style={{ fontWeight: 'bold' }}>{fmt(totalAllocated)}</td>
+                        <td className="align-right" style={{ fontWeight: 'bold' }}>{formatCurrency(totalAllocated)}</td>
                         <td></td>
                       </tr>
                     </tfoot>
@@ -298,7 +299,7 @@ export function PaymentPage() {
               <FormField label={t.common.customer}><p>{detail.customer?.name ?? '-'}</p></FormField>
               <FormField label={t.payment.paymentDate}><p>{detail.payment_date}</p></FormField>
               <FormField label={t.payment.method}><p>{detail.method.replace('_', ' ')}</p></FormField>
-              <FormField label={t.payment.amount}><p>{fmt(detail.amount)}</p></FormField>
+              <FormField label={t.payment.amount}><p>{formatCurrency(detail.amount)}</p></FormField>
               <FormField label={t.payment.referenceNo}><p>{detail.reference_no || '-'}</p></FormField>
               <FormField label={t.common.status}><StatusBadge status={detail.status} /></FormField>
             </div>
@@ -310,7 +311,7 @@ export function PaymentPage() {
                     {detail.allocations.map(a => (
                       <tr key={a.id}>
                         <td>{a.invoice?.invoice_number ?? a.invoice_id}</td>
-                        <td className="align-right">{fmt(a.allocated_amount)}</td>
+                        <td className="align-right">{formatCurrency(a.allocated_amount)}</td>
                       </tr>
                     ))}
                   </tbody>
