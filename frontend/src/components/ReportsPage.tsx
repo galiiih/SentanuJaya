@@ -144,17 +144,17 @@ export function ReportsPage() {
       {!loading && activeTab === 'financial' && financialData && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginTop: '1.25rem' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
-            <Card title="Total Revenue (Posted)">
+            <Card title={tr('Total Pendapatan (Posted)', 'Total Revenue (Posted)')}>
               <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--color-success)' }}>
                 {formatCurrency(financialData.total_revenue ?? financialData.total_invoice_amount ?? 0)}
               </div>
             </Card>
-            <Card title="Total Invoiced">
+            <Card title={tr('Total Invoice', 'Total Invoiced')}>
               <div style={{ fontSize: '1.5rem', fontWeight: 700 }}>
                 {formatCurrency(financialData.total_invoice_amount ?? 0)}
               </div>
             </Card>
-            <Card title="Total Payments">
+            <Card title={tr('Total Pembayaran', 'Total Payments')}>
               <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--color-info)' }}>
                 {formatCurrency(financialData.total_payment_amount ?? 0)}
               </div>
