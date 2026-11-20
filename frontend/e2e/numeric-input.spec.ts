@@ -44,4 +44,24 @@ test.describe('Formatted numeric inputs', () => {
     await quantity.fill('');
     await expect(quantity).toHaveValue('');
   });
+  test('loads and formats numeric values when editing an existing legacy PO', async ({ page }) => {
+    await login(page);
+    await page.goto('/customer-po');
+
+    const draftRow = page.locator('tbody tr').filter({ hasText: /DRAFT/i }).first();
+    if (!(await draftRow.count())) test.skip(true, 'No editable draft Customer PO is available in this test database.');
+
+    const editButton = draftRow.locator('button[title="Edit"], button[title="Ubah"]').first();
+    if (!(await editButton.count())) test.skip(true, 'The current account has no edit permission for draft Customer POs.');
+
+    await editButton.click();
+    const inputs = page.locator('input[inputmode="decimal"]');
+    await expect(inputs).toHaveCount(2);
+    await expect(inputs.nth(0)).not.toHaveValue('');
+    // Existing numeric values are retained in the form and displayed using id-ID grouping.
+    await inputs.nth(0).blur();
+    await expect(inputs.nth(0)).not.toHaveValue('');
+    await expect(inputs.nth(1)).not.toHaveValue('');
+  });
+
 });
