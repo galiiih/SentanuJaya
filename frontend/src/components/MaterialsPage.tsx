@@ -180,8 +180,8 @@ export function MaterialsPage() {
   const handlePostReceipt = (id: string) => {
     setConfirmState({
       open: true,
-      title: 'Post {tr('Penerimaan Material', 'Material Receipts')}',
-      description: 'Apakah Anda yakin ingin memposting penerimaan ini? Stok di gudang akan bertambah dan transaksi akan dikunci.',
+      title: tr('Posting Penerimaan Material', 'Post Material Receipt'),
+      description: tr('Apakah Anda yakin ingin memposting penerimaan ini? Stok di gudang akan bertambah dan transaksi akan dikunci.', 'Are you sure you want to post this receipt? Warehouse stock will increase and the transaction will be locked.'),
       tone: 'primary',
       onConfirm: async () => {
         try {
@@ -220,7 +220,7 @@ export function MaterialsPage() {
     setError('');
     try {
       await stockApi.adjust({ ...adjForm, quantity: Number(adjForm.quantity) });
-      setNotice('Stock adjustment berhasil diproses.');
+      setNotice(tr('Stock adjustment berhasil diproses.', 'Stock adjustment processed successfully.'));
       setAdjForm({ warehouse_id: '', material_id: '', type: 'IN', quantity: '', reason: '' });
       loadData();
     } catch (err) {
@@ -234,7 +234,7 @@ export function MaterialsPage() {
     const currentStock = stocks.find((s: any) => s.warehouse_id === opnameForm.warehouse_id && s.material_id === opnameForm.material_id)?.quantity_on_hand ?? 0;
     const physicalQty = Number(opnameForm.physical_qty);
     if (!Number.isFinite(physicalQty) || physicalQty < 0) {
-      setError('Jumlah stok fisik harus berupa angka nol atau lebih.');
+      setError(tr('Jumlah stok fisik harus berupa angka nol atau lebih.', 'Physical stock quantity must be zero or greater.'));
       return;
     }
     const diff = physicalQty - Number(currentStock);
@@ -287,7 +287,7 @@ export function MaterialsPage() {
       {error && <Alert tone="danger">{error}</Alert>}
       {warehouses.length === 0 && (
         <Alert tone="warning">
-          {tr('Belum ada gudang yang terdaftar. Buat terlebih dahulu melalui Master Data → Cabang, kemudian Master Data → Gudang dengan memilih cabang tersebut.', 'No warehouses are registered. First create a Branch under Master Data, then create a Warehouse and assign it to that branch.')} Setelah gudang aktif dibuat, pilihan gudang akan muncul di formulir penerimaan dan penyesuaian stok.
+          {tr('Belum ada gudang yang terdaftar. Buat terlebih dahulu melalui Master Data → Cabang, kemudian Master Data → Gudang dengan memilih cabang tersebut. Setelah gudang aktif dibuat, pilihan gudang akan muncul di formulir penerimaan dan penyesuaian stok.', 'No warehouses are registered. First create a Branch under Master Data, then create a Warehouse and assign it to that branch. Once an active warehouse is available, it will appear in the receipt and stock adjustment forms.')}
         </Alert>
       )}
       {warehouses.length > 0 && activeWarehouses.length === 0 && (
@@ -317,7 +317,7 @@ export function MaterialsPage() {
           <ArrowLeftRight className="w-4 h-4 mr-2" /> Stock Card (Mutasi)
         </Button>
         <Button variant={activeTab === 'adjust' ? 'primary' : 'secondary'} onClick={() => setActiveTab('adjust')}>
-          <CheckCircle2 className="w-4 h-4 mr-2" /> Stock Adjustment & Stock Count
+          <CheckCircle2 className="w-4 h-4 mr-2" /> {tr('Stock Adjustment & Stock Count', 'Stock Adjustment & Stock Count')}
         </Button>
       </div>
 
@@ -363,7 +363,7 @@ export function MaterialsPage() {
                     </Button>
                     {rec.status === 'DRAFT' && (
                       <>
-                        <Button variant="primary" onClick={() => handlePostReceipt(rec.id)}>Post</Button>
+                        <Button variant="primary" onClick={() => handlePostReceipt(rec.id)}>{tr('Post', 'Post')}</Button>
                         <Button variant="danger" onClick={() => handleCancelReceipt(rec.id)}>{tr('Batal', 'Cancel')}</Button>
                       </>
                     )}
@@ -533,7 +533,7 @@ export function MaterialsPage() {
                         }} required />
                       </FormField>
 
-                      <FormField label="Harga Satuan (Rp)" required>
+                      <FormField label={tr('Harga Satuan (Rp)', 'Unit Cost (IDR)')} required>
                         <NumericInput min={0} maximumFractionDigits={2} placeholder={tr('Contoh: 85000', 'e.g. 85000')} value={line.unit_cost} onValueChange={(raw) => {
                           const newLines = [...receiptForm.lines];
                           newLines[idx].unit_cost = raw;
@@ -544,7 +544,7 @@ export function MaterialsPage() {
 
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
                       <div style={{ flex: 1, minWidth: '200px' }}>
-                        <FormField label="Catatan">
+                        <FormField label={tr('Catatan', 'Notes')}>
                           <Input placeholder={tr('Catatan opsional per baris...', 'Optional line notes...')} value={line.notes} onChange={(e) => {
                             const newLines = [...receiptForm.lines];
                             newLines[idx].notes = e.target.value;
@@ -554,7 +554,7 @@ export function MaterialsPage() {
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: 'auto' }}>
                         <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-success, #22c55e)' }}>
-                          Subtotal: Rp {subtotal.toLocaleString('id-ID')}
+                          {tr('Subtotal', 'Subtotal')}: Rp {subtotal.toLocaleString(en ? 'en-US' : 'id-ID')}
                         </div>
                         <Button type="button" variant="danger" onClick={() => {
                           const newLines = receiptForm.lines.filter((_, i) => i !== idx);
