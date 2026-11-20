@@ -21,9 +21,11 @@ test.describe('Formatted numeric inputs', () => {
 
     // Empty is not coerced to zero.
     await expect(unitPrice).toHaveValue('');
+    expect(await unitPrice.evaluate((input: HTMLInputElement) => input.validity.valid)).toBeTruthy();
     await unitPrice.fill('0');
     await unitPrice.blur();
     await expect(unitPrice).toHaveValue('0');
+    expect(await unitPrice.evaluate((input: HTMLInputElement) => input.validity.valid)).toBeTruthy();
 
     // Decimal comma is normalized to a numeric decimal internally and formatted on blur.
     await unitPrice.fill('1234,56');
