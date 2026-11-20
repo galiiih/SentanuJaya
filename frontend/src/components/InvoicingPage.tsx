@@ -1,3 +1,4 @@
+import { getLocalDateInputValue } from '../utils/date';
 import { useState, useEffect, useCallback } from 'react';
 import { Plus, Eye, Send, XCircle, Printer } from 'lucide-react';
 import { useAuth, permissions } from '../auth';
@@ -63,7 +64,7 @@ export function InvoicingPage() {
   const [customerId, setCustomerId] = useState('');
   const [eligibleDos, setEligibleDos] = useState<DeliveryOrderRecord[]>([]);
   const [selectedDoIds, setSelectedDoIds] = useState<string[]>([]);
-  const [invoiceDate, setInvoiceDate] = useState(new Date().toISOString().slice(0, 10));
+  const [invoiceDate, setInvoiceDate] = useState(getLocalDateInputValue());
   const [taxCondition, setTaxCondition] = useState<1 | 2 | 3>(3);
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -94,7 +95,7 @@ export function InvoicingPage() {
     setCustomerId('');
     setEligibleDos([]);
     setSelectedDoIds([]);
-    setInvoiceDate(new Date().toISOString().slice(0, 10));
+    setInvoiceDate(getLocalDateInputValue());
     setTaxCondition(3);
     setFormError('');
     if (!customers.length) {
