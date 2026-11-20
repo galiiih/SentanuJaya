@@ -263,7 +263,7 @@ export function CustomerPoPage() {
           errors[`lines.${idx}.customer_item_id`] = t.po.validation.itemRequired;
         }
         const qty = Number(line.quantity);
-        if (isNaN(qty) || qty <= 0) {
+        if (!Number.isFinite(qty) || qty < 1) {
           errors[`lines.${idx}.quantity`] = t.po.validation.quantityPositive;
         }
         // Check customer item ownership
