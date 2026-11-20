@@ -482,9 +482,9 @@ export function MaterialsPage() {
         <Modal open={receiptModalOpen} title={tr('Buat Penerimaan Material Baru (Material Receipt)', 'Create New Material Receipt')} onClose={() => setReceiptModalOpen(false)}>
           <form onSubmit={handleCreateReceipt} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-              <FormField label="Gudang" required>
+              <FormField label={tr('Gudang', 'Warehouse')} required>
                 <Select value={receiptForm.warehouse_id} onChange={(e) => setReceiptForm({ ...receiptForm, warehouse_id: e.target.value })} required>
-                  <option value="">Pilih Gudang...</option>
+                  <option value="">{tr('Pilih Gudang...', 'Select warehouse...')}</option>
                   {warehouses.map((w: any) => <option key={w.id} value={w.id}>{w.name}</option>)}
                 </Select>
               </FormField>
@@ -520,7 +520,7 @@ export function MaterialsPage() {
                           newLines[idx].material_id = e.target.value;
                           setReceiptForm({ ...receiptForm, lines: newLines });
                         }} required>
-                          <option value="">Pilih Material...</option>
+                          <option value="">{tr('Pilih Material...', 'Select material...')}</option>
                           {materials.map((m: any) => <option key={m.id} value={m.id}>{m.name}</option>)}
                         </Select>
                       </FormField>
