@@ -68,7 +68,7 @@ export function CustomerReturnsPage() {
         <FormField label={tr('Tanggal Retur', 'Return Date')} required><Input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></FormField>
         {selected && selected.lines.map((line) => <div key={line.id} className="form-section" style={{ marginTop: 12 }}>
           <strong>{line.customer_item?.name || line.customer_item_id}</strong><div className="form-grid">
-            <FormField label={`${tr('Qty retur (dikirim:', 'Return Qty (delivered:')} ${line.quantity})`}><NumericInput min={0} maximumFractionDigits={3} value={quantities[line.id] || ''} onValueChange={(raw) => setQuantities((v) => ({ ...v, [line.id]: raw }))} /></FormField>
+            <FormField label={`${tr('Qty retur (dikirim:', 'Return Qty (delivered:')} ${line.quantity})`}><NumericInput min={0} max={line.quantity} maximumFractionDigits={3} value={quantities[line.id] || ''} onValueChange={(raw) => setQuantities((v) => ({ ...v, [line.id]: raw }))} /></FormField>
             <FormField label={tr('Alasan', 'Reason')}><Input value={reasons[line.id] || ''} onChange={(e) => setReasons((v) => ({ ...v, [line.id]: e.target.value }))} /></FormField>
           </div>
         </div>)}
