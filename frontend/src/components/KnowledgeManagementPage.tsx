@@ -183,7 +183,7 @@ export function KnowledgeManagementPage() {
             <Search className="w-5 h-5 text-[var(--muted-foreground)]" />
             <input
               type="text"
-              placeholder="{en ? 'Search by title, question pattern, or knowledge content...' : 'Cari berdasarkan judul, pola pertanyaan, atau isi knowledge...'}"
+              placeholder={en ? 'Search by title, question pattern, or knowledge content...' : 'Cari berdasarkan judul, pola pertanyaan, atau isi knowledge...'}
               value={officialSearch}
               onChange={(e) => setOfficialSearch(e.target.value)}
               className="w-full bg-transparent border-none outline-none text-[var(--foreground)] text-sm placeholder:text-[var(--muted-foreground)]"
