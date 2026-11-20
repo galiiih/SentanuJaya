@@ -465,12 +465,12 @@ export function MasterDataPage() {
         })}
       </div>
 
-      <Card title={`Daftar ${getMasterLabel(tab, en)}`}>
+      <Card title={`${tr('Daftar', 'List of')} ${getMasterLabel(tab, en)}`}>
         <DataTable columns={getColumnsForTab()} rows={data} emptyTitle={tr('Belum ada data master', 'No master data yet')} emptyDescription={`${tr('Belum ada data pada tabel', 'No data in the')} ${getMasterLabel(tab, en)} ${tr('Klik tombol Tambah untuk membuat baru.', 'table yet. Select Add to create a new record.')}`} />
       </Card>
 
       {/* Clean Single-Column Vertical Stacked Form Modal (Matching Reference Design) */}
-      <Modal open={modalOpen} title={editingItem ? `Edit ${getMasterLabel(tab, en)}` : `Tambah ${getMasterLabel(tab, en)}`} onClose={() => setModalOpen(false)}>
+      <Modal open={modalOpen} title={editingItem ? `${tr('Edit', 'Edit')} ${getMasterLabel(tab, en)}` : `${tr('Tambah', 'Add')} ${getMasterLabel(tab, en)}`} onClose={() => setModalOpen(false)}>
         <form onSubmit={handleSave}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             
