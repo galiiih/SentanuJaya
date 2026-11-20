@@ -95,9 +95,8 @@ const routePages: Record<string, PageKey> = {
   '/documentation': 'documentation',
 };
 
-const currency = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 });
-const quantity = new Intl.NumberFormat('id-ID', { maximumFractionDigits: 2 });
-const formatQuantity = (value: string | number) => quantity.format(Number(value));
+const formatQuantity = (value: string | number, locale = 'id-ID') =>
+  new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }).format(Number(value));
 
 function RequireAuth({ children, allowPasswordChange = false }: { children: React.ReactNode; allowPasswordChange?: boolean }) {
   const { isAuthenticated, isReady, user } = useAuth();
@@ -323,6 +322,8 @@ function Dashboard() {
   const { language } = useLanguage();
   const en = language === 'en';
   const tr = (id: string, english: string) => en ? english : id;
+  const currency = new Intl.NumberFormat(en ? 'en-US' : 'id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 });
+  const numberLocale = en ? 'en-US' : 'id-ID';
   const navigate = useNavigate();
   const greeting = en
     ? `Here is today’s Sentanu Jaya operational overview${user?.name ? `, ${user.name}` : ''}.`
@@ -384,8 +385,8 @@ function Dashboard() {
     </section>
     <div className="dashboard-grid">
       <Card title={tr('Production overview', 'Production Overview')} action={<span className="card__meta">{totalUnits} {tr('unit aktif', 'active units')}</span>}>{totalUnits === 0 ? <p className="chart-note">{tr('Belum ada data produksi.', 'No production data yet.')}</p> : <><div className="production-summary"><p>{tr('Work order per tahap produksi', 'Work orders by production stage')}</p><strong>{totalUnits} <span>{tr('unit', 'units')}</span></strong></div><div className="production-bar" aria-label={tr('Distribusi unit aktif berdasarkan tahap produksi', 'Active units by production stage')}>{productionStages.map(([label, value, tone]) => <div key={label} className={`production-bar__segment production-bar__segment--${tone}`} style={{ width: `${Math.max(5, Number(value) / 1.2)}%` }} title={`${label}: ${value} ${tr('unit', 'units')}`}><span>{label}</span></div>)}</div><div className="production-legend">{productionStages.map(([label, value, tone]) => <span key={label}><i className={`status-dot status-dot--${tone}`} />{label} <strong>{value}</strong></span>)}</div></>}</Card>
-      <Card title={tr('Financial Summary', 'Financial Summary')} action={<Button variant="ghost" onClick={() => navigate('/invoicing')}>{tr('Lihat invoice', 'View invoices')}</Button>}><div className="alert-item"><div><strong>{tr('Total Invoice Periode Ini', 'Total Invoices This Period')}</strong><span>Rp {Number(fin.total_invoice_period ?? 0).toLocaleString('id-ID')}</span></div><div><strong>{tr('Total Pembayaran (POSTED)', 'Total Posted Payments')}</strong><span>Rp {Number(fin.total_payment_posted ?? 0).toLocaleString('id-ID')}</span></div></div></Card>
-      <Card title={tr('Revenue & Financial Trend', 'Revenue & Financial Trend')} className="dashboard-grid__wide" action={<span className="card__meta">{trendData.length ? tr('Data aktual', 'Live data') : tr('Belum ada data', 'No data')}</span>}>{trendData.length === 0 ? <p className="chart-note">{tr('Belum ada data transaksi untuk ditampilkan.', 'No transaction data to display.')}</p> : <div className="chart-container"><ResponsiveContainer width="100%" height={220}><BarChart data={trendData} barGap={2}><CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" /><XAxis dataKey="period" tick={{ fontSize: 11, fill: 'var(--color-text-muted)' }} /><YAxis tick={{ fontSize: 11, fill: 'var(--color-text-muted)' }} tickFormatter={(v: number) => `${(v / 1000000).toFixed(0)}jt`} /><Tooltip formatter={(v) => `Rp ${Number(v).toLocaleString('id-ID')}`} /><Legend wrapperStyle={{ fontSize: 12 }} /><Bar dataKey="revenue" name="Revenue" fill="var(--color-info)" radius={[3, 3, 0, 0]} /><Bar dataKey="payments" name={tr('Pembayaran', 'Payments')} fill="var(--color-warning)" radius={[3, 3, 0, 0]} /><Bar dataKey="net" name="Net" fill="var(--color-success)" radius={[3, 3, 0, 0]} /></BarChart></ResponsiveContainer></div>}</Card>
+      <Card title={tr('Financial Summary', 'Financial Summary')} action={<Button variant="ghost" onClick={() => navigate('/invoicing')}>{tr('Lihat invoice', 'View invoices')}</Button>}><div className="alert-item"><div><strong>{tr('Total Invoice Periode Ini', 'Total Invoices This Period')}</strong><span>Rp {Number(fin.total_invoice_period ?? 0).toLocaleString(numberLocale)}</span></div><div><strong>{tr('Total Pembayaran (POSTED)', 'Total Posted Payments')}</strong><span>Rp {Number(fin.total_payment_posted ?? 0).toLocaleString(numberLocale)}</span></div></div></Card>
+      <Card title={tr('Revenue & Financial Trend', 'Revenue & Financial Trend')} className="dashboard-grid__wide" action={<span className="card__meta">{trendData.length ? tr('Data aktual', 'Live data') : tr('Belum ada data', 'No data')}</span>}>{trendData.length === 0 ? <p className="chart-note">{tr('Belum ada data transaksi untuk ditampilkan.', 'No transaction data to display.')}</p> : <div className="chart-container"><ResponsiveContainer width="100%" height={220}><BarChart data={trendData} barGap={2}><CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" /><XAxis dataKey="period" tick={{ fontSize: 11, fill: 'var(--color-text-muted)' }} /><YAxis tick={{ fontSize: 11, fill: 'var(--color-text-muted)' }} tickFormatter={(v: number) => `${(v / 1000000).toFixed(0)}${en ? 'M' : 'jt'}`} /><Tooltip formatter={(v) => `Rp ${Number(v).toLocaleString(numberLocale)}`} /><Legend wrapperStyle={{ fontSize: 12 }} /><Bar dataKey="revenue" name="Revenue" fill="var(--color-info)" radius={[3, 3, 0, 0]} /><Bar dataKey="payments" name={tr('Pembayaran', 'Payments')} fill="var(--color-warning)" radius={[3, 3, 0, 0]} /><Bar dataKey="net" name="Net" fill="var(--color-success)" radius={[3, 3, 0, 0]} /></BarChart></ResponsiveContainer></div>}</Card>
       <Card title={tr('Aktivitas terbaru', 'Recent Activity')} className="dashboard-grid__wide" action={<Button variant="ghost" onClick={() => void loadSummary()}>{tr('Muat ulang', 'Refresh')}</Button>}>{recentActivity.length === 0 ? <p className="chart-note">{tr('Belum ada aktivitas transaksi.', 'No recent transaction activity.')}</p> : <ul className="activity-list">{recentActivity.map((act, i) => <li key={i}><time>{new Date(act.timestamp).toLocaleDateString(en ? 'en-US' : 'id-ID')}</time><span className="activity-list__icon"><CheckCircle2 size={16} /></span><div><strong>{act.description}</strong><span>{act.type}</span></div><StatusBadge status={act.status} /></li>)}</ul>}</Card>
     </div>
   </>;
@@ -482,7 +483,13 @@ function CustodyPage() {
       ? (item: GoodsReceipt) => `${item.lines.length} lines`
       : en && column.id === 'location'
         ? (item: CustodyBalance | CustodyLedger) => item.custody_location?.name ?? 'Not specified'
-        : column.cell,
+        : en && column.id === 'quantity'
+          ? (item: CustodyBalance) => `${formatQuantity(item.balance_quantity, 'en-US')} pcs`
+          : en && column.id === 'in'
+            ? (item: CustodyLedger) => `${formatQuantity(item.quantity_in, 'en-US')} pcs`
+            : en && column.id === 'out'
+              ? (item: CustodyLedger) => `${formatQuantity(item.quantity_out, 'en-US')} pcs`
+              : column.cell,
   }));
   const receiptTableColumns = localizedColumns(receiptColumns);
   const balanceTableColumns = localizedColumns(balanceColumns);
