@@ -534,7 +534,7 @@ export function MaterialsPage() {
                       </FormField>
 
                       <FormField label="Harga Satuan (Rp)" required>
-                        <NumericInput maximumFractionDigits={2} placeholder={tr('Contoh: 85000', 'e.g. 85000')} value={line.unit_cost} onValueChange={(raw) => {
+                        <NumericInput min={0} maximumFractionDigits={2} placeholder={tr('Contoh: 85000', 'e.g. 85000')} value={line.unit_cost} onValueChange={(raw) => {
                           const newLines = [...receiptForm.lines];
                           newLines[idx].unit_cost = raw;
                           setReceiptForm({ ...receiptForm, lines: newLines });
