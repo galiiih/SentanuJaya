@@ -255,7 +255,7 @@ class NanuKnowledgeLearningTest extends TestCase
         try {
             $service->reviewCandidate($candidate->id, $admin->id, 'approved');
             $this->fail('A reviewed candidate must not be approved twice.');
-        } catch (\\Illuminate\\Validation\\ValidationException $exception) {
+        } catch (\Illuminate\Validation\ValidationException $exception) {
             $this->assertArrayHasKey('candidate', $exception->errors());
         }
 
