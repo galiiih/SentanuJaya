@@ -293,7 +293,7 @@ export function KnowledgeManagementPage() {
                               ? 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400'
                               : 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400'
                           }`}>
-                            {c.status}
+                            {c.status === 'pending_review' ? (en ? 'Pending review' : 'Menunggu review') : c.status === 'approved' ? (en ? 'Approved' : 'Disetujui') : (en ? 'Rejected' : 'Ditolak')}
                           </span>
                         </td>
                         <td className="p-4 align-top text-right">
