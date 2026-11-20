@@ -114,7 +114,7 @@ const masterApi = {
 type MasterKey = keyof typeof masterApi;
 
 const getMasterLabel = (key: MasterKey, english: boolean): string => {
-  if (!english) return getMasterLabel(key, en);
+  if (!english) return masterApi[key].label;
   const labels: Record<MasterKey, string> = {
     companies: 'Company',
     branches: 'Branch',
@@ -133,11 +133,11 @@ const getMasterLabel = (key: MasterKey, english: boolean): string => {
 
 // Display quantities without meaningless trailing decimal zeros while preserving
 // fractional stock thresholds (e.g. 1.000 -> 1 and 1.500 -> 1,5).
-const formatStockQuantity = (value: unknown): string => {
+const formatStockQuantity = (value: unknown, locale = 'id-ID'): string => {
   if (value === null || value === undefined || value === '') return '-';
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) return String(value);
-  return new Intl.NumberFormat('id-ID', { maximumFractionDigits: 3 }).format(numeric);
+  return new Intl.NumberFormat(locale, { maximumFractionDigits: 3 }).format(numeric);
 };
 
 export function MasterDataPage() {
@@ -397,7 +397,7 @@ export function MasterDataPage() {
           { id: 'code', header: 'Kode SKU', cell: (row: any) => row.code || '-' },
           { id: 'name', header: tr('Nama Material / Cat', 'Material / Paint Name'), cell: (row: any) => row.name || '-' },
           { id: 'unit', header: tr('Satuan', 'Unit'), cell: (row: any) => row.unit || '-' },
-          { id: 'min_stock', header: tr('Minimum Stok', 'Minimum Stock'), cell: (row: any) => formatStockQuantity(row.minimum_stock ?? row.min_stock) },
+          { id: 'min_stock', header: tr('Minimum Stok', 'Minimum Stock'), cell: (row: any) => formatStockQuantity(row.minimum_stock ?? row.min_stock, en ? 'en-US' : 'id-ID') },
           ...actionColumn
         ];
       case 'warehouses':
