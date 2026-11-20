@@ -746,6 +746,7 @@ export function CustomerPoPage() {
                       error={fieldErrors[`lines.${idx}.quantity`]}
                     >
                       <NumericInput
+                        min={1}
                         value={line.quantity}
                         maximumFractionDigits={3}
                         onValueChange={(raw) => updateLine(idx, 'quantity', raw)}
@@ -754,6 +755,7 @@ export function CustomerPoPage() {
 
                     <FormField label={t.common.unitPrice}>
                       <NumericInput
+                        min={0}
                         value={line.unit_price}
                         maximumFractionDigits={2}
                         placeholder="0"
