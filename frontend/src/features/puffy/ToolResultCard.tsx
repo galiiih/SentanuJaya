@@ -3,11 +3,14 @@ import type { PuffyStrings } from "./strings";
 import { useLanguage } from "../../i18n";
 import type { ActionState, PendingAction, ToolResult } from "./types";
 
-const dateFmt = new Intl.DateTimeFormat("id-ID", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Jakarta" });
-
-function formatAsOf(iso: string): string {
+function formatAsOf(iso: string, locale: string): string {
   const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? iso : dateFmt.format(d).replace(/(\d{2})\.(\d{2})$/, "$1:$2");
+  if (Number.isNaN(d.getTime())) return iso;
+  return new Intl.DateTimeFormat(locale, {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "Asia/Jakarta",
+  }).format(d);
 }
 
 interface CardProps {
