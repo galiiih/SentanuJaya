@@ -46,37 +46,43 @@ class DashboardController extends BaseApiController
 
         $unpaidInvoicesCount = Invoice::whereIn('status', [Invoice::STATUS_POSTED, Invoice::STATUS_PARTIALLY_PAID])->count();
 
-        // Outstanding & Top Customers by Outstanding
-        $topCustomers = Customer::with('invoices')->get()->map(function ($customer) {
-            $invoices = $customer->invoices()->whereIn('status', [Invoice::STATUS_POSTED, Invoice::STATUS_PARTIALLY_PAID])->get();
-            $totalBilled = $invoices->sum('total_amount');
-            $invoiceIds = $invoices->pluck('id');
-            $totalPaid = DB::table('payment_allocations')
-                ->join('payments', 'payments.id', '=', 'payment_allocations.payment_id')
-                ->whereIn('payment_allocations.invoice_id', $invoiceIds)
-                ->where('payments.status', 'POSTED')
-                ->sum('payment_allocations.allocated_amount');
-            $outstanding = max(0, round($totalBilled - $totalPaid, 2));
+        // Aggregate receivables in SQL instead of issuing invoice/payment queries per customer.
+        // Keep the same accounting scope: POSTED/PARTIALLY_PAID invoices and POSTED payments only.
+        $eligibleInvoiceStatuses = [Invoice::STATUS_POSTED, Invoice::STATUS_PARTIALLY_PAID];
 
-            return [
-                'id' => $customer->id,
-                'name' => $customer->name,
-                'code' => $customer->code,
-                'outstanding' => $outstanding,
-            ];
-        })->sortByDesc('outstanding')->take(5)->values();
+        $invoiceTotals = Invoice::query()
+            ->select('customer_id')
+            ->selectRaw('SUM(total_amount) AS total_billed')
+            ->whereIn('status', $eligibleInvoiceStatuses)
+            ->groupBy('customer_id');
 
-        $totalOutstanding = Customer::get()->sum(function ($customer) {
-            $invoices = $customer->invoices()->whereIn('status', [Invoice::STATUS_POSTED, Invoice::STATUS_PARTIALLY_PAID])->get();
-            $totalBilled = $invoices->sum('total_amount');
-            $invoiceIds = $invoices->pluck('id');
-            $totalPaid = DB::table('payment_allocations')
-                ->join('payments', 'payments.id', '=', 'payment_allocations.payment_id')
-                ->whereIn('payment_allocations.invoice_id', $invoiceIds)
-                ->where('payments.status', 'POSTED')
-                ->sum('payment_allocations.allocated_amount');
-            return max(0, round($totalBilled - $totalPaid, 2));
-        });
+        $paymentTotals = DB::table('payment_allocations')
+            ->join('payments', 'payments.id', '=', 'payment_allocations.payment_id')
+            ->join('invoices', 'invoices.id', '=', 'payment_allocations.invoice_id')
+            ->where('payments.status', 'POSTED')
+            ->whereIn('invoices.status', $eligibleInvoiceStatuses)
+            ->select('invoices.customer_id')
+            ->selectRaw('SUM(payment_allocations.allocated_amount) AS total_paid')
+            ->groupBy('invoices.customer_id');
+
+        $customerReceivables = Customer::query()
+            ->leftJoinSub($invoiceTotals, 'invoice_totals', 'invoice_totals.customer_id', '=', 'customers.id')
+            ->leftJoinSub($paymentTotals, 'payment_totals', 'payment_totals.customer_id', '=', 'customers.id')
+            ->select('customers.id', 'customers.name', 'customers.code')
+            ->selectRaw('COALESCE(invoice_totals.total_billed, 0) AS total_billed')
+            ->selectRaw('COALESCE(payment_totals.total_paid, 0) AS total_paid')
+            ->get()
+            ->map(function ($customer) {
+                return [
+                    'id' => $customer->id,
+                    'name' => $customer->name,
+                    'code' => $customer->code,
+                    'outstanding' => max(0, round((float) $customer->total_billed - (float) $customer->total_paid, 2)),
+                ];
+            });
+
+        $totalOutstanding = $customerReceivables->sum('outstanding');
+        $topCustomers = $customerReceivables->sortByDesc('outstanding')->take(5)->values();
 
         return $this->sendResponse([
             'operational' => [
