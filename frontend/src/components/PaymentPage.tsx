@@ -1,3 +1,4 @@
+import { getLocalDateInputValue } from '../utils/date';
 import { useState, useEffect, useCallback } from 'react';
 import { Plus, Eye } from 'lucide-react';
 import { useAuth, permissions } from '../auth';
@@ -62,7 +63,7 @@ export function PaymentPage() {
   const [outstanding, setOutstanding] = useState<CustomerOutstanding | null>(null);
   const [loadingOutstanding, setLoadingOutstanding] = useState(false);
   const [allocations, setAllocations] = useState<AllocationRow[]>([]);
-  const [paymentDate, setPaymentDate] = useState(new Date().toISOString().slice(0, 10));
+  const [paymentDate, setPaymentDate] = useState(getLocalDateInputValue());
   const [method, setMethod] = useState<string>(METHODS[0]);
   const [referenceNo, setReferenceNo] = useState('');
   const [notes, setNotes] = useState('');
@@ -105,7 +106,7 @@ export function PaymentPage() {
     setCustomerId('');
     setOutstanding(null);
     setAllocations([]);
-    setPaymentDate(new Date().toISOString().slice(0, 10));
+    setPaymentDate(getLocalDateInputValue());
     setMethod(METHODS[0]);
     setReferenceNo('');
     setNotes('');
