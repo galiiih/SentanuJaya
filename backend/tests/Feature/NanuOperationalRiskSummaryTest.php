@@ -66,6 +66,40 @@ class NanuOperationalRiskSummaryTest extends TestCase
         $this->assertContains('Analyzing operational risks…', $statuses);
     }
 
+    public function test_nanu_operational_risk_chat_defaults_to_indonesian_language(): void
+    {
+        $statuses = [];
+
+        $result = app(PuffyAiService::class)->agenticChat(
+            'Tampilkan ringkasan risiko operasional',
+            null,
+            ['language' => 'id', 'user_name' => 'Test User', 'role' => 'ADMIN', 'title' => 'Dashboard', 'route' => '/dashboard'],
+            static function (string $message, ?array $ui = null) use (&$statuses): void {
+                $statuses[] = $message;
+            },
+            static function (array $toolResult): void {},
+            static function (string $token): void {},
+        );
+
+        $this->assertSame('Ringkasan Risiko Operasional', $result['tool_result']['title']);
+        $this->assertStringContainsString('Pemeriksaan berhasil', $result['reply']);
+        $this->assertContains('Menganalisis risiko operasional…', $statuses);
+    }
+
+    public function test_nanu_out_of_scope_response_defaults_to_indonesian_language(): void
+    {
+        $result = app(PuffyAiService::class)->agenticChat(
+            'Bagaimana cuaca hari ini?',
+            null,
+            ['language' => 'id', 'user_name' => 'Test User', 'role' => 'ADMIN', 'title' => 'Dashboard', 'route' => '/dashboard'],
+            static function (string $message, ?array $ui = null): void {},
+            static function (?array $toolResult): void {},
+            static function (string $token): void {},
+        );
+
+        $this->assertStringContainsString('Saya hanya dapat membantu operasional Sentanu Jaya ERP', $result['reply']);
+    }
+
     public function test_nanu_out_of_scope_response_uses_active_english_language(): void
     {
         $result = app(PuffyAiService::class)->agenticChat(
