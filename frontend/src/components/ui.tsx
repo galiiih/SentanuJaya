@@ -1,5 +1,6 @@
 import { type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useLanguage } from '../i18n';
 import { AlertCircle, CheckCircle2, ChevronDown, ChevronUp, Search, X } from 'lucide-react';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'success';
@@ -376,7 +377,7 @@ export type NumericInputProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'val
 export function NumericInput({
   value,
   onValueChange,
-  locale = 'id-ID',
+  locale: localeOverride,
   maximumFractionDigits = 2,
   allowNegative = false,
   className = '',
@@ -385,6 +386,8 @@ export function NumericInput({
   ...props
 }: NumericInputProps) {
   const [focused, setFocused] = useState(false);
+  const { language } = useLanguage();
+  const locale = localeOverride ?? (language === 'en' ? 'en-US' : 'id-ID');
   const rawValue = value === null || value === undefined ? '' : String(value);
   const formatter = useMemo(() => new Intl.NumberFormat(locale, {
     useGrouping: true,
@@ -405,8 +408,11 @@ export function NumericInput({
         .replace(decimal === ',' ? /\./g : /,/g, '')
         .replace(decimal, '.');
     } else if (comma >= 0) {
-      // Indonesian convention: comma is decimal; dots are grouping.
-      normalized = normalized.replace(/\./g, '').replace(',', '.');
+      const commaCount = (normalized.match(/,/g) || []).length;
+      const trailingDigits = normalized.length - normalized.lastIndexOf(',') - 1;
+      const commaIsGrouping = locale.toLowerCase().startsWith('en') && (commaCount > 1 || trailingDigits === 3);
+      if (commaIsGrouping) normalized = normalized.replace(/,/g, '');
+      else normalized = normalized.replace(/\./g, '').replace(',', '.');
     } else if (dot >= 0) {
       const dotCount = (normalized.match(/\./g) || []).length;
       const trailingDigits = normalized.length - normalized.lastIndexOf('.') - 1;
