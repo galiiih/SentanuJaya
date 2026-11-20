@@ -293,13 +293,19 @@ export function KnowledgeManagementPage() {
                           </span>
                         </td>
                         <td className="p-4 align-top text-right">
-                          <Button
-                            variant="secondary"
-                            onClick={() => setSelectedCandidate(c)}
-                            className="text-xs py-1.5 px-3"
-                          >
-                            Tinjau / Review
-                          </Button>
+                          {c.status === 'pending_review' ? (
+                            <Button
+                              variant="secondary"
+                              onClick={() => setSelectedCandidate(c)}
+                              className="text-xs py-1.5 px-3"
+                            >
+                              Tinjau / Review
+                            </Button>
+                          ) : (
+                            <span className="text-xs text-[var(--muted-foreground)]">
+                              Sudah ditinjau
+                            </span>
+                          )}
                         </td>
                       </tr>
                     ))}
