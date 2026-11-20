@@ -171,6 +171,7 @@ export function Alert({ tone = 'info', children }: { tone?: 'info' | 'warning' |
 type ToastTone = 'info' | 'success' | 'warning' | 'danger';
 
 export function Toast({ open, message, tone = 'info', onClose, duration = 4000 }: { open: boolean; message: string; tone?: ToastTone; onClose: () => void; duration?: number }) {
+  const { language } = useLanguage();
   useEffect(() => {
     if (!open) return;
     const timeout = window.setTimeout(onClose, duration);
@@ -178,10 +179,13 @@ export function Toast({ open, message, tone = 'info', onClose, duration = 4000 }
   }, [duration, onClose, open]);
 
   if (!open) return null;
-  return <div className={`toast toast--${tone}`} role={tone === 'danger' ? 'alert' : 'status'}><span>{message}</span><button className="icon-button toast__close" onClick={onClose} aria-label="Tutup notifikasi"><X size={16} /></button></div>;
+  return <div className={`toast toast--${tone}`} role={tone === 'danger' ? 'alert' : 'status'}><span>{message}</span><button className="icon-button toast__close" onClick={onClose} aria-label={language === 'en' ? 'Close notification' : 'Tutup notifikasi'}><X size={16} /></button></div>;
 }
 
-export function ConfirmationDialog({ open, title, description, confirmLabel = 'Konfirmasi', cancelLabel = 'Batal', tone = 'danger', onConfirm, onClose }: { open: boolean; title: string; description: string; confirmLabel?: string; cancelLabel?: string; tone?: 'primary' | 'danger'; onConfirm: () => void; onClose: () => void }) {
+export function ConfirmationDialog({ open, title, description, confirmLabel, cancelLabel, tone = 'danger', onConfirm, onClose }: { open: boolean; title: string; description: string; confirmLabel?: string; cancelLabel?: string; tone?: 'primary' | 'danger'; onConfirm: () => void; onClose: () => void }) {
+  const { language } = useLanguage();
+  const resolvedConfirmLabel = confirmLabel ?? (language === 'en' ? 'Confirm' : 'Konfirmasi');
+  const resolvedCancelLabel = cancelLabel ?? (language === 'en' ? 'Cancel' : 'Batal');
   const titleId = useId();
   const descriptionId = useId();
   const dialog = useRef<HTMLElement>(null);
@@ -216,7 +220,7 @@ export function ConfirmationDialog({ open, title, description, confirmLabel = 'K
 
   if (!open || typeof document === 'undefined') return null;
   return createPortal(
-    <div className="modal-backdrop" onMouseDown={onClose}><section ref={dialog} className="modal confirmation-dialog" role="alertdialog" aria-modal="true" aria-labelledby={titleId} aria-describedby={descriptionId} onMouseDown={(event) => event.stopPropagation()}><div className="modal__header"><h2 id={titleId}>{title}</h2></div><div className="confirmation-dialog__body"><p id={descriptionId}>{description}</p><div className="confirmation-dialog__actions"><Button variant="secondary" onClick={onClose}>{cancelLabel}</Button><Button className="confirmation-dialog__confirm" variant={tone} onClick={onConfirm}>{confirmLabel}</Button></div></div></section></div>,
+    <div className="modal-backdrop" onMouseDown={onClose}><section ref={dialog} className="modal confirmation-dialog" role="alertdialog" aria-modal="true" aria-labelledby={titleId} aria-describedby={descriptionId} onMouseDown={(event) => event.stopPropagation()}><div className="modal__header"><h2 id={titleId}>{title}</h2></div><div className="confirmation-dialog__body"><p id={descriptionId}>{description}</p><div className="confirmation-dialog__actions"><Button variant="secondary" onClick={onClose}>{resolvedCancelLabel}</Button><Button className="confirmation-dialog__confirm" variant={tone} onClick={onConfirm}>{resolvedConfirmLabel}</Button></div></div></section></div>,
     document.body,
   );
 }
@@ -243,12 +247,16 @@ type DataTableProps<T extends { id: string }> = {
 export function DataTable<T extends { id: string }>({
   columns,
   rows,
-  searchPlaceholder = 'Cari data...',
+  searchPlaceholder,
   searchText = (row) => JSON.stringify(row),
-  emptyTitle = 'Data belum tersedia',
-  emptyDescription = 'Data akan muncul setelah tersedia.',
+  emptyTitle,
+  emptyDescription,
   pageSize = 8,
 }: DataTableProps<T>) {
+  const { language } = useLanguage();
+  const searchLabel = searchPlaceholder ?? (language === 'en' ? 'Search data...' : 'Cari data...');
+  const emptyHeading = emptyTitle ?? (language === 'en' ? 'No data available' : 'Data belum tersedia');
+  const emptyCopy = emptyDescription ?? (language === 'en' ? 'Data will appear here when available.' : 'Data akan muncul setelah tersedia.');
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<{ id: string; direction: 'asc' | 'desc' }>();
   const [page, setPage] = useState(0);
@@ -278,14 +286,15 @@ export function DataTable<T extends { id: string }>({
 
   return (
     <div className="data-table">
-      <div className="data-table__toolbar"><label className="search-input"><Search size={16} /><Input value={query} onChange={(event) => updateQuery(event.target.value)} placeholder={searchPlaceholder} aria-label={searchPlaceholder} /></label><span>{filteredRows.length} data</span></div>
-      {visibleRows.length ? <div className="data-table__scroll"><table><thead><tr>{columns.map((column) => <th key={column.id} className={`align-${column.align ?? 'left'}`}><button className={column.sortValue ? 'table-sort' : 'table-label'} onClick={() => toggleSort(column)} disabled={!column.sortValue}>{column.header}{sort?.id === column.id && (sort.direction === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />)}</button></th>)}</tr></thead><tbody>{visibleRows.map((row) => <tr key={row.id}>{columns.map((column) => <td className={`align-${column.align ?? 'left'}`} data-label={column.mobileLabel ?? column.header} key={column.id}>{column.cell(row)}</td>)}</tr>)}</tbody></table></div> : <EmptyState title={emptyTitle} description={emptyDescription} />}
-      {totalPages > 1 && <div className="data-table__pagination"><span>Halaman {currentPage + 1} dari {totalPages}</span><div><Button variant="ghost" onClick={() => setPage((value) => value - 1)} disabled={!currentPage}>Sebelumnya</Button><Button variant="ghost" onClick={() => setPage((value) => value + 1)} disabled={currentPage === totalPages - 1}>Berikutnya</Button></div></div>}
+      <div className="data-table__toolbar"><label className="search-input"><Search size={16} /><Input value={query} onChange={(event) => updateQuery(event.target.value)} placeholder={searchLabel} aria-label={searchLabel} /></label><span>{filteredRows.length} {language === 'en' ? 'records' : 'data'}</span></div>
+      {visibleRows.length ? <div className="data-table__scroll"><table><thead><tr>{columns.map((column) => <th key={column.id} className={`align-${column.align ?? 'left'}`}><button className={column.sortValue ? 'table-sort' : 'table-label'} onClick={() => toggleSort(column)} disabled={!column.sortValue}>{column.header}{sort?.id === column.id && (sort.direction === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />)}</button></th>)}</tr></thead><tbody>{visibleRows.map((row) => <tr key={row.id}>{columns.map((column) => <td className={`align-${column.align ?? 'left'}`} data-label={column.mobileLabel ?? column.header} key={column.id}>{column.cell(row)}</td>)}</tr>)}</tbody></table></div> : <EmptyState title={emptyHeading} description={emptyCopy} />}
+      {totalPages > 1 && <div className="data-table__pagination"><span>{language === 'en' ? 'Page' : 'Halaman'} {currentPage + 1} {language === 'en' ? 'of' : 'dari'} {totalPages}</span><div><Button variant="ghost" onClick={() => setPage((value) => value - 1)} disabled={!currentPage}>{language === 'en' ? 'Previous' : 'Sebelumnya'}</Button><Button variant="ghost" onClick={() => setPage((value) => value + 1)} disabled={currentPage === totalPages - 1}>{language === 'en' ? 'Next' : 'Berikutnya'}</Button></div></div>}
     </div>
   );
 }
 
 export function Modal({ open, title, children, onClose }: { open: boolean; title: string; children: ReactNode; onClose: () => void }) {
+  const { language } = useLanguage();
   const titleId = useId();
   const closeButton = useRef<HTMLButtonElement>(null);
   const opener = useRef<HTMLElement | null>(null);
@@ -349,7 +358,7 @@ export function Modal({ open, title, children, onClose }: { open: boolean; title
       <section className="glass-modal" role="dialog" aria-modal="true" aria-labelledby={titleId} onMouseDown={(event) => event.stopPropagation()}>
         <div className="modal__header">
           <h2 id={titleId} style={{ color: '#38BDF8', fontWeight: 800, letterSpacing: '-0.025em' }}>{title}</h2>
-          <button ref={closeButton} className="icon-button" onClick={onClose} aria-label="Tutup dialog" style={{ color: '#94A3B8' }}><X size={18} /></button>
+          <button ref={closeButton} className="icon-button" onClick={onClose} aria-label={language === 'en' ? 'Close dialog' : 'Tutup dialog'} style={{ color: '#94A3B8' }}><X size={18} /></button>
         </div>
         <div style={{ marginTop: '1rem' }}>
           {children}
