@@ -680,6 +680,8 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     });
     expect(itemValue, 'E2E customer item fixture must be seeded').not.toBe('');
     await itemSelect.selectOption(itemValue);
+    // New PO lines intentionally start empty; enter a valid positive quantity before saving.
+    await dialog.locator('input[type="number"]').first().fill('1');
 
     const poNumber = `E2E-PO-${Date.now()}`;
     await dialog.locator('#po-number').fill(poNumber);
