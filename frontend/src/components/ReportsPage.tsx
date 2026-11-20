@@ -12,6 +12,16 @@ export function ReportsPage() {
   const en = language === 'en';
   const tr = (id: string, english: string) => en ? english : id;
   const formatCurrency = (value: number) => fmt(value, en ? 'en-US' : 'id-ID');
+  const formatPaymentMethod = (value?: string) => {
+    const labels: Record<string, [string, string]> = {
+      BANK_TRANSFER: ['Transfer Bank', 'Bank Transfer'],
+      CASH: ['Tunai', 'Cash'],
+      GIRO: ['Giro', 'Giro'],
+      CHECK: ['Cek', 'Check'],
+    };
+    const pair = value ? labels[value] : undefined;
+    return pair ? pair[en ? 1 : 0] : value?.replaceAll('_', ' ') ?? (en ? 'Transfer' : 'Transfer');
+  };
   const [activeTab, setActiveTab] = useState<'financial' | 'receivables' | 'operational' | 'custody'>('financial');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -210,7 +220,7 @@ export function ReportsPage() {
                           <tr key={pay.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
                             <td style={{ padding: '0.5rem', fontWeight: 500 }}>{pay.payment_number}</td>
                             <td style={{ padding: '0.5rem', color: 'var(--color-text-secondary)' }}>{pay.payment_date}</td>
-                            <td style={{ padding: '0.5rem' }}>{pay.payment_method ?? (en ? 'Transfer' : 'Transfer')}</td>
+                            <td style={{ padding: '0.5rem' }}>{formatPaymentMethod(pay.payment_method)}</td>
                             <td style={{ padding: '0.5rem', textAlign: 'right', fontWeight: 600, color: 'var(--color-success)' }}>{formatCurrency(pay.amount)}</td>
                             <td style={{ padding: '0.5rem', textAlign: 'center' }}><StatusBadge status={pay.status} /></td>
                           </tr>
