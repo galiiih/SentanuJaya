@@ -441,7 +441,7 @@ export function MaterialsPage() {
                 </Select>
               </FormField>
               <FormField label={tr('Kuantitas', 'Quantity')} required>
-                <NumericInput value={adjForm.quantity} maximumFractionDigits={0} placeholder="Contoh: 10" onValueChange={(raw) => setAdjForm({ ...adjForm, quantity: raw })} required />
+                <NumericInput min={1} value={adjForm.quantity} maximumFractionDigits={0} placeholder="Contoh: 10" onValueChange={(raw) => setAdjForm({ ...adjForm, quantity: raw })} required />
               </FormField>
               <FormField label={tr('Alasan / Keterangan (Wajib)', 'Reason / Description (Required)')} required>
                 <Textarea value={adjForm.reason} onChange={(e) => setAdjForm({ ...adjForm, reason: e.target.value })} placeholder={tr('Alasan koreksi stok...', 'Reason for stock adjustment...')} required />
@@ -466,7 +466,7 @@ export function MaterialsPage() {
                 </Select>
               </FormField>
               <FormField label={tr('Jumlah Stok Fisik Hitung', 'Counted Physical Stock')} required>
-                <NumericInput value={opnameForm.physical_qty} maximumFractionDigits={0} placeholder={tr('Contoh: 0', 'e.g. 0')} onValueChange={(raw) => setOpnameForm({ ...opnameForm, physical_qty: raw })} required />
+                <NumericInput min={0} value={opnameForm.physical_qty} maximumFractionDigits={0} placeholder={tr('Contoh: 0', 'e.g. 0')} onValueChange={(raw) => setOpnameForm({ ...opnameForm, physical_qty: raw })} required />
               </FormField>
               <FormField label={tr('Catatan / Alasan Opname', 'Stock Count Notes / Reason')}>
                 <Textarea value={opnameForm.reason} onChange={(e) => setOpnameForm({ ...opnameForm, reason: e.target.value })} />
@@ -526,7 +526,7 @@ export function MaterialsPage() {
                       </FormField>
 
                       <FormField label={`${tr('Kuantitas', 'Quantity')} (${unitLabel})`} required>
-                        <NumericInput maximumFractionDigits={3} placeholder="Contoh: 10 atau 2,5" value={line.quantity_received} onValueChange={(raw) => {
+                        <NumericInput min={0.001} maximumFractionDigits={3} placeholder="Contoh: 10 atau 2,5" value={line.quantity_received} onValueChange={(raw) => {
                           const newLines = [...receiptForm.lines];
                           newLines[idx].quantity_received = raw;
                           setReceiptForm({ ...receiptForm, lines: newLines });
