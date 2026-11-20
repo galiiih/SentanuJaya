@@ -27,29 +27,38 @@ class NanuKnowledgeLearningService
      */
     public function reviewCandidate(string $candidateId, string $reviewerUserId, string $status, ?string $notes = null): ?NanuKnowledgeBase
     {
-        $candidate = NanuKnowledgeCandidate::find($candidateId);
-        if (! $candidate) {
-            return null;
-        }
+        return DB::transaction(function () use ($candidateId, $reviewerUserId, $status, $notes) {
+            // Serialize concurrent reviews so the same candidate cannot publish duplicate knowledge.
+            $candidate = NanuKnowledgeCandidate::query()->lockForUpdate()->find($candidateId);
+            if (! $candidate) {
+                return null;
+            }
 
-        $candidate->update([
-            'reviewed_by' => $reviewerUserId,
-            'status' => $status, // 'approved', 'rejected'
-            'reviewer_notes' => $notes,
-        ]);
+            if ($candidate->status !== 'pending_review') {
+                throw ValidationException::withMessages([
+                    'candidate' => 'Kandidat ini sudah pernah ditinjau dan tidak dapat ditinjau ulang.',
+                ]);
+            }
 
-        if ($status === 'approved') {
-            return NanuKnowledgeBase::create([
-                'title' => $candidate->title,
-                'module' => $candidate->module,
-                'question_pattern' => $candidate->question,
-                'content' => $candidate->answer,
-                'audience_role' => 'ALL',
-                'is_published' => true,
+            $candidate->update([
+                'reviewed_by' => $reviewerUserId,
+                'status' => $status,
+                'reviewer_notes' => $notes,
             ]);
-        }
 
-        return null;
+            if ($status === 'approved') {
+                return NanuKnowledgeBase::create([
+                    'title' => $candidate->title,
+                    'module' => $candidate->module,
+                    'question_pattern' => $candidate->question,
+                    'content' => $candidate->answer,
+                    'audience_role' => 'ALL',
+                    'is_published' => true,
+                ]);
+            }
+
+            return null;
+        });
     }
 
     /**
