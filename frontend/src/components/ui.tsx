@@ -358,3 +358,96 @@ export function Modal({ open, title, children, onClose }: { open: boolean; title
     document.body,
   );
 }
+
+
+export type NumericInputProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'type'> & {
+  value: string | number | null | undefined;
+  onValueChange: (rawValue: string, numericValue: number | null) => void;
+  locale?: string;
+  maximumFractionDigits?: number;
+  allowNegative?: boolean;
+};
+
+/**
+ * Locale-aware numeric input. The parent always receives a canonical numeric
+ * string (decimal point, no grouping separators); formatting is presentation
+ * only. Empty input is represented by an empty string and null numeric value.
+ */
+export function NumericInput({
+  value,
+  onValueChange,
+  locale = 'id-ID',
+  maximumFractionDigits = 2,
+  allowNegative = false,
+  className = '',
+  onBlur,
+  onFocus,
+  ...props
+}: NumericInputProps) {
+  const [focused, setFocused] = useState(false);
+  const rawValue = value === null || value === undefined ? '' : String(value);
+  const formatter = useMemo(() => new Intl.NumberFormat(locale, {
+    useGrouping: true,
+    maximumFractionDigits,
+  }), [locale, maximumFractionDigits]);
+
+  const parseInput = (input: string): string => {
+    let normalized = input.replace(/\\s/g, '').replace(/[^0-9,.-]/g, '');
+    if (!allowNegative) normalized = normalized.replace(/-/g, '');
+    else normalized = normalized.replace(/(?!^)-/g, '');
+
+    const comma = normalized.lastIndexOf(',');
+    const dot = normalized.lastIndexOf('.');
+    if (comma >= 0 && dot >= 0) {
+      // The last punctuation is the decimal separator; the other is grouping.
+      const decimal = comma > dot ? ',' : '.';
+      normalized = normalized
+        .replace(decimal === ',' ? /\\./g : /,/g, '')
+        .replace(decimal, '.');
+    } else if (comma >= 0) {
+      // Indonesian input convention: comma is decimal; dots are grouping.
+      normalized = normalized.replace(/\\./g, '').replace(',', '.');
+    } else {
+      const dots = (normalized.match(/\\./g) || []).length;
+      if (dots > 1) normalized = normalized.replace(/\\./g, '');
+    }
+
+    const negative = normalized.startsWith('-') ? '-' : '';
+    normalized = normalized.replace(/-/g, '');
+    const parts = normalized.split('.');
+    const integer = parts.shift() ?? '';
+    const fraction = parts.join('').slice(0, maximumFractionDigits);
+    return negative + integer + (normalized.includes('.') ? '.' + fraction : '');
+  };
+
+  const displayValue = () => {
+    if (!rawValue || rawValue === '-') return rawValue;
+    const parsed = Number(rawValue);
+    if (!Number.isFinite(parsed)) return rawValue;
+    return focused ? rawValue : formatter.format(parsed);
+  };
+
+  return (
+    <input
+      {...props}
+      type="text"
+      inputMode="decimal"
+      className={`input ${className}`}
+      value={displayValue()}
+      onFocus={(event) => {
+        setFocused(true);
+        onFocus?.(event);
+      }}
+      onChange={(event) => {
+        const raw = parseInput(event.target.value);
+        const numeric = raw === '' || raw === '-' || raw === '.' || raw === '-.' ? null : Number(raw);
+        onValueChange(raw, numeric !== null && Number.isFinite(numeric) ? numeric : null);
+      }}
+      onBlur={(event) => {
+        setFocused(false);
+        onBlur?.(event);
+      }}
+      aria-valuenow={rawValue !== '' && Number.isFinite(Number(rawValue)) ? Number(rawValue) : undefined}
+    />
+  );
+}
