@@ -100,8 +100,9 @@ const formatQuantity = (value: string | number) => quantity.format(Number(value)
 
 function RequireAuth({ children, allowPasswordChange = false }: { children: React.ReactNode; allowPasswordChange?: boolean }) {
   const { isAuthenticated, isReady, user } = useAuth();
+  const { language } = useLanguage();
   const location = useLocation();
-  if (!isReady) return <main className="auth-page" aria-busy="true"><Card className="auth-card">Memeriksa sesi…</Card></main>;
+  if (!isReady) return <main className="auth-page" aria-busy="true"><Card className="auth-card">{language === 'en' ? 'Checking session…' : 'Memeriksa sesi…'}</Card></main>;
   if (!isAuthenticated) return <Navigate to="/login" replace state={{ from: location }} />;
   if (user?.must_change_password && !allowPasswordChange) return <Navigate to="/change-password" replace />;
   return <>{children}</>;
@@ -290,12 +291,12 @@ function AuthenticatedLayout() {
   return (
     <>
     <div className={`app-shell${intro !== 'off' ? ' app-shell--intro' : ''}${intro === 'wait' ? ' app-shell--intro-wait' : ''}`} inert={intro !== 'off' ? true : undefined}>
-      <button type="button" className={`sidebar-mobile-overlay${mobileNavOpen ? ' sidebar-mobile-overlay--visible' : ''}`} aria-label="Tutup navigasi" tabIndex={mobileNavOpen ? 0 : -1} onClick={() => setMobileNavOpen(false)} />
+      <button type="button" className={`sidebar-mobile-overlay${mobileNavOpen ? ' sidebar-mobile-overlay--visible' : ''}`} aria-label={language === 'en' ? 'Close navigation' : 'Tutup navigasi'} tabIndex={mobileNavOpen ? 0 : -1} onClick={() => setMobileNavOpen(false)} />
       <Sidebar mobileOpen={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
       <div className="app-shell__main">
         <header className="app-header">
           <div className="app-header__context">
-            <button type="button" className="icon-button sidebar-mobile-trigger" aria-label="Buka navigasi" aria-expanded={mobileNavOpen} onClick={() => setMobileNavOpen((value) => !value)}><Menu size={19} /></button>
+            <button type="button" className="icon-button sidebar-mobile-trigger" aria-label={language === 'en' ? 'Open navigation' : 'Buka navigasi'} aria-expanded={mobileNavOpen} onClick={() => setMobileNavOpen((value) => !value)}><Menu size={19} /></button>
             <div><span className="app-header__eyebrow">SENTANU JAYA ERP</span><strong>{pageTitle}</strong></div>
           </div>
           <div className="app-header__account">
@@ -545,7 +546,7 @@ function PasswordChangePage() {
   </Card></main>;
 }
 
-function ErrorPage({ code, title, description }: { code: '403' | '404'; title: string; description: string }) { const navigate = useNavigate(); return <main className="error-page"><Card className="error-card"><span>{code}</span><h1>{title}</h1><p>{description}</p><Button onClick={() => navigate('/dashboard')}>Kembali ke Dashboard</Button></Card></main>; }
+function ErrorPage({ code, title, description }: { code: '403' | '404'; title: string; description: string }) { const navigate = useNavigate(); const { language } = useLanguage(); const en = language === 'en'; const translatedTitle = en ? (code === '403' ? 'Access denied' : 'Page not found') : title; const translatedDescription = en ? (code === '403' ? 'You do not have permission to access this page.' : 'The page you are looking for does not exist.') : description; return <main className="error-page"><Card className="error-card"><span>{code}</span><h1>{translatedTitle}</h1><p>{translatedDescription}</p><Button onClick={() => navigate('/dashboard')}>{en ? 'Back to Dashboard' : 'Kembali ke Dashboard'}</Button></Card></main>; }
 
 export function App() {
   return (
