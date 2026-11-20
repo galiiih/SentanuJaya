@@ -52,7 +52,7 @@ export function MaterialsPage() {
     supplier_id: '',
     receipt_date: new Date().toISOString().split('T')[0],
     notes: '',
-    lines: [{ material_id: '', quantity_received: 1, unit_cost: 0, notes: '' }],
+    lines: [{ material_id: '', quantity_received: '', unit_cost: '', notes: '' }],
   });
 
   // Adjustment Form
@@ -60,7 +60,7 @@ export function MaterialsPage() {
     warehouse_id: '',
     material_id: '',
     type: 'IN' as 'IN' | 'OUT',
-    quantity: 1,
+    quantity: '',
     reason: '',
   });
 
@@ -68,7 +68,7 @@ export function MaterialsPage() {
   const [opnameForm, setOpnameForm] = useState({
     warehouse_id: '',
     material_id: '',
-    physical_qty: 0,
+    physical_qty: '',
     reason: 'Stock Opname physical count reconciliation',
   });
 
@@ -149,7 +149,14 @@ export function MaterialsPage() {
     e.preventDefault();
     setError('');
     try {
-      await materialReceiptApi.create(receiptForm);
+      await materialReceiptApi.create({
+        ...receiptForm,
+        lines: receiptForm.lines.map((line) => ({
+          ...line,
+          quantity_received: Number(line.quantity_received),
+          unit_cost: Number(line.unit_cost || 0),
+        })),
+      });
       setNotice('Penerimaan material (Draft) berhasil dibuat.');
       setReceiptModalOpen(false);
       setReceiptForm({
@@ -157,7 +164,7 @@ export function MaterialsPage() {
         supplier_id: '',
         receipt_date: new Date().toISOString().split('T')[0],
         notes: '',
-        lines: [{ material_id: '', quantity_received: 1, unit_cost: 0, notes: '' }],
+        lines: [{ material_id: '', quantity_received: '', unit_cost: '', notes: '' }],
       });
       loadData();
     } catch (err) {
@@ -207,9 +214,9 @@ export function MaterialsPage() {
     e.preventDefault();
     setError('');
     try {
-      await stockApi.adjust(adjForm);
+      await stockApi.adjust({ ...adjForm, quantity: Number(adjForm.quantity) });
       setNotice('Stock adjustment berhasil diproses.');
-      setAdjForm({ warehouse_id: '', material_id: '', type: 'IN', quantity: 1, reason: '' });
+      setAdjForm({ warehouse_id: '', material_id: '', type: 'IN', quantity: '', reason: '' });
       loadData();
     } catch (err) {
       setError(apiError(err));
@@ -220,7 +227,12 @@ export function MaterialsPage() {
     e.preventDefault();
     setError('');
     const currentStock = stocks.find((s: any) => s.warehouse_id === opnameForm.warehouse_id && s.material_id === opnameForm.material_id)?.quantity_on_hand ?? 0;
-    const diff = opnameForm.physical_qty - Number(currentStock);
+    const physicalQty = Number(opnameForm.physical_qty);
+    if (!Number.isFinite(physicalQty) || physicalQty < 0) {
+      setError('Jumlah stok fisik harus berupa angka nol atau lebih.');
+      return;
+    }
+    const diff = physicalQty - Number(currentStock);
     if (diff === 0) {
       setError('Kuantitas fisik sama dengan stok sistem. Tidak ada adjustment yang diperlukan.');
       return;
@@ -424,7 +436,7 @@ export function MaterialsPage() {
                 </Select>
               </FormField>
               <FormField label="Kuantitas" required>
-                <Input type="number" step="1" min="1" value={adjForm.quantity} onChange={(e) => setAdjForm({ ...adjForm, quantity: Number(e.target.value) })} required />
+                <Input type="number" step="1" min="1" value={adjForm.quantity} placeholder="Contoh: 10" onChange={(e) => setAdjForm({ ...adjForm, quantity: e.target.value })} required />
               </FormField>
               <FormField label="Alasan / Keterangan (Wajib)" required>
                 <Textarea value={adjForm.reason} onChange={(e) => setAdjForm({ ...adjForm, reason: e.target.value })} placeholder="Alasan koreksi stok..." required />
@@ -449,7 +461,7 @@ export function MaterialsPage() {
                 </Select>
               </FormField>
               <FormField label="Jumlah Stok Fisik Hitung" required>
-                <Input type="number" step="1" min="0" value={opnameForm.physical_qty} onChange={(e) => setOpnameForm({ ...opnameForm, physical_qty: Number(e.target.value) })} required />
+                <Input type="number" step="1" min="0" value={opnameForm.physical_qty} placeholder="Contoh: 0" onChange={(e) => setOpnameForm({ ...opnameForm, physical_qty: e.target.value })} required />
               </FormField>
               <FormField label="Catatan / Alasan Opname">
                 <Textarea value={opnameForm.reason} onChange={(e) => setOpnameForm({ ...opnameForm, reason: e.target.value })} />
@@ -509,17 +521,17 @@ export function MaterialsPage() {
                       </FormField>
 
                       <FormField label={`Kuantitas (${unitLabel})`} required>
-                        <Input type="number" step="0.001" min="0.001" placeholder="Contoh: 10 atau 2,5" value={line.quantity_received === 0 ? '' : line.quantity_received} onChange={(e) => {
+                        <Input type="number" step="0.001" min="0.001" placeholder="Contoh: 10 atau 2,5" value={line.quantity_received} onChange={(e) => {
                           const newLines = [...receiptForm.lines];
-                          newLines[idx].quantity_received = e.target.value === '' ? 0 : Number(e.target.value);
+                          newLines[idx].quantity_received = e.target.value;
                           setReceiptForm({ ...receiptForm, lines: newLines });
                         }} required />
                       </FormField>
 
                       <FormField label="Harga Satuan (Rp)" required>
-                        <Input type="number" step="100" min="0" placeholder="Contoh: 85000" value={line.unit_cost === 0 ? '' : line.unit_cost} onChange={(e) => {
+                        <Input type="number" step="100" min="0" placeholder="Contoh: 85000" value={line.unit_cost} onChange={(e) => {
                           const newLines = [...receiptForm.lines];
-                          newLines[idx].unit_cost = e.target.value === '' ? 0 : Number(e.target.value);
+                          newLines[idx].unit_cost = e.target.value;
                           setReceiptForm({ ...receiptForm, lines: newLines });
                         }} required />
                       </FormField>
@@ -548,7 +560,7 @@ export function MaterialsPage() {
                   </div>
                 );
               })}
-              <Button type="button" variant="secondary" onClick={() => setReceiptForm({ ...receiptForm, lines: [...receiptForm.lines, { material_id: '', quantity_received: 1, unit_cost: 0, notes: '' }] })}>
+              <Button type="button" variant="secondary" onClick={() => setReceiptForm({ ...receiptForm, lines: [...receiptForm.lines, { material_id: '', quantity_received: '', unit_cost: '', notes: '' }] })}>
                 + Tambah Baris Material
               </Button>
             </div>
