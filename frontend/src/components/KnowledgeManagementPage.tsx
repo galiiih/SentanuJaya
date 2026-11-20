@@ -1,11 +1,15 @@
 import { useState, useEffect } from 'react';
 import { nanuKnowledgeApi, type NanuKnowledgeBaseRecord, type NanuKnowledgeCandidateRecord } from '../services/api';
 import { useAuth } from '../auth';
+import { useLanguage } from '../i18n';
 import { Modal, Input, Select, Textarea, Button, Card } from './ui';
 import { BookOpen, CheckCircle, XCircle, Search, Plus, ShieldAlert, Sparkles, Filter } from 'lucide-react';
 
 export function KnowledgeManagementPage() {
   const { user } = useAuth();
+  const { language } = useLanguage();
+  const en = language === 'en';
+  const dateLocale = en ? 'en-US' : 'id-ID';
   const isAdminOrOwner = ['ADMIN', 'OWNER', 'DEV'].includes(user?.role || '');
 
   const [activeTab, setActiveTab] = useState<'official' | 'candidates'>('official');
@@ -81,7 +85,7 @@ export function KnowledgeManagementPage() {
       setReviewNotes('');
       fetchCandidates();
     } catch (err: any) {
-      alert(err?.response?.data?.message || 'Gagal melakukan review kandidat.');
+      alert(err?.response?.data?.message || (en ? 'Failed to review the knowledge candidate.' : 'Gagal melakukan review kandidat.'));
     } finally {
       setReviewing(false);
     }
@@ -90,7 +94,7 @@ export function KnowledgeManagementPage() {
   const handleManualSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newQuestion || !newAnswer) {
-      setSubmitError('Pertanyaan dan jawaban wajib diisi.');
+      setSubmitError((en ? 'Question and answer are required.' : 'Pertanyaan dan jawaban wajib diisi.'));
       return;
     }
     setSubmitting(true);
@@ -103,7 +107,7 @@ export function KnowledgeManagementPage() {
         module: newModule,
         title: newTitle || undefined,
       });
-      setSubmitSuccess('Kandidat knowledge berhasil diajukan untuk ditinjau.');
+      setSubmitSuccess((en ? 'Knowledge candidate submitted for review.' : 'Kandidat knowledge berhasil diajukan untuk ditinjau.'));
       setNewQuestion('');
       setNewAnswer('');
       setNewTitle('');
@@ -113,7 +117,7 @@ export function KnowledgeManagementPage() {
         if (activeTab === 'candidates') fetchCandidates();
       }, 1500);
     } catch (err: any) {
-      setSubmitError(err?.response?.data?.message || 'Gagal mengajukan kandidat.');
+      setSubmitError(err?.response?.data?.message || (en ? 'Failed to submit the candidate.' : 'Gagal mengajukan kandidat.'));
     } finally {
       setSubmitting(false);
     }
@@ -139,7 +143,7 @@ export function KnowledgeManagementPage() {
             className="flex items-center gap-2"
           >
             <Plus className="w-4 h-4" />
-            Ajukan Knowledge Baru
+            {en ? 'Submit New Knowledge' : 'Ajukan Knowledge Baru'}
           </Button>
         </div>
       </Card>
@@ -167,7 +171,7 @@ export function KnowledgeManagementPage() {
             }`}
           >
             <Filter className="w-4 h-4" />
-            Review Kandidat ({candidateList.length})
+            {en ? 'Candidate Review (' : 'Review Kandidat ('}{candidateList.length})
           </button>
         )}
       </div>
@@ -179,7 +183,7 @@ export function KnowledgeManagementPage() {
             <Search className="w-5 h-5 text-[var(--muted-foreground)]" />
             <input
               type="text"
-              placeholder="Cari berdasarkan judul, pola pertanyaan, atau isi knowledge..."
+              placeholder="{en ? 'Search by title, question pattern, or knowledge content...' : 'Cari berdasarkan judul, pola pertanyaan, atau isi knowledge...'}"
               value={officialSearch}
               onChange={(e) => setOfficialSearch(e.target.value)}
               className="w-full bg-transparent border-none outline-none text-[var(--foreground)] text-sm placeholder:text-[var(--muted-foreground)]"
@@ -187,12 +191,12 @@ export function KnowledgeManagementPage() {
           </Card>
 
           {officialLoading ? (
-            <div className="text-center py-12 text-[var(--muted-foreground)]">Memuat knowledge resmi...</div>
+            <div className="text-center py-12 text-[var(--muted-foreground)]">{en ? 'Loading official knowledge...' : 'Memuat knowledge resmi...'}</div>
           ) : officialList.length === 0 ? (
             <Card className="text-center py-12">
               <BookOpen className="w-12 h-12 text-[var(--muted-foreground)] mx-auto mb-3 opacity-50" />
-              <p className="text-[var(--foreground)] font-medium">Belum ada knowledge resmi yang dipublikasikan.</p>
-              <p className="text-sm text-[var(--muted-foreground)] mt-1">Ajukan kandidat atau setujui dari menu review.</p>
+              <p className="text-[var(--foreground)] font-medium">{en ? 'No official knowledge has been published yet.' : 'Belum ada knowledge resmi yang dipublikasikan.'}</p>
+              <p className="text-sm text-[var(--muted-foreground)] mt-1">{en ? 'Submit a candidate or approve one from the review tab.' : 'Ajukan kandidat atau setujui dari menu review.'}</p>
             </Card>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -213,8 +217,8 @@ export function KnowledgeManagementPage() {
                     </p>
                   </div>
                   <div className="mt-4 pt-3 border-t border-[var(--border)] flex justify-between items-center text-xs text-[var(--muted-foreground)]">
-                    <span>Target: {item.audience_role}</span>
-                    <span>Dipublikasikan: {new Date(item.created_at).toLocaleDateString('id-ID')}</span>
+                    <span>{en ? 'Audience: ' : 'Target: '}{item.audience_role}</span>
+                    <span>{en ? 'Published: ' : 'Dipublikasikan: '}{new Date(item.created_at).toLocaleDateString(dateLocale)}</span>
                   </div>
                 </Card>
               ))}
@@ -233,21 +237,21 @@ export function KnowledgeManagementPage() {
                 value={candidateStatusFilter}
                 onChange={(e) => setCandidateStatusFilter(e.target.value)}
               >
-                <option value="">Semua Status</option>
+                <option value="">{en ? 'All statuses' : 'Semua Status'}</option>
                 <option value="pending_review">Pending Review</option>
                 <option value="approved">Approved</option>
                 <option value="rejected">Rejected</option>
               </Select>
             </div>
-            <span className="text-xs text-[var(--muted-foreground)]">Total Kandidat: {candidateList.length}</span>
+            <span className="text-xs text-[var(--muted-foreground)]">{en ? 'Total candidates: ' : 'Total Kandidat: '}{candidateList.length}</span>
           </Card>
 
           {candidateLoading ? (
-            <div className="text-center py-12 text-[var(--muted-foreground)]">Memuat kandidat knowledge...</div>
+            <div className="text-center py-12 text-[var(--muted-foreground)]">{en ? 'Loading knowledge candidates...' : 'Memuat kandidat knowledge...'}</div>
           ) : candidateList.length === 0 ? (
             <Card className="text-center py-12">
               <ShieldAlert className="w-12 h-12 text-[var(--muted-foreground)] mx-auto mb-3 opacity-50" />
-              <p className="text-[var(--foreground)] font-medium">Tidak ada kandidat knowledge yang ditemukan.</p>
+              <p className="text-[var(--foreground)] font-medium">{en ? 'No knowledge candidates found.' : 'Tidak ada kandidat knowledge yang ditemukan.'}</p>
             </Card>
           ) : (
             <Card className="overflow-hidden p-0">
@@ -255,18 +259,18 @@ export function KnowledgeManagementPage() {
                 <table className="w-full text-left border-collapse text-sm">
                   <thead>
                     <tr className="bg-[var(--surface)] text-[var(--muted-foreground)] border-b border-[var(--border)]">
-                      <th className="p-4 font-semibold">Judul / Modul</th>
-                      <th className="p-4 font-semibold">Pertanyaan & Jawaban</th>
-                      <th className="p-4 font-semibold">Pengaju</th>
+                      <th className="p-4 font-semibold">{en ? 'Title / Module' : 'Judul / Modul'}</th>
+                      <th className="p-4 font-semibold">{en ? 'Question & Answer' : 'Pertanyaan & Jawaban'}</th>
+                      <th className="p-4 font-semibold">{en ? 'Submitted by' : 'Pengaju'}</th>
                       <th className="p-4 font-semibold">Status</th>
-                      <th className="p-4 font-semibold text-right">Aksi</th>
+                      <th className="p-4 font-semibold text-right">{en ? 'Actions' : 'Aksi'}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[var(--border)] text-[var(--foreground)]">
                     {candidateList.map((c) => (
                       <tr key={c.id} className="hover:bg-[var(--surface)] transition">
                         <td className="p-4 align-top">
-                          <div className="font-semibold text-[var(--foreground)]">{c.title || 'Kandidat Nanu'}</div>
+                          <div className="font-semibold text-[var(--foreground)]">{c.title || (en ? 'Nanu candidate' : 'Kandidat Nanu')}</div>
                           <span className="inline-block mt-1 px-2 py-0.5 rounded text-xs bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-400 font-mono">
                             {c.module || 'general'}
                           </span>
@@ -299,11 +303,11 @@ export function KnowledgeManagementPage() {
                               onClick={() => setSelectedCandidate(c)}
                               className="text-xs py-1.5 px-3"
                             >
-                              Tinjau / Review
+                              {en ? 'Review' : 'Tinjau / Review'}
                             </Button>
                           ) : (
                             <span className="text-xs text-[var(--muted-foreground)]">
-                              Sudah ditinjau
+                              {en ? 'Reviewed' : 'Sudah ditinjau'}
                             </span>
                           )}
                         </td>
@@ -318,23 +322,23 @@ export function KnowledgeManagementPage() {
       )}
 
       {/* Review Modal */}
-      <Modal open={!!selectedCandidate} title="Review Kandidat Knowledge" onClose={() => setSelectedCandidate(null)}>
+      <Modal open={!!selectedCandidate} title={en ? 'Review Knowledge Candidate' : 'Review Kandidat Knowledge'} onClose={() => setSelectedCandidate(null)}>
         {selectedCandidate && (
           <div className="space-y-4 text-sm">
             <div>
               <span className="text-xs text-[var(--muted-foreground)] block font-medium">Judul / Modul</span>
-              <p className="font-semibold text-[var(--foreground)]">{selectedCandidate.title || 'Tanpa Judul'} ({selectedCandidate.module})</p>
+              <p className="font-semibold text-[var(--foreground)]">{selectedCandidate.title || '{en ? 'Untitled' : 'Tanpa Judul'}'} ({selectedCandidate.module})</p>
             </div>
             <div>
               <span className="text-xs text-[var(--muted-foreground)] block font-medium">Pertanyaan</span>
               <p className="bg-[var(--surface)] p-3 rounded-lg text-[var(--foreground)]">{selectedCandidate.question}</p>
             </div>
             <div>
-              <span className="text-xs text-[var(--muted-foreground)] block font-medium">Jawaban / Koreksi yang Diajukan</span>
+              <span className="text-xs text-[var(--muted-foreground)] block font-medium">{en ? 'Submitted Answer / Correction' : 'Jawaban / Koreksi yang Diajukan'}</span>
               <p className="bg-[var(--surface)] p-3 rounded-lg text-[var(--foreground)] whitespace-pre-wrap">{selectedCandidate.answer}</p>
             </div>
             <div>
-              <label className="text-xs text-[var(--muted-foreground)] block font-medium mb-1">Catatan Reviewer (Opsional)</label>
+              <label className="text-xs text-[var(--muted-foreground)] block font-medium mb-1">{en ? 'Reviewer Notes (Optional)' : 'Catatan Reviewer (Opsional)'}</label>
               <Textarea
                 value={reviewNotes}
                 onChange={(e) => setReviewNotes(e.target.value)}
@@ -349,7 +353,7 @@ export function KnowledgeManagementPage() {
                 variant="secondary"
                 onClick={() => setSelectedCandidate(null)}
               >
-                Batal
+                {en ? 'Cancel' : 'Batal'}
               </Button>
               <Button
                 type="button"
@@ -359,7 +363,7 @@ export function KnowledgeManagementPage() {
                 className="flex items-center gap-1.5"
               >
                 <XCircle className="w-4 h-4" />
-                Tolak (Reject)
+                {en ? 'Reject' : 'Tolak (Reject)'}
               </Button>
               <Button
                 type="button"
@@ -369,7 +373,7 @@ export function KnowledgeManagementPage() {
                 className="flex items-center gap-1.5"
               >
                 <CheckCircle className="w-4 h-4" />
-                Setujui (Approve)
+                {en ? 'Approve' : 'Setujui (Approve)'}
               </Button>
             </div>
           </div>
@@ -377,21 +381,21 @@ export function KnowledgeManagementPage() {
       </Modal>
 
       {/* Submit New Candidate Modal */}
-      <Modal open={showSubmitModal} title="Ajukan Kandidat Knowledge Baru" onClose={() => setShowSubmitModal(false)}>
+      <Modal open={showSubmitModal} title={en ? 'Submit New Knowledge Candidate' : 'Ajukan Kandidat Knowledge Baru'} onClose={() => setShowSubmitModal(false)}>
         <form onSubmit={handleManualSubmit} className="space-y-4 text-sm">
           {submitError && <div className="p-3 bg-rose-50 text-rose-700 text-xs rounded-lg">{submitError}</div>}
           {submitSuccess && <div className="p-3 bg-emerald-50 text-emerald-700 text-xs rounded-lg">{submitSuccess}</div>}
           <div>
-            <label className="block text-xs font-medium text-[var(--muted-foreground)] mb-1">Judul Pengetahuan</label>
+            <label className="block text-xs font-medium text-[var(--muted-foreground)] mb-1">{en ? 'Knowledge Title' : 'Judul Pengetahuan'}</label>
             <Input
               type="text"
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
-              placeholder="Contoh: Cara Input Material Baru"
+              placeholder={en ? 'e.g. How to Add a New Material' : 'Contoh: Cara Input Material Baru'}
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-[var(--muted-foreground)] mb-1">Modul Terkait</label>
+            <label className="block text-xs font-medium text-[var(--muted-foreground)] mb-1">{en ? 'Related Module' : 'Modul Terkait'}</label>
             <Select
               value={newModule}
               onChange={(e) => setNewModule(e.target.value)}
@@ -405,22 +409,22 @@ export function KnowledgeManagementPage() {
             </Select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-[var(--muted-foreground)] mb-1">Pertanyaan / Topik *</label>
+            <label className="block text-xs font-medium text-[var(--muted-foreground)] mb-1">{en ? 'Question / Topic *' : 'Pertanyaan / Topik *'}</label>
             <Input
               type="text"
               required
               value={newQuestion}
               onChange={(e) => setNewQuestion(e.target.value)}
-              placeholder="Contoh: Bagaimana cara membuat customer po baru?"
+              placeholder={en ? 'e.g. How do I create a new Customer PO?' : 'Contoh: Bagaimana cara membuat customer po baru?'}
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-[var(--muted-foreground)] mb-1">Jawaban / Panduan Resmi *</label>
+            <label className="block text-xs font-medium text-[var(--muted-foreground)] mb-1">{en ? 'Answer / Official Guide *' : 'Jawaban / Panduan Resmi *'}</label>
             <Textarea
               required
               value={newAnswer}
               onChange={(e) => setNewAnswer(e.target.value)}
-              placeholder="Tuliskan langkah-langkah atau panduan yang akurat..."
+              placeholder={en ? 'Enter accurate steps or guidance...' : 'Tuliskan langkah-langkah atau panduan yang akurat...'}
               rows={4}
             />
           </div>
@@ -437,7 +441,7 @@ export function KnowledgeManagementPage() {
               variant="primary"
               loading={submitting}
             >
-              Kirim Kandidat
+              {en ? 'Submit Candidate' : 'Kirim Kandidat'}
             </Button>
           </div>
         </form>
