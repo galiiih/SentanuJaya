@@ -20,6 +20,7 @@ import {
   type DataTableColumn,
   FormField,
   Input,
+  NumericInput,
   Modal,
   PageHeader,
   Select,
@@ -436,7 +437,7 @@ export function MaterialsPage() {
                 </Select>
               </FormField>
               <FormField label="Kuantitas" required>
-                <Input type="number" step="1" min="1" value={adjForm.quantity} placeholder="Contoh: 10" onChange={(e) => setAdjForm({ ...adjForm, quantity: e.target.value })} required />
+                <NumericInput value={adjForm.quantity} maximumFractionDigits={0} placeholder="Contoh: 10" onValueChange={(raw) => setAdjForm({ ...adjForm, quantity: raw })} required />
               </FormField>
               <FormField label="Alasan / Keterangan (Wajib)" required>
                 <Textarea value={adjForm.reason} onChange={(e) => setAdjForm({ ...adjForm, reason: e.target.value })} placeholder="Alasan koreksi stok..." required />
@@ -461,7 +462,7 @@ export function MaterialsPage() {
                 </Select>
               </FormField>
               <FormField label="Jumlah Stok Fisik Hitung" required>
-                <Input type="number" step="1" min="0" value={opnameForm.physical_qty} placeholder="Contoh: 0" onChange={(e) => setOpnameForm({ ...opnameForm, physical_qty: e.target.value })} required />
+                <NumericInput value={opnameForm.physical_qty} maximumFractionDigits={0} placeholder="Contoh: 0" onValueChange={(raw) => setOpnameForm({ ...opnameForm, physical_qty: raw })} required />
               </FormField>
               <FormField label="Catatan / Alasan Opname">
                 <Textarea value={opnameForm.reason} onChange={(e) => setOpnameForm({ ...opnameForm, reason: e.target.value })} />
@@ -521,17 +522,17 @@ export function MaterialsPage() {
                       </FormField>
 
                       <FormField label={`Kuantitas (${unitLabel})`} required>
-                        <Input type="number" step="0.001" min="0.001" placeholder="Contoh: 10 atau 2.5" value={line.quantity_received} onChange={(e) => {
+                        <NumericInput maximumFractionDigits={3} placeholder="Contoh: 10 atau 2,5" value={line.quantity_received} onValueChange={(raw) => {
                           const newLines = [...receiptForm.lines];
-                          newLines[idx].quantity_received = e.target.value;
+                          newLines[idx].quantity_received = raw;
                           setReceiptForm({ ...receiptForm, lines: newLines });
                         }} required />
                       </FormField>
 
                       <FormField label="Harga Satuan (Rp)" required>
-                        <Input type="number" step="100" min="0" placeholder="Contoh: 85000" value={line.unit_cost} onChange={(e) => {
+                        <NumericInput maximumFractionDigits={2} placeholder="Contoh: 85000" value={line.unit_cost} onValueChange={(raw) => {
                           const newLines = [...receiptForm.lines];
-                          newLines[idx].unit_cost = e.target.value;
+                          newLines[idx].unit_cost = raw;
                           setReceiptForm({ ...receiptForm, lines: newLines });
                         }} required />
                       </FormField>
