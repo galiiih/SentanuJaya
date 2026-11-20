@@ -83,6 +83,9 @@ class NanuKnowledgeController extends BaseApiController
             return $this->sendError('Validation error', $validator->errors(), 422);
         }
 
+        $candidate = NanuKnowledgeCandidate::findOrFail($id);
+        abort_unless($candidate->status === 'pending_review', 409, 'Candidate has already been reviewed.');
+
         $user = $request->user();
         $official = $this->learningService->reviewCandidate(
             $id,
