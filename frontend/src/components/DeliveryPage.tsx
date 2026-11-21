@@ -82,6 +82,7 @@ export function DeliveryPage() {
 
   // Customer Acceptance states
   const [doAcceptances, setDoAcceptances] = useState<AcceptanceRecord[]>([]);
+  const [acceptanceError, setAcceptanceError] = useState('');
   const [acceptanceModalOpen, setAcceptanceModalOpen] = useState(false);
   const [acceptanceDate, setAcceptanceDate] = useState<string>(getLocalDateInputValue());
   const [acceptanceNotes, setAcceptanceNotes] = useState<string>('');
@@ -102,11 +103,13 @@ export function DeliveryPage() {
   const canAcceptPost = hasPermission(permissions.acceptancePost);
 
   const loadAcceptances = async (doId: string) => {
+    setAcceptanceError('');
     try {
       const res = await acceptanceApi.list({ delivery_order_id: doId });
       setDoAcceptances(res.data || []);
-    } catch {
-      setDoAcceptances([]);
+    } catch (err) {
+      // Do not present a failed request as an empty acceptance history.
+      setAcceptanceError(apiError(err));
     }
   };
 
@@ -314,6 +317,7 @@ export function DeliveryPage() {
       reject_reason: '',
     }));
     setAcceptanceLines(lines);
+    setAcceptanceError('');
     setAcceptanceDate(getLocalDateInputValue());
     setAcceptanceNotes('');
     setFieldErrors({});
@@ -704,7 +708,9 @@ export function DeliveryPage() {
                 )}
               </div>
 
-              {doAcceptances.length === 0 ? (
+              {acceptanceError ? (
+                <Alert tone="danger">{tr('Riwayat penerimaan gagal dimuat. Silakan coba buka kembali detail Surat Jalan.', 'The acceptance history could not be loaded. Please reopen the Delivery Order details and try again.')} {acceptanceError}</Alert>
+              ) : doAcceptances.length === 0 ? (
                 <p style={{ fontSize: '0.875rem', color: 'var(--color-muted)' }}>{tr('Belum ada penerimaan customer untuk surat jalan ini.', 'No customer acceptance has been recorded for this Delivery Order.')}</p>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
