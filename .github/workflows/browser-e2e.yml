@@ -16,7 +16,9 @@ concurrency:
 
 jobs:
   browser-e2e:
-    runs-on: ubuntu-latest
+    # Pin to the supported LTS image; ubuntu-latest currently resolves to 26.04,
+    # where setup-php v2 cannot configure PHP extensions reliably.
+    runs-on: ubuntu-24.04
     timeout-minutes: 50
     services:
       postgres:
