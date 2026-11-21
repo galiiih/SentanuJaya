@@ -106,7 +106,7 @@ export function MaterialsPage() {
     const requestId = ++loadRequestRef.current;
     setError('');
     const failures: string[] = [];
-    const withFallback = async <T,>(request: Promise<T>, label: string, fallback: T): Promise<T> => {
+    const withFallback = async <T, F,>(request: Promise<T>, label: string, fallback: F): Promise<T | F> => {
       try {
         return await request;
       } catch (err) {
