@@ -41,12 +41,12 @@ class AppErrorBoundary extends Component<{ children: ReactNode }, AppErrorBounda
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <BrowserRouter>
-      <AuthProvider>
-        <AppErrorBoundary>
+    <AppErrorBoundary>
+      <BrowserRouter>
+        <AuthProvider>
           <App />
-        </AppErrorBoundary>
-      </AuthProvider>
-    </BrowserRouter>
+        </AuthProvider>
+      </BrowserRouter>
+    </AppErrorBoundary>
   </StrictMode>,
 )
