@@ -485,7 +485,7 @@ export function MasterDataPage() {
                   <Input value={formData.name || ''} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="PT Sentanu Jaya" required />
                 </FormField>
                 <FormField label={tr('Alamat', 'Address')}>
-                  <Textarea value={formData.address || ''} onChange={e => setFormData({ ...formData, address: e.target.value })} placeholder="Jl. Industri Utama No. 1" rows={3} />
+                  <Textarea value={formData.address || ''} onChange={e => setFormData({ ...formData, address: e.target.value })} placeholder={tr("Jl. Industri Utama No. 1", "No. 1, Main Industrial Street")} rows={3} />
                 </FormField>
                 <FormField label={tr('Telepon', 'Phone')}>
                   <Input value={formData.phone || ''} onChange={e => setFormData({ ...formData, phone: e.target.value })} placeholder="021-5551234" />
@@ -552,7 +552,7 @@ export function MasterDataPage() {
                   <Input type="email" value={formData.email || ''} onChange={e => setFormData({ ...formData, email: e.target.value })} placeholder="info@sentanumaju.co.id" />
                 </FormField>
                 <FormField label={tr('Alamat Lengkap', 'Full Address')}>
-                  <Textarea value={formData.address || ''} onChange={e => setFormData({ ...formData, address: e.target.value })} placeholder="Jl. Industri Raya No. 12, Jakarta" rows={3} />
+                  <Textarea value={formData.address || ''} onChange={e => setFormData({ ...formData, address: e.target.value })} placeholder={tr("Jl. Industri Raya No. 12, Jakarta", "No. 12, Industrial Avenue, Jakarta")} rows={3} />
                 </FormField>
               </>
             )}
@@ -567,7 +567,7 @@ export function MasterDataPage() {
                   </Select>
                 </FormField>
                 <FormField label={tr('Nama Kontak', 'Contact Name')} required>
-                  <Input value={formData.name || ''} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="Bapak Budi" required />
+                  <Input value={formData.name || ''} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder={tr("Bapak Budi", "Mr. Budi")} required />
                 </FormField>
                 <FormField label={tr('Jabatan / Title', 'Position / Title')}>
                   <Input value={formData.title || ''} onChange={e => setFormData({ ...formData, title: e.target.value })} placeholder="Purchasing Manager" />
@@ -612,7 +612,7 @@ export function MasterDataPage() {
                   <Input value={formData.code || ''} onChange={e => setFormData({ ...formData, code: e.target.value })} placeholder="PL-2024-01" required />
                 </FormField>
                 <FormField label={tr('Nama Price List', 'Price List Name')} required>
-                  <Input value={formData.name || ''} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="Kontrak Harga 2024" required />
+                  <Input value={formData.name || ''} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder={tr("Kontrak Harga 2024", "2024 Price Agreement")} required />
                 </FormField>
                 <FormField label={tr('Pilih Customer', 'Select Customer')} required>
                   <Select value={formData.customer_id || ''} onChange={e => setFormData({ ...formData, customer_id: e.target.value })} required>
@@ -654,7 +654,7 @@ export function MasterDataPage() {
                   <Input value={formData.code || ''} onChange={e => setFormData({ ...formData, code: e.target.value })} placeholder="PCS" required />
                 </FormField>
                 <FormField label={tr('Nama Satuan', 'Unit Name')} required>
-                  <Input value={formData.name || ''} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="Pieces / Buah" required />
+                  <Input value={formData.name || ''} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder={tr("Pieces / Buah", "Pieces")} required />
                 </FormField>
                 <FormField label={tr('Kategori', 'Category')} required>
                   <Input value={formData.category || 'GENERAL'} onChange={e => setFormData({ ...formData, category: e.target.value })} placeholder="GENERAL / QUANTITY / WEIGHT" required />
@@ -672,7 +672,7 @@ export function MasterDataPage() {
                   <Input value={formData.code || ''} onChange={e => setFormData({ ...formData, code: e.target.value })} placeholder="CAT-PU-BLK" required />
                 </FormField>
                 <FormField label={tr('Nama Material / Cat', 'Material / Paint Name')} required>
-                  <Input value={formData.name || ''} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="Cat Polyurethane Hitam Glossy" required />
+                  <Input value={formData.name || ''} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder={tr("Cat Polyurethane Hitam Glossy", "Glossy Black Polyurethane Paint")} required />
                 </FormField>
                 <FormField label={tr('Kategori', 'Category')} required>
                   <Input value={formData.category || 'GENERAL'} onChange={e => setFormData({ ...formData, category: e.target.value })} placeholder="GENERAL / RAW_MATERIAL / PAINT" required />
@@ -726,7 +726,7 @@ export function MasterDataPage() {
                   <Input type="email" value={formData.email || ''} onChange={e => setFormData({ ...formData, email: e.target.value })} placeholder="sales@warnabadi.com" />
                 </FormField>
                 <FormField label={tr('Alamat Supplier', 'Supplier Address')}>
-                  <Textarea value={formData.address || ''} onChange={e => setFormData({ ...formData, address: e.target.value })} placeholder="Jl. Kimia Raya No. 5, Cikarang" rows={3} />
+                  <Textarea value={formData.address || ''} onChange={e => setFormData({ ...formData, address: e.target.value })} placeholder={tr("Jl. Kimia Raya No. 5, Cikarang", "No. 5, Kimia Avenue, Cikarang")} rows={3} />
                 </FormField>
               </>
             )}
