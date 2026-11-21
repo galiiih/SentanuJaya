@@ -1,5 +1,5 @@
 import { getLocalDateInputValue } from '../utils/date';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '../i18n';
 import axios from 'axios';
 import { Plus, Eye, CheckCircle2, FileText, ArrowLeftRight, Package, AlertTriangle } from 'lucide-react';
@@ -44,6 +44,7 @@ export function MaterialsPage() {
   const en = language === 'en';
   const tr = (id: string, english: string) => en ? english : id;
   const [activeTab, setActiveTab] = useState<'stocks' | 'receipts' | 'cards' | 'adjust'>('stocks');
+  const loadRequestRef = useRef(0);
 
   // Data states
   const [materials, setMaterials] = useState<Material[]>([]);
@@ -102,19 +103,27 @@ export function MaterialsPage() {
   });
 
   const loadData = async () => {
+    const requestId = ++loadRequestRef.current;
     setError('');
+    const failures: string[] = [];
+    const withFallback = async <T,>(request: Promise<T>, label: string, fallback: T): Promise<T> => {
+      try {
+        return await request;
+      } catch (err) {
+        failures.push(`${label}: ${apiError(err)}`);
+        return fallback;
+      }
+    };
+
     try {
       const [matRes, stockRes, recRes, movRes, whRes, supRes, lowRes] = await Promise.all([
-        axios.get('/api/v1/materials', { params: { per_page: 200 } }).catch(() => ({ data: { data: [] } })),
-        stockApi.list({ per_page: 200 }).catch(() => ({ data: [] })),
-        materialReceiptApi.list({ per_page: 100 }).catch(() => ({ data: [] })),
-        stockApi.movements({ per_page: 100 }).catch(() => ({ data: [] })),
-        warehouseApi.list().catch((err) => {
-          setError(`${tr('Daftar gudang gagal dimuat', 'Warehouses could not be loaded')}: ${apiError(err)}`);
-          return { data: [] };
-        }),
-        supplierApi.list().catch(() => ({ data: [] })),
-        stockApi.lowStock().catch(() => []),
+        withFallback(axios.get('/api/v1/materials', { params: { per_page: 200 } }), tr('Material gagal dimuat', 'Materials could not be loaded'), { data: { data: [] } }),
+        withFallback(stockApi.list({ per_page: 200 }), tr('Stok gagal dimuat', 'Stock could not be loaded'), { data: [] }),
+        withFallback(materialReceiptApi.list({ per_page: 100 }), tr('Penerimaan material gagal dimuat', 'Material receipts could not be loaded'), { data: [] }),
+        withFallback(stockApi.movements({ per_page: 100 }), tr('Riwayat pergerakan stok gagal dimuat', 'Stock movements could not be loaded'), { data: [] }),
+        withFallback(warehouseApi.list(), tr('Daftar gudang gagal dimuat', 'Warehouses could not be loaded'), { data: [] }),
+        withFallback(supplierApi.list(), tr('Daftar supplier gagal dimuat', 'Suppliers could not be loaded'), { data: [] }),
+        withFallback(stockApi.lowStock(), tr('Peringatan stok minimum gagal dimuat', 'Low-stock alerts could not be loaded'), []),
       ]);
 
       const asRows = (value: any): any[] => {
@@ -122,6 +131,7 @@ export function MaterialsPage() {
         if (Array.isArray(value?.data)) return value.data;
         return [];
       };
+      if (requestId !== loadRequestRef.current) return;
       const rawMat = asRows(matRes.data?.data?.data ?? matRes.data?.data);
       const stocksList = asRows(stockRes);
       setStocks(stocksList);
@@ -160,8 +170,9 @@ export function MaterialsPage() {
       }
       setSupplierList(asRows(supRes));
       setLowStocks(asRows(lowRes));
+      if (failures.length) setError(failures.join(' · '));
     } catch (err) {
-      setError(apiError(err));
+      if (requestId === loadRequestRef.current) setError(apiError(err));
     }
   };
 
