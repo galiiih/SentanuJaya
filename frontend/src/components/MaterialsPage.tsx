@@ -31,6 +31,14 @@ import {
   Toast,
 } from './ui';
 
+// Normalize numeric values from API strings (e.g. "1.000") for compact stock display.
+const formatStockQuantity = (value: unknown, locale = 'id-ID'): string => {
+  if (value === null || value === undefined || value === '') return '-';
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return String(value);
+  return new Intl.NumberFormat(locale, { maximumFractionDigits: 3 }).format(numeric);
+};
+
 export function MaterialsPage() {
   const { language } = useLanguage();
   const en = language === 'en';
@@ -275,8 +283,8 @@ export function MaterialsPage() {
     { id: 'sku', header: 'SKU', cell: (row) => row.sku, sortValue: (row) => row.sku },
     { id: 'name', header: tr('Nama Material', 'Material Name'), cell: (row) => row.name, sortValue: (row) => row.name },
     { id: 'category', header: tr('Kategori', 'Category'), cell: (row) => row.category, sortValue: (row) => row.category },
-    { id: 'quantity_on_hand', header: tr('Stok Aktual', 'Current Stock'), cell: (row) => `${row.quantity_on_hand} ${row.unit}`, sortValue: (row) => row.quantity_on_hand },
-    { id: 'minimum_stock', header: tr('Minimum', 'Minimum'), cell: (row) => `${row.minimum_stock} ${row.unit}`, sortValue: (row) => row.minimum_stock },
+    { id: 'quantity_on_hand', header: tr('Stok Aktual', 'Current Stock'), cell: (row) => `${formatStockQuantity(row.quantity_on_hand, en ? 'en-US' : 'id-ID')} ${row.unit}`, sortValue: (row) => row.quantity_on_hand },
+    { id: 'minimum_stock', header: tr('Minimum', 'Minimum'), cell: (row) => `${formatStockQuantity(row.minimum_stock, en ? 'en-US' : 'id-ID')} ${row.unit}`, sortValue: (row) => row.minimum_stock },
     {
       id: 'status',
       header: 'Status',
