@@ -104,6 +104,7 @@ export function DeliveryPage() {
 
   const loadAcceptances = async (doId: string) => {
     setAcceptanceError('');
+    setDoAcceptances([]);
     try {
       const res = await acceptanceApi.list({ delivery_order_id: doId });
       setDoAcceptances(res.data || []);
