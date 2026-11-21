@@ -287,7 +287,7 @@ export function MaterialsPage() {
     { id: 'minimum_stock', header: tr('Minimum', 'Minimum'), cell: (row) => `${formatStockQuantity(row.minimum_stock, en ? 'en-US' : 'id-ID')} ${row.unit}`, sortValue: (row) => row.minimum_stock },
     {
       id: 'status',
-      header: 'Status',
+      header: tr('Status', 'Status'),
       cell: (row) => (
         row.quantity_on_hand <= row.minimum_stock ? (
           <StatusBadge status="warning" label={tr('Stok Rendah', 'Low Stock')} />
@@ -333,7 +333,7 @@ export function MaterialsPage() {
           <FileText className="w-4 h-4 mr-2" /> {tr('Penerimaan Material', 'Material Receipts')}
         </Button>
         <Button variant={activeTab === 'cards' ? 'primary' : 'secondary'} onClick={() => setActiveTab('cards')}>
-          <ArrowLeftRight className="w-4 h-4 mr-2" /> Stock Card (Mutasi)
+          <ArrowLeftRight className="w-4 h-4 mr-2" /> {tr('Kartu Stok (Mutasi)', 'Stock Card')}
         </Button>
         <Button variant={activeTab === 'adjust' ? 'primary' : 'secondary'} onClick={() => setActiveTab('adjust')}>
           <CheckCircle2 className="w-4 h-4 mr-2" /> {tr('Penyesuaian Stok & Opname', 'Stock Adjustment & Stock Count')}
@@ -605,7 +605,7 @@ export function MaterialsPage() {
               <div><strong>{tr('Status:', 'Status:')}</strong> <StatusBadge status={receiptDetail.status === 'POSTED' ? 'success' : receiptDetail.status === 'DRAFT' ? 'warning' : 'neutral'} label={receiptDetail.status} /></div>
               <div><strong>{tr('Tanggal:', 'Date:')}</strong> {receiptDetail.receipt_date}</div>
               <div><strong>{tr('Gudang:', 'Warehouse:')}</strong> {receiptDetail.warehouse?.name || '-'}</div>
-              <div><strong>{tr('Supplier:', 'Supplier:')}</strong> {receiptDetail.supplier?.name || 'Umum'}</div>
+              <div><strong>{tr('Supplier:', 'Supplier:')}</strong> {receiptDetail.supplier?.name || (en ? 'General' : 'Umum')}</div>
             </div>
             {receiptDetail.notes && <p style={{ fontSize: '0.875rem' }}><strong>{tr('Catatan:', 'Notes:')}</strong> {receiptDetail.notes}</p>}
 
@@ -617,7 +617,7 @@ export function MaterialsPage() {
                     <th style={{ padding: '0.5rem' }}>{tr('Material', 'Material')}</th>
                     <th style={{ padding: '0.5rem' }}>{tr('Jumlah', 'Quantity')}</th>
                     <th style={{ padding: '0.5rem' }}>{tr('Harga Unit', 'Unit Price')}</th>
-                    <th style={{ padding: '0.5rem' }}>Subtotal</th>
+                    <th style={{ padding: '0.5rem' }}>{tr('Subtotal', 'Subtotal')}</th>
                   </tr>
                 </thead>
                 <tbody>
