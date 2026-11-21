@@ -1,5 +1,5 @@
 import { getLocalDateInputValue } from '../utils/date';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Plus, Eye, Edit, CheckCircle, XCircle, Archive } from 'lucide-react';
 import { useAuth, permissions } from '../auth';
 import { useLanguage } from '../i18n';
@@ -64,6 +64,7 @@ export function CustomerPoPage() {
   const [pos, setPos] = useState<CustomerPo[]>([]);
   const [master, setMaster] = useState<MasterData>({ companies: [], customers: [], items: [] });
   const [loading, setLoading] = useState(true);
+  const loadRequestRef = useRef(0);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
@@ -124,6 +125,7 @@ export function CustomerPoPage() {
   const canClose = hasPermission(permissions.poClose);
 
   const loadData = async (page = currentPage) => {
+    const requestId = ++loadRequestRef.current;
     setLoading(true);
     setError('');
     try {
@@ -138,6 +140,7 @@ export function CustomerPoPage() {
         custodyApi.customerItems(),
       ]);
 
+      if (requestId !== loadRequestRef.current) return;
       setPos(poRes.data || []);
       setCurrentPage(poRes.current_page || 1);
       setLastPage(poRes.last_page || 1);
@@ -149,9 +152,9 @@ export function CustomerPoPage() {
         items: itemsRes.data || [],
       });
     } catch (err) {
-      setError(apiError(err));
+      if (requestId === loadRequestRef.current) setError(apiError(err));
     } finally {
-      setLoading(false);
+      if (requestId === loadRequestRef.current) setLoading(false);
     }
   };
 
