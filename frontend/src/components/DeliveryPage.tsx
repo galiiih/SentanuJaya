@@ -1,5 +1,5 @@
 import { getLocalDateInputValue } from '../utils/date';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Plus, Eye, Send, FileCheck, Printer } from 'lucide-react';
 import { useAuth, permissions } from '../auth';
 import { useLanguage } from '../i18n';
@@ -72,6 +72,8 @@ export function DeliveryPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
 
   const [loading, setLoading] = useState(true);
+  const loadRequestRef = useRef(0);
+  const acceptanceRequestRef = useRef(0);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
@@ -103,14 +105,15 @@ export function DeliveryPage() {
   const canAcceptPost = hasPermission(permissions.acceptancePost);
 
   const loadAcceptances = async (doId: string) => {
+    const requestId = ++acceptanceRequestRef.current;
     setAcceptanceError('');
     setDoAcceptances([]);
     try {
       const res = await acceptanceApi.list({ delivery_order_id: doId });
-      setDoAcceptances(res.data || []);
+      if (requestId === acceptanceRequestRef.current) setDoAcceptances(res.data || []);
     } catch (err) {
       // Do not present a failed request as an empty acceptance history.
-      setAcceptanceError(apiError(err));
+      if (requestId === acceptanceRequestRef.current) setAcceptanceError(apiError(err));
     }
   };
 
@@ -130,6 +133,7 @@ export function DeliveryPage() {
   const [draft, setDraft] = useState<DeliveryDraftForm>(emptyDraft);
 
   const loadData = async () => {
+    const requestId = ++loadRequestRef.current;
     setLoading(true);
     setError('');
     try {
@@ -141,15 +145,16 @@ export function DeliveryPage() {
         custodyApi.customers(),
       ]);
 
+      if (requestId !== loadRequestRef.current) return;
       setDeliveryOrders(doRes.data || []);
       setActivePos(poRes.data || []);
       setCompanies(compRes.data || []);
       setBranches(branchRes.data || []);
       setCustomers(custRes.data || []);
     } catch (err) {
-      setError(apiError(err));
+      if (requestId === loadRequestRef.current) setError(apiError(err));
     } finally {
-      setLoading(false);
+      if (requestId === loadRequestRef.current) setLoading(false);
     }
   };
 
