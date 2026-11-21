@@ -1,5 +1,5 @@
 import { getLocalDateInputValue } from '../utils/date';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Plus, Eye } from 'lucide-react';
 import { useAuth, permissions } from '../auth';
 import { useLanguage } from '../i18n';
@@ -62,6 +62,7 @@ export function PaymentPage() {
   const [customerId, setCustomerId] = useState('');
   const [outstanding, setOutstanding] = useState<CustomerOutstanding | null>(null);
   const [loadingOutstanding, setLoadingOutstanding] = useState(false);
+  const outstandingRequestRef = useRef(0);
   const [allocations, setAllocations] = useState<AllocationRow[]>([]);
   const [paymentDate, setPaymentDate] = useState(getLocalDateInputValue());
   const [method, setMethod] = useState<string>(METHODS[0]);
@@ -86,10 +87,19 @@ export function PaymentPage() {
   useEffect(() => { loadPayments(); }, [loadPayments]);
 
   const loadOutstanding = async (cid: string) => {
-    if (!cid) { setOutstanding(null); setAllocations([]); return; }
+    const requestId = ++outstandingRequestRef.current;
+    setFormError('');
+    setOutstanding(null);
+    setAllocations([]);
+    if (!cid) {
+      setLoadingOutstanding(false);
+      return;
+    }
+
     setLoadingOutstanding(true);
     try {
       const os = await paymentApi.customerOutstanding(cid);
+      if (requestId !== outstandingRequestRef.current) return;
       setOutstanding(os);
       setAllocations(os.invoices.filter(inv => inv.amount_due > 0).map(inv => ({
         invoice_id: inv.id,
@@ -97,8 +107,11 @@ export function PaymentPage() {
         amount_due: inv.amount_due,
         amount: '',
       })));
-    } catch (e) { setFormError(apiError(e)); }
-    setLoadingOutstanding(false);
+    } catch (e) {
+      if (requestId === outstandingRequestRef.current) setFormError(apiError(e));
+    } finally {
+      if (requestId === outstandingRequestRef.current) setLoadingOutstanding(false);
+    }
   };
 
   const openCreate = async () => {
@@ -112,7 +125,12 @@ export function PaymentPage() {
     setNotes('');
     setFormError('');
     if (!customers.length) {
-      try { const c = await custodyApi.customers(); setCustomers(c.data); } catch {}
+      try {
+        const c = await custodyApi.customers();
+        setCustomers(c.data);
+      } catch (e) {
+        setFormError(apiError(e));
+      }
     }
   };
 
@@ -177,7 +195,7 @@ export function PaymentPage() {
     { id: 'payment_number', header: t.payment.paymentNumber, cell: (row) => row.payment_number, sortValue: (row) => row.payment_number },
     { id: 'customer', header: t.common.customer, cell: (row) => row.customer?.name ?? '-', sortValue: (row) => row.customer?.name ?? '' },
     { id: 'payment_date', header: t.payment.paymentDate, cell: (row) => row.payment_date, sortValue: (row) => row.payment_date },
-    { id: 'method', header: t.payment.method, cell: (row) => row.method.replace('_', ' ') },
+    { id: 'method', header: t.payment.method, cell: (row) => formatMethod(row.method) },
     { id: 'amount', header: t.payment.amount, cell: (row) => formatCurrency(row.amount), sortValue: (row) => row.amount, align: 'right' },
     { id: 'reference_no', header: t.payment.referenceNo, cell: (row) => row.reference_no || '-' },
     { id: 'status', header: t.common.status, cell: (row) => <StatusBadge status={row.status} />, sortValue: (row) => row.status },
