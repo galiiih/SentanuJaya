@@ -324,7 +324,7 @@ export function MasterDataPage() {
       header: tr('Aksi', 'Actions'),
       cell: (row: any) => (
         <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <Button variant="ghost" onClick={() => openEdit(row)} title="Edit" aria-label="Edit"><Edit size={16} /></Button>
+          <Button variant="ghost" onClick={() => openEdit(row)} title={tr('Edit', 'Edit')} aria-label={tr('Edit', 'Edit')}><Edit size={16} /></Button>
           <Button variant="ghost" onClick={() => handleDelete(row)} title={tr('Hapus', 'Delete')} aria-label={tr('Hapus', 'Delete')} style={{ color: 'var(--color-danger)' }}><Trash2 size={16} /></Button>
         </div>
       )
@@ -345,14 +345,14 @@ export function MasterDataPage() {
           { id: 'code', header: tr('Kode Cabang', 'Branch Code'), cell: (row: any) => row.code || '-' },
           { id: 'name', header: tr('Nama Cabang', 'Branch Name'), cell: (row: any) => row.name || '-' },
           { id: 'address', header: tr('Alamat', 'Address'), cell: (row: any) => row.address || '-' },
-          { id: 'is_active', header: 'Status', cell: (row: any) => row.is_active ? tr('Aktif', 'Active') : tr('Nonaktif', 'Inactive') },
+          { id: 'is_active', header: tr('Status', 'Status'), cell: (row: any) => row.is_active ? tr('Aktif', 'Active') : tr('Nonaktif', 'Inactive') },
           ...actionColumn
         ];
       case 'customers':
         return [
           { id: 'code', header: tr('Kode Customer', 'Customer Code'), cell: (row: any) => row.code || '-' },
           { id: 'name', header: tr('Nama Customer', 'Customer Name'), cell: (row: any) => row.name || '-' },
-          { id: 'phone', header: 'Telepon', cell: (row: any) => row.phone || '-' },
+          { id: 'phone', header: tr('Telepon', 'Phone'), cell: (row: any) => row.phone || '-' },
           { id: 'email', header: 'Email', cell: (row: any) => row.email || '-' },
           ...actionColumn
         ];
@@ -361,7 +361,7 @@ export function MasterDataPage() {
           { id: 'customer', header: 'Customer', cell: (row: any) => row.customer?.name || '-' },
           { id: 'name', header: tr('Nama Kontak', 'Contact Name'), cell: (row: any) => row.name || '-' },
           { id: 'title', header: tr('Jabatan', 'Position'), cell: (row: any) => row.title || '-' },
-          { id: 'phone', header: 'Telepon', cell: (row: any) => row.phone || '-' },
+          { id: 'phone', header: tr('Telepon', 'Phone'), cell: (row: any) => row.phone || '-' },
           ...actionColumn
         ];
       case 'customer_items':
@@ -406,14 +406,14 @@ export function MasterDataPage() {
           { id: 'code', header: tr('Kode Gudang', 'Warehouse Code'), cell: (row: any) => row.code || '-' },
           { id: 'name', header: tr('Nama Gudang', 'Warehouse Name'), cell: (row: any) => row.name || '-' },
           { id: 'branch', header: tr('Cabang', 'Branch'), cell: (row: any) => row.branch?.name || '-' },
-          { id: 'is_active', header: 'Status', cell: (row: any) => row.is_active ? tr('Aktif', 'Active') : tr('Nonaktif', 'Inactive') },
+          { id: 'is_active', header: tr('Status', 'Status'), cell: (row: any) => row.is_active ? tr('Aktif', 'Active') : tr('Nonaktif', 'Inactive') },
           ...actionColumn
         ];
       case 'suppliers':
         return [
           { id: 'code', header: tr('Kode Supplier', 'Supplier Code'), cell: (row: any) => row.code || '-' },
           { id: 'name', header: tr('Nama Supplier', 'Supplier Name'), cell: (row: any) => row.name || '-' },
-          { id: 'phone', header: 'Telepon', cell: (row: any) => row.phone || '-' },
+          { id: 'phone', header: tr('Telepon', 'Phone'), cell: (row: any) => row.phone || '-' },
           { id: 'email', header: 'Email', cell: (row: any) => row.email || '-' },
           ...actionColumn
         ];
