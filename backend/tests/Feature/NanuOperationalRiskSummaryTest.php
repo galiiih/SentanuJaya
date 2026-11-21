@@ -35,7 +35,14 @@ class NanuOperationalRiskSummaryTest extends TestCase
         $this->assertSame('Operational Risk Summary', $result['title']);
         $this->assertSame(['Indicator', 'Count', 'Status', 'Details'], $result['table']['columns']);
         $this->assertStringContainsString('Operational review completed', $result['summary']);
-        $this->assertCount(6, $result['metrics']);
+        $this->assertCount(5, $result['metrics']);
+        $this->assertSame([
+            'Open Customer POs',
+            'Work Orders (Active / Overdue)',
+            'Pending Deliveries',
+            'Outstanding Invoices',
+            'Materials at Minimum Stock',
+        ], array_column($result['metrics'], 'label'));
     }
 
     public function test_operational_risk_summary_defaults_to_indonesian_output(): void
