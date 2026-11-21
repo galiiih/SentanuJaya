@@ -519,17 +519,12 @@ class PuffyAiService
                             'detail' => $openPoCount > 0 ? "{$openPoCount} Customer POs are OPEN." : 'No OPEN Customer POs.',
                         ],
                         [
-                            'label' => 'Work orders in progress',
+                            'label' => 'Work orders',
                             'value' => $activeWorkOrderCount,
-                            'status' => $activeWorkOrderCount > 0 ? 'In progress' : 'No activity',
-                            'detail' => $activeWorkOrderCount > 0 ? "{$activeWorkOrderCount} work orders are OPEN or IN_PROGRESS." : 'No work orders are currently in progress.',
+                            'status' => $overdueWorkOrderCount > 0 ? 'Overdue' : ($activeWorkOrderCount > 0 ? 'In progress' : 'No activity'),
+                            'detail' => "{$activeWorkOrderCount} work orders are OPEN or IN_PROGRESS; {$overdueWorkOrderCount} are overdue.",
                         ],
-                        [
-                            'label' => 'Overdue work orders',
-                            'value' => $overdueWorkOrderCount,
-                            'status' => $overdueWorkOrderCount > 0 ? 'Attention required' : 'On schedule',
-                            'detail' => $overdueWorkOrderCount > 0 ? "{$overdueWorkOrderCount} active work orders have passed their target date." : 'No active work orders are past their target date.',
-                        ],
+                        
                         [
                             'label' => 'Active delivery orders',
                             'value' => $activeDeliveryCount,
@@ -556,17 +551,12 @@ class PuffyAiService
                             'detail' => $openPoCount > 0 ? "{$openPoCount} Customer PO berstatus OPEN." : 'Belum ada Customer PO berstatus OPEN.',
                         ],
                         [
-                            'label' => 'Work Order berjalan',
+                            'label' => 'Work Order',
                             'value' => $activeWorkOrderCount,
-                            'status' => $activeWorkOrderCount > 0 ? 'Sedang berjalan' : 'Tidak ada aktivitas',
-                            'detail' => $activeWorkOrderCount > 0 ? "{$activeWorkOrderCount} Work Order berstatus OPEN atau IN_PROGRESS." : 'Tidak ada Work Order yang sedang berjalan.',
+                            'status' => $overdueWorkOrderCount > 0 ? 'Ada yang terlambat' : ($activeWorkOrderCount > 0 ? 'Sedang berjalan' : 'Tidak ada aktivitas'),
+                            'detail' => "{$activeWorkOrderCount} Work Order berstatus OPEN atau IN_PROGRESS; {$overdueWorkOrderCount} di antaranya terlambat.",
                         ],
-                        [
-                            'label' => 'Work Order terlambat',
-                            'value' => $overdueWorkOrderCount,
-                            'status' => $overdueWorkOrderCount > 0 ? 'Perlu tindak lanjut' : 'Sesuai target',
-                            'detail' => $overdueWorkOrderCount > 0 ? "{$overdueWorkOrderCount} Work Order aktif telah melewati target tanggal selesai." : 'Tidak ada Work Order aktif yang melewati target tanggal selesai.',
-                        ],
+                        
                         [
                             'label' => 'Surat Jalan aktif',
                             'value' => $activeDeliveryCount,
@@ -603,8 +593,7 @@ class PuffyAiService
                         'hasData' => true,
                         'metrics' => [
                             ['label' => $isEnglish ? 'Open Customer POs' : 'Customer PO OPEN', 'value' => (string) $openPoCount],
-                            ['label' => $isEnglish ? 'Work Orders in Progress' : 'WO Berjalan', 'value' => (string) $activeWorkOrderCount],
-                            ['label' => $isEnglish ? 'Overdue Work Orders' : 'WO Terlambat', 'value' => (string) $overdueWorkOrderCount],
+                            ['label' => $isEnglish ? 'Work Orders (Active / Overdue)' : 'WO (Berjalan / Terlambat)', 'value' => $activeWorkOrderCount.' / '.$overdueWorkOrderCount],
                             ['label' => $isEnglish ? 'Pending Deliveries' : 'SJ Menunggu Pengiriman', 'value' => (string) $activeDeliveryCount],
                             ['label' => $isEnglish ? 'Outstanding Invoices' : 'Invoice Outstanding', 'value' => (string) $outstandingInvoiceCount],
                             ['label' => $isEnglish ? 'Materials at Minimum Stock' : 'Stok Minimum', 'value' => (string) $lowStockCount],
