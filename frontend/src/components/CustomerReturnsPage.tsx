@@ -1,5 +1,5 @@
 import { getLocalDateInputValue } from '../utils/date';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Plus, Send } from 'lucide-react';
 import { useAuth, permissions } from '../auth';
 import { useLanguage } from '../i18n';
@@ -21,17 +21,28 @@ export function CustomerReturnsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const loadRequestRef = useRef(0);
   const selected = useMemo(() => orders.find((o) => o.id === selectedId), [orders, selectedId]);
 
   const load = async () => {
-    setLoading(true); setError('');
+    const requestId = ++loadRequestRef.current;
+    setLoading(true);
+    setError('');
     try {
       const [doResult, returnResult] = await Promise.all([deliveryOrderApi.list(), customerReturnApi.list()]);
+      if (requestId !== loadRequestRef.current) return;
       setOrders((doResult.data || []).filter((o: DeliveryOrderRecord) => ['DELIVERED', 'CLOSED'].includes(o.status)));
       setReturns(returnResult.data || []);
-    } catch (e) { setError(apiError(e)); } finally { setLoading(false); }
+    } catch (e) {
+      if (requestId === loadRequestRef.current) setError(apiError(e));
+    } finally {
+      if (requestId === loadRequestRef.current) setLoading(false);
+    }
   };
-  useEffect(() => { void load(); }, []);
+  useEffect(() => {
+    void load();
+    return () => { loadRequestRef.current += 1; };
+  }, []);
 
   const canCreate = hasPermission(permissions.returnCreate);
   const canPost = hasPermission(permissions.returnPost);
