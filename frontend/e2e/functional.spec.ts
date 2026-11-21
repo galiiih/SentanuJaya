@@ -589,8 +589,19 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
 
     await lineRow.getByRole('button', { name: 'Edit', exact: true }).click();
     dialog = page.getByRole('dialog');
-    await dialog.getByPlaceholder('1500000').fill(editedPrice);
+    const editedPriceInput = dialog.getByPlaceholder('1500000');
+    await editedPriceInput.fill(editedPrice);
+    await expect(editedPriceInput).toHaveValue(editedPrice);
+
+    const priceUpdateResponsePromise = page.waitForResponse(response =>
+      response.request().method() === 'PATCH' && response.url().includes('/api/v1/price-list-lines/'),
+    );
     await dialog.getByRole('button', { name: /Simpan Data/i }).click();
+    const priceUpdateResponse = await priceUpdateResponsePromise;
+    const priceUpdatePayload = priceUpdateResponse.request().postDataJSON() as { unit_price?: number };
+    expect(priceUpdateResponse.status(), await priceUpdateResponse.text()).toBe(200);
+    expect(Number(priceUpdatePayload.unit_price)).toBe(1850000);
+
     lineRow = page.locator('tr').filter({ hasText: listName }).filter({ hasText: itemName });
     await expect(lineRow).toContainText('1.850.000', { timeout: 10000 });
 
