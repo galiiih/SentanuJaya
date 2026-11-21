@@ -1,5 +1,5 @@
 import { getLocalDateInputValue } from '../utils/date';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Plus, Eye, Send, XCircle, Printer } from 'lucide-react';
 import { useAuth, permissions } from '../auth';
 import { useLanguage } from '../i18n';
@@ -70,6 +70,7 @@ export function InvoicingPage() {
   const [submitting, setSubmitting] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [loadingDos, setLoadingDos] = useState(false);
+  const eligibleDosRequestRef = useRef(0);
 
   /* ── Detail ── */
   const [detail, setDetail] = useState<InvoiceDetailRecord | null>(null);
@@ -79,15 +80,26 @@ export function InvoicingPage() {
   const [cancelTarget, setCancelTarget] = useState<InvoiceRecord | null>(null);
 
   const loadEligibleDos = async (cid: string) => {
-    if (!cid) { setEligibleDos([]); setSelectedDoIds([]); return; }
+    const requestId = ++eligibleDosRequestRef.current;
+    setFormError('');
+    setEligibleDos([]);
+    setSelectedDoIds([]);
+    if (!cid) {
+      setLoadingDos(false);
+      return;
+    }
+
     setLoadingDos(true);
     try {
-      // Use backend endpoint that computes actual invoiceable qty per line
+      // Use backend endpoint that computes actual invoiceable qty per line.
       const res = await invoiceApi.eligibleDeliveryOrders(cid);
+      if (requestId !== eligibleDosRequestRef.current) return;
       setEligibleDos(res);
-      setSelectedDoIds([]);
-    } catch (e) { setFormError(apiError(e)); }
-    setLoadingDos(false);
+    } catch (e) {
+      if (requestId === eligibleDosRequestRef.current) setFormError(apiError(e));
+    } finally {
+      if (requestId === eligibleDosRequestRef.current) setLoadingDos(false);
+    }
   };
 
   const openCreate = async () => {
@@ -99,7 +111,12 @@ export function InvoicingPage() {
     setTaxCondition(3);
     setFormError('');
     if (!customers.length) {
-      try { const c = await custodyApi.customers(); setCustomers(c.data); } catch {}
+      try {
+        const c = await custodyApi.customers();
+        setCustomers(c.data);
+      } catch (e) {
+        setFormError(apiError(e));
+      }
     }
   };
 
@@ -111,7 +128,7 @@ export function InvoicingPage() {
     setFormError('');
     if (!customerId) { setFormError(t.invoice.selectCustomer); return; }
     if (!selectedDoIds.length) { setFormError(t.invoice.selectDeliveryOrders); return; }
-    if (!invoiceDate) { setFormError(t.invoice.invoiceDate + ' wajib diisi.'); return; }
+    if (!invoiceDate) { setFormError(tr(`${t.invoice.invoiceDate} wajib diisi.`, `${t.invoice.invoiceDate} is required.`)); return; }
 
     setSubmitting(true);
     try {
