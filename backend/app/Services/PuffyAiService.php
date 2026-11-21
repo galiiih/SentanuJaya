@@ -485,6 +485,7 @@ class PuffyAiService
                     $activeDeliveryCount = DeliveryOrder::whereIn('status', [
                         DeliveryOrder::STATUS_DRAFT,
                         DeliveryOrder::STATUS_SUBMITTED,
+                        DeliveryOrder::STATUS_DELIVERED,
                     ])->count();
                     $outstandingInvoiceCount = Invoice::whereIn('status', [
                         Invoice::STATUS_POSTED,
@@ -530,10 +531,10 @@ class PuffyAiService
                             'detail' => $overdueWorkOrderCount > 0 ? "{$overdueWorkOrderCount} active work orders have passed their target date." : 'No active work orders are past their target date.',
                         ],
                         [
-                            'label' => 'Pending delivery orders',
+                            'label' => 'Active delivery orders',
                             'value' => $activeDeliveryCount,
-                            'status' => $activeDeliveryCount > 0 ? 'In process' : 'No pending deliveries',
-                            'detail' => $activeDeliveryCount > 0 ? "{$activeDeliveryCount} delivery orders are still DRAFT or SUBMITTED." : 'No delivery orders are waiting to be delivered.',
+                            'status' => $activeDeliveryCount > 0 ? 'Active' : 'No active deliveries',
+                            'detail' => $activeDeliveryCount > 0 ? "{$activeDeliveryCount} delivery orders are in the active lifecycle (DRAFT, SUBMITTED, or DELIVERED)." : 'No active delivery orders were found.',
                         ],
                         [
                             'label' => 'Outstanding invoices',
@@ -567,10 +568,10 @@ class PuffyAiService
                             'detail' => $overdueWorkOrderCount > 0 ? "{$overdueWorkOrderCount} Work Order aktif telah melewati target tanggal selesai." : 'Tidak ada Work Order aktif yang melewati target tanggal selesai.',
                         ],
                         [
-                            'label' => 'Surat Jalan menunggu pengiriman',
+                            'label' => 'Surat Jalan aktif',
                             'value' => $activeDeliveryCount,
-                            'status' => $activeDeliveryCount > 0 ? 'Dalam proses' : 'Tidak ada pengiriman tertunda',
-                            'detail' => $activeDeliveryCount > 0 ? "{$activeDeliveryCount} Surat Jalan masih berstatus DRAFT atau SUBMITTED." : 'Tidak ada Surat Jalan yang menunggu pengiriman.',
+                            'status' => $activeDeliveryCount > 0 ? 'Aktif' : 'Tidak ada Surat Jalan aktif',
+                            'detail' => $activeDeliveryCount > 0 ? "{$activeDeliveryCount} Surat Jalan berada dalam siklus aktif (DRAFT, SUBMITTED, atau DELIVERED)." : 'Tidak ada Surat Jalan aktif.',
                         ],
                         [
                             'label' => 'Invoice outstanding',
