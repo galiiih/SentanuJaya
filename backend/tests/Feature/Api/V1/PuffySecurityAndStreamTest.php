@@ -133,7 +133,7 @@ class PuffySecurityAndStreamTest extends TestCase
         $result = app(PuffyAiService::class)->executeTool('get_operational_risk_summary');
 
         $this->assertTrue($result['hasData']);
-        $this->assertSame('Ringkasan Kondisi Operasional', $result['title']);
+        $this->assertSame('Ringkasan Risiko Operasional', $result['title']);
         $this->assertCount(5, $result['table']['rows']);
         $this->assertSame([
             'Customer PO OPEN',
