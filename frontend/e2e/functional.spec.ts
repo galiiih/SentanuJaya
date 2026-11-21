@@ -1064,7 +1064,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await page.getByRole('button', { name: /Pembayaran Baru|Buat Pembayaran|New Payment/i }).click();
     dialog = page.getByRole('dialog');
     await dialog.locator('select').first().selectOption(customer.id);
-    const allocation = dialog.locator('input[type="number"]').first();
+    const allocation = dialog.locator('input[inputmode="decimal"]').first();
     await expect(allocation).toBeVisible({ timeout: 10000 });
     await allocation.fill('1250');
     await dialog.getByPlaceholder('TRF-001').fill('E2E-TRANSFER-0001');
