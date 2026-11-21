@@ -137,7 +137,7 @@ class PuffySecurityAndStreamTest extends TestCase
         $this->assertCount(5, $result['table']['rows']);
         $this->assertSame([
             'Customer PO OPEN',
-            'Work Order berjalan',
+            'Work Order',
             'Surat Jalan aktif',
             'Invoice outstanding',
             'Material stok minimum',
