@@ -989,7 +989,8 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
           invoices: [{
             id: invoice?.id ?? 'e2e-invoice-id', invoice_number: invoice?.invoice_number ?? 'INV-E2E-0001',
             invoice_date: invoice?.invoice_date ?? '2026-10-22', total_amount: 1250,
-            amount_paid: payment?.amount ?? 0, amount_due: Math.max(0, 1250 - (payment?.amount ?? 0)),
+            amount_paid: payment?.amount ?? 0,
+            amount_due: Math.max(0, 1250 - (payment?.amount ?? 0)),
             status: payment?.amount >= 1250 ? 'PAID' : payment?.amount ? 'PARTIALLY_PAID' : 'POSTED',
           }],
         });
