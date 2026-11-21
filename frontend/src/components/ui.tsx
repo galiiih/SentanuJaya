@@ -232,11 +232,13 @@ type ToastTone = 'info' | 'success' | 'warning' | 'danger';
 
 export function Toast({ open, message, tone = 'info', onClose, duration = 4000 }: { open: boolean; message: string; tone?: ToastTone; onClose: () => void; duration?: number }) {
   const { language } = useLanguage();
+  const onCloseRef = useRef(onClose);
+  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
   useEffect(() => {
     if (!open) return;
-    const timeout = window.setTimeout(onClose, duration);
+    const timeout = window.setTimeout(() => onCloseRef.current(), duration);
     return () => window.clearTimeout(timeout);
-  }, [duration, onClose, open]);
+  }, [duration, open]);
 
   if (!open) return null;
   return <div className={`toast toast--${tone}`} role={tone === 'danger' ? 'alert' : 'status'}><span>{message}</span><button className="icon-button toast__close" onClick={onClose} aria-label={language === 'en' ? 'Close notification' : 'Tutup notifikasi'}><X size={16} /></button></div>;
