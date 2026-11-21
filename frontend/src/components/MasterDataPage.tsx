@@ -395,7 +395,7 @@ export function MasterDataPage() {
         ];
       case 'materials':
         return [
-          { id: 'code', header: 'Kode SKU', cell: (row: any) => row.code || '-' },
+          { id: 'code', header: tr('Kode SKU', 'SKU Code'), cell: (row: any) => row.code || '-' },
           { id: 'name', header: tr('Nama Material / Cat', 'Material / Paint Name'), cell: (row: any) => row.name || '-' },
           { id: 'unit', header: tr('Satuan', 'Unit'), cell: (row: any) => row.unit || '-' },
           { id: 'min_stock', header: tr('Minimum Stok', 'Minimum Stock'), cell: (row: any) => formatStockQuantity(row.minimum_stock ?? row.min_stock, en ? 'en-US' : 'id-ID') },
@@ -674,7 +674,7 @@ export function MasterDataPage() {
                 <FormField label={tr('Nama Material / Cat', 'Material / Paint Name')} required>
                   <Input value={formData.name || ''} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="Cat Polyurethane Hitam Glossy" required />
                 </FormField>
-                <FormField label="Kategori" required>
+                <FormField label={tr('Kategori', 'Category')} required>
                   <Input value={formData.category || 'GENERAL'} onChange={e => setFormData({ ...formData, category: e.target.value })} placeholder="GENERAL / RAW_MATERIAL / PAINT" required />
                 </FormField>
                 <FormField label={tr('Satuan (Unit)', 'Unit of Measure')} required>
@@ -719,7 +719,7 @@ export function MasterDataPage() {
                 <FormField label={tr('Nama Supplier', 'Supplier Name')} required>
                   <Input value={formData.name || ''} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="PT Warna Abadi Kimia" required />
                 </FormField>
-                <FormField label="Nomor Telepon">
+                <FormField label={tr('Nomor Telepon', 'Phone Number')}>
                   <Input value={formData.phone || ''} onChange={e => setFormData({ ...formData, phone: e.target.value })} placeholder="021-4448888" />
                 </FormField>
                 <FormField label="Email">
