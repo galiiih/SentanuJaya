@@ -564,7 +564,15 @@ export function NumericInput({
         onValueChange(raw, numeric !== null && Number.isFinite(numeric) ? numeric : null);
       }}
       onBlur={(event) => {
-        event.currentTarget.setCustomValidity(constraintMessage(rawValue));
+        // Commit the final draft on blur as well as onChange. This protects
+        // controlled forms from losing the last edit if focus changes while
+        // React is reconciling a parent form update.
+        const committedRaw = parseInput(draftValue);
+        const committedNumber = committedRaw === '' || committedRaw === '-' || committedRaw === '.' || committedRaw === '-.'
+          ? null
+          : Number(committedRaw);
+        onValueChange(committedRaw, committedNumber !== null && Number.isFinite(committedNumber) ? committedNumber : null);
+        event.currentTarget.setCustomValidity(constraintMessage(committedRaw));
         setFocused(false);
         onBlur?.(event);
       }}
