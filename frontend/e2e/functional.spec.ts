@@ -591,7 +591,9 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     dialog = page.getByRole('dialog');
     const editedPriceInput = dialog.getByPlaceholder('1500000');
     await editedPriceInput.fill(editedPrice);
-    await expect(editedPriceInput).toHaveValue(editedPrice);
+    // Blur commits the canonical numeric value to the parent form state.
+    await editedPriceInput.press('Tab');
+    await expect(editedPriceInput).toHaveAttribute('aria-valuenow', editedPrice);
 
     const priceUpdateResponsePromise = page.waitForResponse(response =>
       response.request().method() === 'PATCH' && response.url().includes('/api/v1/price-list-lines/'),
