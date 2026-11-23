@@ -558,7 +558,8 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     const listCode = `E2E-PLL-LIST-${suffix}`;
     const listName = `Price Line List ${suffix}`;
     const price = '1750000';
-    const editedPrice = '1850000';
+    const editedPrice = '1.850.000';
+    const editedPriceCanonical = '1850000';
 
     await login(page);
     await page.goto('/master');
@@ -621,10 +622,10 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     const editedPriceInput = dialog.getByPlaceholder('1500000');
     await editedPriceInput.fill(editedPrice);
     // The controlled value must reflect the edit before blur or submit.
-    await expect(editedPriceInput).toHaveValue(editedPrice);
-    await expect(editedPriceInput).toHaveJSProperty('valueAsNumber', 1850000);
+    await expect(editedPriceInput).toHaveValue(editedPriceCanonical);
+    await expect(editedPriceInput).toHaveAttribute('aria-valuenow', editedPriceCanonical);
     await editedPriceInput.press('Tab');
-    await expect(editedPriceInput).toHaveJSProperty('valueAsNumber', 1850000);
+    await expect(editedPriceInput).toHaveAttribute('aria-valuenow', editedPriceCanonical);
 
     const priceUpdateResponsePromise = page.waitForResponse(response =>
       response.request().method() === 'PATCH' && response.url().includes('/api/v1/price-list-lines/'),
