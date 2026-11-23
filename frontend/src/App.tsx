@@ -15,6 +15,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  MoreHorizontal,
   Moon,
   Package,
   Plus,
@@ -207,6 +208,79 @@ function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => 
   );
 }
 
+
+function MobileBottomBar() {
+  const { hasPermission, user, logout } = useAuth();
+  const { t, language } = useLanguage();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [moreOpen, setMoreOpen] = useState(false);
+  const en = language === 'en';
+
+  const candidates = [
+    { path: '/custody', label: t.nav.custody, icon: Package, permission: permissions.custodyView },
+    { path: '/customer-po', label: t.nav.customerPo, icon: FileText, permission: permissions.poView },
+    { path: '/delivery', label: t.nav.delivery, icon: Truck, permission: permissions.deliveryView },
+    { path: '/invoicing', label: t.nav.invoicing, icon: Receipt, permission: permissions.invoiceView },
+    { path: '/payments', label: t.nav.payments, icon: CircleDollarSign, permission: permissions.paymentView },
+    { path: '/reports', label: t.nav.reports, icon: FileCheck, permission: permissions.reportView },
+    { path: '/materials', label: t.nav.materials, icon: Boxes, permission: permissions.materialView },
+    { path: '/master', label: t.nav.master, icon: Package, permission: permissions.dashboardView },
+    { path: '/templates', label: t.nav.templates, icon: FileText, permission: permissions.invoiceView },
+    { path: '/knowledge', label: t.nav.knowledge, icon: BookOpen, permission: permissions.dashboardView },
+    { path: '/documentation', label: en ? 'ERP Documentation' : 'Panduan ERP', icon: BookOpen, permission: permissions.dashboardView },
+    { path: '/users', label: t.nav.users, icon: Users, permission: permissions.userManage },
+  ];
+  const available = candidates.filter((item) => hasPermission(item.permission));
+  const primaryPaths = ['/custody', '/customer-po', '/delivery'];
+  const primary = primaryPaths.map((path) => available.find((item) => item.path === path) ?? null);
+  const extraItems = available.filter((item) => !primaryPaths.includes(item.path));
+  const isDashboardActive = location.pathname === '/dashboard';
+  const moreActive = moreOpen || extraItems.some((item) => location.pathname === item.path) || ['/customer-returns'].includes(location.pathname);
+
+  const closeMore = () => setMoreOpen(false);
+  const signOut = () => { closeMore(); logout(); navigate('/login', { replace: true }); };
+
+  return (
+    <>
+      {moreOpen && <button type="button" className="mobile-more-backdrop" aria-label={en ? 'Close more menu' : 'Tutup menu lainnya'} onClick={closeMore} />}
+      {moreOpen && (
+        <section className="mobile-more-panel" aria-label={en ? 'More navigation' : 'Navigasi lainnya'}>
+          <div className="mobile-more-panel__header">
+            <span className="sidebar__avatar" aria-hidden="true">{user?.name.slice(0, 2).toUpperCase()}</span>
+            <div><strong>{user?.name}</strong><span>{user?.role === 'ADMIN' ? 'Administrator' : user?.role}</span></div>
+          </div>
+          <nav className="mobile-more-panel__links" aria-label={en ? 'Other pages' : 'Halaman lainnya'}>
+            {extraItems.map((item) => {
+              const Icon = item.icon;
+              return <NavLink key={item.path} to={item.path} onClick={closeMore} className={({ isActive }) => `mobile-more-panel__link${isActive ? ' mobile-more-panel__link--active' : ''}`}><Icon size={17} aria-hidden="true" /><span>{item.label}</span></NavLink>;
+            })}
+            {hasPermission(permissions.returnView) && <NavLink to="/customer-returns" onClick={closeMore} className={({ isActive }) => `mobile-more-panel__link${isActive ? ' mobile-more-panel__link--active' : ''}`}><RotateCcw size={17} aria-hidden="true" /><span>{t.nav.customerReturns}</span></NavLink>}
+          </nav>
+          <button type="button" className="mobile-more-panel__logout" onClick={signOut}><LogOut size={16} aria-hidden="true" />{t.nav.logout}</button>
+        </section>
+      )}
+      <nav className="mobile-bottom-bar" aria-label={en ? 'Primary navigation' : 'Navigasi utama'}>
+        <div className="mobile-bottom-bar__slot">
+          {primary[0] && (() => { const Icon = primary[0].icon; return <NavLink to={primary[0].path} aria-label={primary[0].label} title={primary[0].label} className={({ isActive }) => `mobile-bottom-bar__item${isActive ? ' mobile-bottom-bar__item--active' : ''}`}><Icon size={20} /><span>{primary[0].label}</span></NavLink>; })()}
+        </div>
+        <div className="mobile-bottom-bar__slot">
+          {primary[1] && (() => { const Icon = primary[1].icon; return <NavLink to={primary[1].path} aria-label={primary[1].label} title={primary[1].label} className={({ isActive }) => `mobile-bottom-bar__item${isActive ? ' mobile-bottom-bar__item--active' : ''}`}><Icon size={20} /><span>{primary[1].label}</span></NavLink>; })()}
+        </div>
+        <div className="mobile-bottom-bar__slot mobile-bottom-bar__slot--dashboard">
+          <NavLink to="/dashboard" aria-label={t.nav.dashboard} title={t.nav.dashboard} aria-current={isDashboardActive ? 'page' : undefined} className={({ isActive }) => `mobile-bottom-bar__dashboard${isActive ? ' mobile-bottom-bar__dashboard--active' : ''}`}><LayoutDashboard size={22} /><span>{t.nav.dashboard}</span></NavLink>
+        </div>
+        <div className="mobile-bottom-bar__slot">
+          {primary[2] && (() => { const Icon = primary[2].icon; return <NavLink to={primary[2].path} aria-label={primary[2].label} title={primary[2].label} className={({ isActive }) => `mobile-bottom-bar__item${isActive ? ' mobile-bottom-bar__item--active' : ''}`}><Icon size={20} /><span>{primary[2].label}</span></NavLink>; })()}
+        </div>
+        <div className="mobile-bottom-bar__slot">
+          <button type="button" className={`mobile-bottom-bar__item${moreActive ? ' mobile-bottom-bar__item--active' : ''}`} aria-label={en ? 'More' : 'Lainnya'} aria-expanded={moreOpen} onClick={() => setMoreOpen((value) => !value)}><MoreHorizontal size={21} /><span>{en ? 'More' : 'Lainnya'}</span></button>
+        </div>
+      </nav>
+    </>
+  );
+}
+
 function ThemeSwitcher() {
   const { language } = useLanguage();
   const [theme, setTheme] = useState(() => localStorage.getItem('sentanu_theme') || 'light');
@@ -257,14 +331,6 @@ function AuthenticatedLayout() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [intro, setIntro] = useState<'off' | 'wait' | 'wave'>(() => (shouldPlayLoginIntro() ? 'wait' : 'off'));
   useEffect(() => { clearLoginIntro(); }, []);
-  useEffect(() => {
-    if (!mobileNavOpen) return;
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setMobileNavOpen(false);
-    };
-    window.addEventListener('keydown', closeOnEscape);
-    return () => window.removeEventListener('keydown', closeOnEscape);
-  }, [mobileNavOpen]);
   const location = useLocation();
   const { t, language } = useLanguage();
   const en = language === 'en';
@@ -292,12 +358,10 @@ function AuthenticatedLayout() {
   return (
     <>
     <div className={`app-shell${intro !== 'off' ? ' app-shell--intro' : ''}${intro === 'wait' ? ' app-shell--intro-wait' : ''}`} inert={intro !== 'off' ? true : undefined}>
-      <button type="button" className={`sidebar-mobile-overlay${mobileNavOpen ? ' sidebar-mobile-overlay--visible' : ''}`} aria-label={language === 'en' ? 'Close navigation' : 'Tutup navigasi'} tabIndex={mobileNavOpen ? 0 : -1} onClick={() => setMobileNavOpen(false)} />
-      <Sidebar mobileOpen={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
+      <Sidebar mobileOpen={false} onClose={() => undefined} />
       <div className="app-shell__main">
         <header className="app-header">
           <div className="app-header__context">
-            <button type="button" className="icon-button sidebar-mobile-trigger" aria-label={language === 'en' ? 'Open navigation' : 'Buka navigasi'} aria-expanded={mobileNavOpen} onClick={() => setMobileNavOpen((value) => !value)}><Menu size={19} /></button>
             <div><span className="app-header__eyebrow">SENTANU JAYA ERP</span><strong>{pageTitle}</strong></div>
           </div>
           <div className="app-header__account">
@@ -312,6 +376,7 @@ function AuthenticatedLayout() {
         <main className="app-content"><Breadcrumb items={breadcrumbItems} /><Outlet /></main>
       </div>
       <PuffyAssistant />
+      <MobileBottomBar />
     </div>
     {intro !== 'off' && <LoginIntro onWave={() => setIntro((value) => (value === 'wait' ? 'wave' : value))} onDone={() => setIntro('off')} />}
     </>
