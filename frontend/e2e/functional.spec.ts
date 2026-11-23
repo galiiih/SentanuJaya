@@ -81,9 +81,9 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await bottomBar.getByRole('button', { name: /Lainnya|More/i }).click();
     const morePanel = page.locator('.mobile-more-panel');
     await expect(morePanel).toBeVisible();
-    await expect(morePanel.getByRole('link', { name: /Invoice/i })).toBeVisible();
-    await morePanel.getByRole('link', { name: /Invoice/i }).click();
-    await expect(page).toHaveURL(/\\/invoicing$/);
+    await expect(morePanel.getByRole('link', { name: /Laporan|Reports/i })).toBeVisible();
+    await morePanel.getByRole('link', { name: /Laporan|Reports/i }).click();
+    await expect(page).toHaveURL(/\\/reports$/);
     await expect(bottomBar).toBeVisible();
   });
 
