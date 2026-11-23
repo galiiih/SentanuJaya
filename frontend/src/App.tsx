@@ -216,6 +216,19 @@ function MobileMoreMenu() {
   const location = useLocation();
   const [moreOpen, setMoreOpen] = useState(false);
   const en = language === 'en';
+  const primaryPermissionOrder = [
+    ['/custody', permissions.custodyView],
+    ['/customer-po', permissions.poView],
+    ['/delivery', permissions.deliveryView],
+    ['/invoicing', permissions.invoiceView],
+    ['/materials', permissions.materialView],
+    ['/payments', permissions.paymentView],
+    ['/reports', permissions.reportView],
+  ] as const;
+  const primaryPaths = primaryPermissionOrder
+    .filter(([, permission]) => hasPermission(permission))
+    .slice(0, 4)
+    .map(([path]) => path);
 
   const extraItems = [
     { path: '/customer-returns', label: t.nav.customerReturns, icon: RotateCcw, permission: permissions.returnView },
@@ -227,7 +240,7 @@ function MobileMoreMenu() {
     { path: '/knowledge', label: t.nav.knowledge, icon: BookOpen, permission: permissions.dashboardView },
     { path: '/documentation', label: en ? 'ERP Documentation' : 'Panduan ERP', icon: BookOpen, permission: permissions.dashboardView },
     { path: '/users', label: t.nav.users, icon: Users, permission: permissions.userManage },
-  ].filter((item) => hasPermission(item.permission));
+  ].filter((item) => hasPermission(item.permission) && !primaryPaths.includes(item.path));
   const moreActive = extraItems.some((item) => location.pathname === item.path);
   const closeMore = () => setMoreOpen(false);
   const signOut = () => { closeMore(); void logout().catch(() => undefined).finally(() => navigate('/login', { replace: true })); };
@@ -270,8 +283,11 @@ function MobileBottomBar() {
     { path: '/customer-po', label: t.nav.customerPo, shortLabel: 'PO', icon: FileText, permission: permissions.poView },
     { path: '/delivery', label: t.nav.delivery, shortLabel: language === 'en' ? 'Delivery' : 'SJ', icon: Truck, permission: permissions.deliveryView },
     { path: '/invoicing', label: t.nav.invoicing, shortLabel: 'Invoice', icon: Receipt, permission: permissions.invoiceView },
+    { path: '/materials', label: t.nav.materials, shortLabel: language === 'en' ? 'Materials' : 'Material', icon: Boxes, permission: permissions.materialView },
+    { path: '/payments', label: t.nav.payments, shortLabel: language === 'en' ? 'Payments' : 'Bayar', icon: CircleDollarSign, permission: permissions.paymentView },
+    { path: '/reports', label: t.nav.reports, shortLabel: language === 'en' ? 'Reports' : 'Laporan', icon: FileCheck, permission: permissions.reportView },
   ];
-  const primary = candidates.map((item) => hasPermission(item.permission) ? item : null);
+  const primary = candidates.filter((item) => hasPermission(item.permission)).slice(0, 4);
   const renderItem = (item: (typeof candidates)[number] | null) => {
     if (!item) return null;
     const Icon = item.icon;
@@ -280,13 +296,13 @@ function MobileBottomBar() {
 
   return (
     <nav className="mobile-bottom-bar" aria-label={language === 'en' ? 'Primary navigation' : 'Navigasi utama'}>
-      <div className="mobile-bottom-bar__slot">{renderItem(primary[0])}</div>
-      <div className="mobile-bottom-bar__slot">{renderItem(primary[1])}</div>
+      <div className="mobile-bottom-bar__slot">{renderItem(primary[0] ?? null)}</div>
+      <div className="mobile-bottom-bar__slot">{renderItem(primary[1] ?? null)}</div>
       <div className="mobile-bottom-bar__slot mobile-bottom-bar__slot--dashboard">
         <NavLink to="/dashboard" aria-label={t.nav.dashboard} title={t.nav.dashboard} className={({ isActive }) => `mobile-bottom-bar__dashboard${isActive ? ' mobile-bottom-bar__dashboard--active' : ''}`}><LayoutDashboard size={22} aria-hidden="true" /><span>{t.nav.dashboard}</span></NavLink>
       </div>
-      <div className="mobile-bottom-bar__slot">{renderItem(primary[2])}</div>
-      <div className="mobile-bottom-bar__slot">{renderItem(primary[3])}</div>
+      <div className="mobile-bottom-bar__slot">{renderItem(primary[2] ?? null)}</div>
+      <div className="mobile-bottom-bar__slot">{renderItem(primary[3] ?? null)}</div>
     </nav>
   );
 }
