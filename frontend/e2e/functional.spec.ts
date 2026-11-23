@@ -609,6 +609,14 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     lineRow = page.locator('tr').filter({ hasText: listName }).filter({ hasText: itemName });
     await expect(lineRow).toContainText('1.850.000', { timeout: 10000 });
 
+    // Reload from the API-backed table to prove the updated price persisted,
+    // rather than only reflecting optimistic or local component state.
+    await page.reload();
+    await page.getByRole('button', { name: 'Price List Line' }).click();
+    await expect(page.getByText('Daftar Price List Line')).toBeVisible();
+    lineRow = page.locator('tr').filter({ hasText: listName }).filter({ hasText: itemName });
+    await expect(lineRow).toContainText('1.850.000', { timeout: 10000 });
+
     // Delete dependent line before its parent records to respect foreign keys.
     await lineRow.getByRole('button', { name: 'Hapus', exact: true }).click();
     await expect(page.getByText('Hapus Data Master?')).toBeVisible();
