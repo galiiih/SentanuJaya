@@ -13,7 +13,7 @@ import {
   DataTable,
   FormField,
   Input,
-  NumericInput,
+  NumberInput,
   Select,
   Textarea,
   Modal,
@@ -642,7 +642,7 @@ export function MasterDataPage() {
                   </Select>
                 </FormField>
                 <FormField label={tr('Harga Satuan (IDR)', 'Unit Price (IDR)')} required>
-                  <NumericInput min={0} maximumFractionDigits={2} value={formData.unit_price ?? ''} onValueChange={raw => setFormData((current: any) => ({ ...current, unit_price: raw }))} placeholder="1500000" required />
+                  <NumberInput min="0" step="0.01" value={formData.unit_price ?? ''} onChange={event => setFormData((current: any) => ({ ...current, unit_price: event.target.value }))} placeholder="1500000" required />
                 </FormField>
               </>
             )}
