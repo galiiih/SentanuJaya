@@ -8,6 +8,24 @@ export function DocumentationCenterPage() {
   const { language } = useLanguage();
   const en = language === 'en';
   const dateLocale = en ? 'en-US' : 'id-ID';
+  const categoryLabels: Record<string, string> = {
+    dashboard: 'Dashboard',
+    'master-data': 'Master Data',
+    'customer-po': 'Customer Purchase Orders',
+    'material-inventory': 'Materials & Inventory',
+    'work-order-production': 'Work Orders & Production',
+    'quality-control': 'Quality Control',
+    'surat-jalan': 'Delivery Orders',
+    invoice: 'Invoicing',
+    payment: 'Payments',
+    'financial-reports': 'Financial Reports',
+    'user-management-rbac': 'User Management & Access Control',
+    'template-management': 'Document Templates',
+    troubleshooting: 'Troubleshooting',
+    faq: 'Frequently Asked Questions',
+  };
+  const categoryName = (item?: Pick<DocumentationCategory, 'slug' | 'name'> | null) =>
+    item ? (en ? categoryLabels[item.slug] || item.name : item.name) : (en ? 'ERP Guide' : 'Panduan ERP');
   const [categories, setCategories] = useState<DocumentationCategory[]>([]);
   const [articles, setArticles] = useState<DocumentationArticle[]>([]);
   const [selected, setSelected] = useState<DocumentationArticle | null>(null);
@@ -67,7 +85,7 @@ export function DocumentationCenterPage() {
       <Button variant="ghost" onClick={() => setSelected(null)} className="flex items-center gap-2"><ArrowLeft className="h-4 w-4" /> {en ? 'Back to documentation' : 'Kembali ke dokumentasi'}</Button>
       <Card className="space-y-4">
         <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--muted-foreground)]">
-          <span>{selected.category?.name || (en ? 'ERP Guide' : 'Panduan ERP')}</span><span>•</span>
+          <span>{categoryName(selected.category)}</span><span>•</span>
           <span>{en ? 'Version' : 'Versi'} {selected.current_version}</span><span>•</span>
           {selected.published_at && <span className="flex items-center gap-1"><CalendarDays className="h-3 w-3" /> {en ? 'Updated ' : 'Diperbarui '}{new Date(selected.published_at).toLocaleDateString(dateLocale)}</span>}
         </div>
@@ -87,11 +105,11 @@ export function DocumentationCenterPage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-4 md:p-6">
-      <header><div className="flex items-center gap-3"><BookOpen className="h-7 w-7 text-indigo-500" /><h1 className="text-2xl font-bold text-[var(--foreground)]">Documentation Center</h1></div><p className="mt-1 text-sm text-[var(--muted-foreground)]">{en ? 'Official user guides for Sentanu Jaya ERP.' : 'Panduan resmi penggunaan Sentanu Jaya ERP.'}</p></header>
+      <header><div className="flex items-center gap-3"><BookOpen className="h-7 w-7 text-indigo-500" /><h1 className="text-2xl font-bold text-[var(--foreground)]">{en ? 'Documentation Center' : 'Pusat Dokumentasi'}</h1></div><p className="mt-1 text-sm text-[var(--muted-foreground)]">{en ? 'Official user guides for Sentanu Jaya ERP.' : 'Panduan resmi penggunaan Sentanu Jaya ERP.'}</p></header>
       <Card className="flex items-center gap-3"><Search className="h-5 w-5 text-[var(--muted-foreground)]" /><input aria-label={en ? 'Search documentation' : 'Cari dokumentasi'} value={search} onChange={(e) => setSearch(e.target.value)} placeholder={en ? 'Search titles, content, or keywords...' : 'Cari judul, isi, atau kata kunci...'} className="w-full bg-transparent text-sm outline-none" /></Card>
-      <div className="flex flex-wrap gap-2"><Button variant={category === '' ? 'primary' : 'secondary'} onClick={() => setCategory('')}>{en ? 'All' : 'Semua'}</Button>{categories.map((item) => <Button key={item.id} variant={category === item.slug ? 'primary' : 'secondary'} onClick={() => setCategory(item.slug)}>{item.name}</Button>)}</div>
+      <div className="flex flex-wrap gap-2"><Button variant={category === '' ? 'primary' : 'secondary'} onClick={() => setCategory('')}>{en ? 'All' : 'Semua'}</Button>{categories.map((item) => <Button key={item.id} variant={category === item.slug ? 'primary' : 'secondary'} onClick={() => setCategory(item.slug)}>{categoryName(item)}</Button>)}</div>
       {error && <p role="alert" className="text-sm text-red-500">{error}</p>}
-      {loading ? <p className="py-10 text-center text-sm text-[var(--muted-foreground)]">{en ? 'Loading documentation…' : 'Memuat dokumentasi…'}</p> : articles.length === 0 ? <Card className="py-12 text-center text-sm text-[var(--muted-foreground)]">{en ? 'No published articles match this search.' : 'Belum ada artikel yang dipublikasikan untuk pencarian ini.'}</Card> : <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{articles.map((article) => <button key={article.id} onClick={() => void openArticle(article.slug)} className="text-left"><Card className="h-full space-y-2 transition hover:-translate-y-0.5 hover:shadow-lg"><p className="text-xs text-indigo-500">{article.category?.name || 'Panduan ERP'} · v{article.current_version}</p><h2 className="font-semibold text-[var(--foreground)]">{article.title}</h2><p className="line-clamp-3 text-sm text-[var(--muted-foreground)]">{article.summary}</p></Card></button>)}</div>}
+      {loading ? <p className="py-10 text-center text-sm text-[var(--muted-foreground)]">{en ? 'Loading documentation…' : 'Memuat dokumentasi…'}</p> : articles.length === 0 ? <Card className="py-12 text-center text-sm text-[var(--muted-foreground)]">{en ? 'No published articles match this search.' : 'Belum ada artikel yang dipublikasikan untuk pencarian ini.'}</Card> : <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{articles.map((article) => <button key={article.id} onClick={() => void openArticle(article.slug)} className="text-left"><Card className="h-full space-y-2 transition hover:-translate-y-0.5 hover:shadow-lg"><p className="text-xs text-indigo-500">{categoryName(article.category)} · v{article.current_version}</p><h2 className="font-semibold text-[var(--foreground)]">{article.title}</h2><p className="line-clamp-3 text-sm text-[var(--muted-foreground)]">{article.summary}</p></Card></button>)}</div>}
     </div>
   );
 }
