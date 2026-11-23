@@ -60,6 +60,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await login(page);
     await expect(page.locator('#main-sidebar-navigation')).toBeVisible();
     await expect(page.locator('.mobile-bottom-bar')).toBeHidden();
+    await expect(page.locator('.mobile-more-trigger')).toBeHidden();
     await page.getByRole('link', { name: /Master Data/i }).first().click();
     await expect(page).toHaveURL(/\/master$/);
     await expect(page.getByText('Master Data & Referensi')).toBeVisible();
@@ -74,6 +75,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     const bottomBar = page.locator('.mobile-bottom-bar');
     await expect(sidebar).toBeHidden();
     await expect(bottomBar).toBeVisible();
+    await expect(page.locator('.mobile-more-trigger')).toBeVisible();
     await expect(bottomBar.locator('.mobile-bottom-bar__slot')).toHaveCount(5);
 
     const dashboardSlot = bottomBar.locator('.mobile-bottom-bar__slot').nth(2);
