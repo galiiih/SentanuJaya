@@ -556,7 +556,6 @@ export function NumericInput({
         setFocused(true);
         onFocus?.(event);
       }}
-      onInput={handleNumericInput}
       onChange={handleNumericInput}
       onBlur={(event) => {
         event.currentTarget.setCustomValidity(constraintMessage(rawValue));
