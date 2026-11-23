@@ -208,7 +208,8 @@ function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => 
 }
 
 
-function MobileBottomBar() {
+
+function MobileMoreMenu() {
   const { hasPermission, user, logout } = useAuth();
   const { t, language } = useLanguage();
   const navigate = useNavigate();
@@ -216,11 +217,8 @@ function MobileBottomBar() {
   const [moreOpen, setMoreOpen] = useState(false);
   const en = language === 'en';
 
-  const candidates = [
-    { path: '/custody', label: t.nav.custody, icon: Package, permission: permissions.custodyView },
-    { path: '/customer-po', label: t.nav.customerPo, icon: FileText, permission: permissions.poView },
-    { path: '/delivery', label: t.nav.delivery, icon: Truck, permission: permissions.deliveryView },
-    { path: '/invoicing', label: t.nav.invoicing, icon: Receipt, permission: permissions.invoiceView },
+  const extraItems = [
+    { path: '/customer-returns', label: t.nav.customerReturns, icon: RotateCcw, permission: permissions.returnView },
     { path: '/payments', label: t.nav.payments, icon: CircleDollarSign, permission: permissions.paymentView },
     { path: '/reports', label: t.nav.reports, icon: FileCheck, permission: permissions.reportView },
     { path: '/materials', label: t.nav.materials, icon: Boxes, permission: permissions.materialView },
@@ -229,19 +227,21 @@ function MobileBottomBar() {
     { path: '/knowledge', label: t.nav.knowledge, icon: BookOpen, permission: permissions.dashboardView },
     { path: '/documentation', label: en ? 'ERP Documentation' : 'Panduan ERP', icon: BookOpen, permission: permissions.dashboardView },
     { path: '/users', label: t.nav.users, icon: Users, permission: permissions.userManage },
-  ];
-  const available = candidates.filter((item) => hasPermission(item.permission));
-  const primaryPaths = ['/custody', '/customer-po', '/delivery'];
-  const primary = primaryPaths.map((path) => available.find((item) => item.path === path) ?? null);
-  const extraItems = available.filter((item) => !primaryPaths.includes(item.path));
-  const isDashboardActive = location.pathname === '/dashboard';
-  const moreActive = moreOpen || extraItems.some((item) => location.pathname === item.path) || ['/customer-returns'].includes(location.pathname);
-
+  ].filter((item) => hasPermission(item.permission));
+  const moreActive = extraItems.some((item) => location.pathname === item.path);
   const closeMore = () => setMoreOpen(false);
-  const signOut = () => { closeMore(); logout(); navigate('/login', { replace: true }); };
+  const signOut = () => { closeMore(); void logout().finally(() => navigate('/login', { replace: true })); };
+
+  useEffect(() => {
+    if (!moreOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === 'Escape') closeMore(); };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [moreOpen]);
 
   return (
     <>
+      <button type="button" className={`icon-button mobile-more-trigger${moreActive ? ' mobile-more-trigger--active' : ''}`} aria-label={en ? 'More navigation' : 'Menu lainnya'} aria-expanded={moreOpen} onClick={() => setMoreOpen((value) => !value)}><MoreHorizontal size={21} /></button>
       {moreOpen && <button type="button" className="mobile-more-backdrop" aria-label={en ? 'Close more menu' : 'Tutup menu lainnya'} onClick={closeMore} />}
       {moreOpen && (
         <section className="mobile-more-panel" aria-label={en ? 'More navigation' : 'Navigasi lainnya'}>
@@ -254,29 +254,40 @@ function MobileBottomBar() {
               const Icon = item.icon;
               return <NavLink key={item.path} to={item.path} onClick={closeMore} className={({ isActive }) => `mobile-more-panel__link${isActive ? ' mobile-more-panel__link--active' : ''}`}><Icon size={17} aria-hidden="true" /><span>{item.label}</span></NavLink>;
             })}
-            {hasPermission(permissions.returnView) && <NavLink to="/customer-returns" onClick={closeMore} className={({ isActive }) => `mobile-more-panel__link${isActive ? ' mobile-more-panel__link--active' : ''}`}><RotateCcw size={17} aria-hidden="true" /><span>{t.nav.customerReturns}</span></NavLink>}
           </nav>
           <button type="button" className="mobile-more-panel__logout" onClick={signOut}><LogOut size={16} aria-hidden="true" />{t.nav.logout}</button>
         </section>
       )}
-      <nav className="mobile-bottom-bar" aria-label={en ? 'Primary navigation' : 'Navigasi utama'}>
-        <div className="mobile-bottom-bar__slot">
-          {primary[0] && (() => { const Icon = primary[0].icon; return <NavLink to={primary[0].path} aria-label={primary[0].label} title={primary[0].label} className={({ isActive }) => `mobile-bottom-bar__item${isActive ? ' mobile-bottom-bar__item--active' : ''}`}><Icon size={20} /><span>{primary[0].label}</span></NavLink>; })()}
-        </div>
-        <div className="mobile-bottom-bar__slot">
-          {primary[1] && (() => { const Icon = primary[1].icon; return <NavLink to={primary[1].path} aria-label={primary[1].label} title={primary[1].label} className={({ isActive }) => `mobile-bottom-bar__item${isActive ? ' mobile-bottom-bar__item--active' : ''}`}><Icon size={20} /><span>{primary[1].label}</span></NavLink>; })()}
-        </div>
-        <div className="mobile-bottom-bar__slot mobile-bottom-bar__slot--dashboard">
-          <NavLink to="/dashboard" aria-label={t.nav.dashboard} title={t.nav.dashboard} aria-current={isDashboardActive ? 'page' : undefined} className={({ isActive }) => `mobile-bottom-bar__dashboard${isActive ? ' mobile-bottom-bar__dashboard--active' : ''}`}><LayoutDashboard size={22} /><span>{t.nav.dashboard}</span></NavLink>
-        </div>
-        <div className="mobile-bottom-bar__slot">
-          {primary[2] && (() => { const Icon = primary[2].icon; return <NavLink to={primary[2].path} aria-label={primary[2].label} title={primary[2].label} className={({ isActive }) => `mobile-bottom-bar__item${isActive ? ' mobile-bottom-bar__item--active' : ''}`}><Icon size={20} /><span>{primary[2].label}</span></NavLink>; })()}
-        </div>
-        <div className="mobile-bottom-bar__slot">
-          <button type="button" className={`mobile-bottom-bar__item${moreActive ? ' mobile-bottom-bar__item--active' : ''}`} aria-label={en ? 'More' : 'Lainnya'} aria-expanded={moreOpen} onClick={() => setMoreOpen((value) => !value)}><MoreHorizontal size={21} /><span>{en ? 'More' : 'Lainnya'}</span></button>
-        </div>
-      </nav>
     </>
+  );
+}
+
+function MobileBottomBar() {
+  const { hasPermission } = useAuth();
+  const { t } = useLanguage();
+  const candidates = [
+    { path: '/custody', label: t.nav.custody, icon: Package, permission: permissions.custodyView },
+    { path: '/customer-po', label: t.nav.customerPo, icon: FileText, permission: permissions.poView },
+    { path: '/delivery', label: t.nav.delivery, icon: Truck, permission: permissions.deliveryView },
+    { path: '/invoicing', label: t.nav.invoicing, icon: Receipt, permission: permissions.invoiceView },
+  ];
+  const primary = candidates.map((item) => hasPermission(item.permission) ? item : null);
+  const renderItem = (item: (typeof candidates)[number] | null) => {
+    if (!item) return null;
+    const Icon = item.icon;
+    return <NavLink to={item.path} aria-label={item.label} title={item.label} className={({ isActive }) => `mobile-bottom-bar__item${isActive ? ' mobile-bottom-bar__item--active' : ''}`}><Icon size={20} aria-hidden="true" /><span>{item.label}</span></NavLink>;
+  };
+
+  return (
+    <nav className="mobile-bottom-bar" aria-label="Primary navigation">
+      <div className="mobile-bottom-bar__slot">{renderItem(primary[0])}</div>
+      <div className="mobile-bottom-bar__slot">{renderItem(primary[1])}</div>
+      <div className="mobile-bottom-bar__slot mobile-bottom-bar__slot--dashboard">
+        <NavLink to="/dashboard" aria-label={t.nav.dashboard} title={t.nav.dashboard} className={({ isActive }) => `mobile-bottom-bar__dashboard${isActive ? ' mobile-bottom-bar__dashboard--active' : ''}`}><LayoutDashboard size={22} aria-hidden="true" /><span>{t.nav.dashboard}</span></NavLink>
+      </div>
+      <div className="mobile-bottom-bar__slot">{renderItem(primary[2])}</div>
+      <div className="mobile-bottom-bar__slot">{renderItem(primary[3])}</div>
+    </nav>
   );
 }
 
@@ -363,6 +374,7 @@ function AuthenticatedLayout() {
             <div><span className="app-header__eyebrow">SENTANU JAYA ERP</span><strong>{pageTitle}</strong></div>
           </div>
           <div className="app-header__account">
+            <MobileMoreMenu />
             <ThemeSwitcher />
             <span className="header-divider" />
             <LanguageSwitcher />
