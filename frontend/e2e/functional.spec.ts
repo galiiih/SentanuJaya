@@ -58,6 +58,8 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
   });
   test('login and master data navigation work', async ({ page }) => {
     await login(page);
+    await expect(page.locator('#main-sidebar-navigation')).toBeVisible();
+    await expect(page.locator('.mobile-bottom-bar')).toBeHidden();
     await page.getByRole('link', { name: /Master Data/i }).first().click();
     await expect(page).toHaveURL(/\/master$/);
     await expect(page.getByText('Master Data & Referensi')).toBeVisible();
