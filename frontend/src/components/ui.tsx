@@ -459,16 +459,11 @@ export function NumericInput({
   ...props
 }: NumericInputProps) {
   const [focused, setFocused] = useState(false);
-  const [draftValue, setDraftValue] = useState('');
   const { language } = useLanguage();
   const locale = localeOverride ?? (language === 'en' ? 'en-US' : 'id-ID');
   const rawValue = value === null || value === undefined ? '' : String(value);
-  // Keep the in-progress keystrokes local while editing. The parent remains the
-  // source of truth for persistence, but a parent rerender must not replace the
-  // user's active text with the previous formatted value mid-edit.
-  useEffect(() => {
-    if (!focused) setDraftValue(rawValue);
-  }, [focused, rawValue]);
+  // The controlled parent value is the single source of truth while editing.
+  // This avoids a stale local draft overwriting a newer parent value on blur.
   const formatter = useMemo(() => new Intl.NumberFormat(locale, {
     useGrouping: true,
     maximumFractionDigits,
@@ -535,11 +530,10 @@ export function NumericInput({
   }, [validationMessage]);
 
   const displayValue = () => {
-    const editingValue = focused ? draftValue : rawValue;
-    if (!editingValue || editingValue === '-') return editingValue;
-    const parsed = Number(editingValue);
-    if (!Number.isFinite(parsed)) return editingValue;
-    return focused ? editingValue : formatter.format(parsed);
+    if (!rawValue || rawValue === '-') return rawValue;
+    const parsed = Number(rawValue);
+    if (!Number.isFinite(parsed)) return rawValue;
+    return focused ? rawValue : formatter.format(parsed);
   };
 
   return (
@@ -552,27 +546,17 @@ export function NumericInput({
       value={displayValue()}
       onFocus={(event) => {
         event.currentTarget.setCustomValidity(constraintMessage(rawValue));
-        setDraftValue(rawValue);
         setFocused(true);
         onFocus?.(event);
       }}
       onChange={(event) => {
         const raw = parseInput(event.target.value);
         const numeric = raw === '' || raw === '-' || raw === '.' || raw === '-.' ? null : Number(raw);
-        setDraftValue(raw);
         event.currentTarget.setCustomValidity(constraintMessage(raw));
         onValueChange(raw, numeric !== null && Number.isFinite(numeric) ? numeric : null);
       }}
       onBlur={(event) => {
-        // Commit the final draft on blur as well as onChange. This protects
-        // controlled forms from losing the last edit if focus changes while
-        // React is reconciling a parent form update.
-        const committedRaw = parseInput(draftValue);
-        const committedNumber = committedRaw === '' || committedRaw === '-' || committedRaw === '.' || committedRaw === '-.'
-          ? null
-          : Number(committedRaw);
-        onValueChange(committedRaw, committedNumber !== null && Number.isFinite(committedNumber) ? committedNumber : null);
-        event.currentTarget.setCustomValidity(constraintMessage(committedRaw));
+        event.currentTarget.setCustomValidity(constraintMessage(rawValue));
         setFocused(false);
         onBlur?.(event);
       }}
