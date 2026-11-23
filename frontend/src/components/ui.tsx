@@ -462,38 +462,34 @@ export function NumericInput({
   const { language } = useLanguage();
   const locale = localeOverride ?? (language === 'en' ? 'en-US' : 'id-ID');
   const rawValue = value === null || value === undefined ? '' : String(value);
-  // The controlled parent value is the single source of truth while editing.
-  // This avoids a stale local draft overwriting a newer parent value on blur.
   const formatter = useMemo(() => new Intl.NumberFormat(locale, {
     useGrouping: true,
     maximumFractionDigits,
   }), [locale, maximumFractionDigits]);
 
   const parseInput = (input: string): string => {
-    let normalized = input.replace(/\s/g, '').replace(/[^0-9,.-]/g, '');
+    let normalized = input.replace(/\\s/g, '').replace(/[^0-9,.-]/g, '');
     if (!allowNegative) normalized = normalized.replace(/-/g, '');
     else normalized = normalized.replace(/(?!^)-/g, '');
 
     const comma = normalized.lastIndexOf(',');
     const dot = normalized.lastIndexOf('.');
     if (comma >= 0 && dot >= 0) {
-      // With both separators, the last one is decimal and the other is grouping.
       const decimal = comma > dot ? ',' : '.';
       normalized = normalized
-        .replace(decimal === ',' ? /\./g : /,/g, '')
+        .replace(decimal === ',' ? /\\./g : /,/g, '')
         .replace(decimal, '.');
     } else if (comma >= 0) {
       const commaCount = (normalized.match(/,/g) || []).length;
       const trailingDigits = normalized.length - normalized.lastIndexOf(',') - 1;
       const commaIsGrouping = locale.toLowerCase().startsWith('en') && (commaCount > 1 || trailingDigits === 3);
       if (commaIsGrouping) normalized = normalized.replace(/,/g, '');
-      else normalized = normalized.replace(/\./g, '').replace(',', '.');
+      else normalized = normalized.replace(/\\./g, '').replace(',', '.');
     } else if (dot >= 0) {
-      const dotCount = (normalized.match(/\./g) || []).length;
+      const dotCount = (normalized.match(/\\./g) || []).length;
       const trailingDigits = normalized.length - normalized.lastIndexOf('.') - 1;
-      // "1.234" is a grouped integer in id-ID; "1.23" remains a decimal.
       if (dotCount > 1 || (locale.toLowerCase().startsWith('id') && trailingDigits === 3 && normalized.indexOf('.') <= 3)) {
-        normalized = normalized.replace(/\./g, '');
+        normalized = normalized.replace(/\\./g, '');
       }
     }
 
@@ -506,7 +502,6 @@ export function NumericInput({
   };
 
   const inputRef = useRef<HTMLInputElement>(null);
-
   const constraintMessage = (raw: string): string => {
     if (raw === '') return '';
     if (raw === '-' || raw === '.' || raw === '-.' || !Number.isFinite(Number(raw))) {
@@ -522,8 +517,6 @@ export function NumericInput({
     return '';
   };
 
-  // Keep native form validation synchronized even when a legacy value is
-  // populated externally and the user submits without focusing this field.
   const validationMessage = constraintMessage(rawValue);
   useEffect(() => {
     inputRef.current?.setCustomValidity(validationMessage);
@@ -536,6 +529,9 @@ export function NumericInput({
     return focused ? rawValue : formatter.format(parsed);
   };
 
+  // Use the native input event as the single update path. Listening to both
+  // input and change can replay a stale controlled value after React restores
+  // the DOM value between the two browser events.
   const handleNumericInput = (event: React.FormEvent<HTMLInputElement>) => {
     const raw = parseInput(event.currentTarget.value);
     const numeric = raw === '' || raw === '-' || raw === '.' || raw === '-.' ? null : Number(raw);
@@ -556,7 +552,7 @@ export function NumericInput({
         setFocused(true);
         onFocus?.(event);
       }}
-      onChange={handleNumericInput}
+      onInput={handleNumericInput}
       onBlur={(event) => {
         event.currentTarget.setCustomValidity(constraintMessage(rawValue));
         setFocused(false);
