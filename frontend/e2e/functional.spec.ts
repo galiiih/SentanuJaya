@@ -63,6 +63,30 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await expect(page.getByText('Master Data & Referensi')).toBeVisible();
   });
 
+
+  test('mobile navigation uses five bottom-bar slots with Dashboard centered', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await login(page);
+
+    const sidebar = page.locator('#main-sidebar-navigation');
+    const bottomBar = page.locator('.mobile-bottom-bar');
+    await expect(sidebar).toBeHidden();
+    await expect(bottomBar).toBeVisible();
+    await expect(bottomBar.locator('.mobile-bottom-bar__slot')).toHaveCount(5);
+
+    const dashboardSlot = bottomBar.locator('.mobile-bottom-bar__slot').nth(2);
+    await expect(dashboardSlot.getByRole('link')).toHaveAttribute('href', '/dashboard');
+    await expect(dashboardSlot.getByRole('link')).toContainText('Dashboard');
+
+    await bottomBar.getByRole('button', { name: /Lainnya|More/i }).click();
+    const morePanel = page.locator('.mobile-more-panel');
+    await expect(morePanel).toBeVisible();
+    await expect(morePanel.getByRole('link', { name: /Invoice/i })).toBeVisible();
+    await morePanel.getByRole('link', { name: /Invoice/i }).click();
+    await expect(page).toHaveURL(/\\/invoicing$/);
+    await expect(bottomBar).toBeVisible();
+  });
+
   test('customer form supports continuous typing, dropdown selection, save, persistence and delete', async ({ page }) => {
     const suffix = Date.now().toString();
     const code = `E2E-${suffix}`;
