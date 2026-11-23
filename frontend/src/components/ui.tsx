@@ -459,6 +459,8 @@ export function NumericInput({
   ...props
 }: NumericInputProps) {
   const [focused, setFocused] = useState(false);
+  const [draftValue, setDraftValue] = useState('');
+  const draftValueRef = useRef('');
   const { language } = useLanguage();
   const locale = localeOverride ?? (language === 'en' ? 'en-US' : 'id-ID');
   const rawValue = value === null || value === undefined ? '' : String(value);
@@ -466,6 +468,15 @@ export function NumericInput({
     useGrouping: true,
     maximumFractionDigits,
   }), [locale, maximumFractionDigits]);
+
+  // When not editing, external form changes remain authoritative. While editing,
+  // keep the immediate DOM draft so a parent render cannot restore stale text.
+  useEffect(() => {
+    if (!focused) {
+      draftValueRef.current = rawValue;
+      setDraftValue(rawValue);
+    }
+  }, [focused, rawValue]);
 
   const parseInput = (input: string): string => {
     let normalized = input.replace(/\s/g, '').replace(/[^0-9,.-]/g, '');
@@ -523,10 +534,11 @@ export function NumericInput({
   }, [validationMessage]);
 
   const displayValue = () => {
-    if (!rawValue || rawValue === '-') return rawValue;
-    const parsed = Number(rawValue);
-    if (!Number.isFinite(parsed)) return rawValue;
-    return focused ? rawValue : formatter.format(parsed);
+    const editingValue = focused ? draftValue : rawValue;
+    if (!editingValue || editingValue === '-') return editingValue;
+    const parsed = Number(editingValue);
+    if (!Number.isFinite(parsed)) return editingValue;
+    return focused ? editingValue : formatter.format(parsed);
   };
 
   // Use the native input event as the single update path. Listening to both
@@ -535,6 +547,10 @@ export function NumericInput({
   const handleNumericInput = (event: React.FormEvent<HTMLInputElement>) => {
     const raw = parseInput(event.currentTarget.value);
     const numeric = raw === '' || raw === '-' || raw === '.' || raw === '-.' ? null : Number(raw);
+    // Update the local draft synchronously with the browser input event, then
+    // propagate the canonical value to the parent form state.
+    draftValueRef.current = raw;
+    setDraftValue(raw);
     event.currentTarget.setCustomValidity(constraintMessage(raw));
     onValueChange(raw, numeric !== null && Number.isFinite(numeric) ? numeric : null);
   };
@@ -548,17 +564,26 @@ export function NumericInput({
       className={`input ${className}`}
       value={displayValue()}
       onFocus={(event) => {
+        draftValueRef.current = rawValue;
+        setDraftValue(rawValue);
         event.currentTarget.setCustomValidity(constraintMessage(rawValue));
         setFocused(true);
         onFocus?.(event);
       }}
       onInput={handleNumericInput}
       onBlur={(event) => {
-        event.currentTarget.setCustomValidity(constraintMessage(rawValue));
+        // Commit the final draft again on blur so form submission cannot race
+        // the last controlled-input update.
+        const committedRaw = draftValueRef.current;
+        const committedNumber = committedRaw === '' || committedRaw === '-' || committedRaw === '.' || committedRaw === '-.'
+          ? null
+          : Number(committedRaw);
+        event.currentTarget.setCustomValidity(constraintMessage(committedRaw));
+        onValueChange(committedRaw, committedNumber !== null && Number.isFinite(committedNumber) ? committedNumber : null);
         setFocused(false);
         onBlur?.(event);
       }}
-      aria-valuenow={rawValue !== '' && Number.isFinite(Number(rawValue)) ? Number(rawValue) : undefined}
+      aria-valuenow={(focused ? draftValue : rawValue) !== '' && Number.isFinite(Number(focused ? draftValue : rawValue)) ? Number(focused ? draftValue : rawValue) : undefined}
     />
   );
 }
