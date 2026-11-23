@@ -14,7 +14,6 @@ import {
   Globe,
   LayoutDashboard,
   LogOut,
-  Menu,
   MoreHorizontal,
   Moon,
   Package,
@@ -328,7 +327,6 @@ function LanguageSwitcher() {
 }
 
 function AuthenticatedLayout() {
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [intro, setIntro] = useState<'off' | 'wait' | 'wave'>(() => (shouldPlayLoginIntro() ? 'wait' : 'off'));
   useEffect(() => { clearLoginIntro(); }, []);
   const location = useLocation();
