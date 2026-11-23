@@ -544,12 +544,17 @@ export function NumericInput({
   // React's onChange is the canonical controlled-input event for text fields.
   // It fires for every edit and keeps the parent form state in sync with the DOM.
   const handleNumericInput = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const raw = parseInput(event.currentTarget.value);
+    // Keep the exact localized draft while editing. Canonicalizing the visible
+    // text on every keystroke destroys grouping separators mid-entry (for
+    // example, "1.850" becomes "1850" before the user can type ".000").
+    let draft = event.currentTarget.value.replace(/\\s/g, '').replace(/[^0-9,.-]/g, '');
+    if (!allowNegative) draft = draft.replace(/-/g, '');
+    else draft = draft.replace(/(?!^)-/g, '');
+
+    const raw = parseInput(draft);
     const numeric = raw === '' || raw === '-' || raw === '.' || raw === '-.' ? null : Number(raw);
-    // Update the local draft synchronously with the browser input event, then
-    // propagate the canonical value to the parent form state.
-    draftValueRef.current = raw;
-    setDraftValue(raw);
+    draftValueRef.current = draft;
+    setDraftValue(draft);
     event.currentTarget.setCustomValidity(constraintMessage(raw));
     onValueChange(raw, numeric !== null && Number.isFinite(numeric) ? numeric : null);
   };
@@ -573,7 +578,7 @@ export function NumericInput({
       onBlur={(event) => {
         // Commit the final draft again on blur so form submission cannot race
         // the last controlled-input update.
-        const committedRaw = draftValueRef.current;
+        const committedRaw = parseInput(draftValueRef.current);
         const committedNumber = committedRaw === '' || committedRaw === '-' || committedRaw === '.' || committedRaw === '-.'
           ? null
           : Number(committedRaw);
@@ -582,7 +587,7 @@ export function NumericInput({
         setFocused(false);
         onBlur?.(event);
       }}
-      aria-valuenow={(focused ? draftValue : rawValue) !== '' && Number.isFinite(Number(focused ? draftValue : rawValue)) ? Number(focused ? draftValue : rawValue) : undefined}
+      aria-valuenow={(() => { const current = parseInput(focused ? draftValue : rawValue); return current !== '' && Number.isFinite(Number(current)) ? Number(current) : undefined; })()}
     />
   );
 }
