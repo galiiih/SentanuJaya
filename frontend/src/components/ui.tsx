@@ -536,6 +536,13 @@ export function NumericInput({
     return focused ? rawValue : formatter.format(parsed);
   };
 
+  const handleNumericInput = (event: React.FormEvent<HTMLInputElement>) => {
+    const raw = parseInput(event.currentTarget.value);
+    const numeric = raw === '' || raw === '-' || raw === '.' || raw === '-.' ? null : Number(raw);
+    event.currentTarget.setCustomValidity(constraintMessage(raw));
+    onValueChange(raw, numeric !== null && Number.isFinite(numeric) ? numeric : null);
+  };
+
   return (
     <input
       {...props}
@@ -549,14 +556,8 @@ export function NumericInput({
         setFocused(true);
         onFocus?.(event);
       }}
-      onInput={(event) => {
-        // Use the native input event for controlled text inputs. This is also
-        // reliably emitted by browser automation and IME/mobile keyboards.
-        const raw = parseInput(event.currentTarget.value);
-        const numeric = raw === '' || raw === '-' || raw === '.' || raw === '-.' ? null : Number(raw);
-        event.currentTarget.setCustomValidity(constraintMessage(raw));
-        onValueChange(raw, numeric !== null && Number.isFinite(numeric) ? numeric : null);
-      }}
+      onInput={handleNumericInput}
+      onChange={handleNumericInput}
       onBlur={(event) => {
         event.currentTarget.setCustomValidity(constraintMessage(rawValue));
         setFocused(false);
