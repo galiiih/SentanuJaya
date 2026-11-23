@@ -620,9 +620,17 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await lineRow.getByRole('button', { name: 'Edit', exact: true }).click();
     dialog = page.getByRole('dialog');
     const editedPriceInput = dialog.getByPlaceholder('1500000');
+    // Paste/localized entry must retain the user's grouping separators while
+    // exposing the canonical numeric value to the form state.
     await editedPriceInput.fill(editedPrice);
-    // The controlled value must reflect the edit before blur or submit.
-    await expect(editedPriceInput).toHaveValue(editedPriceCanonical);
+    await expect(editedPriceInput).toHaveValue(editedPrice);
+    await expect(editedPriceInput).toHaveAttribute('aria-valuenow', editedPriceCanonical);
+
+    // Also reproduce real sequential keyboard input; separators must not be
+    // normalized away before the user finishes entering the amount.
+    await editedPriceInput.fill('');
+    await editedPriceInput.pressSequentially(editedPrice);
+    await expect(editedPriceInput).toHaveValue(editedPrice);
     await expect(editedPriceInput).toHaveAttribute('aria-valuenow', editedPriceCanonical);
     await editedPriceInput.press('Tab');
     await expect(editedPriceInput).toHaveAttribute('aria-valuenow', editedPriceCanonical);
