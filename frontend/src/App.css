@@ -1107,7 +1107,8 @@ html[data-theme] .modal .modal__header .icon-button { color:var(--color-text-sec
 }
 .mobile-bottom-bar,
 .mobile-more-panel,
-.mobile-more-backdrop { display: none; }
+.mobile-more-backdrop,
+.mobile-more-trigger { display: none; }
 
 @media (max-width: 760px) {
   .sidebar { display: none !important; }
