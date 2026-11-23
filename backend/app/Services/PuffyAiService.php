@@ -482,10 +482,11 @@ class PuffyAiService
                         ->whereNotNull('target_date')
                         ->whereDate('target_date', '<', $today)
                         ->count();
-                    $activeDeliveryCount = DeliveryOrder::whereIn('status', [
+                    // DELIVERED orders are no longer pending shipment. Keep only
+                    // DRAFT and SUBMITTED Surat Jalan in this operational indicator.
+                    $pendingDeliveryCount = DeliveryOrder::whereIn('status', [
                         DeliveryOrder::STATUS_DRAFT,
                         DeliveryOrder::STATUS_SUBMITTED,
-                        DeliveryOrder::STATUS_DELIVERED,
                     ])->count();
                     $outstandingInvoiceCount = Invoice::whereIn('status', [
                         Invoice::STATUS_POSTED,
@@ -526,10 +527,10 @@ class PuffyAiService
                         ],
                         
                         [
-                            'label' => 'Active delivery orders',
-                            'value' => $activeDeliveryCount,
-                            'status' => $activeDeliveryCount > 0 ? 'Active' : 'No active deliveries',
-                            'detail' => $activeDeliveryCount > 0 ? "{$activeDeliveryCount} delivery orders are in the active lifecycle (DRAFT, SUBMITTED, or DELIVERED)." : 'No active delivery orders were found.',
+                            'label' => 'Pending delivery orders',
+                            'value' => $pendingDeliveryCount,
+                            'status' => $pendingDeliveryCount > 0 ? 'Pending' : 'No pending deliveries',
+                            'detail' => $pendingDeliveryCount > 0 ? "{$pendingDeliveryCount} delivery orders are awaiting shipment (DRAFT or SUBMITTED)." : 'No pending delivery orders were found.',
                         ],
                         [
                             'label' => 'Outstanding invoices',
@@ -558,10 +559,10 @@ class PuffyAiService
                         ],
                         
                         [
-                            'label' => 'Surat Jalan aktif',
-                            'value' => $activeDeliveryCount,
-                            'status' => $activeDeliveryCount > 0 ? 'Aktif' : 'Tidak ada Surat Jalan aktif',
-                            'detail' => $activeDeliveryCount > 0 ? "{$activeDeliveryCount} Surat Jalan berada dalam siklus aktif (DRAFT, SUBMITTED, atau DELIVERED)." : 'Tidak ada Surat Jalan aktif.',
+                            'label' => 'Surat Jalan menunggu pengiriman',
+                            'value' => $pendingDeliveryCount,
+                            'status' => $pendingDeliveryCount > 0 ? 'Menunggu pengiriman' : 'Tidak ada Surat Jalan tertunda',
+                            'detail' => $pendingDeliveryCount > 0 ? "{$pendingDeliveryCount} Surat Jalan masih menunggu pengiriman (DRAFT atau SUBMITTED)." : 'Tidak ada Surat Jalan tertunda.',
                         ],
                         [
                             'label' => 'Invoice outstanding',
@@ -580,11 +581,11 @@ class PuffyAiService
                     $attentionCount = $overdueWorkOrderCount + $outstandingInvoiceCount + $lowStockCount;
                     $summary = $isEnglish
                         ? ($attentionCount > 0
-                            ? "Operational review completed. {$overdueWorkOrderCount} overdue work orders, {$outstandingInvoiceCount} outstanding invoices, and {$lowStockCount} materials at or below minimum stock require follow-up. Open POs and in-process deliveries are shown as operational activity, not automatically classified as risks."
-                            : 'Operational review completed. No overdue work orders, outstanding invoices, or materials at/below minimum stock were found. Open POs and in-process deliveries are shown as operational activity.')
+                            ? "Operational review completed. {$overdueWorkOrderCount} overdue work orders, {$outstandingInvoiceCount} outstanding invoices, and {$lowStockCount} materials at or below minimum stock require follow-up. Open POs and pending deliveries are shown as operational activity, not automatically classified as risks."
+                            : 'Operational review completed. No overdue work orders, outstanding invoices, or materials at/below minimum stock were found. Open POs and pending deliveries are shown as operational activity.')
                         : ($attentionCount > 0
-                            ? "Pemeriksaan berhasil. {$overdueWorkOrderCount} Work Order terlambat, {$outstandingInvoiceCount} invoice outstanding, dan {$lowStockCount} material pada/di bawah stok minimum memerlukan tindak lanjut. PO terbuka dan pengiriman dalam proses ditampilkan sebagai aktivitas, bukan otomatis dikategorikan sebagai risiko."
-                            : 'Pemeriksaan berhasil. Tidak ditemukan Work Order terlambat, invoice outstanding, atau material pada/di bawah stok minimum. PO terbuka dan pengiriman dalam proses ditampilkan sebagai aktivitas operasional.');
+                            ? "Pemeriksaan berhasil. {$overdueWorkOrderCount} Work Order terlambat, {$outstandingInvoiceCount} invoice outstanding, dan {$lowStockCount} material pada/di bawah stok minimum memerlukan tindak lanjut. PO terbuka dan Surat Jalan yang menunggu pengiriman ditampilkan sebagai aktivitas, bukan otomatis dikategorikan sebagai risiko."
+                            : 'Pemeriksaan berhasil. Tidak ditemukan Work Order terlambat, invoice outstanding, atau material pada/di bawah stok minimum. PO terbuka dan Surat Jalan yang menunggu pengiriman ditampilkan sebagai aktivitas operasional.');
 
                     return [
                         'tool' => $toolName,
@@ -594,7 +595,7 @@ class PuffyAiService
                         'metrics' => [
                             ['label' => $isEnglish ? 'Open Customer POs' : 'Customer PO OPEN', 'value' => (string) $openPoCount],
                             ['label' => $isEnglish ? 'Work Orders (Active / Overdue)' : 'WO (Berjalan / Terlambat)', 'value' => $activeWorkOrderCount.' / '.$overdueWorkOrderCount],
-                            ['label' => $isEnglish ? 'Pending Deliveries' : 'SJ Menunggu Pengiriman', 'value' => (string) $activeDeliveryCount],
+                            ['label' => $isEnglish ? 'Pending Deliveries' : 'SJ Menunggu Pengiriman', 'value' => (string) $pendingDeliveryCount],
                             ['label' => $isEnglish ? 'Outstanding Invoices' : 'Invoice Outstanding', 'value' => (string) $outstandingInvoiceCount],
                             ['label' => $isEnglish ? 'Materials at Minimum Stock' : 'Stok Minimum', 'value' => (string) $lowStockCount],
                         ],
