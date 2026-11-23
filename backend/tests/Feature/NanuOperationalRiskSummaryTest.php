@@ -43,6 +43,7 @@ class NanuOperationalRiskSummaryTest extends TestCase
             'Outstanding Invoices',
             'Materials at Minimum Stock',
         ], array_column($result['metrics'], 'label'));
+        $this->assertSame('No pending delivery orders were found.', $result['table']['rows'][2][3]);
     }
 
     public function test_operational_risk_summary_defaults_to_indonesian_output(): void
@@ -51,6 +52,7 @@ class NanuOperationalRiskSummaryTest extends TestCase
 
         $this->assertSame('Ringkasan Risiko Operasional', $result['title']);
         $this->assertSame(['Indikator', 'Jumlah', 'Status', 'Keterangan'], $result['table']['columns']);
+        $this->assertSame('Tidak ada Surat Jalan tertunda.', $result['table']['rows'][2][3]);
     }
 
     public function test_nanu_operational_risk_chat_uses_active_english_language(): void
