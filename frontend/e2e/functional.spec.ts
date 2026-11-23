@@ -591,7 +591,9 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     dialog = page.getByRole('dialog');
     const editedPriceInput = dialog.getByPlaceholder('1500000');
     await editedPriceInput.fill(editedPrice);
-    // Blur commits the canonical numeric value to the parent form state.
+    // The controlled value must reflect the edit before blur or submit.
+    await expect(editedPriceInput).toHaveValue(editedPrice);
+    await expect(editedPriceInput).toHaveAttribute('aria-valuenow', editedPrice);
     await editedPriceInput.press('Tab');
     await expect(editedPriceInput).toHaveAttribute('aria-valuenow', editedPrice);
 
