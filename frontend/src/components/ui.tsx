@@ -541,10 +541,9 @@ export function NumericInput({
     return focused ? editingValue : formatter.format(parsed);
   };
 
-  // Use the native input event as the single update path. Listening to both
-  // input and change can replay a stale controlled value after React restores
-  // the DOM value between the two browser events.
-  const handleNumericInput = (event: React.FormEvent<HTMLInputElement>) => {
+  // React's onChange is the canonical controlled-input event for text fields.
+  // It fires for every edit and keeps the parent form state in sync with the DOM.
+  const handleNumericInput = (event: React.ChangeEvent<HTMLInputElement>) => {
     const raw = parseInput(event.currentTarget.value);
     const numeric = raw === '' || raw === '-' || raw === '.' || raw === '-.' ? null : Number(raw);
     // Update the local draft synchronously with the browser input event, then
@@ -570,7 +569,7 @@ export function NumericInput({
         setFocused(true);
         onFocus?.(event);
       }}
-      onInput={handleNumericInput}
+      onChange={handleNumericInput}
       onBlur={(event) => {
         // Commit the final draft again on blur so form submission cannot race
         // the last controlled-input update.
