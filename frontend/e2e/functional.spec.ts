@@ -832,10 +832,12 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     // A positional ".last()" locator is re-evaluated after unmount and then
     // points at the still-open delivery detail dialog, creating a false failure.
     const form = page.getByRole('dialog').filter({ has: page.getByPlaceholder('Alasan reject...') });
-    const quantities = form.locator('input[type="number"]');
-    await expect(quantities).toHaveCount(2);
-    await quantities.nth(0).fill('8');
-    await quantities.nth(1).fill('2');
+    // NumericInput renders a text input with numeric parsing/formatting,
+    // so scope the two quantity fields to the acceptance table row.
+    const lineInputs = form.locator('table tbody tr').first().locator('input');
+    await expect(lineInputs).toHaveCount(3);
+    await lineInputs.nth(0).fill('8');
+    await lineInputs.nth(1).fill('2');
     await form.getByPlaceholder('Alasan reject...').fill('Cat mengelupas');
     const createRequestPromise = page.waitForRequest(
       request => request.method() === 'POST' && new URL(request.url()).pathname.replace(/\/$/, '') === '/api/v1/acceptances',
