@@ -240,7 +240,7 @@ function MobileMoreMenu() {
     { path: '/knowledge', label: t.nav.knowledge, icon: BookOpen, permission: permissions.dashboardView },
     { path: '/documentation', label: en ? 'ERP Documentation' : 'Panduan ERP', icon: BookOpen, permission: permissions.dashboardView },
     { path: '/users', label: t.nav.users, icon: Users, permission: permissions.userManage },
-  ].filter((item) => hasPermission(item.permission) && !primaryPaths.includes(item.path));
+  ].filter((item) => hasPermission(item.permission) && !primaryPaths.some((path) => path === item.path));
   const moreActive = extraItems.some((item) => location.pathname === item.path);
   const closeMore = () => setMoreOpen(false);
   const signOut = () => { closeMore(); void logout().catch(() => undefined).finally(() => navigate('/login', { replace: true })); };
