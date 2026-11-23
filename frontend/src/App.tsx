@@ -230,7 +230,7 @@ function MobileMoreMenu() {
   ].filter((item) => hasPermission(item.permission));
   const moreActive = extraItems.some((item) => location.pathname === item.path);
   const closeMore = () => setMoreOpen(false);
-  const signOut = () => { closeMore(); void logout().finally(() => navigate('/login', { replace: true })); };
+  const signOut = () => { closeMore(); void logout().catch(() => undefined).finally(() => navigate('/login', { replace: true })); };
 
   useEffect(() => {
     if (!moreOpen) return;
@@ -264,22 +264,22 @@ function MobileMoreMenu() {
 
 function MobileBottomBar() {
   const { hasPermission } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const candidates = [
-    { path: '/custody', label: t.nav.custody, icon: Package, permission: permissions.custodyView },
-    { path: '/customer-po', label: t.nav.customerPo, icon: FileText, permission: permissions.poView },
-    { path: '/delivery', label: t.nav.delivery, icon: Truck, permission: permissions.deliveryView },
-    { path: '/invoicing', label: t.nav.invoicing, icon: Receipt, permission: permissions.invoiceView },
+    { path: '/custody', label: t.nav.custody, shortLabel: language === 'en' ? 'Goods' : 'Barang', icon: Package, permission: permissions.custodyView },
+    { path: '/customer-po', label: t.nav.customerPo, shortLabel: 'PO', icon: FileText, permission: permissions.poView },
+    { path: '/delivery', label: t.nav.delivery, shortLabel: language === 'en' ? 'Delivery' : 'SJ', icon: Truck, permission: permissions.deliveryView },
+    { path: '/invoicing', label: t.nav.invoicing, shortLabel: 'Invoice', icon: Receipt, permission: permissions.invoiceView },
   ];
   const primary = candidates.map((item) => hasPermission(item.permission) ? item : null);
   const renderItem = (item: (typeof candidates)[number] | null) => {
     if (!item) return null;
     const Icon = item.icon;
-    return <NavLink to={item.path} aria-label={item.label} title={item.label} className={({ isActive }) => `mobile-bottom-bar__item${isActive ? ' mobile-bottom-bar__item--active' : ''}`}><Icon size={20} aria-hidden="true" /><span>{item.label}</span></NavLink>;
+    return <NavLink to={item.path} aria-label={item.label} title={item.label} className={({ isActive }) => `mobile-bottom-bar__item${isActive ? ' mobile-bottom-bar__item--active' : ''}`}><Icon size={20} aria-hidden="true" /><span>{item.shortLabel}</span></NavLink>;
   };
 
   return (
-    <nav className="mobile-bottom-bar" aria-label="Primary navigation">
+    <nav className="mobile-bottom-bar" aria-label={language === 'en' ? 'Primary navigation' : 'Navigasi utama'}>
       <div className="mobile-bottom-bar__slot">{renderItem(primary[0])}</div>
       <div className="mobile-bottom-bar__slot">{renderItem(primary[1])}</div>
       <div className="mobile-bottom-bar__slot mobile-bottom-bar__slot--dashboard">
