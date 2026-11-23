@@ -593,9 +593,9 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await editedPriceInput.fill(editedPrice);
     // The controlled value must reflect the edit before blur or submit.
     await expect(editedPriceInput).toHaveValue(editedPrice);
-    await expect(editedPriceInput).toHaveAttribute('aria-valuenow', editedPrice);
+    await expect(editedPriceInput).toHaveJSProperty('valueAsNumber', 1850000);
     await editedPriceInput.press('Tab');
-    await expect(editedPriceInput).toHaveAttribute('aria-valuenow', editedPrice);
+    await expect(editedPriceInput).toHaveJSProperty('valueAsNumber', 1850000);
 
     const priceUpdateResponsePromise = page.waitForResponse(response =>
       response.request().method() === 'PATCH' && response.url().includes('/api/v1/price-list-lines/'),
