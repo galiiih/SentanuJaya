@@ -468,7 +468,7 @@ export function NumericInput({
   }), [locale, maximumFractionDigits]);
 
   const parseInput = (input: string): string => {
-    let normalized = input.replace(/\\s/g, '').replace(/[^0-9,.-]/g, '');
+    let normalized = input.replace(/\s/g, '').replace(/[^0-9,.-]/g, '');
     if (!allowNegative) normalized = normalized.replace(/-/g, '');
     else normalized = normalized.replace(/(?!^)-/g, '');
 
@@ -477,19 +477,19 @@ export function NumericInput({
     if (comma >= 0 && dot >= 0) {
       const decimal = comma > dot ? ',' : '.';
       normalized = normalized
-        .replace(decimal === ',' ? /\\./g : /,/g, '')
+        .replace(decimal === ',' ? /\./g : /,/g, '')
         .replace(decimal, '.');
     } else if (comma >= 0) {
       const commaCount = (normalized.match(/,/g) || []).length;
       const trailingDigits = normalized.length - normalized.lastIndexOf(',') - 1;
       const commaIsGrouping = locale.toLowerCase().startsWith('en') && (commaCount > 1 || trailingDigits === 3);
       if (commaIsGrouping) normalized = normalized.replace(/,/g, '');
-      else normalized = normalized.replace(/\\./g, '').replace(',', '.');
+      else normalized = normalized.replace(/\./g, '').replace(',', '.');
     } else if (dot >= 0) {
-      const dotCount = (normalized.match(/\\./g) || []).length;
+      const dotCount = (normalized.match(/\./g) || []).length;
       const trailingDigits = normalized.length - normalized.lastIndexOf('.') - 1;
       if (dotCount > 1 || (locale.toLowerCase().startsWith('id') && trailingDigits === 3 && normalized.indexOf('.') <= 3)) {
-        normalized = normalized.replace(/\\./g, '');
+        normalized = normalized.replace(/\./g, '');
       }
     }
 
