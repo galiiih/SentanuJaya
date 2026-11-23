@@ -138,7 +138,7 @@ class PuffySecurityAndStreamTest extends TestCase
         $this->assertSame([
             'Customer PO OPEN',
             'Work Order',
-            'Surat Jalan aktif',
+            'Surat Jalan menunggu pengiriman',
             'Invoice outstanding',
             'Material stok minimum',
         ], array_column($result['table']['rows'], 0));
