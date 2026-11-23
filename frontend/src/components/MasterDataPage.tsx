@@ -14,6 +14,7 @@ import {
   FormField,
   Input,
   NumberInput,
+  NumericInput,
   Select,
   Textarea,
   Modal,
