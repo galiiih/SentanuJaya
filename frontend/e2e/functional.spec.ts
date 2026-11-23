@@ -867,10 +867,25 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     }]);
 
     await expect(detail.getByText('AC-E2E-0001')).toBeVisible({ timeout: 10000 });
+    // StatusBadge intentionally localizes workflow states in Indonesian.
+    // Assert the rendered labels, not the raw API enum values.
+    const submitRequest = page.waitForRequest(
+      request => request.method() === 'POST'
+        && new URL(request.url()).pathname === '/api/v1/acceptances/e2e-acceptance-id/submit',
+      { timeout: 10000 },
+    );
     await detail.getByRole('button', { name: /Ajukan Penerimaan|Submit Acceptance/i }).click();
-    await expect(detail.getByText('SUBMITTED')).toBeVisible({ timeout: 10000 });
+    await submitRequest;
+    await expect(detail.getByText('Diajukan', { exact: true })).toBeVisible({ timeout: 10000 });
+
+    const postRequest = page.waitForRequest(
+      request => request.method() === 'POST'
+        && new URL(request.url()).pathname === '/api/v1/acceptances/e2e-acceptance-id/post',
+      { timeout: 10000 },
+    );
     await detail.getByRole('button', { name: /Posting Penerimaan|Post Penerimaan/i }).click();
-    await expect(detail.getByText('POSTED')).toBeVisible({ timeout: 10000 });
+    await postRequest;
+    await expect(detail.getByText('Diposting', { exact: true })).toBeVisible({ timeout: 10000 });
     await expect(detail.getByText(/OK:\s*8 pcs/)).toBeVisible();
     await expect(detail.getByText(/Reject:\s*2 pcs/)).toBeVisible();
   });
