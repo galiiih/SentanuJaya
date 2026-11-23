@@ -43,47 +43,45 @@ test.describe('login intro animation', () => {
     await expect(page.locator('.app-shell')).not.toHaveClass(/app-shell--intro/);
   });
 
-  test('flies the intro logo toward the mobile navigation trigger on narrow screens', async ({ page }) => {
+  test('flies the intro logo toward the centered mobile Dashboard button on narrow screens', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await submitLogin(page);
     const intro = page.getByTestId('login-intro');
     await expect(intro).toBeVisible();
-    await expect(page.locator('.sidebar-mobile-trigger')).toBeVisible();
+    await expect(page.locator('.mobile-bottom-bar')).toBeVisible();
+    await expect(page.locator('.mobile-bottom-bar__dashboard')).toBeVisible();
     await expect(intro).toHaveClass(/login-intro--mobile/, { timeout: 6000 });
     await expect(intro).toHaveClass(/login-intro--fly|login-intro--wave/, { timeout: 6000 });
-    const dx = await intro.evaluate((element) => Number.parseFloat(getComputedStyle(element).getPropertyValue('--intro-dx')));
-    expect(Number.isFinite(dx)).toBeTruthy();
-    expect(Math.abs(dx)).toBeGreaterThan(20);
+    const dy = await intro.evaluate((element) => Number.parseFloat(getComputedStyle(element).getPropertyValue('--intro-dy')));
+    expect(Number.isFinite(dy)).toBeTruthy();
+    expect(Math.abs(dy)).toBeGreaterThan(20);
     await expect(intro).toHaveClass(/login-intro--wave/, { timeout: 6000 });
     await expect(intro).toBeHidden({ timeout: 4000 });
-    await expect(page.locator('.sidebar-mobile-trigger')).toBeVisible();
+    await expect(page.locator('.mobile-bottom-bar')).toBeVisible();
+    await expect(page.locator('.mobile-bottom-bar__dashboard')).toBeVisible();
   });
 
-  test('mobile navigation drawer opens and closes with Escape and backdrop', async ({ page }) => {
+  test('mobile bottom navigation exposes five slots and an overflow menu', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await submitLogin(page);
     await page.getByRole('button', { name: 'Lewati animasi pembuka' }).click();
     await expect(page.getByTestId('login-intro')).toBeHidden({ timeout: 1500 });
 
-    const trigger = page.getByRole('button', { name: 'Buka navigasi' });
-    const sidebar = page.locator('#main-sidebar-navigation');
-    const backdrop = page.getByRole('button', { name: 'Tutup navigasi' });
+    const bar = page.locator('.mobile-bottom-bar');
+    await expect(bar).toBeVisible();
+    await expect(bar.locator('.mobile-bottom-bar__slot')).toHaveCount(5);
+    await expect(bar.locator('.mobile-bottom-bar__slot').nth(2).getByRole('link')).toHaveAttribute('href', '/dashboard');
 
-    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
-    await trigger.click();
-    await expect(trigger).toHaveAttribute('aria-expanded', 'true');
-    await expect(sidebar).toHaveClass(/sidebar--mobile-open/);
-    await expect(backdrop).toHaveClass(/sidebar-mobile-overlay--visible/);
-
+    const more = page.getByRole('button', { name: 'Menu lainnya' });
+    await expect(more).toBeVisible();
+    await more.click();
+    const panel = page.locator('.mobile-more-panel');
+    await expect(panel).toBeVisible();
     await page.keyboard.press('Escape');
-    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
-    await expect(sidebar).not.toHaveClass(/sidebar--mobile-open/);
-
-    await trigger.click();
-    await expect(sidebar).toHaveClass(/sidebar--mobile-open/);
-    await backdrop.click({ position: { x: 350, y: 420 } });
-    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
-    await expect(sidebar).not.toHaveClass(/sidebar--mobile-open/);
+    await expect(panel).toBeHidden();
+    await more.click();
+    await page.locator('.mobile-more-backdrop').click({ position: { x: 5, y: 5 } });
+    await expect(panel).toBeHidden();
   });
 
   test('desktop sidebar collapses and expands without losing accessible navigation labels', async ({ page }) => {
@@ -111,19 +109,22 @@ test.describe('login intro animation', () => {
     await expect(page.getByRole('button', { name: 'Ciutkan sidebar' })).toHaveAttribute('aria-expanded', 'true');
   });
 
-  test('switches cleanly at the mobile drawer breakpoint', async ({ page }) => {
+  test('switches cleanly between mobile bottom bar and desktop sidebar at the breakpoint', async ({ page }) => {
     await page.setViewportSize({ width: 760, height: 900 });
     await submitLogin(page);
     await page.getByRole('button', { name: 'Lewati animasi pembuka' }).click();
     await expect(page.getByTestId('login-intro')).toBeHidden({ timeout: 1500 });
 
-    const trigger = page.getByRole('button', { name: 'Buka navigasi' });
+    const bar = page.locator('.mobile-bottom-bar');
+    const more = page.locator('.mobile-more-trigger');
     const sidebar = page.locator('#main-sidebar-navigation');
-    await expect(trigger).toBeVisible();
+    await expect(bar).toBeVisible();
+    await expect(more).toBeVisible();
     await expect(sidebar).toBeHidden();
 
     await page.setViewportSize({ width: 761, height: 900 });
-    await expect(trigger).toBeHidden();
+    await expect(bar).toBeHidden();
+    await expect(more).toBeHidden();
     await expect(sidebar).toBeVisible();
     await expect(sidebar).not.toHaveClass(/sidebar--mobile-open/);
   });
