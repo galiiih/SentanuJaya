@@ -549,8 +549,10 @@ export function NumericInput({
         setFocused(true);
         onFocus?.(event);
       }}
-      onChange={(event) => {
-        const raw = parseInput(event.target.value);
+      onInput={(event) => {
+        // Use the native input event for controlled text inputs. This is also
+        // reliably emitted by browser automation and IME/mobile keyboards.
+        const raw = parseInput(event.currentTarget.value);
         const numeric = raw === '' || raw === '-' || raw === '.' || raw === '-.' ? null : Number(raw);
         event.currentTarget.setCustomValidity(constraintMessage(raw));
         onValueChange(raw, numeric !== null && Number.isFinite(numeric) ? numeric : null);
