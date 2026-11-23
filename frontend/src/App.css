@@ -1286,3 +1286,29 @@ html[data-theme] .modal .modal__header .icon-button { color:var(--color-text-sec
 @media (prefers-reduced-motion: reduce) {
   .mobile-more-panel { animation: none !important; }
 }
+
+
+/* Keep overflow navigation in the mobile header; the bottom bar stays at five real destinations. */
+@media (max-width: 760px) {
+  .mobile-more-trigger {
+    position: relative;
+    z-index: 1104;
+    display: inline-grid !important;
+    flex: 0 0 auto;
+    width: 2.2rem;
+    height: 2.2rem;
+    border: 1px solid var(--color-border);
+    border-radius: .75rem;
+    background: color-mix(in srgb, var(--color-surface) 72%, transparent);
+    color: var(--color-text-secondary);
+  }
+  .mobile-more-trigger--active { color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 12%, transparent); }
+  .mobile-more-backdrop { z-index: 1102; }
+  .mobile-more-panel {
+    z-index: 1105;
+    top: calc(4.65rem + env(safe-area-inset-top));
+    right: .75rem;
+    bottom: auto;
+    max-height: calc(100dvh - 10rem - env(safe-area-inset-top));
+  }
+}
