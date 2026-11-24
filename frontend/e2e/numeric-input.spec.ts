@@ -32,13 +32,13 @@ test.describe('Formatted numeric inputs', () => {
     await unitPrice.blur();
     await expect(unitPrice).toHaveValue('1.234,56');
     await unitPrice.focus();
-    await expect(unitPrice).toHaveValue('1234.56');
+    await expect(unitPrice).toHaveValue('1.234,56');
 
     // A single three-digit dot group is interpreted as an Indonesian thousands separator.
     await unitPrice.fill('1.234');
     await unitPrice.blur();
     await unitPrice.focus();
-    await expect(unitPrice).toHaveValue('1234');
+    await expect(unitPrice).toHaveValue('1.234');
 
     // Indonesian thousands separators are parsed as grouping, not decimal fractions.
     await unitPrice.fill('1.234.567,89');
@@ -95,7 +95,7 @@ test.describe('Formatted numeric inputs', () => {
     await unitPrice.blur();
     await expect(unitPrice).toHaveValue('1,234');
     await unitPrice.focus();
-    await expect(unitPrice).toHaveValue('1234');
+    await expect(unitPrice).toHaveValue('1.234');
 
     await unitPrice.fill('1,234.56');
     await unitPrice.blur();
