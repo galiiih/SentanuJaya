@@ -477,7 +477,6 @@ export function NumericInput({
     // never overwritten with the previous parent value.
     if (!focusedRef.current) {
       draftValueRef.current = rawValue;
-      setDraftValue(rawValue);
     }
   }, [rawValue]);
 
