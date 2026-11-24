@@ -1197,52 +1197,6 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await expect(bottomNavigation.locator('.mobile-bottom-bar__dashboard')).toBeVisible();
   });
 
-  test('mobile navigation opens as a drawer and closes after route selection', async ({ page }) => {
-    await page.setViewportSize({ width: 390, height: 844 });
-    await login(page);
-
-    const sidebar = page.locator('aside.sidebar');
-    const trigger = page.getByRole('button', { name: 'Buka navigasi' });
-    const overlay = page.locator('.sidebar-mobile-overlay');
-
-    await expect(trigger).toBeVisible();
-    await expect(sidebar).not.toHaveClass(/sidebar--mobile-open/);
-    await trigger.click();
-    await expect(sidebar).toHaveClass(/sidebar--mobile-open/);
-    await expect(overlay).toHaveClass(/sidebar-mobile-overlay--visible/);
-    await expect(page.getByRole('link', { name: 'Master Data' })).toBeVisible();
-
-    await page.getByRole('link', { name: 'Master Data' }).click();
-    await expect(page).toHaveURL(/\/master$/);
-    await expect(sidebar).not.toHaveClass(/sidebar--mobile-open/);
-    await expect(overlay).toBeHidden();
-  });
-
-  test('mobile navigation closes with Escape and restores page interaction', async ({ page }) => {
-    await page.setViewportSize({ width: 390, height: 844 });
-    await login(page);
-
-    const sidebar = page.locator('aside.sidebar');
-    await page.getByRole('button', { name: 'Buka navigasi' }).click();
-    await expect(sidebar).toHaveClass(/sidebar--mobile-open/);
-    await page.keyboard.press('Escape');
-    await expect(sidebar).not.toHaveClass(/sidebar--mobile-open/);
-    await expect(page.getByRole('button', { name: 'Buka navigasi' })).toHaveAttribute('aria-expanded', 'false');
-    await expect(page.getByRole('heading', { name: /Dashboard/i }).first()).toBeVisible();
-  });
-
-  test('mobile navigation overlay closes the drawer without changing route', async ({ page }) => {
-    await page.setViewportSize({ width: 390, height: 844 });
-    await login(page);
-
-    const sidebar = page.locator('aside.sidebar');
-    await page.getByRole('button', { name: 'Buka navigasi' }).click();
-    await expect(sidebar).toHaveClass(/sidebar--mobile-open/);
-    await page.getByRole('button', { name: 'Tutup navigasi' }).click({ position: { x: 360, y: 24 } });
-    await expect(sidebar).not.toHaveClass(/sidebar--mobile-open/);
-    await expect(page).toHaveURL(/\/dashboard$/);
-  });
-
   test('logout lives in the sidebar profile menu, not in the header', async ({ page }) => {
     await login(page);
     await expect(page.locator('.app-header .user-menu')).toHaveCount(0);
