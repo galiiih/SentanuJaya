@@ -12,7 +12,7 @@ test.describe('Formatted numeric inputs', () => {
   test('keeps empty, zero, decimal and grouped values stable while editing', async ({ page }) => {
     await login(page);
     await page.goto('/customer-po');
-    await page.getByRole('button', { name: /PO Baru|New PO/i }).click();
+    await page.getByRole('button', { name: /Buat Customer PO|Create Customer PO/i }).click();
 
     const inputs = page.locator('input[inputmode="decimal"]');
     await expect(inputs).toHaveCount(2);
