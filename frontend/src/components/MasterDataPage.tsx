@@ -288,6 +288,12 @@ export function MasterDataPage() {
         setNotice(tr('Data master berhasil ditambahkan.', 'Master data created successfully.'));
       }
       setModalOpen(false);
+      // Companies and branches are relationship options used by other master
+      // forms. Refresh them after mutations so a company/branch created in this
+      // session is immediately selectable without a full page reload.
+      if (tab === 'companies' || tab === 'branches') {
+        await loadReferences();
+      }
       // Finish refreshing the table before the save flow settles so callers see
       // one stable, server-backed state rather than a late competing render.
       await loadData();
@@ -308,7 +314,10 @@ export function MasterDataPage() {
           await masterApi[tab].remove(row.id);
           setNotice(tr('Data master berhasil dihapus.', 'Master data deleted successfully.'));
           setConfirmState(s => ({ ...s, open: false }));
-          loadData();
+          if (tab === 'companies' || tab === 'branches') {
+            await loadReferences();
+          }
+          await loadData();
         } catch (err: any) {
           setError(apiError(err));
           setConfirmState(s => ({ ...s, open: false }));
