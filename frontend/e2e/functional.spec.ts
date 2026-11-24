@@ -864,6 +864,30 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     // The printable document repeats line-item labels; keep this workflow assertion
     // scoped to the interactive detail panel, not the separate print-only document.
     await expect(detail.locator('.confirmation-dialog__body.no-print').getByText('Spoiler E2E')).toBeVisible();
+
+    // Verify the actual print stylesheet, not only the on-screen document markup.
+    const printDocument = detail.locator('.print-document');
+    await expect(printDocument).toBeVisible();
+    const flatLogo = printDocument.locator('[data-sentanu-logo] .sj-flat svg');
+    await expect(flatLogo).toHaveCount(1, { timeout: 10000 });
+    await page.emulateMedia({ media: 'print' });
+    await expect(printDocument).toBeVisible();
+    const printLayout = await printDocument.evaluate((element) => {
+      const logo = element.querySelector('[data-sentanu-logo] .sj-flat') as HTMLElement | null;
+      const svg = logo?.querySelector('svg');
+      return {
+        width: element.getBoundingClientRect().width,
+        display: getComputedStyle(element).display,
+        logoDisplay: logo ? getComputedStyle(logo).display : 'missing',
+        logoVisibility: svg ? getComputedStyle(svg).visibility : 'missing',
+      };
+    });
+    expect(printLayout.width).toBeGreaterThan(780); // A4 portrait is ~794 CSS px at 96 dpi.
+    expect(printLayout.display).toBe('block');
+    expect(printLayout.logoDisplay).toBe('block');
+    expect(printLayout.logoVisibility).toBe('visible');
+    await page.emulateMedia({ media: 'screen' });
+
     await detail.getByRole('button', { name: /Penerimaan Baru|Catat Penerimaan/i }).click();
 
     // Identify the creation dialog by its unique reject-reason field.
