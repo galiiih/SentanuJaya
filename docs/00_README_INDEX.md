@@ -40,7 +40,7 @@
 4. `DATABASE_SCHEMA.md` dan migration aktif menjadi acuan schema; jangan menganggap tabel fase berikutnya sudah ada tanpa memeriksa migration.
 5. Dokumen historis adalah referensi, bukan instruksi implementasi bila sudah digantikan keputusan terbaru.
 
-## Status eksekusi — snapshot 11 November 2026
+## Status eksekusi — snapshot 25 November 2026
 
 - Implementasi inti Phase 0–5 tersedia; status per modul dan bukti terbaru tercatat di `IMPLEMENTATION_PROGRESS.md`.
 - PHP/PostgreSQL workflow: 153 tests passed, 1,037 assertions.
@@ -49,4 +49,4 @@
 - Production readiness: BELUM SELESAI. Deployment VPS, UAT bisnis final, training, backup-restore drill, opening data, dan Owner sign-off masih harus diselesaikan.
 - Current branch: `feat/sidebar-collapse-navigation-new`; belum di-merge ke `main`.
 
-Terakhir diperbarui: 2026-11-11.
+Terakhir diperbarui: 2026-11-25. Verifikasi kode terbaru: `e95767b7e585ec2520e35d4b17aabefe440e959c`.
