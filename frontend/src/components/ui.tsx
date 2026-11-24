@@ -539,11 +539,11 @@ export function NumericInput({
   }, [validationMessage]);
 
   const displayValue = () => {
-    const editingValue = focusedRef.current ? draftValue : rawValue;
+    const editingValue = focusedRef.current ? draftValueRef.current : rawValue;
     if (!editingValue || editingValue === '-') return editingValue;
     const parsed = Number(editingValue);
     if (!Number.isFinite(parsed)) return editingValue;
-    return focused ? editingValue : formatter.format(parsed);
+    return focusedRef.current ? editingValue : formatter.format(parsed);
   };
 
   // React's onChange is the canonical controlled-input event for text fields.
@@ -594,7 +594,7 @@ export function NumericInput({
         setFocused(false);
         onBlur?.(event);
       }}
-      aria-valuenow={(() => { const current = parseInput(focusedRef.current ? draftValue : rawValue); return current !== '' && Number.isFinite(Number(current)) ? Number(current) : undefined; })()}
+      aria-valuenow={(() => { const current = parseInput(focusedRef.current ? draftValueRef.current : rawValue); return current !== '' && Number.isFinite(Number(current)) ? Number(current) : undefined; })()}
     />
   );
 }
