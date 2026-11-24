@@ -13,7 +13,6 @@ import {
   DataTable,
   FormField,
   Input,
-  NumberInput,
   NumericInput,
   Select,
   Textarea,
