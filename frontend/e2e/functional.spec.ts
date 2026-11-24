@@ -1178,7 +1178,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     expect(restoredWidth).toBeGreaterThan(collapsedWidth);
   });
 
-  test('mobile drawer restores labels after collapsing the desktop sidebar', async ({ page }) => {
+  test('mobile bottom navigation remains available after collapsing the desktop sidebar', async ({ page }) => {
     await login(page);
 
     const sidebar = page.locator('aside.sidebar');
@@ -1188,13 +1188,13 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await expect(sidebar).toHaveClass(/sidebar--collapsed/);
 
     await page.setViewportSize({ width: 390, height: 844 });
-    const trigger = page.getByRole('button', { name: 'Buka navigasi' });
-    await expect(trigger).toBeVisible();
-    await trigger.click();
+    await expect(sidebar).toBeHidden();
 
-    await expect(sidebar).toHaveClass(/sidebar--mobile-open/);
-    await expect(sidebar.getByRole('link', { name: 'Master Data' })).toBeVisible();
-    await expect(collapseButton).toBeHidden();
+    const bottomNavigation = page.locator('nav.mobile-bottom-bar');
+    await expect(bottomNavigation).toBeVisible();
+    await expect(bottomNavigation.getByRole('link', { name: /Dashboard/i })).toBeVisible();
+    await expect(bottomNavigation.locator('.mobile-bottom-bar__item')).toHaveCount(4);
+    await expect(bottomNavigation.locator('.mobile-bottom-bar__dashboard')).toBeVisible();
   });
 
   test('mobile navigation opens as a drawer and closes after route selection', async ({ page }) => {
