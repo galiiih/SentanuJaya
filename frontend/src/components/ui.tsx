@@ -458,9 +458,7 @@ export function NumericInput({
   max,
   ...props
 }: NumericInputProps) {
-  const [focused, setFocused] = useState(false);
   const focusedRef = useRef(false);
-  const [, setDraftValue] = useState('');
   const draftValueRef = useRef('');
   const { language } = useLanguage();
   const locale = localeOverride ?? (language === 'en' ? 'en-US' : 'id-ID');
@@ -481,7 +479,7 @@ export function NumericInput({
       draftValueRef.current = rawValue;
       setDraftValue(rawValue);
     }
-  }, [focused, rawValue]);
+  }, [rawValue]);
 
   const parseInput = (input: string): string => {
     let normalized = input.replace(/\s/g, '').replace(/[^0-9,.-]/g, '');
@@ -559,7 +557,6 @@ export function NumericInput({
     const raw = parseInput(draft);
     const numeric = raw === '' || raw === '-' || raw === '.' || raw === '-.' ? null : Number(raw);
     draftValueRef.current = draft;
-    setDraftValue(draft);
     event.currentTarget.setCustomValidity(constraintMessage(raw));
     onValueChange(raw, numeric !== null && Number.isFinite(numeric) ? numeric : null);
   };
@@ -575,9 +572,7 @@ export function NumericInput({
       onFocus={(event) => {
         focusedRef.current = true;
         draftValueRef.current = rawValue;
-        setDraftValue(rawValue);
         event.currentTarget.setCustomValidity(constraintMessage(rawValue));
-        setFocused(true);
         onFocus?.(event);
       }}
       onChange={handleNumericInput}
@@ -591,7 +586,6 @@ export function NumericInput({
         event.currentTarget.setCustomValidity(constraintMessage(committedRaw));
         onValueChange(committedRaw, committedNumber !== null && Number.isFinite(committedNumber) ? committedNumber : null);
         focusedRef.current = false;
-        setFocused(false);
         onBlur?.(event);
       }}
       aria-valuenow={(() => { const current = parseInput(focusedRef.current ? draftValueRef.current : rawValue); return current !== '' && Number.isFinite(Number(current)) ? Number(current) : undefined; })()}
