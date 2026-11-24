@@ -162,12 +162,27 @@ export function MaterialsPage() {
       setMovements(asRows(movRes));
       const loadedWarehouses = asRows(whRes);
       setWarehouseList(loadedWarehouses);
+      const activeWarehouseIds = new Set(
+        loadedWarehouses
+          .filter((warehouse: any) => warehouse.is_active !== false)
+          .map((warehouse: any) => warehouse.id),
+      );
       const defaultWarehouseId = loadedWarehouses.find((warehouse: any) => warehouse.is_active !== false)?.id ?? '';
-      if (defaultWarehouseId) {
-        setReceiptForm((current) => current.warehouse_id ? current : { ...current, warehouse_id: defaultWarehouseId });
-        setAdjForm((current) => current.warehouse_id ? current : { ...current, warehouse_id: defaultWarehouseId });
-        setOpnameForm((current) => current.warehouse_id ? current : { ...current, warehouse_id: defaultWarehouseId });
-      }
+      // Keep controlled warehouse selectors aligned with active options. Retaining
+      // an ID for a warehouse that was deactivated leaves the select visually blank
+      // and prevents users from choosing a valid warehouse.
+      setReceiptForm((current) => ({
+        ...current,
+        warehouse_id: activeWarehouseIds.has(current.warehouse_id) ? current.warehouse_id : defaultWarehouseId,
+      }));
+      setAdjForm((current) => ({
+        ...current,
+        warehouse_id: activeWarehouseIds.has(current.warehouse_id) ? current.warehouse_id : defaultWarehouseId,
+      }));
+      setOpnameForm((current) => ({
+        ...current,
+        warehouse_id: activeWarehouseIds.has(current.warehouse_id) ? current.warehouse_id : defaultWarehouseId,
+      }));
       setSupplierList(asRows(supRes));
       setLowStocks(asRows(lowRes));
       if (failures.length) setError(failures.join(' · '));
@@ -195,7 +210,7 @@ export function MaterialsPage() {
       setNotice(tr('Penerimaan material (Draft) berhasil dibuat.', 'Material receipt draft created successfully.'));
       setReceiptModalOpen(false);
       setReceiptForm({
-        warehouse_id: '',
+        warehouse_id: activeWarehouses[0]?.id ?? '',
         supplier_id: '',
         receipt_date: getLocalDateInputValue(),
         notes: '',
@@ -251,7 +266,7 @@ export function MaterialsPage() {
     try {
       await stockApi.adjust({ ...adjForm, quantity: Number(adjForm.quantity) });
       setNotice(tr('Stock adjustment berhasil diproses.', 'Stock adjustment processed successfully.'));
-      setAdjForm({ warehouse_id: '', material_id: '', type: 'IN', quantity: '', reason: '' });
+      setAdjForm({ warehouse_id: activeWarehouses[0]?.id ?? '', material_id: '', type: 'IN', quantity: '', reason: '' });
       loadData();
     } catch (err) {
       setError(apiError(err));
@@ -367,7 +382,7 @@ export function MaterialsPage() {
         <Card>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
             <h3 style={{ fontWeight: 600, fontSize: '1.1rem' }}>{tr('Daftar Penerimaan Material (Material Receipts)', 'Material Receipts')}</h3>
-            <Button onClick={() => setReceiptModalOpen(true)}>
+            <Button onClick={() => setReceiptModalOpen(true)} disabled={activeWarehouses.length === 0}>
               <Plus className="w-4 h-4 mr-2" /> {tr('Buat Penerimaan', 'Create Receipt')}
             </Button>
           </div>
@@ -486,7 +501,7 @@ export function MaterialsPage() {
               <FormField label={tr('Gudang', 'Warehouse')} required>
                 <Select value={opnameForm.warehouse_id} onChange={(e) => setOpnameForm({ ...opnameForm, warehouse_id: e.target.value })} required>
                   <option value="">{tr('Pilih Gudang...', 'Select warehouse...')}</option>
-                  {warehouses.map((w: any) => <option key={w.id} value={w.id}>{w.name}</option>)}
+                  {activeWarehouses.map((w: any) => <option key={w.id} value={w.id}>{w.name}</option>)}
                 </Select>
               </FormField>
               <FormField label={tr('Material', 'Material')} required>
@@ -501,7 +516,7 @@ export function MaterialsPage() {
               <FormField label={tr('Catatan / Alasan Opname', 'Stock Count Notes / Reason')}>
                 <Textarea value={opnameForm.reason} onChange={(e) => setOpnameForm({ ...opnameForm, reason: e.target.value })} />
               </FormField>
-              <Button type="submit">{tr('Proses Stock Opname', 'Process Stock Count')}</Button>
+              <Button type="submit" disabled={activeWarehouses.length === 0}>{tr('Proses Stock Opname', 'Process Stock Count')}</Button>
             </form>
           </Card>
         </div>
