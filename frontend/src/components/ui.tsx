@@ -549,7 +549,7 @@ export function NumericInput({
     // Keep the exact localized draft while editing. Canonicalizing the visible
     // text on every keystroke destroys grouping separators mid-entry (for
     // example, "1.850" becomes "1850" before the user can type ".000").
-    let draft = event.currentTarget.value.replace(/\\s/g, '').replace(/[^0-9,.-]/g, '');
+    let draft = event.currentTarget.value.replace(/\s/g, '').replace(/[^0-9,.-]/g, '');
     if (!allowNegative) draft = draft.replace(/-/g, '');
     else draft = draft.replace(/(?!^)-/g, '');
 
