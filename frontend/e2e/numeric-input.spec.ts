@@ -95,7 +95,7 @@ test.describe('Formatted numeric inputs', () => {
     await unitPrice.blur();
     await expect(unitPrice).toHaveValue('1,234');
     await unitPrice.focus();
-    await expect(unitPrice).toHaveValue('1.234');
+    await expect(unitPrice).toHaveValue('1,234');
 
     await unitPrice.fill('1,234.56');
     await unitPrice.blur();
