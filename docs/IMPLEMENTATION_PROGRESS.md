@@ -1,8 +1,20 @@
 # Implementation Progress — Sentanu Jaya ERP
 
-Snapshot: 11 November 2026  
+Snapshot baseline: 11 November 2026  
 Branch: `feat/sidebar-collapse-navigation-new`  
 Verified commit: `b2f0e1bd5143cb5d173f87e09f1e79571d7112ca`
+
+## Update verifikasi — 25 November 2026
+
+Branch aktif tetap `feat/sidebar-collapse-navigation-new`. Commit aplikasi terbaru yang diverifikasi adalah `e95767b7e585ec2520e35d4b17aabefe440e959c`.
+
+- Frontend build & lint: PASS.
+- Backend PHPUnit: PASS.
+- PHP & PostgreSQL 16: PASS (workflow run `45443332362`).
+- Browser E2E: PASS (workflow run `45443332144`).
+- Sentanu Jaya CI (frontend + backend): PASS (workflow run `45443332116`).
+- Fix warehouse selector: semua form stok memakai gudang aktif; referensi terpilih dinormalisasi saat data dimuat; aksi penerimaan/opname dinonaktifkan jika tidak ada gudang aktif.
+- Print A4 Invoice dan Surat Jalan serta logo pada dokumen aktual (bukan modal input) telah diverifikasi melalui workflow print khusus pada commit `21a4546360e61b81999f21f4970421cc5a55c3aa`.
 
 ## Status implementasi
 
@@ -21,6 +33,10 @@ Verified commit: `b2f0e1bd5143cb5d173f87e09f1e79571d7112ca`
 | Production deployment | NOT COMPLETE | VPS deployment, environment hardening, backup-restore drill, opening data, training, dan Owner sign-off belum dibuktikan |
 
 ## Latest automated verification
+
+Automated verification pada baseline historis di bawah ini tetap dicatat sebagai bukti historis. Status terkini per 25 November 2026 tercantum pada bagian Update verifikasi di atas.
+
+## Historical automated verification
 
 Workflow run untuk commit `b2f0e1bd5143cb5d173f87e09f1e79571d7112ca`:
 
