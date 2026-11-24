@@ -530,7 +530,7 @@ export function MaterialsPage() {
               <FormField label={tr('Gudang', 'Warehouse')} required>
                 <Select value={receiptForm.warehouse_id} onChange={(e) => setReceiptForm({ ...receiptForm, warehouse_id: e.target.value })} required>
                   <option value="">{tr('Pilih Gudang...', 'Select warehouse...')}</option>
-                  {warehouses.map((w: any) => <option key={w.id} value={w.id}>{w.name}</option>)}
+                  {activeWarehouses.map((w: any) => <option key={w.id} value={w.id}>{w.name}</option>)}
                 </Select>
               </FormField>
               <FormField label={tr('Supplier', 'Supplier')}>
