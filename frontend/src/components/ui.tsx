@@ -459,6 +459,7 @@ export function NumericInput({
   ...props
 }: NumericInputProps) {
   const [focused, setFocused] = useState(false);
+  const focusedRef = useRef(false);
   const [draftValue, setDraftValue] = useState('');
   const draftValueRef = useRef('');
   const { language } = useLanguage();
@@ -472,7 +473,11 @@ export function NumericInput({
   // When not editing, external form changes remain authoritative. While editing,
   // keep the immediate DOM draft so a parent render cannot restore stale text.
   useEffect(() => {
-    if (!focused) {
+    // React may render the parent value update caused by the first input event
+    // before the focused state render is committed. The ref is set synchronously
+    // by onFocus, so an in-progress replacement (select-all / paste / fill) is
+    // never overwritten with the previous parent value.
+    if (!focusedRef.current) {
       draftValueRef.current = rawValue;
       setDraftValue(rawValue);
     }
@@ -534,7 +539,7 @@ export function NumericInput({
   }, [validationMessage]);
 
   const displayValue = () => {
-    const editingValue = focused ? draftValue : rawValue;
+    const editingValue = focusedRef.current ? draftValue : rawValue;
     if (!editingValue || editingValue === '-') return editingValue;
     const parsed = Number(editingValue);
     if (!Number.isFinite(parsed)) return editingValue;
@@ -568,6 +573,7 @@ export function NumericInput({
       className={`input ${className}`}
       value={displayValue()}
       onFocus={(event) => {
+        focusedRef.current = true;
         draftValueRef.current = rawValue;
         setDraftValue(rawValue);
         event.currentTarget.setCustomValidity(constraintMessage(rawValue));
@@ -584,10 +590,11 @@ export function NumericInput({
           : Number(committedRaw);
         event.currentTarget.setCustomValidity(constraintMessage(committedRaw));
         onValueChange(committedRaw, committedNumber !== null && Number.isFinite(committedNumber) ? committedNumber : null);
+        focusedRef.current = false;
         setFocused(false);
         onBlur?.(event);
       }}
-      aria-valuenow={(() => { const current = parseInput(focused ? draftValue : rawValue); return current !== '' && Number.isFinite(Number(current)) ? Number(current) : undefined; })()}
+      aria-valuenow={(() => { const current = parseInput(focusedRef.current ? draftValue : rawValue); return current !== '' && Number.isFinite(Number(current)) ? Number(current) : undefined; })()}
     />
   );
 }
