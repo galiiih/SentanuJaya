@@ -460,7 +460,7 @@ export function NumericInput({
 }: NumericInputProps) {
   const [focused, setFocused] = useState(false);
   const focusedRef = useRef(false);
-  const [draftValue, setDraftValue] = useState('');
+  const [, setDraftValue] = useState('');
   const draftValueRef = useRef('');
   const { language } = useLanguage();
   const locale = localeOverride ?? (language === 'en' ? 'en-US' : 'id-ID');
