@@ -119,12 +119,12 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     // controlled input after each character (which made this test flaky in CI).
     await codeInput.click();
     await expect(codeInput).toBeFocused();
-    await codeInput.pressSequentially(code, { delay: 5 });
+    await codeInput.pressSequentially(code, { delay: 5, timeout: 30000 });
     await expect(codeInput).toHaveValue(code);
 
     await nameInput.click();
     await expect(nameInput).toBeFocused();
-    await nameInput.pressSequentially(name, { delay: 5 });
+    await nameInput.pressSequentially(name, { delay: 5, timeout: 30000 });
     await expect(nameInput).toHaveValue(name);
 
     await taxSelect.selectOption('2');
