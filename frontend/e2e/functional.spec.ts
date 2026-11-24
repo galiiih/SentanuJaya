@@ -865,29 +865,6 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     // scoped to the interactive detail panel, not the separate print-only document.
     await expect(detail.locator('.confirmation-dialog__body.no-print').getByText('Spoiler E2E')).toBeVisible();
 
-    // Verify the actual print stylesheet, not only the on-screen document markup.
-    const printDocument = detail.locator('.print-document');
-    await expect(printDocument).toBeVisible();
-    const flatLogo = printDocument.locator('[data-sentanu-logo] .sj-flat svg');
-    await expect(flatLogo).toHaveCount(1, { timeout: 10000 });
-    await page.emulateMedia({ media: 'print' });
-    await expect(printDocument).toBeVisible();
-    const printLayout = await printDocument.evaluate((element) => {
-      const logo = element.querySelector('[data-sentanu-logo] .sj-flat') as HTMLElement | null;
-      const svg = logo?.querySelector('svg');
-      return {
-        width: element.getBoundingClientRect().width,
-        display: getComputedStyle(element).display,
-        logoDisplay: logo ? getComputedStyle(logo).display : 'missing',
-        logoVisibility: svg ? getComputedStyle(svg).visibility : 'missing',
-      };
-    });
-    expect(printLayout.width).toBeGreaterThan(780); // A4 portrait is ~794 CSS px at 96 dpi.
-    expect(printLayout.display).toBe('block');
-    expect(printLayout.logoDisplay).toBe('block');
-    expect(printLayout.logoVisibility).toBe('visible');
-    await page.emulateMedia({ media: 'screen' });
-
     await detail.getByRole('button', { name: /Penerimaan Baru|Catat Penerimaan/i }).click();
 
     // Identify the creation dialog by its unique reject-reason field.
@@ -1147,6 +1124,8 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await expect(invoicePrint).toContainText('Jl. Contoh No. 10, Jakarta');
     await expect(invoicePrint).toContainText('DPP / Subtotal');
     await expect(invoicePrint).toContainText('Sisa Tagihan');
+    const invoiceLogo = invoicePrint.locator('[data-sentanu-logo] .sj-flat svg');
+    await expect(invoiceLogo).toHaveCount(1, { timeout: 10000 });
     await page.emulateMedia({ media: 'print' });
     const invoicePrintGeometry = await invoicePrint.evaluate((element) => ({ display: getComputedStyle(element).display, position: getComputedStyle(element).position, visibility: getComputedStyle(element).visibility, width: getComputedStyle(element).width, height: element.getBoundingClientRect().height }));
     expect(invoicePrintGeometry.display).toBe('block');
@@ -1154,6 +1133,12 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     expect(invoicePrintGeometry.visibility).toBe('visible');
     expect(invoicePrintGeometry.height).toBeGreaterThan(300);
     expect(parseFloat(invoicePrintGeometry.width)).toBeGreaterThan(780);
+    const invoiceLogoStyle = await invoiceLogo.evaluate((element) => ({
+      display: getComputedStyle(element.parentElement!).display,
+      visibility: getComputedStyle(element).visibility,
+    }));
+    expect(invoiceLogoStyle.display).toBe('block');
+    expect(invoiceLogoStyle.visibility).toBe('visible');
     await page.screenshot({ path: testInfo.outputPath('invoice-print-preview.png'), fullPage: true });
     await page.pdf({ path: testInfo.outputPath('invoice-print-preview.pdf'), format: 'A4', printBackground: true });
     await page.emulateMedia({ media: 'screen' });
@@ -1484,6 +1469,8 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await expect(printDocument).toContainText('Finishing glossy');
     await expect(printDocument).toContainText('Budi E2E');
     await expect(printDocument).toContainText('B 1234 E2E');
+    const sjLogo = printDocument.locator('[data-sentanu-logo] .sj-flat svg');
+    await expect(sjLogo).toHaveCount(1, { timeout: 10000 });
 
     // Apply print media before asserting print-only CSS and capturing the generated preview.
     await page.emulateMedia({ media: 'print' });
@@ -1493,6 +1480,12 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     expect(printGeometry.visibility).toBe('visible');
     expect(printGeometry.height).toBeGreaterThan(300);
     expect(parseFloat(printGeometry.width)).toBeGreaterThan(780);
+    const sjLogoStyle = await sjLogo.evaluate((element) => ({
+      display: getComputedStyle(element.parentElement!).display,
+      visibility: getComputedStyle(element).visibility,
+    }));
+    expect(sjLogoStyle.display).toBe('block');
+    expect(sjLogoStyle.visibility).toBe('visible');
     // Capture the actual print stylesheet rendering so the CI artifact can be visually reviewed.
     await page.screenshot({ path: testInfo.outputPath('surat-jalan-print-preview.png'), fullPage: true });
     await page.pdf({ path: testInfo.outputPath('surat-jalan-print-preview.pdf'), format: 'A4', printBackground: true });
