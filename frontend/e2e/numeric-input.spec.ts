@@ -88,7 +88,7 @@ test.describe('Formatted numeric inputs', () => {
     await login(page);
     await page.getByRole('button', { name: 'EN', exact: true }).click();
     await page.goto('/customer-po');
-    await page.getByRole('button', { name: /New PO/i }).click();
+    await page.getByRole('button', { name: /Create Customer PO/i }).click();
 
     const unitPrice = page.locator('input[inputmode="decimal"]').nth(1);
     await unitPrice.fill('1,234');
