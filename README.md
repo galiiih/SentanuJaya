@@ -30,12 +30,13 @@ Sentanu ERP adalah custom web app untuk bisnis jasa automotive finishing, painti
 
 Implementasi modul inti dan automated test suite telah berkembang melampaui baseline awal. Jangan gunakan angka modul/test dari snapshot lama di dokumen historis; lihat [Implementation Progress](docs/IMPLEMENTATION_PROGRESS.md) untuk status dan bukti terbaru.
 
-Verifikasi implementasi terbaru pada commit `e95767b7e585ec2520e35d4b17aabefe440e959c` (24 November 2026):
+Verifikasi implementasi terbaru pada commit `de8c7f087966115142055e9625694b25936f56ea` (25 November 2026):
 - Frontend build & lint: PASS.
 - Backend PHPUnit: PASS.
 - PHP & PostgreSQL 16 workflow: PASS.
 - Browser E2E workflow: PASS.
 - Perbaikan pemilihan gudang aktif pada Penerimaan Material, Adjustment, dan Stock Opname: PASS pada seluruh workflow di atas.
+- Customer Acceptance pada Surat Jalan tetap tersimpan setelah reload: Sentanu Jaya CI, PHP/PostgreSQL, dan Browser E2E PASS (53 passed, 1 skipped).
 - Verifikasi cetak Surat Jalan dan Invoice A4 beserta logo Sentanu Jaya: PASS pada workflow khusus print di commit `21a4546360e61b81999f21f4970421cc5a55c3aa`.
 
 Riwayat baseline sebelumnya (commit `b2f0e1bd5143cb5d173f87e09f1e79571d7112ca`):
