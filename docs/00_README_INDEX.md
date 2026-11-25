@@ -43,10 +43,10 @@
 ## Status eksekusi — snapshot 25 November 2026
 
 - Implementasi inti Phase 0–5 tersedia; status per modul dan bukti terbaru tercatat di `IMPLEMENTATION_PROGRESS.md`.
-- PHP/PostgreSQL workflow: 153 tests passed, 1,037 assertions.
-- Browser E2E workflow: 53 tests passed; dedicated Login Intro suite 11 tests passed; dedicated print suite 2 tests passed.
+- PHP/PostgreSQL workflow: PASS pada commit terbaru `de8c7f0` (run `45541266328`).
+- Browser E2E workflow: PASS pada commit terbaru `de8c7f0` (53 passed, 1 skipped; run `45541266329`); dedicated Login Intro dan print suite juga PASS.
 - Frontend TypeScript dan Vite production build: PASS.
 - Production readiness: BELUM SELESAI. Deployment VPS, UAT bisnis final, training, backup-restore drill, opening data, dan Owner sign-off masih harus diselesaikan.
 - Current branch: `feat/sidebar-collapse-navigation-new`; belum di-merge ke `main`.
 
-Terakhir diperbarui: 2026-11-25. Verifikasi kode terbaru: `e95767b7e585ec2520e35d4b17aabefe440e959c`.
+Terakhir diperbarui: 2026-11-25. Verifikasi kode terbaru: `de8c7f087966115142055e9625694b25936f56ea`.
