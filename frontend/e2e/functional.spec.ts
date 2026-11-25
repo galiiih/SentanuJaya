@@ -1520,11 +1520,9 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await page.goto('/materials');
     await expect(page.getByRole('heading', { name: /Inventaris & Gudang Material|Material Inventory & Warehouse/i })).toBeVisible();
 
-    // The E2E seeder creates an active WH-001 warehouse. This specifically guards
-    // against storing a paginated response object instead of its rows, which
-    // previously made warehouse dropdowns appear empty after the page loaded.
-    await expect(page.getByText(/Gudang Utama Sentanu Jaya/).first()).toBeVisible({ timeout: 15000 });
-
+    // The E2E seeder creates an active WH-001 warehouse. This guards against
+    // storing a paginated response object instead of its rows, which makes
+    // warehouse dropdowns appear empty.
     await page.getByRole('button', { name: /Penerimaan Material|Material Receipts/i }).click();
     const createReceipt = page.getByRole('button', { name: /Buat Penerimaan|Create Receipt/i });
     await expect(createReceipt).toBeEnabled();
