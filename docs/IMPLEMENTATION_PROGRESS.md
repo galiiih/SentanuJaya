@@ -6,16 +6,16 @@ Verified commit: `b2f0e1bd5143cb5d173f87e09f1e79571d7112ca`
 
 ## Update verifikasi — 25 November 2026
 
-Branch aktif tetap `feat/sidebar-collapse-navigation-new`. Commit implementasi NumericInput yang diverifikasi adalah `62bd6399f4c8758c034e6010e84861fff098dfad`; commit dokumentasi terbaru adalah `eac2c35b83ec1bcf0cb406f1e685e96e55e185a1`.
+Branch aktif tetap `feat/sidebar-collapse-navigation-new`. HEAD yang diverifikasi saat pembaruan ini adalah `7f84b85519aeb9a387cd57a1fe7f60eb7757d11b`.
 
-- Sentanu Jaya CI: PASS pada commit `eac2c35` (workflow run `45564961027`).
-- PHP & PostgreSQL 16: PASS pada commit `eac2c35` (workflow run `45564961021`).
-- Browser E2E: PASS pada commit `eac2c35` (workflow run `45564961133`).
-- Perbaikan NumericInput pada Price List Line tetap mencakup input localized `1.850.000`, sequential keyboard entry, canonical PATCH `unit_price=1850000`, dan persistensi setelah reload.
-- Commit `62bd639` menambah assertion khusus setelah create/update Price List Line: modal tertutup, heading Master Data dan daftar Price List Line tetap tampil, serta tidak ada uncaught page error.
-- Assertion tambahan ini memperkuat deteksi regresi pada alur save. **Blank screen setelah save belum dinyatakan selesai/root cause terkonfirmasi** karena belum berhasil direproduksi sebagai error spesifik.
+- Sentanu Jaya CI: PASS pada HEAD (workflow run `45579165296`).
+- Browser E2E: PASS pada HEAD (workflow run `45579165261`).
+- PHP & PostgreSQL Tests: PASS pada HEAD (workflow run `45579165245`).
+- Implementasi NumericInput dan assertion regresi Price List Line berada pada commit `62bd6399f4c8758c034e6010e84861fff098dfad`.
+- Regression coverage mencakup input localized `1.850.000`, sequential keyboard entry, canonical PATCH `unit_price=1850000`, persistensi setelah reload, modal tertutup, heading tetap tampil, dan tidak ada uncaught page error.
+- **Blank screen setelah save belum dinyatakan selesai/root cause terkonfirmasi** karena belum berhasil direproduksi sebagai error spesifik. Jangan menganggap NumericInput sebagai penyebab tanpa bukti.
 
-Investigasi lanjutan harus berangkat dari reproduksi atau error log nyata, bukan menganggap Price List Line sebagai penyebab blank screen.
+Investigasi blank screen selanjutnya harus menggunakan reproduksi/error log nyata. Hindari mengubah NumericInput yang sudah stabil tanpa defect terukur.
 
 ## Status implementasi
 
@@ -35,7 +35,7 @@ Investigasi lanjutan harus berangkat dari reproduksi atau error log nyata, bukan
 
 ## Latest automated verification
 
-Ketiga workflow untuk commit dokumentasi terbaru `eac2c35b83ec1bcf0cb406f1e685e96e55e185a1` selesai dengan status PASS: Browser E2E (`45564961133`), Sentanu Jaya CI (`45564961027`), dan PHP & PostgreSQL 16 (`45564961021`). Commit tersebut hanya memperbarui dokumentasi; perubahan implementasi NumericInput dan assertion regresinya berada pada commit `62bd6399f4c8758c034e6010e84861fff098dfad`. Automated verification pada baseline historis di bawah ini tetap dicatat sebagai bukti historis.
+Ketiga workflow pada branch HEAD `7f84b85519aeb9a387cd57a1fe7f60eb7757d11b` selesai dengan status PASS: Browser E2E (`45579165261`), Sentanu Jaya CI (`45579165296`), dan PHP & PostgreSQL Tests (`45579165245`). HEAD tersebut adalah commit dokumentasi; implementasi NumericInput yang diuji berada pada commit `62bd6399f4c8758c034e6010e84861fff098dfad`.
 
 ## Historical automated verification
 
