@@ -6,18 +6,16 @@ Verified commit: `b2f0e1bd5143cb5d173f87e09f1e79571d7112ca`
 
 ## Update verifikasi — 25 November 2026
 
-Branch aktif tetap `feat/sidebar-collapse-navigation-new`. Commit terbaru yang diverifikasi penuh adalah `de8c7f087966115142055e9625694b25936f56ea` (Customer Acceptance pada Surat Jalan tetap tersimpan setelah reload).
+Branch aktif tetap `feat/sidebar-collapse-navigation-new`. Commit terbaru yang diverifikasi adalah `62bd6399f4c8758c034e6010e84861fff098dfad`.
 
-- Frontend build & lint: PASS.
-- Backend PHPUnit: PASS.
-- PHP & PostgreSQL 16: PASS (workflow run `45443332362`).
-- Browser E2E: PASS (workflow run `45443332144`).
-- Sentanu Jaya CI (frontend + backend): PASS (workflow run `45443332116`).
-- Fix warehouse selector: semua form stok memakai gudang aktif; referensi terpilih dinormalisasi saat data dimuat; aksi penerimaan/opname dinonaktifkan jika tidak ada gudang aktif.
-- Print A4 Invoice dan Surat Jalan serta logo pada dokumen aktual (bukan modal input) telah diverifikasi melalui workflow print khusus pada commit `21a4546360e61b81999f21f4970421cc5a55c3aa`.
-- Customer Acceptance E2E memvalidasi nomor acceptance, status `Diposting`, qty OK 8 pcs dan reject 2 pcs setelah halaman Surat Jalan di-reload.
-- Commit `de8c7f0`: Sentanu Jaya CI run `45541266251` PASS; PHP & PostgreSQL run `45541266328` PASS; Browser E2E run `45541266329` PASS (53 passed, 1 skipped, 0 failed).
-- Investigasi blank screen setelah save: belum ada reproduksi yang memastikan halaman/aksi penyebab. E2E menangkap pageerror, console error, API error, dan request gagal; jangan menyimpulkan akar masalah tanpa error spesifik.
+- Sentanu Jaya CI: PASS (workflow run `45561788505`).
+- PHP & PostgreSQL 16: PASS (workflow run `45561788553`).
+- Browser E2E: PASS (workflow run `45561788541`).
+- Perbaikan NumericInput pada Price List Line tetap mencakup input localized `1.850.000`, sequential keyboard entry, canonical PATCH `unit_price=1850000`, dan persistensi setelah reload.
+- Commit `62bd639` menambah assertion khusus setelah create/update Price List Line: modal tertutup, heading Master Data dan daftar Price List Line tetap tampil, serta tidak ada uncaught page error.
+- Assertion tambahan ini memperkuat deteksi regresi pada alur save. **Blank screen setelah save belum dinyatakan selesai/root cause terkonfirmasi** karena belum berhasil direproduksi sebagai error spesifik.
+
+Investigasi lanjutan harus berangkat dari reproduksi atau error log nyata, bukan menganggap Price List Line sebagai penyebab blank screen.
 
 ## Status implementasi
 
