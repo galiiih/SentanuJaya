@@ -35,7 +35,7 @@ Investigasi lanjutan harus berangkat dari reproduksi atau error log nyata, bukan
 
 ## Latest automated verification
 
-Ketiga workflow untuk commit dokumentasi terbaru `eac2c35b83ec1bcf0cb406f1e685e96e55e185a1` selesai dengan status PASS: Browser E2E (`45564961133`), Sentanu Jaya CI (`45564961027`), dan PHP & PostgreSQL 16 (`45564961021`). Commit tersebut hanya memperbarui dokumentasi; perubahan implementasi NumericInput dan assertion regresinya berada pada commit `62bd63999f4c8758c034e6010e84861fff098dfad`. Automated verification pada baseline historis di bawah ini tetap dicatat sebagai bukti historis.
+Ketiga workflow untuk commit dokumentasi terbaru `eac2c35b83ec1bcf0cb406f1e685e96e55e185a1` selesai dengan status PASS: Browser E2E (`45564961133`), Sentanu Jaya CI (`45564961027`), dan PHP & PostgreSQL 16 (`45564961021`). Commit tersebut hanya memperbarui dokumentasi; perubahan implementasi NumericInput dan assertion regresinya berada pada commit `62bd6399f4c8758c034e6010e84861fff098dfad`. Automated verification pada baseline historis di bawah ini tetap dicatat sebagai bukti historis.
 
 ## Historical automated verification
 
