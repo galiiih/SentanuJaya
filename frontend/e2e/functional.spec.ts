@@ -1523,7 +1523,7 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     // The E2E seeder creates an active WH-001 warehouse. This guards against
     // storing a paginated response object instead of its rows, which makes
     // warehouse dropdowns appear empty.
-    await page.getByRole('button', { name: /Penerimaan Material|Material Receipts/i }).click();
+    await page.getByRole('button', { name: 'Penerimaan Material', exact: true }).click();
     const createReceipt = page.getByRole('button', { name: /Buat Penerimaan|Create Receipt/i });
     await expect(createReceipt).toBeEnabled();
     await createReceipt.click();
