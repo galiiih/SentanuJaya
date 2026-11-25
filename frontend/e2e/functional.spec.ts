@@ -927,6 +927,17 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await expect(detail.getByText('Diposting', { exact: true })).toBeVisible({ timeout: 10000 });
     await expect(detail.getByText(/OK:\s*8 pcs/)).toBeVisible();
     await expect(detail.getByText(/Reject:\s*2 pcs/)).toBeVisible();
+
+    // Reload the page and reopen the delivery order to verify the acceptance
+    // history is hydrated from the list API rather than only retained in modal state.
+    await page.reload();
+    await expect(page.getByRole('button', { name: 'SJ-E2E-ACC-001' })).toBeVisible({ timeout: 15000 });
+    await page.getByRole('button', { name: 'SJ-E2E-ACC-001' }).click();
+    const reloadedDetail = page.getByRole('dialog').first();
+    await expect(reloadedDetail.getByText('AC-E2E-0001')).toBeVisible({ timeout: 10000 });
+    await expect(reloadedDetail.getByText('Diposting', { exact: true })).toBeVisible();
+    await expect(reloadedDetail.getByText(/OK:\s*8 pcs/)).toBeVisible();
+    await expect(reloadedDetail.getByText(/Reject:\s*2 pcs/)).toBeVisible();
   });
 
   test('invoice creation requires an eligible delivered order and cannot submit an empty selection', async ({ page }) => {
