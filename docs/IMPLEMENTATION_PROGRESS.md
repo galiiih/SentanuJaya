@@ -6,7 +6,7 @@ Verified commit: `b2f0e1bd5143cb5d173f87e09f1e79571d7112ca`
 
 ## Update verifikasi — 25 November 2026
 
-Branch aktif tetap `feat/sidebar-collapse-navigation-new`. Commit aplikasi terbaru yang diverifikasi adalah `e95767b7e585ec2520e35d4b17aabefe440e959c`.
+Branch aktif tetap `feat/sidebar-collapse-navigation-new`. Commit terbaru yang diverifikasi penuh adalah `de8c7f087966115142055e9625694b25936f56ea` (Customer Acceptance pada Surat Jalan tetap tersimpan setelah reload).
 
 - Frontend build & lint: PASS.
 - Backend PHPUnit: PASS.
@@ -15,6 +15,9 @@ Branch aktif tetap `feat/sidebar-collapse-navigation-new`. Commit aplikasi terba
 - Sentanu Jaya CI (frontend + backend): PASS (workflow run `45443332116`).
 - Fix warehouse selector: semua form stok memakai gudang aktif; referensi terpilih dinormalisasi saat data dimuat; aksi penerimaan/opname dinonaktifkan jika tidak ada gudang aktif.
 - Print A4 Invoice dan Surat Jalan serta logo pada dokumen aktual (bukan modal input) telah diverifikasi melalui workflow print khusus pada commit `21a4546360e61b81999f21f4970421cc5a55c3aa`.
+- Customer Acceptance E2E memvalidasi nomor acceptance, status `Diposting`, qty OK 8 pcs dan reject 2 pcs setelah halaman Surat Jalan di-reload.
+- Commit `de8c7f0`: Sentanu Jaya CI run `45541266251` PASS; PHP & PostgreSQL run `45541266328` PASS; Browser E2E run `45541266329` PASS (53 passed, 1 skipped, 0 failed).
+- Investigasi blank screen setelah save: belum ada reproduksi yang memastikan halaman/aksi penyebab. E2E menangkap pageerror, console error, API error, dan request gagal; jangan menyimpulkan akar masalah tanpa error spesifik.
 
 ## Status implementasi
 
