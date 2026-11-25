@@ -548,6 +548,8 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
   });
 
   test('Price List Line supports related dropdowns, price editing, persistence and child-first deletion', async ({ page }) => {
+    const uncaughtPageErrors: string[] = [];
+    page.on('pageerror', (error) => uncaughtPageErrors.push(error.stack ?? error.message));
     // This scenario creates and removes three related records, including several page reloads.
     test.setTimeout(180_000);
     const suffix = Date.now().toString();
@@ -609,6 +611,9 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await dialog.getByPlaceholder('1500000').fill(price);
     await dialog.getByRole('button', { name: /Simpan Data/i }).click();
     await expect(dialog).toBeHidden({ timeout: 10000 });
+    await expect(page.getByText('Master Data & Referensi')).toBeVisible();
+    await expect(page.getByText('Daftar Price List Line')).toBeVisible();
+    expect(uncaughtPageErrors, 'Unexpected uncaught browser error after creating Price List Line').toEqual([]);
 
     let lineRow = page.locator('tr').filter({ hasText: listName }).filter({ hasText: itemName });
     await expect(lineRow).toContainText('1.750.000', { timeout: 10000 });
@@ -646,6 +651,8 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
 
     lineRow = page.locator('tr').filter({ hasText: listName }).filter({ hasText: itemName });
     await expect(lineRow).toContainText('1.850.000', { timeout: 10000 });
+    await expect(page.getByText('Master Data & Referensi')).toBeVisible();
+    expect(uncaughtPageErrors, 'Unexpected uncaught browser error after updating Price List Line').toEqual([]);
 
     // Reload from the API-backed table to prove the updated price persisted,
     // rather than only reflecting optimistic or local component state.
