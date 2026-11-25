@@ -1514,4 +1514,34 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     )).toBe(true);
   });
 
+
+  test('warehouse options remain selectable in material receipt and stock adjustment forms', async ({ page }) => {
+    await login(page);
+    await page.goto('/materials');
+    await expect(page.getByRole('heading', { name: /Inventaris & Gudang Material|Material Inventory & Warehouse/i })).toBeVisible();
+
+    // The E2E seeder creates an active WH-001 warehouse. This specifically guards
+    // against storing a paginated response object instead of its rows, which
+    // previously made warehouse dropdowns appear empty after the page loaded.
+    await expect(page.getByText(/Gudang Utama Sentanu Jaya/).first()).toBeVisible({ timeout: 15000 });
+
+    await page.getByRole('button', { name: /Penerimaan Material|Material Receipts/i }).click();
+    const createReceipt = page.getByRole('button', { name: /Buat Penerimaan|Create Receipt/i });
+    await expect(createReceipt).toBeEnabled();
+    await createReceipt.click();
+
+    const receiptDialog = page.getByRole('dialog');
+    const receiptWarehouse = receiptDialog.getByRole('combobox').first();
+    await expect(receiptWarehouse).toBeVisible();
+    await expect(receiptWarehouse.locator('option')).toContainText('Gudang Utama Sentanu Jaya');
+    await expect(receiptWarehouse).toHaveValue(/.+/);
+
+    await receiptDialog.getByRole('button', { name: /Tutup dialog|Close dialog/i }).click();
+    await page.getByRole('button', { name: /Penyesuaian Stok & Opname|Stock Adjustment & Stock Count/i }).click();
+    const adjustmentWarehouse = page.locator('select').first();
+    await expect(adjustmentWarehouse).toBeVisible();
+    await expect(adjustmentWarehouse.locator('option')).toContainText('WH-001');
+    await expect(adjustmentWarehouse).toHaveValue(/.+/);
+  });
+
 });
