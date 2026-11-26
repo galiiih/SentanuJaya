@@ -60,6 +60,30 @@ test.describe('Formatted numeric inputs', () => {
     await quantity.fill('');
     await expect(quantity).toHaveValue('');
   });
+  test('preserves grouped currency during real keyboard replacement and editing', async ({ page }) => {
+    await login(page);
+    await page.goto('/customer-po');
+    await page.getByRole('button', { name: /Buat Customer PO|Create Customer PO/i }).click();
+
+    const unitPrice = page.locator('input[inputmode="decimal"]').nth(1);
+    await unitPrice.click();
+    await unitPrice.pressSequentially('1.850.000');
+    await expect(unitPrice).toHaveValue('1.850.000');
+    await unitPrice.blur();
+    await expect(unitPrice).toHaveValue('1.850.000');
+
+    // Replace the complete formatted value using keyboard input, as users do
+    // after selecting an existing amount. The controlled render must not restore
+    // the previous value or strip grouping separators mid-entry.
+    await unitPrice.focus();
+    await unitPrice.press('Control+A');
+    await unitPrice.pressSequentially('2.450.000');
+    await expect(unitPrice).toHaveValue('2.450.000');
+    await unitPrice.blur();
+    await expect(unitPrice).toHaveValue('2.450.000');
+    expect(await unitPrice.evaluate((input: HTMLInputElement) => input.validity.valid)).toBeTruthy();
+  });
+
   test('loads and formats numeric values when editing an existing legacy PO', async ({ page }) => {
     await login(page);
     await page.goto('/customer-po');
