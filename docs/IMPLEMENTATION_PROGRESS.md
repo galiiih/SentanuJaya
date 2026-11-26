@@ -2,21 +2,23 @@
 
 Snapshot baseline: 11 November 2026  
 Branch: `feat/sidebar-collapse-navigation-new`  
-Latest verified commit: `249eecb978239aebb9b837729ff583fc7f0d6ffe`
+Latest verified commit: `c1eda4b8ea4ea83b293cd91d99bd6945f42c1238`
 
 ## Update verifikasi — 26 November 2026
 
 Branch aktif tetap `feat/sidebar-collapse-navigation-new`. Tidak ada branch baru.
 
-- Sentanu Jaya CI: PASS pada HEAD dokumentasi `249eecb978239aebb9b837729ff583fc7f0d6ffe` (workflow run `45786616247`).
-- Browser E2E: PASS pada HEAD dokumentasi (workflow run `45786616242`).
-- PHP & PostgreSQL Tests: PASS pada HEAD dokumentasi (workflow run `45786616303`).
-- Pemeriksaan Browser E2E untuk simpan Price List Line sekarang mengumpulkan uncaught page errors, console errors, failed API requests, dan HTTP 5xx. Respons `401 GET /api/v1/auth/me` saat bootstrap sebelum login teridentifikasi sebagai noise autentikasi yang diharapkan; pemeriksaan tidak lagi menggagalkan skenario hanya karena respons ini.
-- Blank screen setelah save Master Data **belum dinyatakan fixed**: pada skenario yang teruji tidak ada uncaught JavaScript exception atau failed API request, dan layar tidak blank. Belum ada reproduksi pada entity/urutan tindakan yang dilaporkan pengguna; jangan menetapkan root cause tanpa bukti.
-- Artefak Browser E2E terbaru diperiksa: Invoice print logo Sentanu Jaya tampil pada dokumen cetak (bukan hanya modal input), informasi customer/invoice/PO, tabel item, DPP/PPN/PPh, total dan balance terlihat. PDF Invoice dihasilkan dalam **1 halaman A4** (595.92 × 842.88 pt). Test juga menghasilkan preview Surat Jalan A4. Visual check ini dilakukan dari artefak CI; bukan klaim inspeksi browser lokal.
+- Latest verified HEAD: `c1eda4b8ea4ea83b293cd91d99bd6945f42c1238`.
+- Sentanu Jaya CI: PASS (workflow run `45809546335`).
+- Browser E2E: PASS (workflow run `45809546347`).
+- PHP & PostgreSQL Tests: PASS (workflow run `45809546402`).
+- Browser E2E mencakup dropdown gudang pada form Penerimaan Material dan Stock Adjustment; assertion memeriksa nilai/select element agar tidak terkena strict-mode error karena banyak option. E2E terbaru PASS.
+- Customer Master save test mengumpulkan page errors, failed API requests, dan respons 5xx setelah save; layar kembali ke Master Data dan row tersimpan pada skenario test. Ini belum membuktikan laporan blank screen pada entity/urutan tindakan lain telah teratasi.
+- Regression test NumericInput terbaru mengetik nominal dengan separator ribuan, melakukan Ctrl+A dan mengganti seluruh nilai melalui keyboard, lalu memeriksa format setelah blur serta validity. Browser E2E PASS.
+- Blank screen setelah save Master Data **belum dinyatakan fixed**: belum ada reproduksi sesuai entity dan urutan tindakan yang dilaporkan pengguna. Jangan menetapkan root cause tanpa error atau request yang dapat direproduksi.
+- Pemeriksaan print sebelumnya: logo Sentanu Jaya tampil pada dokumen Invoice cetak, dan PDF Invoice satu halaman A4; artefak CI juga menghasilkan preview Surat Jalan A4. Ini merupakan pemeriksaan artefak CI, bukan inspeksi browser lokal.
 
 Langkah berikut untuk blank screen: reproduksi dengan data/entity serta urutan save yang sama seperti laporan pengguna, lalu gunakan console/network diagnostics yang telah tersedia untuk menemukan error spesifik. Jangan mengubah NumericInput yang sudah terverifikasi tanpa defect terukur.
-
 ## Status implementasi
 
 | Area | Status | Bukti / catatan |
