@@ -2,15 +2,15 @@
 
 Snapshot baseline: 11 November 2026  
 Branch: `feat/sidebar-collapse-navigation-new`  
-Latest verified commit: `a8fc4a4d00168db3a8436c6385392a077efdf93b`
+Latest verified commit: `249eecb978239aebb9b837729ff583fc7f0d6ffe`
 
 ## Update verifikasi — 26 November 2026
 
 Branch aktif tetap `feat/sidebar-collapse-navigation-new`. Tidak ada branch baru.
 
-- Sentanu Jaya CI: PASS pada commit terbaru (workflow run `45773256521`).
-- Browser E2E: PASS pada commit terbaru (workflow run `45773256420`).
-- PHP & PostgreSQL Tests: PASS pada commit terbaru (workflow run `45773256454`).
+- Sentanu Jaya CI: PASS pada HEAD dokumentasi `249eecb978239aebb9b837729ff583fc7f0d6ffe` (workflow run `45786616247`).
+- Browser E2E: PASS pada HEAD dokumentasi (workflow run `45786616242`).
+- PHP & PostgreSQL Tests: PASS pada HEAD dokumentasi (workflow run `45786616303`).
 - Pemeriksaan Browser E2E untuk simpan Price List Line sekarang mengumpulkan uncaught page errors, console errors, failed API requests, dan HTTP 5xx. Respons `401 GET /api/v1/auth/me` saat bootstrap sebelum login teridentifikasi sebagai noise autentikasi yang diharapkan; pemeriksaan tidak lagi menggagalkan skenario hanya karena respons ini.
 - Blank screen setelah save Master Data **belum dinyatakan fixed**: pada skenario yang teruji tidak ada uncaught JavaScript exception atau failed API request, dan layar tidak blank. Belum ada reproduksi pada entity/urutan tindakan yang dilaporkan pengguna; jangan menetapkan root cause tanpa bukti.
 - Artefak Browser E2E terbaru diperiksa: Invoice print logo Sentanu Jaya tampil pada dokumen cetak (bukan hanya modal input), informasi customer/invoice/PO, tabel item, DPP/PPN/PPh, total dan balance terlihat. PDF Invoice dihasilkan dalam **1 halaman A4** (595.92 × 842.88 pt). Test juga menghasilkan preview Surat Jalan A4. Visual check ini dilakukan dari artefak CI; bukan klaim inspeksi browser lokal.
@@ -35,7 +35,13 @@ Langkah berikut untuk blank screen: reproduksi dengan data/entity serta urutan s
 
 ## Latest automated verification
 
-Ketiga workflow pada branch HEAD `7f84b85519aeb9a387cd57a1fe7f60eb7757d11b` selesai dengan status PASS: Browser E2E (`45579165261`), Sentanu Jaya CI (`45579165296`), dan PHP & PostgreSQL Tests (`45579165245`). HEAD tersebut adalah commit dokumentasi; implementasi NumericInput yang diuji berada pada commit `62bd6399f4c8758c034e6010e84861fff098dfad`.
+Branch HEAD `249eecb978239aebb9b837729ff583fc7f0d6ffe` — seluruh workflow PASS:
+
+- Browser E2E: https://github.com/galiiih/SentanuJaya/actions/runs/45786616242
+- Sentanu Jaya CI: https://github.com/galiiih/SentanuJaya/actions/runs/45786616247
+- PHP & PostgreSQL Tests: https://github.com/galiiih/SentanuJaya/actions/runs/45786616303
+
+Commit ini merupakan pembaruan dokumentasi; verifikasi fitur dan artefak invoice dilakukan pada implementasi sebelumnya, lalu CI dijalankan kembali pada HEAD terbaru.
 
 ## Historical automated verification
 
