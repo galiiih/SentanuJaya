@@ -2,20 +2,20 @@
 
 Snapshot baseline: 11 November 2026  
 Branch: `feat/sidebar-collapse-navigation-new`  
-Verified commit: `b2f0e1bd5143cb5d173f87e09f1e79571d7112ca`
+Latest verified commit: `a8fc4a4d00168db3a8436c6385392a077efdf93b`
 
-## Update verifikasi — 25 November 2026
+## Update verifikasi — 26 November 2026
 
-Branch aktif tetap `feat/sidebar-collapse-navigation-new`. HEAD yang diverifikasi saat pembaruan ini adalah `7f84b85519aeb9a387cd57a1fe7f60eb7757d11b`.
+Branch aktif tetap `feat/sidebar-collapse-navigation-new`. Tidak ada branch baru.
 
-- Sentanu Jaya CI: PASS pada HEAD (workflow run `45579165296`).
-- Browser E2E: PASS pada HEAD (workflow run `45579165261`).
-- PHP & PostgreSQL Tests: PASS pada HEAD (workflow run `45579165245`).
-- Implementasi NumericInput dan assertion regresi Price List Line berada pada commit `62bd6399f4c8758c034e6010e84861fff098dfad`.
-- Regression coverage mencakup input localized `1.850.000`, sequential keyboard entry, canonical PATCH `unit_price=1850000`, persistensi setelah reload, modal tertutup, heading tetap tampil, dan tidak ada uncaught page error.
-- **Blank screen setelah save belum dinyatakan selesai/root cause terkonfirmasi** karena belum berhasil direproduksi sebagai error spesifik. Jangan menganggap NumericInput sebagai penyebab tanpa bukti.
+- Sentanu Jaya CI: PASS pada commit terbaru (workflow run `45773256521`).
+- Browser E2E: PASS pada commit terbaru (workflow run `45773256420`).
+- PHP & PostgreSQL Tests: PASS pada commit terbaru (workflow run `45773256454`).
+- Pemeriksaan Browser E2E untuk simpan Price List Line sekarang mengumpulkan uncaught page errors, console errors, failed API requests, dan HTTP 5xx. Respons `401 GET /api/v1/auth/me` saat bootstrap sebelum login teridentifikasi sebagai noise autentikasi yang diharapkan; pemeriksaan tidak lagi menggagalkan skenario hanya karena respons ini.
+- Blank screen setelah save Master Data **belum dinyatakan fixed**: pada skenario yang teruji tidak ada uncaught JavaScript exception atau failed API request, dan layar tidak blank. Belum ada reproduksi pada entity/urutan tindakan yang dilaporkan pengguna; jangan menetapkan root cause tanpa bukti.
+- Artefak Browser E2E terbaru diperiksa: Invoice print logo Sentanu Jaya tampil pada dokumen cetak (bukan hanya modal input), informasi customer/invoice/PO, tabel item, DPP/PPN/PPh, total dan balance terlihat. PDF Invoice dihasilkan dalam **1 halaman A4** (595.92 × 842.88 pt). Test juga menghasilkan preview Surat Jalan A4. Visual check ini dilakukan dari artefak CI; bukan klaim inspeksi browser lokal.
 
-Investigasi blank screen selanjutnya harus menggunakan reproduksi/error log nyata. Hindari mengubah NumericInput yang sudah stabil tanpa defect terukur.
+Langkah berikut untuk blank screen: reproduksi dengan data/entity serta urutan save yang sama seperti laporan pengguna, lalu gunakan console/network diagnostics yang telah tersedia untuk menemukan error spesifik. Jangan mengubah NumericInput yang sudah terverifikasi tanpa defect terukur.
 
 ## Status implementasi
 
