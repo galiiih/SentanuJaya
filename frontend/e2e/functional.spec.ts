@@ -948,22 +948,26 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await expect(detail.getByText('AC-E2E-0001')).toBeVisible({ timeout: 10000 });
     // StatusBadge intentionally localizes workflow states in Indonesian.
     // Assert the rendered labels, not the raw API enum values.
-    const submitRequest = page.waitForRequest(
-      request => request.method() === 'POST'
-        && new URL(request.url()).pathname === '/api/v1/acceptances/e2e-acceptance-id/submit',
+    const submitResponsePromise = page.waitForResponse(
+      response => response.request().method() === 'POST'
+        && new URL(response.url()).pathname === '/api/v1/acceptances/e2e-acceptance-id/submit',
       { timeout: 10000 },
     );
     await detail.getByRole('button', { name: /Ajukan Penerimaan|Submit Acceptance/i }).click();
-    await submitRequest;
+    const submitResponse = await submitResponsePromise;
+    expect(submitResponse.status(), await submitResponse.text()).toBe(200);
+    expect((await submitResponse.json()).data.status).toBe('SUBMITTED');
     await expect(detail.getByText('Diajukan', { exact: true })).toBeVisible({ timeout: 10000 });
 
-    const postRequest = page.waitForRequest(
-      request => request.method() === 'POST'
-        && new URL(request.url()).pathname === '/api/v1/acceptances/e2e-acceptance-id/post',
+    const postResponsePromise = page.waitForResponse(
+      response => response.request().method() === 'POST'
+        && new URL(response.url()).pathname === '/api/v1/acceptances/e2e-acceptance-id/post',
       { timeout: 10000 },
     );
     await detail.getByRole('button', { name: /Posting Penerimaan|Post Penerimaan/i }).click();
-    await postRequest;
+    const postResponse = await postResponsePromise;
+    expect(postResponse.status(), await postResponse.text()).toBe(200);
+    expect((await postResponse.json()).data.status).toBe('POSTED');
     await expect(detail.getByText('Diposting', { exact: true })).toBeVisible({ timeout: 10000 });
     await expect(detail.getByText(/OK:\s*8 pcs/)).toBeVisible();
     await expect(detail.getByText(/Reject:\s*2 pcs/)).toBeVisible();
