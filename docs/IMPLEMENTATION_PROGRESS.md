@@ -4,6 +4,12 @@ Snapshot baseline: 11 November 2026
 Branch: `feat/sidebar-collapse-navigation-new`  
 Latest verified commit: `c1eda4b8ea4ea83b293cd91d99bd6945f42c1238`
 
+## Update pekerjaan — 26 November 2026 (Customer Acceptance E2E)
+
+- Commit `af38354aaa725ab4aacfcce4ae16460555b2f463` memperkuat E2E Customer Acceptance.
+- Sebelumnya test hanya menunggu request submit/post; kini menunggu respons HTTP dan memvalidasi HTTP 200 serta status response `SUBMITTED` dan `POSTED`. Ini mencegah test memberi false-positive saat endpoint mengembalikan error tetapi request tetap terkirim.
+- CI untuk commit perubahan ini belum terkonfirmasi berjalan; jangan menyatakan test PASS sampai workflow Browser E2E selesai pada commit tersebut.
+
 ## Update verifikasi — 26 November 2026
 
 Branch aktif tetap `feat/sidebar-collapse-navigation-new`. Tidak ada branch baru.
