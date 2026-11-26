@@ -549,7 +549,22 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
 
   test('Price List Line supports related dropdowns, price editing, persistence and child-first deletion', async ({ page }) => {
     const uncaughtPageErrors: string[] = [];
+    const consoleErrors: string[] = [];
+    const failedApiRequests: string[] = [];
     page.on('pageerror', (error) => uncaughtPageErrors.push(error.stack ?? error.message));
+    // Capture the same diagnostics visible in DevTools Console/Network while exercising save.
+    page.on('console', (message) => {
+      if (message.type() === 'error') consoleErrors.push(message.text());
+    });
+    page.on('requestfailed', (request) => {
+      if (request.url().includes('/api/')) failedApiRequests.push(`${request.method()} ${request.url()} :: ${request.failure()?.errorText ?? 'failed'}`);
+    });
+    page.on('response', (response) => {
+      if (response.url().includes('/api/') && response.status() >= 500) {
+        failedApiRequests.push(`${response.request().method()} ${response.url()} :: HTTP ${response.status()}`);
+      }
+    });
+    const browserDiagnostics = () => JSON.stringify({ uncaughtPageErrors, consoleErrors, failedApiRequests }, null, 2);
     // This scenario creates and removes three related records, including several page reloads.
     test.setTimeout(180_000);
     const suffix = Date.now().toString();
@@ -613,7 +628,11 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await expect(dialog).toBeHidden({ timeout: 10000 });
     await expect(page.getByText('Master Data & Referensi')).toBeVisible();
     await expect(page.getByText('Daftar Price List Line')).toBeVisible();
-    expect(uncaughtPageErrors, 'Unexpected uncaught browser error after creating Price List Line').toEqual([]);
+    await expect(page.getByText('Master Data & Referensi')).toBeVisible();
+    await expect(page.locator('body')).not.toHaveText(/^\\s*$/);
+    expect(uncaughtPageErrors, `Uncaught browser error after creating Price List Line. Diagnostics: ${browserDiagnostics()}`).toEqual([]);
+    expect(consoleErrors, `Browser console error after creating Price List Line. Diagnostics: ${browserDiagnostics()}`).toEqual([]);
+    expect(failedApiRequests, `Failed API request after creating Price List Line. Diagnostics: ${browserDiagnostics()}`).toEqual([]);
 
     let lineRow = page.locator('tr').filter({ hasText: listName }).filter({ hasText: itemName });
     await expect(lineRow).toContainText('1.750.000', { timeout: 10000 });
@@ -652,7 +671,10 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     lineRow = page.locator('tr').filter({ hasText: listName }).filter({ hasText: itemName });
     await expect(lineRow).toContainText('1.850.000', { timeout: 10000 });
     await expect(page.getByText('Master Data & Referensi')).toBeVisible();
-    expect(uncaughtPageErrors, 'Unexpected uncaught browser error after updating Price List Line').toEqual([]);
+    await expect(page.locator('body')).not.toHaveText(/^\\s*$/);
+    expect(uncaughtPageErrors, `Uncaught browser error after updating Price List Line. Diagnostics: ${browserDiagnostics()}`).toEqual([]);
+    expect(consoleErrors, `Browser console error after updating Price List Line. Diagnostics: ${browserDiagnostics()}`).toEqual([]);
+    expect(failedApiRequests, `Failed API request after updating Price List Line. Diagnostics: ${browserDiagnostics()}`).toEqual([]);
 
     // Reload from the API-backed table to prove the updated price persisted,
     // rather than only reflecting optimistic or local component state.
