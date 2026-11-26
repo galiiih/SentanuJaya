@@ -93,6 +93,16 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
   });
 
   test('customer form supports continuous typing, dropdown selection, save, persistence and delete', async ({ page }) => {
+    const saveDiagnostics: string[] = [];
+    page.on('pageerror', error => saveDiagnostics.push(error.stack ?? error.message));
+    page.on('requestfailed', request => {
+      if (request.url().includes('/api/v1/')) saveDiagnostics.push(`FAILED ${request.method()} ${request.url()} ${request.failure()?.errorText ?? ''}`);
+    });
+    page.on('response', response => {
+      if (response.url().includes('/api/v1/customers') && response.request().method() !== 'GET' && response.status() >= 500) {
+        saveDiagnostics.push(`HTTP ${response.status()} ${response.request().method()} ${response.url()}`);
+      }
+    });
     const suffix = Date.now().toString();
     const code = `E2E-${suffix}`;
     const name = `Browser Test Customer ${suffix}`;
@@ -135,6 +145,9 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     await expect(saveButton).toBeEnabled();
     await saveButton.click();
     await expect(dialog).toBeHidden({ timeout: 10000 });
+    await expect(page.getByText('Master Data & Referensi')).toBeVisible();
+    await expect(page.locator('body')).not.toHaveText(/^\\s*$/);
+    expect(saveDiagnostics, `Customer save diagnostics: ${JSON.stringify(saveDiagnostics, null, 2)}`).toEqual([]);
     const row = await searchMasterRow(page, code);
     await expect(row).toContainText(name, { timeout: 10000 });
     created = true;
