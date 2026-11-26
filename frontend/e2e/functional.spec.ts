@@ -1531,14 +1531,14 @@ test.describe('Sentanu Jaya ERP browser E2E', () => {
     const receiptDialog = page.getByRole('dialog');
     const receiptWarehouse = receiptDialog.getByRole('combobox').first();
     await expect(receiptWarehouse).toBeVisible();
-    await expect(receiptWarehouse.locator('option')).toContainText('Gudang Utama Sentanu Jaya');
+    await expect(receiptWarehouse).toContainText('Gudang Utama Sentanu Jaya');
     await expect(receiptWarehouse).toHaveValue(/.+/);
 
     await receiptDialog.getByRole('button', { name: /Tutup dialog|Close dialog/i }).click();
     await page.getByRole('button', { name: /Penyesuaian Stok & Opname|Stock Adjustment & Stock Count/i }).click();
     const adjustmentWarehouse = page.locator('select').first();
     await expect(adjustmentWarehouse).toBeVisible();
-    await expect(adjustmentWarehouse.locator('option')).toContainText('WH-001');
+    await expect(adjustmentWarehouse).toContainText('WH-001');
     await expect(adjustmentWarehouse).toHaveValue(/.+/);
   });
 
