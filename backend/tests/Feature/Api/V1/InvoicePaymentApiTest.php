@@ -197,7 +197,7 @@ class InvoicePaymentApiTest extends TestCase
         try {
             app(InvoiceService::class)->cancelDraftInvoice($draft, $admin->id);
             $this->fail('Cancellation should reject an inconsistent invoiced quantity.');
-        } catch (\\Illuminate\\Validation\\ValidationException $exception) {
+        } catch (\Illuminate\Validation\ValidationException $exception) {
             $this->assertArrayHasKey('lines', $exception->errors());
         }
 
