@@ -109,4 +109,71 @@ class UserManagementSecurityTest extends TestCase
             'is_active' => true,
         ]);
     }
+
+    public function test_role_permission_matrix_matches_the_approved_business_grants(): void
+    {
+        $expected = [
+            'STAFF' => [
+                'delivery.view', 'delivery.create',
+                'acceptance.view', 'return.view',
+                'po.view', 'po.create', 'po.edit',
+                'master.view', 'documentation.view',
+            ],
+            'ADMIN' => [
+                'delivery.view', 'delivery.create', 'delivery.submit', 'delivery.deliver', 'delivery.cancel_draft',
+                'acceptance.view', 'acceptance.create', 'acceptance.submit', 'acceptance.post',
+                'return.view', 'return.create', 'return.post',
+                'invoice.view', 'invoice.create',
+                'po.view', 'po.create', 'po.edit', 'po.activate', 'po.cancel', 'po.close',
+                'master.view', 'master.manage', 'report.view',
+                'documentation.view', 'documentation.manage', 'documentation.publish',
+            ],
+            'OWNER' => [
+                'delivery.view', 'delivery.create', 'delivery.submit', 'delivery.deliver',
+                'delivery.cancel_draft', 'delivery.cancel_posted',
+                'acceptance.view', 'acceptance.create', 'acceptance.submit', 'acceptance.post',
+                'return.view', 'return.create', 'return.post',
+                'invoice.view', 'invoice.create', 'invoice.approve',
+                'report.view',
+                'po.view', 'po.create', 'po.edit', 'po.activate', 'po.cancel', 'po.close',
+                'master.view', 'master.manage',
+                'documentation.view', 'documentation.manage',
+            ],
+        ];
+
+        $allPermissions = array_values(array_unique(array_merge(...array_values($expected))));
+
+        foreach ($expected as $role => $grantedPermissions) {
+            $user = User::factory()->create(['role' => $role]);
+
+            foreach ($allPermissions as $permission) {
+                $this->assertSame(
+                    in_array($permission, $grantedPermissions, true),
+                    $user->hasPermission($permission),
+                    sprintf('%s permission mismatch for role %s', $permission, $role),
+                );
+            }
+
+            $this->assertFalse($user->hasPermission('permission.not.defined'));
+        }
+    }
+
+    public function test_internal_developer_roles_bypass_the_business_permission_matrix(): void
+    {
+        foreach (['DEV', 'DEV ADMIN'] as $role) {
+            $user = User::factory()->create(['role' => $role]);
+
+            $this->assertTrue($user->hasPermission('delivery.cancel_posted'));
+            $this->assertTrue($user->hasPermission('documentation.publish'));
+            $this->assertTrue($user->hasPermission('permission.not.defined'));
+        }
+    }
+
+    public function test_unknown_role_does_not_receive_any_business_permission(): void
+    {
+        $user = User::factory()->create(['role' => 'UNRECOGNIZED']);
+
+        $this->assertFalse($user->hasPermission('master.view'));
+        $this->assertFalse($user->hasPermission('invoice.create'));
+    }
 }
