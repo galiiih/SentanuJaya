@@ -71,6 +71,15 @@ class DeliveryOrderController extends BaseApiController
             if ($po->customer_id !== $data['customer_id']) {
                 throw ValidationException::withMessages(['customer_po_id' => ['Customer PO does not belong to the selected customer.']]);
             }
+            if ($po->company_id !== $data['company_id']) {
+                throw ValidationException::withMessages(['customer_po_id' => ['Customer PO does not belong to the selected company.']]);
+            }
+            if (!Branch::query()->whereKey($data['branch_id'])->where('company_id', $data['company_id'])->exists()) {
+                throw ValidationException::withMessages(['branch_id' => ['Branch does not belong to the selected company.']]);
+            }
+            if (!Customer::query()->whereKey($data['customer_id'])->where('company_id', $data['company_id'])->exists()) {
+                throw ValidationException::withMessages(['customer_id' => ['Customer does not belong to the selected company.']]);
+            }
             if (in_array($po->status, [CustomerPo::STATUS_CANCELLED, CustomerPo::STATUS_CLOSED])) {
                 throw ValidationException::withMessages(['customer_po_id' => ['Cannot create Surat Jalan for a cancelled or closed Customer PO.']]);
             }
@@ -197,6 +206,9 @@ class DeliveryOrderController extends BaseApiController
 
             if ($po->customer_id !== $locked->customer_id) {
                 throw ValidationException::withMessages(['customer_po_id' => ['Customer PO does not belong to the selected customer.']]);
+            }
+            if ($po->company_id !== $locked->company_id) {
+                throw ValidationException::withMessages(['customer_po_id' => ['Customer PO does not belong to the selected company.']]);
             }
             if (in_array($po->status, [CustomerPo::STATUS_CANCELLED, CustomerPo::STATUS_CLOSED])) {
                 throw ValidationException::withMessages(['customer_po_id' => ['Cannot use a cancelled or closed Customer PO.']]);
