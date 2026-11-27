@@ -153,12 +153,18 @@ class CustomerReturnController extends BaseApiController
     public function cancel(Request $request, CustomerReturn $customerReturn): JsonResponse
     {
         abort_unless($request->user()?->hasPermission('return.create'), 403, 'Anda tidak memiliki akses membatalkan draft retur.');
-        if ($customerReturn->status !== 'DRAFT') {
-            throw ValidationException::withMessages(['status' => ['Hanya draft retur yang dapat dibatalkan.']]);
-        }
-        $customerReturn->update(['status' => 'CANCELLED']);
-        $this->auditLogger->log($request->user()->id, 'CANCEL_RETURN', 'CUSTOMER_RETURN', $customerReturn->id, ['status' => 'DRAFT'], ['status' => 'CANCELLED']);
-        return $this->sendResponse($customerReturn->fresh(), 'Draft retur dibatalkan.');
+        $record = DB::transaction(function () use ($customerReturn, $request) {
+            // Serialize cancellation with posting: both operations must lock and
+            // validate the persisted status before changing it.
+            $locked = CustomerReturn::query()->lockForUpdate()->findOrFail($customerReturn->id);
+            if ($locked->status !== 'DRAFT') {
+                throw ValidationException::withMessages(['status' => ['Hanya draft retur yang dapat dibatalkan.']]);
+            }
+            $locked->update(['status' => 'CANCELLED']);
+            $this->auditLogger->log($request->user()->id, 'CANCEL_RETURN', 'CUSTOMER_RETURN', $locked->id, ['status' => 'DRAFT'], ['status' => 'CANCELLED']);
+            return $locked->fresh();
+        });
+        return $this->sendResponse($record, 'Draft retur dibatalkan.');
     }
 
     private function assertReturnableQuantity(DeliveryOrderLine $line, float $requested, ?string $excludeReturnId = null): void
