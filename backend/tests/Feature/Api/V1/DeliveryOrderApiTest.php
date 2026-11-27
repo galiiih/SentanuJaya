@@ -72,14 +72,14 @@ class DeliveryOrderApiTest extends TestCase
         $otherCustomer = Customer::create(['company_id' => $otherCompany->id, 'name' => 'Other Customer', 'code' => 'OTHER-C']);
         $otherItem = CustomerItem::create(['customer_id' => $otherCustomer->id, 'name' => 'Other Item', 'code' => 'OTHER-I']);
 
-        $otherPo = \\App\\Models\\CustomerPo::create([
+        $otherPo = \App\Models\CustomerPo::create([
             'company_id' => $otherCompany->id,
             'customer_id' => $otherCustomer->id,
             'po_number' => 'PO-OTHER',
             'po_date' => '2026-10-01',
             'status' => 'OPEN',
         ]);
-        $otherPoLine = \\App\\Models\\CustomerPoLine::create([
+        $otherPoLine = \App\Models\CustomerPoLine::create([
             'customer_po_id' => $otherPo->id,
             'customer_item_id' => $otherItem->id,
             'quantity' => 100,
@@ -103,14 +103,14 @@ class DeliveryOrderApiTest extends TestCase
         $this->actingAs($admin)->postJson('/api/v1/delivery-orders', $wrongBranch)
             ->assertStatus(422)->assertJsonValidationErrors('branch_id');
 
-        $wrongCustomerPo = \\App\\Models\\CustomerPo::create([
+        $wrongCustomerPo = \App\Models\CustomerPo::create([
             'company_id' => $s['company']->id,
             'customer_id' => $otherCustomer->id,
             'po_number' => 'PO-WRONG-CUSTOMER-COMPANY',
             'po_date' => '2026-10-01',
             'status' => 'OPEN',
         ]);
-        $wrongCustomerPoLine = \\App\\Models\\CustomerPoLine::create([
+        $wrongCustomerPoLine = \App\Models\CustomerPoLine::create([
             'customer_po_id' => $wrongCustomerPo->id,
             'customer_item_id' => $otherItem->id,
             'quantity' => 100,
@@ -123,14 +123,14 @@ class DeliveryOrderApiTest extends TestCase
         $this->actingAs($admin)->postJson('/api/v1/delivery-orders', $wrongCustomer)
             ->assertStatus(422)->assertJsonValidationErrors('customer_id');
 
-        $foreignCompanyPo = \\App\\Models\\CustomerPo::create([
+        $foreignCompanyPo = \App\Models\CustomerPo::create([
             'company_id' => $otherCompany->id,
             'customer_id' => $s['customer']->id,
             'po_number' => 'PO-FOREIGN-COMPANY',
             'po_date' => '2026-10-01',
             'status' => 'OPEN',
         ]);
-        $foreignCompanyPoLine = \\App\\Models\\CustomerPoLine::create([
+        $foreignCompanyPoLine = \App\Models\CustomerPoLine::create([
             'customer_po_id' => $foreignCompanyPo->id,
             'customer_item_id' => $s['item']->id,
             'quantity' => 100,
