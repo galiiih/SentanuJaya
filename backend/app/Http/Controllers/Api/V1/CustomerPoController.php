@@ -136,6 +136,19 @@ class CustomerPoController extends BaseApiController
             return $this->sendError('Customer PO not found', [], 404);
         }
 
+        // Reject line IDs that belong to a different Customer PO. Without this ownership
+        // check, a crafted update payload could mutate another PO's line by UUID.
+        foreach ($request->input('lines', []) as $index => $line) {
+            if (!empty($line['id']) && !CustomerPoLine::query()
+                ->whereKey($line['id'])
+                ->where('customer_po_id', $po->id)
+                ->exists()) {
+                throw ValidationException::withMessages([
+                    "lines.{$index}.id" => ['Customer PO line does not belong to the selected Customer PO.'],
+                ]);
+            }
+        }
+
         // State gate: CANCELLED and CLOSED are immutable
         if (in_array($po->status, [CustomerPo::STATUS_CANCELLED, CustomerPo::STATUS_CLOSED])) {
             return $this->sendError("Cannot modify a {$po->status} Customer PO", [], 422);
