@@ -1,7 +1,7 @@
 # Implementation Progress — Sentanu Jaya ERP
 
 Branch: `feat/sidebar-collapse-navigation-new`
-Latest implementation commit checked: `f7162956860dcb639f89d422ea48e31669d4b412`
+Latest progress commit: `8cc09edb8b957bb6bfc0a6cdddeee56506aec6ca`
 No new branch was created.
 
 ## Recent completed work
@@ -12,13 +12,13 @@ No new branch was created.
 - Master ERP user guide translated to English.
 - Responsive collapsible sidebar, NumericInput Price List regression coverage, warehouse dropdowns, invoice logo/A4 print checks, and earlier workflow improvements remain recorded as implemented; do not rework without a reproducible defect.
 
-## CI — commit `f716295`
+## CI — latest progress commit `8cc09ed`
 
 - Sentanu Jaya CI: PASS — https://github.com/galiiih/SentanuJaya/actions/runs/45932250387
 - PHP & PostgreSQL Tests: PASS — https://github.com/galiiih/SentanuJaya/actions/runs/45932250444
-- Browser E2E: IN PROGRESS at the time of this record — https://github.com/galiiih/SentanuJaya/actions/runs/45932250472
+- Browser E2E: PASS — https://github.com/galiiih/SentanuJaya/actions/runs/45932660350
 
-Do not mark all checks for this commit complete until Browser E2E concludes.
+All three workflows have completed successfully for the latest progress commit.
 
 ## Documentation translation findings
 
