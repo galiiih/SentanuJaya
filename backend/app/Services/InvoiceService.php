@@ -187,7 +187,7 @@ class InvoiceService
             $invoiceLines = $locked->lines()->get();
             $deliveryOrderLineIds = $invoiceLines->pluck('delivery_order_line_id')->unique()->all();
 
-            $deliveryOrderLines = \\App\\Models\\DeliveryOrderLine::query()
+            $deliveryOrderLines = \App\Models\DeliveryOrderLine::query()
                 ->whereIn('id', $deliveryOrderLineIds)
                 ->orderBy('id')
                 ->lockForUpdate()
