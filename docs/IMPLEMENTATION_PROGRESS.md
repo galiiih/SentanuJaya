@@ -82,3 +82,11 @@ Referensi:
 ## Branch / merge policy
 
 Current work remains on `feat/sidebar-collapse-navigation-new`. No merge to `main` or production deployment has been performed. Final merge is deferred until the implementation and UAT checklist above are completed and reviewed.
+
+
+## Continuation — November 27, 2026
+
+- Customer Acceptance E2E now validates successful HTTP responses and the expected `SUBMITTED` and `POSTED` states, rather than only waiting for the requests to be sent.
+- CI for branch HEAD `b57a6a30d5e2e17235aac068cb0f53d538b1174a` completed successfully: Sentanu Jaya CI, Browser E2E, and PHP & PostgreSQL Tests.
+- ERP documentation category descriptions in `ErpDocumentationCategorySeeder` were translated to English. The category labels remain consistent with existing module names. Because the seeder uses `updateOrCreate`, the translated descriptions are applied when the seeder is run again; this does not directly update already-seeded production rows unless the seeder is executed.
+- Blank screen after Master Data save remains open pending an exact reproducible entity/action sequence. NumericInput remains unchanged because existing regression coverage is passing and no new defect has been reproduced.
