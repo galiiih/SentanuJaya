@@ -144,6 +144,54 @@ class DeliveryOrderApiTest extends TestCase
         $this->assertDatabaseCount('delivery_orders', 0);
     }
 
+    public function test_update_draft_sj_cannot_exceed_po_quantity_across_duplicate_lines(): void
+    {
+        $s = $this->seedBase();
+        $admin = $this->makeUser('admin');
+
+        $payload = [
+            'company_id' => $s['company']->id,
+            'branch_id' => $s['branch']->id,
+            'customer_id' => $s['customer']->id,
+            'customer_po_id' => $s['po']->id,
+            'delivery_date' => '2026-10-04',
+            'lines' => [
+                [
+                    'customer_item_id' => $s['item']->id,
+                    'customer_po_line_id' => $s['poLine']->id,
+                    'quantity' => 6,
+                ],
+                [
+                    'customer_item_id' => $s['item']->id,
+                    'customer_po_line_id' => $s['poLine']->id,
+                    'quantity' => 6,
+                ],
+            ],
+        ];
+
+        $created = $this->actingAs($admin)->postJson('/api/v1/delivery-orders', $payload);
+        $created->assertStatus(201);
+        $doId = $created->json('data.id');
+        $lineIds = collect($created->json('data.lines'))->pluck('id')->all();
+
+        $update = $this->actingAs($admin)->putJson("/api/v1/delivery-orders/$doId", [
+            'lines' => [
+                ['id' => $lineIds[0], 'quantity' => 995],
+                ['id' => $lineIds[1], 'quantity' => 6],
+            ],
+        ]);
+
+        $update->assertStatus(422)->assertJsonValidationErrors('lines.0.quantity');
+        $this->assertDatabaseHas('delivery_order_lines', [
+            'id' => $lineIds[0],
+            'quantity' => 6,
+        ]);
+        $this->assertDatabaseHas('delivery_order_lines', [
+            'id' => $lineIds[1],
+            'quantity' => 6,
+        ]);
+    }
+
     public function test_staff_can_create_draft_but_cannot_submit(): void
     {
         $s = $this->seedBase();
