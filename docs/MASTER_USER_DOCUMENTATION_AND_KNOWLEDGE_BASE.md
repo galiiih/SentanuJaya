@@ -1,55 +1,55 @@
 # SENTANU JAYA ERP — MASTER USER DOCUMENTATION & KNOWLEDGE BASE
 Version: 1.0.0
 Last Verified: 2026-11-01
-Scope: ADMIN, OWNER, STAFF Role Guides, Core Modules, Business Rules, and Nanu AI RAG Integration.
+Scope: ADMIN, OWNER, and STAFF role guides, core modules, business rules, and Nanu AI RAG integration.
 
 ---
 
 ## 1. Company & ERP Overview
-Sentanu Jaya Web App adalah sistem Enterprise Resource Planning (ERP) kustom yang dirancang khusus untuk mengelola operasional manufaktur, perdagangan, distribusi, pencatatan inventaris, pesanan pelanggan (Customer PO), penerimaan barang (Goods Receipt / STB), perintah kerja (Work Order), produksi, Quality Control (QC), surat jalan (Delivery Order), invoice, hingga pelunasan piutang (Payment).
+Sentanu Jaya Web App is a custom Enterprise Resource Planning (ERP) system designed specifically to manage manufacturing operations, trading, distribution, inventory records, customer purchase orders (Customer PO), goods receipts (Goods Receipt / STB), work orders, production, Quality Control (QC), delivery notes (Delivery Order), invoices, and receivables settlement (Payment).
 
-### Struktur Peran Pengguna (Role-Based Access Control)
-- **ADMIN**: Mengelola master data, konfigurasi sistem, memantau seluruh modul transaksi, mengelola user, template, serta supervisi operasional harian.
-- **OWNER**: Memiliki hak akses monitoring eksekutif, laporan keuangan, pengawasan kas/piutang, approval transaksi penting, serta analisis performa bisnis secara menyeluruh.
-- **STAFF**: Melakukan input data harian operasional, pencatatan transaksi sesuai penugasan unit kerja (gudang, produksi, sales, atau keuangan).
+### User Roles (Role-Based Access Control)
+- **ADMIN**: Manages master data and system configuration, monitors all transaction modules, manages users and templates, and supervises daily operations.
+- **OWNER**: Has executive monitoring access, financial reports, cash and receivables oversight, approval of key transactions, and comprehensive business performance analysis.
+- **STAFF**: Enters daily operational data and records transactions according to assigned duties (warehouse, production, sales, or finance).
 
 ---
 
 ## 2. Core Business Processes
-Alur bisnis utama Sentanu Jaya ERP berjalan secara berurutan dan terintegrasi:
-1. **Master Data & Customer Setup**: Pendaftaran data customer, material, dan harga.
-2. **Customer PO**: Pencatatan pesanan dari pelanggan (`CustomerPo`).
-3. **Penerimaan Barang / STB**: Pencatatan penerimaan material atau barang (`GoodsReceipt`).
-4. **Work Order & Produksi**: Perintah kerja produksi berdasarkan pesanan atau kebutuhan stok (`WorkOrder`).
-5. **Quality Control (QC)**: Inspeksi hasil produksi (`InternalQcInspection`).
-6. **Surat Jalan (Delivery Order)**: Pengiriman barang jadi ke pelanggan (`DeliveryOrder`).
-7. **Invoice**: Penagihan berdasarkan pengiriman yang sah (`Invoice`).
-8. **Pembayaran (Payment)**: Pelunasan tagihan dari customer (`Payment`).
+The primary Sentanu Jaya ERP business process is sequential and integrated:
+1. **Master Data & Customer Setup**: Register customers, materials, and prices.
+2. **Customer PO**: Record customer orders (`CustomerPo`).
+3. **Goods Receipt / STB**: Record receipt of materials or goods (`GoodsReceipt`).
+4. **Work Order & Production**: Create production work orders based on customer orders or stock requirements (`WorkOrder`).
+5. **Quality Control (QC)**: Inspect production output (`InternalQcInspection`).
+6. **Delivery Order**: Deliver finished goods to customers (`DeliveryOrder`).
+7. **Invoice**: Bill based on valid deliveries (`Invoice`).
+8. **Payment**: Record customer invoice settlement (`Payment`).
 
 ---
 
 ## 3. Role-Based User Manuals
 
 ### A. ADMIN Manual
-- **Dashboard**: Memantau ringkasan operasional harian.
-- **Master Data**: Pengelolaan data Customer, Material, Supplier, UOM, Branch.
-- **Transaksi**: Membuat dan memverifikasi Customer PO, Goods Receipt, Work Order, Surat Jalan, Invoice, dan Pembayaran.
-- **Nanu AI**: Menggunakan asisten AI Nanu untuk kueri cepat data ERP dan panduan operasional.
+- **Dashboard**: Monitor the daily operational overview.
+- **Master Data**: Manage Customer, Material, Supplier, UOM, and Branch records.
+- **Transactions**: Create and verify Customer PO, Goods Receipt, Work Order, Delivery Order, Invoice, and Payment transactions.
+- **Nanu AI**: Use the Nanu AI assistant for quick ERP data queries and operational guidance.
 
 ### B. OWNER Manual
-- **Dashboard Eksekutif**: Memantau KPI, ringkasan produksi, omzet, dan total piutang.
-- **Laporan Keuangan & Piutang**: Analisis pembayaran bulan berjalan dan customer dengan tagihan terbesar.
-- **Audit & Monitoring**: Pengawasan status transaksi tanpa melakukan modifikasi langsung pada operasional harian staf.
+- **Executive Dashboard**: Monitor KPIs, production summaries, revenue, and total receivables.
+- **Financial & Receivables Reports**: Analyze payments for the current month and customers with the largest outstanding balances.
+- **Audit & Monitoring**: Monitor transaction statuses without directly modifying staff's daily operational records.
 
 ### C. STAFF Manual
-- **Operasional Harian**: Menginput data transaksi sesuai unit tugas (contoh: Staff Gudang mencatat penerimaan barang/STB dan stok material).
-- **Panduan Nanu AI**: Mengajukan pertanyaan panduan (*how-to*) untuk memastikan kepatuhan terhadap SOP perusahaan.
+- **Daily Operations**: Enter transactions according to assigned duties (for example, warehouse staff record goods receipts/STB and material stock).
+- **Nanu AI Guide**: Ask how-to questions to ensure compliance with company SOPs.
 
 ---
 
 ## 4. Nanu AI RAG & Knowledge Integration Architecture
-Nanu AI menggunakan arsitektur **Retrieval-Augmented Generation (RAG)** yang didukung oleh:
+Nanu AI uses a **Retrieval-Augmented Generation (RAG)** architecture supported by:
 - **Backend Source of Truth**: Laravel 13 + PostgreSQL 16.
-- **Dual LLM Provider Support**: Ollama (`http://127.0.0.1:11434`, model `qwen3.5:9b`) dan 9Router (`http://localhost:20128/v1`).
-- **Knowledge Retrieval & Guards**: Pemisahan tegas antara kueri panduan (GUIDE) dan kueri data operasional (DATA_QUERY), dengan proteksi *guiderail* terhadap topik di luar domain ERP Sentanu Jaya.
-- **Feedback & Learning Workflow**: Setiap interaksi dan umpan balik pengguna dicatat untuk penyempurnaan basis pengetahuan secara berkelanjutan.
+- **Dual LLM Provider Support**: Ollama (`http://127.0.0.1:11434`, model `qwen3.5:9b`) and 9Router (`http://localhost:20128/v1`).
+- **Knowledge Retrieval & Guards**: Strict separation between guidance queries (GUIDE) and operational data queries (DATA_QUERY), with guardrails for topics outside the Sentanu Jaya ERP domain.
+- **Feedback & Learning Workflow**: User interactions and feedback are recorded to continuously improve the knowledge base.
