@@ -440,6 +440,8 @@ class InvoicePaymentApiTest extends TestCase
     $owner = $this->user('OWNER');
     
     $this->actingAs($staff)->getJson('/api/v1/invoices')->assertStatus(403);
+    $this->actingAs($staff)->getJson('/api/v1/payments')->assertStatus(403);
+    $this->actingAs($staff)->postJson('/api/v1/payments', [])->assertStatus(403);
     $this->actingAs($admin)->getJson('/api/v1/invoices')->assertOk();
     $this->actingAs($owner)->getJson('/api/v1/invoices')->assertOk();
     $this->actingAs($staff)->postJson('/api/v1/invoices', [
