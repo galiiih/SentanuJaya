@@ -62,7 +62,10 @@ class PaymentService
     {
         $idempotencyKey = $data['idempotency_key'] ?? null;
         $normalizedAllocations = $data['allocations'] ?? [];
-        usort($normalizedAllocations, fn($a, $b) => strcmp($a['invoice_id'], $b['invoice_id']));
+        usort($normalizedAllocations, fn ($a, $b) => strcmp($a['invoice_id'], $b['invoice_id']));
+        // Always acquire invoice row locks in the same order. Sorting only the
+        // idempotency signature is insufficient if the original payload order differs.
+        $data['allocations'] = $normalizedAllocations;
 
         $requestPayloadSignature = [
             'customer_id' => $data['customer_id'] ?? null,
@@ -100,7 +103,9 @@ class PaymentService
                     }
                 }
 
-                $customer = \App\Models\Customer::query()->findOrFail($data['customer_id']);
+                $customer = \App\Models\Customer::query()
+                    ->lockForUpdate()
+                    ->findOrFail($data['customer_id']);
 
                 $amount = round((float) $data['amount'], 2);
                 if ($amount <= 0) {
