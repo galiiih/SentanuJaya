@@ -169,25 +169,62 @@ class InvoiceService
                 throw ValidationException::withMessages(['status' => ['Hanya Invoice DRAFT yang dapat dibatalkan.']]);
             }
 
-            foreach ($locked->lines as $line) {
-                \App\Models\DeliveryOrderLine::where('id', $line->delivery_order_line_id)
-                    ->decrement('qty_invoiced', $line->quantity);
+            // Invoice creation locks the DO before changing qty_invoiced. Cancellation must
+            // take the same parent-row lock first, otherwise a concurrent draft creation can
+            // calculate invoiceable quantity while this cancellation is restoring it.
+            $deliveryOrderIds = $locked->deliveryLinks()
+                ->orderBy('delivery_order_id')
+                ->pluck('delivery_order_id')
+                ->all();
+
+            $deliveryOrders = DeliveryOrder::query()
+                ->whereIn('id', $deliveryOrderIds)
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('id');
+
+            $invoiceLines = $locked->lines()->get();
+            $deliveryOrderLineIds = $invoiceLines->pluck('delivery_order_line_id')->unique()->all();
+
+            $deliveryOrderLines = \\App\\Models\\DeliveryOrderLine::query()
+                ->whereIn('id', $deliveryOrderLineIds)
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('id');
+
+            foreach ($invoiceLines as $line) {
+                $deliveryLine = $deliveryOrderLines->get($line->delivery_order_line_id);
+                if (!$deliveryLine || (float) $deliveryLine->qty_invoiced + 0.0005 < (float) $line->quantity) {
+                    throw ValidationException::withMessages([
+                        'lines' => ['Qty invoiced pada Surat Jalan tidak konsisten. Invoice draft tidak dapat dibatalkan dengan aman.'],
+                    ]);
+                }
+
+                $deliveryLine->qty_invoiced = max(
+                    0,
+                    round((float) $deliveryLine->qty_invoiced - (float) $line->quantity, 3)
+                );
+                $deliveryLine->save();
             }
 
-            foreach ($locked->deliveryLinks as $link) {
-                $doId = $link->delivery_order_id;
-                // Refresh DO from DB after lines qty_invoiced are decremented
-                $do = DeliveryOrder::with('lines')->find($doId);
-                if ($do) {
-                    $hasOtherInvoices = InvoiceDeliveryLink::where('delivery_order_id', $doId)
-                        ->where('invoice_id', '!=', $locked->id)
-                        ->whereHas('invoice', fn($q) => $q->where('status', '!=', Invoice::STATUS_CANCELLED))
-                        ->exists();
-                    $hasInvoiceableRemaining = $do->lines->contains(fn($l) => (float)$l->qty_invoiced > 0);
+            $deliveryOrders->load('lines');
 
-                    $status = ($hasOtherInvoices || $hasInvoiceableRemaining) ? 'INVOICED' : 'UNINVOICED';
-                    $do->update(['invoice_status' => $status]);
+            foreach ($deliveryOrderIds as $doId) {
+                $do = $deliveryOrders->get($doId);
+                if (!$do) {
+                    continue;
                 }
+
+                $hasOtherInvoices = InvoiceDeliveryLink::where('delivery_order_id', $doId)
+                    ->where('invoice_id', '!=', $locked->id)
+                    ->whereHas('invoice', fn ($query) => $query->where('status', '!=', Invoice::STATUS_CANCELLED))
+                    ->exists();
+                $hasInvoiceableRemaining = $do->lines->contains(fn ($deliveryLine) => (float) $deliveryLine->qty_invoiced > 0);
+
+                $status = ($hasOtherInvoices || $hasInvoiceableRemaining) ? 'INVOICED' : 'UNINVOICED';
+                $do->update(['invoice_status' => $status]);
             }
 
             $locked->update(['status' => Invoice::STATUS_CANCELLED]);
