@@ -1,29 +1,29 @@
 <?php
 
-namespace Database\Seeders;
+namespace Database\\Seeders;
 
-use App\Models\ErpDocumentationCategory;
-use Illuminate\Database\Seeder;
+use App\\Models\\ErpDocumentationCategory;
+use Illuminate\\Database\\Seeder;
 
 class ErpDocumentationCategorySeeder extends Seeder
 {
     public function run(): void
     {
         $categories = [
-            ['dashboard', 'Dashboard', 'Ringkasan operasional, indikator, dan pemantauan aktivitas ERP.'],
-            ['master-data', 'Master Data', 'Pengelolaan data dasar perusahaan, cabang, gudang, pelanggan, material, dan referensi.'],
-            ['customer-po', 'Customer PO', 'Pencatatan dan pengelolaan pesanan pelanggan.'],
-            ['material-inventory', 'Material & Inventory', 'Data material, gudang, saldo stok, penerimaan, pemakaian, dan pergerakan persediaan.'],
-            ['work-order-production', 'Work Order & Production', 'Pengelolaan perintah kerja dan tahapan proses produksi.'],
-            ['quality-control', 'Quality Control', 'Pencatatan pemeriksaan kualitas dan hasil QC.'],
-            ['surat-jalan', 'Surat Jalan', 'Pembuatan, pengajuan, dan pencatatan pengiriman barang.'],
-            ['invoice', 'Invoice', 'Penagihan berdasarkan Surat Jalan dan informasi perpajakan invoice.'],
-            ['payment', 'Payment', 'Pencatatan pembayaran dan alokasi pembayaran ke tagihan.'],
-            ['financial-reports', 'Financial Reports', 'Laporan keuangan, piutang, dan ringkasan transaksi.'],
-            ['user-management-rbac', 'User Management & RBAC', 'Pengguna, role, dan hak akses aplikasi.'],
-            ['template-management', 'Template Management', 'Pengelolaan template dokumen dan versi template.'],
-            ['troubleshooting', 'Troubleshooting', 'Panduan diagnosis masalah dan penanganan kendala aplikasi.'],
-            ['faq', 'FAQ', 'Pertanyaan umum mengenai penggunaan Sentanu Jaya ERP.'],
+            ['dashboard', 'Dashboard', 'Operational overview, key indicators, and ERP activity monitoring.'],
+            ['master-data', 'Master Data', 'Management of company, branch, warehouse, customer, material, and reference data.'],
+            ['customer-po', 'Customer PO', 'Recording and managing customer purchase orders.'],
+            ['material-inventory', 'Material & Inventory', 'Material and warehouse data, stock balances, receipts, consumption, and inventory movements.'],
+            ['work-order-production', 'Work Order & Production', 'Management of work orders and production process stages.'],
+            ['quality-control', 'Quality Control', 'Recording quality inspections and QC results.'],
+            ['surat-jalan', 'Delivery Note', 'Creating, submitting, and recording goods deliveries.'],
+            ['invoice', 'Invoice', 'Billing based on delivery notes and invoice tax information.'],
+            ['payment', 'Payment', 'Recording payments and allocating them to outstanding invoices.'],
+            ['financial-reports', 'Financial Reports', 'Financial statements, accounts receivable, and transaction summaries.'],
+            ['user-management-rbac', 'User Management & RBAC', 'Application users, roles, and access permissions.'],
+            ['template-management', 'Template Management', 'Managing document templates and template versions.'],
+            ['troubleshooting', 'Troubleshooting', 'Guides for diagnosing and resolving application issues.'],
+            ['faq', 'FAQ', 'Frequently asked questions about using Sentanu Jaya ERP.'],
         ];
 
         foreach ($categories as $index => [$slug, $name, $description]) {
