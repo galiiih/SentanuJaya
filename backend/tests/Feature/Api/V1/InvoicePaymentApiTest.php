@@ -185,6 +185,27 @@ class InvoicePaymentApiTest extends TestCase
     $this->assertSame(Invoice::STATUS_POSTED, $freshDraft->fresh()->status);
     }
 
+    public function test_cancel_draft_invoice_refuses_to_make_invoiced_quantity_negative(): void
+    {
+        $s = $this->delivery();
+        $admin = $this->user('ADMIN');
+        $this->postAcceptance($s['do'], $s['line'], 30, 10);
+
+        $draft = app(InvoiceService::class)->buildDraftInvoice([$s['do']->id], $s['customer']->id, '2026-10-06', 2, $admin->id);
+        $s['line']->update(['qty_invoiced' => 10]);
+
+        try {
+            app(InvoiceService::class)->cancelDraftInvoice($draft, $admin->id);
+            $this->fail('Cancellation should reject an inconsistent invoiced quantity.');
+        } catch (\\Illuminate\\Validation\\ValidationException $exception) {
+            $this->assertArrayHasKey('lines', $exception->errors());
+        }
+
+        $this->assertSame(Invoice::STATUS_DRAFT, $draft->fresh()->status);
+        $this->assertSame(10.0, (float) $s['line']->fresh()->qty_invoiced);
+        $this->assertSame('INVOICED', $s['do']->fresh()->invoice_status);
+    }
+
     public function test_cancelling_draft_invoice_does_not_reset_do_status_if_other_invoice_exists(): void
     {
         $s1 = $this->delivery();
