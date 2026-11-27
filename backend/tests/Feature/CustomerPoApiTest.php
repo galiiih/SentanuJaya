@@ -832,4 +832,55 @@ class CustomerPoApiTest extends TestCase
             ],
         ])->assertStatus(422);
     }
+
+    public function test_customer_po_update_rejects_line_id_from_another_po(): void
+    {
+        $targetPo = CustomerPo::create([
+            'company_id' => $this->company->id,
+            'customer_id' => $this->customer->id,
+            'po_number' => 'PO-OWNERSHIP-TARGET',
+            'po_date' => '2026-10-01',
+            'status' => 'DRAFT',
+        ]);
+        $targetLine = $targetPo->lines()->create([
+            'customer_item_id' => $this->item1->id,
+            'quantity' => 5,
+            'unit_price' => 100,
+        ]);
+
+        $otherPo = CustomerPo::create([
+            'company_id' => $this->company->id,
+            'customer_id' => $this->customer->id,
+            'po_number' => 'PO-OWNERSHIP-OTHER',
+            'po_date' => '2026-10-01',
+            'status' => 'DRAFT',
+        ]);
+        $otherLine = $otherPo->lines()->create([
+            'customer_item_id' => $this->item1->id,
+            'quantity' => 20,
+            'unit_price' => 200,
+        ]);
+
+        $this->actingAs($this->staff)->patchJson("/api/v1/customer-pos/{$targetPo->id}", [
+            'lines' => [[
+                'id' => $otherLine->id,
+                'customer_item_id' => $this->item1->id,
+                'quantity' => 999,
+                'unit_price' => 999,
+            ]],
+        ])->assertStatus(422)->assertJsonValidationErrors(['lines.0.id']);
+
+        $this->assertDatabaseHas('customer_po_lines', [
+            'id' => $otherLine->id,
+            'customer_po_id' => $otherPo->id,
+            'quantity' => 20,
+            'unit_price' => 200,
+        ]);
+        $this->assertDatabaseHas('customer_po_lines', [
+            'id' => $targetLine->id,
+            'customer_po_id' => $targetPo->id,
+            'quantity' => 5,
+            'unit_price' => 100,
+        ]);
+    }
 }
