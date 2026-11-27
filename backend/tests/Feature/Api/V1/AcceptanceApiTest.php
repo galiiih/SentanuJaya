@@ -475,4 +475,38 @@ class AcceptanceApiTest extends TestCase
         ]);
     }
 
+    public function test_staff_can_view_acceptance_but_cannot_submit_or_post_it(): void
+    {
+        $s = $this->seedDelivered();
+        $admin = $this->makeUser('admin');
+        $staff = $this->makeUser('staff');
+
+        $created = $this->actingAs($admin)->postJson('/api/v1/acceptances', [
+            'delivery_order_id' => $s['do']->id,
+            'acceptance_date' => '2026-10-04',
+            'lines' => [[
+                'delivery_order_line_id' => $s['doLine']->id,
+                'quantity_ok' => 8,
+                'quantity_rejected' => 2,
+            ]],
+        ])->assertCreated();
+
+        $acceptanceId = $created->json('data.id');
+
+        $this->actingAs($staff)->getJson('/api/v1/acceptances')
+            ->assertOk();
+        $this->actingAs($staff)->getJson('/api/v1/acceptances/' . $acceptanceId)
+            ->assertOk();
+
+        $this->actingAs($staff)->postJson('/api/v1/acceptances/' . $acceptanceId . '/submit')
+            ->assertForbidden();
+        $this->actingAs($staff)->postJson('/api/v1/acceptances/' . $acceptanceId . '/post')
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('acceptances', [
+            'id' => $acceptanceId,
+            'status' => 'DRAFT',
+        ]);
+    }
+
 }
