@@ -62,6 +62,76 @@ class DeliveryOrderApiTest extends TestCase
         ]);
     }
 
+    public function test_delivery_order_rejects_branch_customer_and_po_from_wrong_company(): void
+    {
+        $s = $this->seedBase();
+        $admin = $this->makeUser('admin');
+
+        $otherCompany = Company::create(['name' => 'Other Company', 'code' => 'OTHER', 'tax_id' => '456']);
+        $otherBranch = Branch::create(['company_id' => $otherCompany->id, 'name' => 'Other Branch', 'code' => 'OTHER-B']);
+        $otherCustomer = Customer::create(['company_id' => $otherCompany->id, 'name' => 'Other Customer', 'code' => 'OTHER-C']);
+        $otherItem = CustomerItem::create(['customer_id' => $otherCustomer->id, 'name' => 'Other Item', 'code' => 'OTHER-I']);
+
+        $otherPo = \\App\\Models\\CustomerPo::create([
+            'company_id' => $otherCompany->id,
+            'customer_id' => $otherCustomer->id,
+            'po_number' => 'PO-OTHER',
+            'po_date' => '2026-10-01',
+            'status' => 'OPEN',
+        ]);
+        $otherPoLine = \\App\\Models\\CustomerPoLine::create([
+            'customer_po_id' => $otherPo->id,
+            'customer_item_id' => $otherItem->id,
+            'quantity' => 100,
+        ]);
+
+        $payload = [
+            'company_id' => $s['company']->id,
+            'branch_id' => $s['branch']->id,
+            'customer_id' => $s['customer']->id,
+            'customer_po_id' => $s['po']->id,
+            'delivery_date' => '2026-10-04',
+            'lines' => [[
+                'customer_item_id' => $s['item']->id,
+                'customer_po_line_id' => $s['poLine']->id,
+                'quantity' => 1,
+            ]],
+        ];
+
+        $wrongBranch = $payload;
+        $wrongBranch['branch_id'] = $otherBranch->id;
+        $this->actingAs($admin)->postJson('/api/v1/delivery-orders', $wrongBranch)
+            ->assertStatus(422)->assertJsonValidationErrors('branch_id');
+
+        $wrongCustomer = $payload;
+        $wrongCustomer['customer_id'] = $otherCustomer->id;
+        $wrongCustomer['customer_po_id'] = $otherPo->id;
+        $wrongCustomer['lines'][0]['customer_item_id'] = $otherItem->id;
+        $wrongCustomer['lines'][0]['customer_po_line_id'] = $otherPoLine->id;
+        $this->actingAs($admin)->postJson('/api/v1/delivery-orders', $wrongCustomer)
+            ->assertStatus(422)->assertJsonValidationErrors('customer_id');
+
+        $foreignCompanyPo = \\App\\Models\\CustomerPo::create([
+            'company_id' => $otherCompany->id,
+            'customer_id' => $s['customer']->id,
+            'po_number' => 'PO-FOREIGN-COMPANY',
+            'po_date' => '2026-10-01',
+            'status' => 'OPEN',
+        ]);
+        $foreignCompanyPoLine = \\App\\Models\\CustomerPoLine::create([
+            'customer_po_id' => $foreignCompanyPo->id,
+            'customer_item_id' => $s['item']->id,
+            'quantity' => 100,
+        ]);
+        $wrongPoCompany = $payload;
+        $wrongPoCompany['customer_po_id'] = $foreignCompanyPo->id;
+        $wrongPoCompany['lines'][0]['customer_po_line_id'] = $foreignCompanyPoLine->id;
+        $this->actingAs($admin)->postJson('/api/v1/delivery-orders', $wrongPoCompany)
+            ->assertStatus(422)->assertJsonValidationErrors('customer_po_id');
+
+        $this->assertDatabaseCount('delivery_orders', 0);
+    }
+
     public function test_staff_can_create_draft_but_cannot_submit(): void
     {
         $s = $this->seedBase();
