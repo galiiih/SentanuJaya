@@ -103,11 +103,23 @@ class DeliveryOrderApiTest extends TestCase
         $this->actingAs($admin)->postJson('/api/v1/delivery-orders', $wrongBranch)
             ->assertStatus(422)->assertJsonValidationErrors('branch_id');
 
+        $wrongCustomerPo = \\App\\Models\\CustomerPo::create([
+            'company_id' => $s['company']->id,
+            'customer_id' => $otherCustomer->id,
+            'po_number' => 'PO-WRONG-CUSTOMER-COMPANY',
+            'po_date' => '2026-10-01',
+            'status' => 'OPEN',
+        ]);
+        $wrongCustomerPoLine = \\App\\Models\\CustomerPoLine::create([
+            'customer_po_id' => $wrongCustomerPo->id,
+            'customer_item_id' => $otherItem->id,
+            'quantity' => 100,
+        ]);
         $wrongCustomer = $payload;
         $wrongCustomer['customer_id'] = $otherCustomer->id;
-        $wrongCustomer['customer_po_id'] = $otherPo->id;
+        $wrongCustomer['customer_po_id'] = $wrongCustomerPo->id;
         $wrongCustomer['lines'][0]['customer_item_id'] = $otherItem->id;
-        $wrongCustomer['lines'][0]['customer_po_line_id'] = $otherPoLine->id;
+        $wrongCustomer['lines'][0]['customer_po_line_id'] = $wrongCustomerPoLine->id;
         $this->actingAs($admin)->postJson('/api/v1/delivery-orders', $wrongCustomer)
             ->assertStatus(422)->assertJsonValidationErrors('customer_id');
 
