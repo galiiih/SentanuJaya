@@ -1,36 +1,58 @@
-# API PERMISSION MATRIX — SENTANU JAYA ERP V1
+# API Permission Matrix — Sentanu Jaya ERP V1
 
-## Overview
-This document specifies the server-side role and permission matrix enforced across all private API endpoints for **ADMIN**, **OWNER**, and **STAFF** roles.
+## Scope and enforcement
 
-## Roles & Base Permissions
-- **STAFF**: Operational entry (Delivery Orders, Customer POs, Acceptances, Customer/Master Data View). Cannot manage financial invoices, payments, reports, or master data mutations.
-- **ADMIN**: Operational management, master data creation/modification, goods receipts, PO activation/cancellation, delivery execution, acceptance posting, and invoice posting.
-- **OWNER**: Full executive permissions including canceling posted deliveries, approving invoices, viewing advanced reports, and managing master data.
+This document records the centralized permission grants defined by `App\\Models\\User::hasPermission()`. Controllers that use these permission keys enforce them with HTTP 403 responses. Some endpoints also apply additional role or state checks; the permission key alone does not bypass those checks.
 
-## Permission Matrix Table
+Unauthenticated requests to private API routes are rejected by authentication middleware. Users with `must_change_password=true` must change their temporary password before accessing the protected API group.
 
-| Resource / Domain | Endpoint / Action | STAFF | ADMIN | OWNER |
-| :--- | :--- | :--- | :--- | :--- |
-| **Master Data** (UOM, Company, Branch, Customer, Material, Supplier, etc.) | `GET /api/v1/*` (View/List) | Allowed | Allowed | Allowed |
-| **Master Data** | `POST/PUT/DELETE /api/v1/*` (Manage) | Forbidden (403) | Allowed | Allowed |
-| **Customer PO** | `GET / Index / Show` | Allowed (`po.view`) | Allowed (`po.view`) | Allowed (`po.view`) |
-| **Customer PO** | `POST Store / PATCH Update` | Allowed (`po.create` / `po.edit`) | Allowed (`po.create` / `po.edit`) | Allowed (`po.create` / `po.edit`) |
-| **Customer PO** | `POST Activate` | Forbidden (403) | Allowed (`po.activate`) | Allowed (`po.activate`) |
-| **Customer PO** | `POST Cancel / Close` | Forbidden (403) | Allowed (`po.cancel` / `po.close`) | Allowed (`po.cancel` / `po.close`) |
-| **Delivery Orders** | `GET / Index / Show` | Allowed (`delivery.view`) | Allowed (`delivery.view`) | Allowed (`delivery.view`) |
-| **Delivery Orders** | `POST Store / Submit / Deliver` | Allowed (`delivery.create` / `submit` / `deliver`) | Allowed | Allowed |
-| **Delivery Orders** | `POST Cancel (Draft)` | Allowed (`delivery.cancel_draft`) | Allowed (`delivery.cancel_draft`) | Allowed (`delivery.cancel_draft`) |
-| **Delivery Orders** | `POST Cancel (Posted)` | Forbidden (403) | Forbidden (403) | Allowed (`delivery.cancel_posted`) |
-| **Acceptances** | `GET / Index / Show` | Allowed (`acceptance.view`) | Allowed (`acceptance.view`) | Allowed (`acceptance.view`) |
-| **Acceptances** | `POST Store / Submit / Post` | Forbidden (403) | Allowed (`acceptance.create` / `post`) | Allowed (`acceptance.create` / `post`) |
-| **Invoices** | `GET / Index / Show` | Forbidden (403) | Allowed (`invoice.view`) | Allowed (`invoice.view`) |
-| **Invoices** | `POST Store / Post` | Forbidden (403) | Allowed (`invoice.create`) | Allowed (`invoice.create`) |
-| **Payments** | `GET / Index / Show` | Forbidden (403) | Allowed (`invoice.view`) | Allowed (`invoice.view`) |
-| **Payments** | `POST Store` | Forbidden (403) | Allowed (`invoice.create`) | Allowed (`invoice.create`) |
-| **Reports** | `GET /reports/*` | Forbidden (403) | Allowed (`report.view` / Role check) | Allowed (`report.view` / Role check) |
-| **Dashboard** | `GET /dashboard/summary` | Allowed (Summary view) | Allowed | Allowed |
+## Role permission matrix
 
----
-## Unauthenticated Access (`401`)
-Any request to private endpoints without a valid session or authentication token receives `401 Unauthorized`.
+| Permission | STAFF | ADMIN | OWNER |
+|---|:---:|:---:|:---:|
+| `delivery.view` | ✓ | ✓ | ✓ |
+| `delivery.create` | ✓ | ✓ | ✓ |
+| `delivery.submit` | — | ✓ | ✓ |
+| `delivery.deliver` | — | ✓ | ✓ |
+| `delivery.cancel_draft` | — | ✓ | ✓ |
+| `delivery.cancel_posted` | — | — | ✓ |
+| `acceptance.view` | ✓ | ✓ | ✓ |
+| `acceptance.create` | — | ✓ | ✓ |
+| `acceptance.submit` | — | ✓ | ✓ |
+| `acceptance.post` | — | ✓ | ✓ |
+| `return.view` | ✓ | ✓ | ✓ |
+| `return.create` | — | ✓ | ✓ |
+| `return.post` | — | ✓ | ✓ |
+| `invoice.view` | — | ✓ | ✓ |
+| `invoice.create` | — | ✓ | ✓ |
+| `invoice.approve` | — | — | ✓ |
+| `po.view` | ✓ | ✓ | ✓ |
+| `po.create` | ✓ | ✓ | ✓ |
+| `po.edit` | ✓ | ✓ | ✓ |
+| `po.activate` | — | ✓ | ✓ |
+| `po.cancel` | — | ✓ | ✓ |
+| `po.close` | — | ✓ | ✓ |
+| `master.view` | ✓ | ✓ | ✓ |
+| `master.manage` | — | ✓ | ✓ |
+| `report.view` | — | ✓ | ✓ |
+| `documentation.view` | ✓ | ✓ | ✓ |
+| `documentation.manage` | — | ✓ | ✓ |
+| `documentation.publish` | — | ✓ | — |
+
+`DEV` and `DEV ADMIN` are internal development roles and currently bypass the centralized permission list.
+
+## Important endpoint-specific behavior
+
+- Master Data mutation is blocked for STAFF; the feature test suite exercises POST, PUT, PATCH, and DELETE across the 17 master resources.
+- User-account creation is OWNER-only. ADMIN cannot create accounts, assign OWNER, modify OWNER accounts, or deactivate OWNER accounts.
+- OWNER is the only business role with `delivery.cancel_posted` and `invoice.approve`.
+- The payment endpoints currently reuse `invoice.view` and `invoice.create`; there are no separate `payment.*` permission keys in the centralized matrix.
+- Documentation publishing is currently granted to ADMIN but not OWNER, while both ADMIN and OWNER have `documentation.manage`. The controller separately checks `documentation.publish`; retain this distinction unless the business owner explicitly changes the policy.
+- Dashboard summary is available to authenticated users after the mandatory-password-change middleware passes.
+
+## Related automated coverage
+
+- `backend/tests/Feature/Api/V1/MasterDataApiTest.php`
+- `backend/tests/Feature/Api/V1/UserManagementSecurityTest.php`
+
+The tests are API-level checks. Browser-level role navigation and denied-action coverage should remain part of UAT and E2E expansion.
