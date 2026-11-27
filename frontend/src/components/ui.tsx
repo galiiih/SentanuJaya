@@ -570,7 +570,14 @@ export function NumericInput({
       value={displayValue()}
       onFocus={(event) => {
         focusedRef.current = true;
-        draftValueRef.current = rawValue;
+        // Keep the locale-formatted grouping visible when focus enters an
+        // existing value. The draft parser accepts localized grouping, so
+        // users can still append, select, replace, or paste without losing
+        // separators during the edit.
+        const numericValue = rawValue === '' ? null : Number(rawValue);
+        draftValueRef.current = numericValue !== null && Number.isFinite(numericValue)
+          ? formatter.format(numericValue)
+          : rawValue;
         event.currentTarget.setCustomValidity(constraintMessage(rawValue));
         onFocus?.(event);
       }}
