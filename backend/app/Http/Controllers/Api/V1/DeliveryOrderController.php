@@ -225,6 +225,12 @@ class DeliveryOrderController extends BaseApiController
 
                     $poLine = CustomerPoLine::query()->whereKey($existing->customer_po_line_id)->lockForUpdate()->first();
                     if ($poLine) {
+                        if ($poLine->customer_po_id !== $po->id) {
+                            throw ValidationException::withMessages([
+                                "lines.{$index}.id" => ['Delivery order line does not belong to the selected Customer PO.'],
+                            ]);
+                        }
+
                         $deliveredOtherDos = (float) DeliveryOrderLine::where('customer_po_line_id', $poLine->id)
                             ->where('delivery_order_id', '!=', $locked->id)
                             ->whereHas('deliveryOrder', function ($q) {
@@ -232,7 +238,12 @@ class DeliveryOrderController extends BaseApiController
                             })
                             ->sum('quantity');
 
-                        $remainingQty = max(0, (float) $poLine->quantity - $deliveredOtherDos);
+                        $otherLinesInThisDo = (float) DeliveryOrderLine::where('customer_po_line_id', $poLine->id)
+                            ->where('delivery_order_id', $locked->id)
+                            ->where('id', '!=', $existing->id)
+                            ->sum('quantity');
+
+                        $remainingQty = max(0, (float) $poLine->quantity - $deliveredOtherDos - $otherLinesInThisDo);
                         if ($requestedQty > $remainingQty + 0.0001) {
                             throw ValidationException::withMessages([
                                 "lines.{$index}.quantity" => [
