@@ -323,6 +323,11 @@ export function MasterDataPage() {
   }, []);
 
   useEffect(() => {
+    // Clear table-bound state when changing tabs so a selected CSV cannot be
+    // accidentally imported into a different master-data resource.
+    setBulkRows([]);
+    setBulkFile(null);
+    if (bulkInputRef.current) bulkInputRef.current.value = '';
     // Clear the previous tab immediately so its rows cannot remain interactive
     // while the newly selected tab is still loading.
     setData([]);
