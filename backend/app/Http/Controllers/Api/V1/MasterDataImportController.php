@@ -1,9 +1,9 @@
 <?php
 
-namespace App\\Http\\Controllers\\Api\\V1;
+namespace App\Http\Controllers\Api\V1;
 
-use App\\Http\\Controllers\\Api\\BaseApiController;
-use App\\Http\\Controllers\\Api\\V1\\{
+use App\Http\Controllers\Api\BaseApiController;
+use App\Http\Controllers\Api\V1\{
     BranchController,
     CompanyController,
     CustomerController,
@@ -16,10 +16,10 @@ use App\\Http\\Controllers\\Api\\V1\\{
     UomController,
     WarehouseController
 };
-use Illuminate\\Http\\JsonResponse;
-use Illuminate\\Http\\Request;
-use Illuminate\\Support\\Facades\\DB;
-use Illuminate\\Database\\QueryException;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Database\QueryException;
 use RuntimeException;
 
 class MasterDataImportController extends BaseApiController
@@ -53,7 +53,7 @@ class MasterDataImportController extends BaseApiController
             ], 404);
         }
 
-        $validator = \\Illuminate\\Support\\Facades\\Validator::make($request->all(), [
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
             'rows' => 'required|array|min:1|max:500',
             'rows.*' => 'required|array',
         ]);
@@ -63,13 +63,13 @@ class MasterDataImportController extends BaseApiController
         }
 
         try {
-            $created = DB::transaction(function () use ($request, $controllerClass): array {
+            $created = DB::transaction(function () use ($request, $controllerClass, $resource): array {
                 $ids = [];
 
                 foreach ($request->input('rows') as $index => $row) {
                     $rowNumber = $index + 2;
                     $rowRequest = Request::create(
-                        '/api/v1/' . $request->route('resource'),
+                        '/api/v1/master-data/import/' . $resource,
                         'POST',
                         $row
                     );
@@ -126,7 +126,7 @@ class MasterDataImportRowException extends RuntimeException
     public function __construct(
         public readonly int $rowNumber,
         public readonly array $errors,
-        ?\\Throwable $previous = null
+        ?\Throwable $previous = null
     ) {
         parent::__construct('Master Data import row failed.', 0, $previous);
     }
