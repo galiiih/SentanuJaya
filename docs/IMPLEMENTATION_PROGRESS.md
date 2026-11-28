@@ -52,3 +52,14 @@ The permission regression test commit `3283a3a` was pushed after those checks. I
 - One Surat Jalan per Invoice.
 - Do not merge to `main` or deploy to production before UAT and Owner sign-off.
 - Keep work on `feat/sidebar-collapse-navigation-new`; no duplicate branch.
+
+## Additional backlog — Master Data Bulk Import
+
+- [ ] Prepare and maintain a standardized Excel template for bulk master-data preparation.
+- [ ] Confirm final import columns and relationships against the current database schema and business rules.
+- [ ] Implement import for customer, item/service catalog, price list, material, warehouse, branch, unit, and category master data as applicable.
+- [ ] Add upload validation, duplicate detection, reference integrity checks, preview/confirmation, transactional import where appropriate, and row-level error report.
+- [ ] Add automated tests for valid imports, missing required fields, duplicate codes, invalid references, and partial/failed imports.
+- [ ] Complete role permission checks and UAT before enabling bulk import for business users.
+
+Template file prepared in the conversation: `SentanuJaya_MasterData_Import_Template.xlsx`. It is a preparation template only; it does not directly import data into the ERP. Column mapping must be confirmed against the live schema before implementing the importer.
