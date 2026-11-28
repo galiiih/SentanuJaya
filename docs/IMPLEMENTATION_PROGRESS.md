@@ -53,13 +53,17 @@ The permission regression test commit `3283a3a` was pushed after those checks. I
 - Do not merge to `main` or deploy to production before UAT and Owner sign-off.
 - Keep work on `feat/sidebar-collapse-navigation-new`; no duplicate branch.
 
-## Additional backlog — Master Data Bulk Import
+## Additional backlog — Master Data Bulk Import / Export
 
-- [ ] Prepare and maintain a standardized Excel template for bulk master-data preparation.
-- [ ] Confirm final import columns and relationships against the current database schema and business rules.
-- [ ] Implement import for customer, item/service catalog, price list, material, warehouse, branch, unit, and category master data as applicable.
-- [ ] Add upload validation, duplicate detection, reference integrity checks, preview/confirmation, transactional import where appropriate, and row-level error report.
-- [ ] Add automated tests for valid imports, missing required fields, duplicate codes, invalid references, and partial/failed imports.
-- [ ] Complete role permission checks and UAT before enabling bulk import for business users.
+- [ ] Provide **Import** and **Export** actions independently on each Master Data table/page, not one shared import/export action for the whole Master Data module.
+- [ ] Separate import/export flows for Customers, Items/Services, Price Lists, Materials, Warehouses, Branches, Units, Item Categories, Material Categories, Customer Contacts, and every other table actually exposed in Master Data.
+- [ ] Each table's import must use its own downloadable Excel template/schema and accept that table's supported Excel format; validate required fields, data types, unique codes, references, and duplicates before committing rows.
+- [ ] Import UX: select file → validate → show preview and row-level errors → user confirms → import; avoid silently skipping invalid rows. Use transactional behavior or clearly report rows accepted/rejected.
+- [ ] Export action must export the current table's data with stable column headers and suitable Excel formatting; honor active search/filter where applicable, and distinguish exporting filtered results from all records.
+- [ ] Include only safe, editable business fields in exports; omit internal IDs, secrets, audit fields, and computed/system-only fields unless specifically required for a reliable relationship import.
+- [ ] Provide a per-table template download and an export of existing records. Keep import and export independent so users can use either action.
+- [ ] Confirm final column mappings and relationships against current backend schemas and API contracts before implementation; do not assume the earlier workbook is a production-ready import schema.
+- [ ] Add automated tests for each table's import/export endpoint and UI actions, including permissions, invalid rows, duplicate codes, empty data, filtered exports, and regression coverage for existing CRUD.
+- [ ] Complete role permission checks and UAT before enabling bulk import/export for business users.
 
 Template file prepared in the conversation: `SentanuJaya_MasterData_Import_Template.xlsx`. It is a preparation template only; it does not directly import data into the ERP. Column mapping must be confirmed against the live schema before implementing the importer.
