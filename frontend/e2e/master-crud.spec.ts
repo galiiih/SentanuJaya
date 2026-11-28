@@ -64,4 +64,52 @@ test.describe('Sentanu Jaya ERP customer master E2E', () => {
     await expect(page.getByText(/File harus memiliki header dan minimal satu baris data|File must contain a header and at least one data row/i)).toBeVisible();
   });
 
+
+  test('master data submits customer import as one atomic batch request', async ({ page }) => {
+    await login(page);
+    await page.goto('/master');
+    await expect(page.getByText('Master Data & Referensi')).toBeVisible();
+
+    const headers = [
+      'company_id','code','name','company_name','billing_address','shipping_address',
+      'npwp','tax_condition','default_tax_rule_id','payment_terms_days','credit_limit',
+      'phone','email','is_active',
+    ];
+    const values = Array(headers.length).fill('');
+    values[1] = 'E2E-BATCH-CUSTOMER';
+    values[2] = 'Customer Batch Import';
+    const csv = [headers.join(','), values.join(',')].join('\\r\\n');
+
+    await page.locator('input[type="file"]').setInputFiles({
+      name: 'customer-batch-import.csv',
+      mimeType: 'text/csv',
+      buffer: Buffer.from(csv, 'utf-8'),
+    });
+    const confirmButton = page.getByRole('button', { name: /Konfirmasi Import|Confirm Import/i });
+    await expect(confirmButton).toBeEnabled();
+
+    let submittedRows: Record<string, unknown>[] = [];
+    await page.route('**/api/v1/master-data/import/customers', async route => {
+      submittedRows = route.request().postDataJSON().rows;
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          data: { resource: 'customers', created_count: 1, ids: ['e2e-customer-id'] },
+          message: 'Master Data imported successfully.',
+        }),
+      });
+    });
+
+    const batchRequest = page.waitForRequest(request =>
+      request.method() === 'POST' && request.url().includes('/api/v1/master-data/import/customers')
+    );
+    await confirmButton.click();
+    await batchRequest;
+
+    expect(submittedRows).toHaveLength(1);
+    expect(submittedRows[0]).toMatchObject({ code: 'E2E-BATCH-CUSTOMER', name: 'Customer Batch Import' });
+    await expect(page.getByText(/Import berhasil: 1 baris tersimpan secara atomik|Import succeeded: 1 rows saved atomically/i)).toBeVisible();
+  });
 });
