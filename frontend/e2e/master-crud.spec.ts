@@ -78,7 +78,7 @@ test.describe('Sentanu Jaya ERP customer master E2E', () => {
     const values = Array(headers.length).fill('');
     values[1] = 'E2E-BATCH-CUSTOMER';
     values[2] = 'Customer Batch Import';
-    const csv = [headers.join(','), values.join(',')].join('\\r\\n');
+    const csv = [headers.join(','), values.join(',')].join('\r\n');
 
     await page.locator('input[type="file"]').setInputFiles({
       name: 'customer-batch-import.csv',
