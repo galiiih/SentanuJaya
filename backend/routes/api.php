@@ -54,7 +54,7 @@ Route::prefix('v1')->group(function () {
 
         Route::middleware(EnsurePasswordChanged::class)->group(function () {
         // Master Data (Protected by Auth)
-        Route::post('master-data/import/{resource}', [\\App\\Http\\Controllers\\Api\\V1\\MasterDataImportController::class, 'store']);
+        Route::post('master-data/import/{resource}', [\App\Http\Controllers\Api\V1\MasterDataImportController::class, 'store']);
         Route::apiResource('uoms', UomController::class);
         Route::apiResource('companies', CompanyController::class);
         Route::apiResource('branches', BranchController::class);
