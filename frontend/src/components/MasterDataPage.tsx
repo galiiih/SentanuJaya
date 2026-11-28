@@ -171,21 +171,44 @@ export function MasterDataPage() {
   const [bulkFile, setBulkFile] = useState<File | null>(null);
   const [bulkRows, setBulkRows] = useState<Record<string, string>[]>([]);
   const [bulkBusy, setBulkBusy] = useState(false);
+  const [bulkValidationErrors, setBulkValidationErrors] = useState<string[]>([]);
   const bulkInputRef = useRef<HTMLInputElement>(null);
 
+  // Keep these columns aligned with each controller's validated store() payload.
+  // Exclude generated IDs, audit fields, and company_id where the API assigns the
+  // single-tenant company automatically.
   const bulkFields: Record<MasterKey, string[]> = {
-    companies: ['code','name','legal_name','npwp','is_pkp','pkp_date','address','phone','email'],
+    companies: ['code','name','legal_name','npwp','is_pkp','pkp_date','address','phone','email','timezone','currency','system_start_date'],
     branches: ['company_id','code','name','address','is_active'],
-    customers: ['company_id','code','name','legal_name','npwp','tax_condition','address','phone','email'],
-    customer_contacts: ['customer_id','name','title','phone','email'],
-    customer_items: ['customer_id','code','name','vehicle_model','part_type'],
-    price_lists: ['code','name','customer_id','effective_date','is_active'],
-    price_list_lines: ['price_list_id','customer_item_id','unit_price'],
-    uoms: ['code','name','category','decimal_places'],
-    materials: ['code','name','category','unit','minimum_stock'],
+    customers: ['company_id','code','name','company_name','billing_address','shipping_address','npwp','tax_condition','default_tax_rule_id','payment_terms_days','credit_limit','phone','email','is_active'],
+    customer_contacts: ['customer_id','name','position','phone','email','is_primary','is_active'],
+    customer_items: ['customer_id','code','name','vehicle_model','part_type','size','item_value','uom_id','is_active'],
+    price_lists: ['customer_id','code','name','effective_date','expiry_date','is_active'],
+    price_list_lines: ['price_list_id','customer_item_id','color_code','treatment_type','size','unit_price','minimum_charge','discount_percent','is_active'],
+    uoms: ['code','name','category','decimal_places','is_active'],
+    materials: ['code','name','category','unit','minimum_stock','reorder_level','is_batch_tracked','purchase_uom_id','stock_uom_id','is_active'],
     warehouses: ['branch_id','code','name','is_active'],
-    suppliers: ['code','name','address','phone','email'],
+    suppliers: ['code','name','address','npwp','phone','email','payment_terms_days','is_active'],
   };
+
+  const bulkRequiredFields: Record<MasterKey, string[]> = {
+    companies: ['code','name'],
+    branches: ['company_id','code','name'],
+    customers: ['code','name'],
+    customer_contacts: ['customer_id','name'],
+    customer_items: ['customer_id','code','name'],
+    price_lists: ['code','name','effective_date'],
+    price_list_lines: ['price_list_id','customer_item_id','unit_price'],
+    uoms: ['code','name','category'],
+    materials: ['code','name','unit'],
+    warehouses: ['branch_id','code','name'],
+    suppliers: ['code','name'],
+  };
+  const bulkBooleanFields = ['is_pkp','is_active','is_primary','is_batch_tracked'];
+  const bulkIntegerFields = ['tax_condition','payment_terms_days','decimal_places'];
+  const bulkNumberFields = ['credit_limit','item_value','unit_price','minimum_charge','discount_percent','minimum_stock','reorder_level'];
+  const bulkDateFields = ['pkp_date','system_start_date','effective_date','expiry_date'];
+  const bulkUuidFields = ['company_id','customer_id','price_list_id','customer_item_id','branch_id','uom_id','purchase_uom_id','stock_uom_id','default_tax_rule_id'];
 
   const csvEscape = (value: unknown) => {
     const text = value == null || typeof value === 'object' ? '' : String(value);
@@ -206,8 +229,69 @@ export function MasterDataPage() {
       else if (ch === '\n' || ch === '\r') { if (ch === '\r' && text[i + 1] === '\n') i++; row.push(cell); output.push(row); row = []; cell = ''; }
       else cell += ch;
     }
+    if (quoted) throw new Error(tr('Format CSV tidak valid: tanda kutip tidak ditutup.', 'Invalid CSV: an opening quote is not closed.'));
     if (cell.length || row.length) { row.push(cell); output.push(row); }
     return output.filter(r => r.some(v => v.trim() !== ''));
+  };
+
+  const validateBulkRows = (rows: Record<string, string>[]): string[] => {
+    const errors: string[] = [];
+    const seenCodes = new Map<string, number>();
+    const required = bulkRequiredFields[tab];
+    const uniqueCode = bulkFields[tab].includes('code');
+    const allowedBoolean = ['1','0','true','false','yes','no','ya','tidak','aktif','nonaktif'];
+    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+    rows.forEach((row, index) => {
+      const rowNumber = index + 2;
+      for (const field of required) {
+        if (!(row[field] ?? '').trim()) errors.push(tr('Baris ', 'Row ') + rowNumber + ': ' + field + tr(' wajib diisi.', ' is required.'));
+      }
+      for (const field of bulkBooleanFields) {
+        const value = (row[field] ?? '').trim().toLowerCase();
+        if (value && !allowedBoolean.includes(value)) errors.push(tr('Baris ', 'Row ') + rowNumber + ': ' + field + tr(' harus berupa TRUE/FALSE, 1/0, Ya/Tidak.', ' must be TRUE/FALSE, 1/0, Yes/No.'));
+      }
+      for (const field of [...bulkIntegerFields, ...bulkNumberFields]) {
+        const value = (row[field] ?? '').trim();
+        if (!value) continue;
+        const numeric = Number(value.replace(/,/g, ''));
+        if (!Number.isFinite(numeric) || (bulkIntegerFields.includes(field) && !Number.isInteger(numeric))) {
+          errors.push(tr('Baris ', 'Row ') + rowNumber + ': ' + field + tr(' harus berupa angka yang valid.', ' must be a valid number.'));
+        } else if (numeric < 0 || (field === 'discount_percent' && numeric > 100) || (field === 'tax_condition' && ![1,2,3].includes(numeric)) || (field === 'decimal_places' && numeric > 6)) {
+          errors.push(tr('Baris ', 'Row ') + rowNumber + ': ' + field + tr(' berada di luar rentang yang diizinkan.', ' is outside the allowed range.'));
+        }
+      }
+      for (const field of bulkUuidFields) {
+        const value = (row[field] ?? '').trim();
+        if (value && !uuidPattern.test(value)) errors.push(tr('Baris ', 'Row ') + rowNumber + ': ' + field + tr(' harus berisi UUID yang valid.', ' must contain a valid UUID.'));
+      }
+      for (const field of bulkDateFields) {
+        const value = (row[field] ?? '').trim();
+        if (value && Number.isNaN(Date.parse(value))) errors.push(tr('Baris ', 'Row ') + rowNumber + ': ' + field + tr(' harus berisi tanggal yang valid.', ' must contain a valid date.'));
+      }
+      const email = (row.email ?? '').trim();
+      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.push(tr('Baris ', 'Row ') + rowNumber + ': email ' + tr('tidak valid.', 'is invalid.'));
+      if (uniqueCode) {
+        const code = (row.code ?? '').trim().toLowerCase();
+        if (code) {
+          const previous = seenCodes.get(code);
+          if (previous) errors.push(tr('Baris ', 'Row ') + rowNumber + ': code ' + tr('duplikat dengan baris ', 'duplicates row ') + previous + '.');
+          else seenCodes.set(code, rowNumber);
+        }
+      }
+      if (tab === 'warehouses') {
+        const key = (row.branch_id ?? '').trim().toLowerCase() + '|' + (row.code ?? '').trim().toLowerCase();
+        if (key !== '|') {
+          const previous = seenCodes.get(key);
+          if (previous) errors.push(tr('Baris ', 'Row ') + rowNumber + ': kombinasi branch_id dan code ' + tr('duplikat dengan baris ', 'duplicates row ') + previous + '.');
+          else seenCodes.set(key, rowNumber);
+        }
+      }
+      if (tab === 'price_lists' && row.expiry_date && row.effective_date && Date.parse(row.expiry_date) < Date.parse(row.effective_date)) {
+        errors.push(tr('Baris ', 'Row ') + rowNumber + ': expiry_date ' + tr('tidak boleh sebelum effective_date.', 'cannot be earlier than effective_date.'));
+      }
+    });
+    return errors;
   };
   const handleBulkExport = async () => {
     try {
@@ -226,34 +310,45 @@ export function MasterDataPage() {
   };
   const handleBulkTemplate = () => saveCsv('sentanu-jaya-' + tab + '-template.csv', [bulkFields[tab]]);
   const handleBulkFile = async (file: File | null) => {
-    setBulkFile(file); setBulkRows([]); if (!file) return;
-    if (!file.name.toLowerCase().endsWith('.csv')) { setError(tr('Import saat ini menerima CSV UTF-8. Simpan file Excel sebagai CSV terlebih dahulu.', 'Import currently accepts UTF-8 CSV. Save the Excel file as CSV first.')); return; }
+    setBulkFile(file); setBulkRows([]); setBulkValidationErrors([]); if (!file) return;
+    if (!file.name.toLowerCase().endsWith('.csv')) { setError(tr('Import saat ini menerima CSV UTF-8. Dukungan XLSX belum tersedia.', 'Import currently accepts UTF-8 CSV. XLSX support is not available yet.')); return; }
     try {
       const parsed = parseCsvText(await file.text());
       if (parsed.length < 2) throw new Error(tr('File harus memiliki header dan minimal satu baris data.', 'File must contain a header and at least one data row.'));
-      const headers = parsed[0].map(h => h.trim().replace(/^\uFEFF/, '')); const required = bulkFields[tab];
-      const missing = required.filter(field => !headers.includes(field));
-      if (missing.length) throw new Error(tr('Kolom template tidak ditemukan: ', 'Missing template columns: ') + missing.join(', '));
-      const mappedRows = parsed.slice(1).map(values => Object.fromEntries(headers.map((header, i) => [header, values[i] ?? '']))); setBulkRows(mappedRows); setError('');
+      const headers = parsed[0].map(h => h.trim().replace(/^\uFEFF/, ''));
+      const expected = bulkFields[tab];
+      const duplicateHeaders = headers.filter((header, index) => headers.indexOf(header) !== index);
+      const unknownHeaders = headers.filter(header => !expected.includes(header));
+      const missingHeaders = expected.filter(field => !headers.includes(field));
+      if (duplicateHeaders.length) throw new Error(tr('Header duplikat: ', 'Duplicate headers: ') + [...new Set(duplicateHeaders)].join(', '));
+      if (unknownHeaders.length) throw new Error(tr('Kolom tidak dikenal untuk tabel ini: ', 'Unknown columns for this table: ') + unknownHeaders.join(', '));
+      if (missingHeaders.length) throw new Error(tr('Kolom template tidak ditemukan: ', 'Missing template columns: ') + missingHeaders.join(', '));
+      const malformedRows = parsed.slice(1).map((values, index) => ({ values, row: index + 2 })).filter(item => item.values.length > headers.length && item.values.slice(headers.length).some(value => value.trim()));
+      if (malformedRows.length) throw new Error(tr('Jumlah kolom tidak sesuai pada baris: ', 'Unexpected extra columns on rows: ') + malformedRows.map(item => item.row).join(', '));
+      const mappedRows = parsed.slice(1).map(values => Object.fromEntries(headers.map((header, i) => [header, values[i] ?? ''])));
+      setBulkRows(mappedRows);
+      const validationErrors = validateBulkRows(mappedRows);
+      setBulkValidationErrors(validationErrors);
+      setError('');
     } catch (err: any) { setError(err?.message || tr('CSV tidak dapat dibaca.', 'Unable to read CSV.')); }
   };
   const handleBulkImport = async () => {
-    if (!isAdminOrOwner || bulkRows.length === 0) return;
+    if (!isAdminOrOwner || bulkRows.length === 0 || bulkValidationErrors.length > 0) return;
     setBulkBusy(true); let created = 0; const errors: string[] = [];
     try {
       for (let i = 0; i < bulkRows.length; i++) {
         const row = bulkRows[i]; const payload: Record<string, unknown> = {};
         for (const field of bulkFields[tab]) {
           const value = (row[field] ?? '').trim(); if (!value) continue;
-          if (['is_active','is_pkp'].includes(field)) payload[field] = ['1','true','yes','ya','aktif'].includes(value.toLowerCase());
-          else if (['tax_condition','decimal_places'].includes(field)) payload[field] = Number(value);
-          else if (['unit_price','minimum_stock'].includes(field)) payload[field] = Number(value.replace(/,/g, ''));
+          if (bulkBooleanFields.includes(field)) payload[field] = ['1','true','yes','ya','aktif'].includes(value.toLowerCase());
+          else if (bulkIntegerFields.includes(field)) payload[field] = Number(value);
+          else if (bulkNumberFields.includes(field)) payload[field] = Number(value.replace(/,/g, ''));
           else payload[field] = value;
         }
         try { await masterApi[tab].create(payload); created++; } catch (err: any) { errors.push(tr('Baris ', 'Row ') + (i + 2) + ': ' + apiError(err)); }
       }
       setNotice(tr('Import selesai: ', 'Import completed: ') + created + tr(' berhasil, ', ' succeeded, ') + errors.length + tr(' gagal.', ' failed.'));
-      setError(errors.slice(0, 10).join('\n')); setBulkRows([]); setBulkFile(null); if (bulkInputRef.current) bulkInputRef.current.value = '';
+      setError(errors.slice(0, 10).join('\n')); setBulkRows([]); setBulkFile(null); setBulkValidationErrors([]); if (bulkInputRef.current) bulkInputRef.current.value = '';
       await loadData(); if (tab === 'companies' || tab === 'branches') await loadReferences();
     } finally { setBulkBusy(false); }
   };
@@ -327,6 +422,7 @@ export function MasterDataPage() {
     // accidentally imported into a different master-data resource.
     setBulkRows([]);
     setBulkFile(null);
+    setBulkValidationErrors([]);
     if (bulkInputRef.current) bulkInputRef.current.value = '';
     // Clear the previous tab immediately so its rows cannot remain interactive
     // while the newly selected tab is still loading.
@@ -551,9 +647,14 @@ export function MasterDataPage() {
         <p>{bulkFile.name} — {bulkRows.length} {tr('baris. Import akan menambahkan record baru; tidak mengubah data yang sudah ada.', 'rows. Import creates new records; it does not update existing data.')}</p>
         <div style={{ overflowX: 'auto' }}><table style={{ width: '100%', borderCollapse: 'collapse' }}><thead><tr>{bulkFields[tab].map(field => <th key={field} style={{ textAlign: 'left', padding: '0.5rem' }}>{field}</th>)}</tr></thead>
           <tbody>{bulkRows.slice(0, 5).map((row, i) => <tr key={i}>{bulkFields[tab].map(field => <td key={field} style={{ padding: '0.5rem', borderTop: '1px solid var(--color-border)' }}>{row[field] || '-'}</td>)}</tr>)}</tbody></table></div>
+        {bulkValidationErrors.length > 0 && <Alert tone="danger">
+          {tr('Perbaiki kesalahan berikut pada file sebelum import:', 'Fix the following file errors before importing:')}
+          {'\n'}{bulkValidationErrors.slice(0, 10).join('\n')}
+          {bulkValidationErrors.length > 10 ? '\n' + tr('Dan ', 'And ') + (bulkValidationErrors.length - 10) + tr(' kesalahan lainnya.', ' more errors.') : ''}
+        </Alert>}
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '1rem' }}>
-          <Button variant="ghost" onClick={() => { setBulkFile(null); setBulkRows([]); if (bulkInputRef.current) bulkInputRef.current.value = ''; }}>{tr('Batal', 'Cancel')}</Button>
-          <Button onClick={handleBulkImport} loading={bulkBusy}>{tr('Konfirmasi Import', 'Confirm Import')} ({bulkRows.length})</Button>
+          <Button variant="ghost" onClick={() => { setBulkFile(null); setBulkRows([]); setBulkValidationErrors([]); if (bulkInputRef.current) bulkInputRef.current.value = ''; }}>{tr('Batal', 'Cancel')}</Button>
+          <Button onClick={handleBulkImport} disabled={bulkValidationErrors.length > 0} loading={bulkBusy}>{tr('Konfirmasi Import', 'Confirm Import')} ({bulkRows.length})</Button>
         </div>
       </Card>}
       {error && <Alert tone="danger">{error}</Alert>}
