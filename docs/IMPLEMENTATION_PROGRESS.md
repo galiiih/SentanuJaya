@@ -86,3 +86,5 @@ Important limitations; do not mark this feature production-ready yet:
 - Export follows API pagination, but current page has no filter-aware export option. Add this if table search/filter controls are introduced.
 - Frontend build/typecheck, UI tests, API tests, and actual browser UAT have not been run for these commits. Verify these before enabling the feature for business users.
 - The earlier workbook `SentanuJaya_MasterData_Import_Template.xlsx` is a separate preparation artifact and is not directly accepted by this CSV-only implementation. Keep its column mapping aligned with the backend API before native Excel support is added.
+
+Implementation follow-up: CSV import state is cleared when switching Master Data tabs, preventing a pending file from being applied to the wrong resource. Latest UI change commit: `0294b490c8af0dd20763d4519d09ad896fbe3308`. The branch has no CI status attached to these direct commits yet; frontend build and browser tests remain unverified.
