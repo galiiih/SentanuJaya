@@ -5,6 +5,7 @@ import { apiError, type Customer, type CustomerItem } from '../services/api';
 import { useAuth } from '../auth';
 import { useLanguage } from '../i18n';
 import axios from 'axios';
+import { parseXlsx, saveXlsx } from '../utils/xlsx';
 import {
   Alert,
   Button,
@@ -210,15 +211,6 @@ export function MasterDataPage() {
   const bulkDateFields = ['pkp_date','system_start_date','effective_date','expiry_date'];
   const bulkUuidFields = ['company_id','customer_id','price_list_id','customer_item_id','branch_id','uom_id','purchase_uom_id','stock_uom_id','default_tax_rule_id'];
 
-  const csvEscape = (value: unknown) => {
-    const text = value == null || typeof value === 'object' ? '' : String(value);
-    return /[\",\\r\\n]/.test(text) ? '"' + text.replace(/"/g, '""') + '"' : text;
-  };
-  const makeCsv = (rows: unknown[][]) => '\uFEFF' + rows.map(row => row.map(csvEscape).join(',')).join('\r\n');
-  const saveCsv = (filename: string, rows: unknown[][]) => {
-    const url = URL.createObjectURL(new Blob([makeCsv(rows)], { type: 'text/csv;charset=utf-8;' }));
-    const link = document.createElement('a'); link.href = url; link.download = filename; link.click(); URL.revokeObjectURL(url);
-  };
   const parseCsvText = (text: string): string[][] => {
     const output: string[][] = []; let row: string[] = []; let cell = ''; let quoted = false;
     for (let i = 0; i < text.length; i++) {
@@ -304,16 +296,17 @@ export function MasterDataPage() {
         rows.push(...pageRows);
         lastPage = Number(payload?.last_page ?? payload?.meta?.last_page ?? 1); page++;
       } while (page <= lastPage);
-      saveCsv('sentanu-jaya-' + tab + '-export.csv', [fields, ...rows.map((item: any) => fields.map(field => item[field] ?? ''))]);
+      saveXlsx('sentanu-jaya-' + tab + '-export.xlsx', tab, [fields, ...rows.map((item: any) => fields.map(field => item[field] ?? ''))]);
       setNotice(tr('Export ' + getMasterLabel(tab, en) + ' selesai.', getMasterLabel(tab, en) + ' export completed.'));
     } catch (err: any) { setError(apiError(err)); }
   };
-  const handleBulkTemplate = () => saveCsv('sentanu-jaya-' + tab + '-template.csv', [bulkFields[tab]]);
+  const handleBulkTemplate = () => saveXlsx('sentanu-jaya-' + tab + '-template.xlsx', tab, [bulkFields[tab]]);
   const handleBulkFile = async (file: File | null) => {
     setBulkFile(file); setBulkRows([]); setBulkValidationErrors([]); if (!file) return;
-    if (!file.name.toLowerCase().endsWith('.csv')) { setError(tr('Import saat ini menerima CSV UTF-8. Dukungan XLSX belum tersedia.', 'Import currently accepts UTF-8 CSV. XLSX support is not available yet.')); return; }
+    const extension = file.name.toLowerCase().split('.').pop();
+    if (extension !== 'csv' && extension !== 'xlsx') { setError(tr('Pilih file CSV atau Excel (.xlsx).', 'Choose a CSV or Excel (.xlsx) file.')); return; }
     try {
-      const parsed = parseCsvText(await file.text());
+      const parsed = extension === 'xlsx' ? await parseXlsx(file) : parseCsvText(await file.text());
       if (parsed.length < 2) throw new Error(tr('File harus memiliki header dan minimal satu baris data.', 'File must contain a header and at least one data row.'));
       const headers = parsed[0].map(h => h.trim().replace(/^\uFEFF/, ''));
       const expected = bulkFields[tab];
@@ -325,7 +318,14 @@ export function MasterDataPage() {
       if (missingHeaders.length) throw new Error(tr('Kolom template tidak ditemukan: ', 'Missing template columns: ') + missingHeaders.join(', '));
       const malformedRows = parsed.slice(1).map((values, index) => ({ values, row: index + 2 })).filter(item => item.values.length > headers.length && item.values.slice(headers.length).some(value => value.trim()));
       if (malformedRows.length) throw new Error(tr('Jumlah kolom tidak sesuai pada baris: ', 'Unexpected extra columns on rows: ') + malformedRows.map(item => item.row).join(', '));
-      const mappedRows = parsed.slice(1).map(values => Object.fromEntries(headers.map((header, i) => [header, values[i] ?? ''])));
+      const mappedRows = parsed.slice(1).map(values => Object.fromEntries(headers.map((header, i) => {
+        let value = values[i] ?? '';
+        if (extension === 'xlsx' && bulkDateFields.includes(header) && /^\\d+(?:\\.\\d+)?$/.test(value.trim())) {
+          const serial = Number(value);
+          if (serial > 0 && serial < 2958466) value = new Date(Date.UTC(1899, 11, 30) + Math.round(serial * 86400000)).toISOString().slice(0, 10);
+        }
+        return [header, value];
+      })));
       setBulkRows(mappedRows);
       const validationErrors = validateBulkRows(mappedRows);
       setBulkValidationErrors(validationErrors);
@@ -639,9 +639,9 @@ export function MasterDataPage() {
 
       {isAdminOrOwner && <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'flex-end', gap: '0.5rem', marginBottom: '0.75rem' }}>
         <Button variant="ghost" onClick={() => bulkInputRef.current?.click()}><Upload size={16} /> {tr('Import', 'Import')} {getMasterLabel(tab, en)}</Button>
-        <Button variant="ghost" onClick={handleBulkExport}><Download size={16} /> {tr('Export', 'Export')} {getMasterLabel(tab, en)}</Button>
-        <Button variant="ghost" onClick={handleBulkTemplate}><FileSpreadsheet size={16} /> {tr('Template CSV', 'CSV Template')}</Button>
-        <input ref={bulkInputRef} type="file" accept=".csv,text/csv" hidden onChange={e => void handleBulkFile(e.target.files?.[0] ?? null)} />
+        <Button variant="ghost" onClick={handleBulkExport}><Download size={16} /> {tr('Export Excel', 'Export Excel')} {getMasterLabel(tab, en)}</Button>
+        <Button variant="ghost" onClick={handleBulkTemplate}><FileSpreadsheet size={16} /> {tr('Template Excel', 'Excel Template')}</Button>
+        <input ref={bulkInputRef} type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden onChange={e => void handleBulkFile(e.target.files?.[0] ?? null)} />
       </div>}
       {bulkFile && bulkRows.length > 0 && <Card title={tr('Preview Import — ', 'Import Preview — ') + getMasterLabel(tab, en)}>
         <p>{bulkFile.name} — {bulkRows.length} {tr('baris. Import akan menambahkan record baru; tidak mengubah data yang sudah ada.', 'rows. Import creates new records; it does not update existing data.')}</p>
