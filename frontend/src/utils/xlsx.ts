@@ -103,7 +103,10 @@ export const createXlsx = (sheetName: string, rows: unknown[][]): Uint8Array => 
 };
 
 export const saveXlsx = (filename: string, sheetName: string, rows: unknown[][]): void => {
-  const blob = new Blob([createXlsx(sheetName, rows)], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const bytes = createXlsx(sheetName, rows);
+  const buffer = new ArrayBuffer(bytes.length);
+  new Uint8Array(buffer).set(bytes);
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url; link.download = filename; link.click();
