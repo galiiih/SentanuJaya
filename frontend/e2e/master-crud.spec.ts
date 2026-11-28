@@ -60,7 +60,11 @@ test.describe('Sentanu Jaya ERP customer master E2E', () => {
     expect(exported.toString('utf8')).toContain('xl/workbook.xml');
     expect(exported.toString('utf8')).toContain('company_name');
 
-    await page.locator('input[type="file"]').setInputFiles(path!);
+    await page.locator('input[type="file"]').setInputFiles({
+      name: download.suggestedFilename(),
+      mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      buffer: exported,
+    });
     await expect(page.getByText(/File harus memiliki header dan minimal satu baris data|File must contain a header and at least one data row/i)).toBeVisible();
   });
 
