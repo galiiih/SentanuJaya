@@ -152,3 +152,40 @@ Remaining work:
 3. Add coverage across all 11 Master Data resources, including permissions, reference integrity, database duplicates, invalid rows, empty exports, and pagination.
 4. Complete browser E2E/UAT for Master Data Import/Export and record final CI results.
 5. Mark this feature DONE only after native Excel, tests, and business UAT are verified.
+
+
+## Progress update — Native XLSX Master Data import/export (2026-11-28)
+
+Status: IN_PROGRESS — native XLSX files are now generated and accepted by the Master Data workflow. Full Excel interoperability, atomic server-side import, and business UAT remain open.
+
+Implemented:
+- Added frontend/src/utils/xlsx.ts: dependency-free Office Open XML workbook writer and XLSX reader. Writer creates a valid ZIP-based .xlsx workbook with inline strings; reader handles ZIP Store and Deflate entries, workbook relationships, first worksheet, shared strings, inline strings, booleans, and numeric values.
+- Master Data Export and Template now download actual .xlsx files for the selected one of 11 tables. Import accepts .xlsx and retains CSV UTF-8 compatibility.
+- Excel date serials in known date columns are converted to YYYY-MM-DD before the existing preflight validation and API payload mapping.
+- XLSX safety limits: 25 MB input file, 200 archive entries, and 60 MB total uncompressed content; archive paths are checked before reading.
+- Added Playwright coverage that downloads the Customer XLSX template, checks the ZIP signature/workbook parts and header content, then re-imports the template to verify the reader can parse it.
+- No package.json/package-lock.json changes were needed because the XLSX implementation uses browser APIs and a small in-repository ZIP/OpenXML implementation. No fake .xlsx extension is used.
+
+Latest commits:
+- 0bd0ce31169fc5eb8e6c298ee29041d822b9bda5 — XLSX reader/writer utility.
+- 06b1a16e4ea24c132c154c19a0389d73c712742f — connect XLSX import/export to Master Data.
+- accca6c7d59dfbbbdc6d4e3be47ec140cf614854 — fix typed Blob buffer for TypeScript 6.
+- 81ac689cb522c28f4b853bda6b0b918b60b119a2 — add XLSX template/import E2E coverage.
+- 9884d6916e7845d0806c0e8798cebfd5954a770d — correct XLSX E2E test flow.
+- a6abdb81749bdc04a5021ae5f785609c2b6b5579 — remove stray E2E assertions.
+- 53f380764a144e5c1a4f59ce9652dcb820a140e8 — clean sheet-name sanitization lint warning.
+
+Verification for 53f380764a144e5c1a4f59ce9652dcb820a140e8:
+- Sentanu Jaya CI: PASS — TypeScript and production build; oxlint.
+- Backend PHPUnit: PASS.
+- PHP & PostgreSQL tests: PHPUnit step PASS.
+- Browser E2E: Surat Jalan and Invoice print browser tests PASS. Login intro browser tests were still running when this progress note was written; the full browser E2E suite had not started yet. The new Master Data XLSX E2E test therefore is not yet confirmed by a completed run.
+- The previous lint failure on commit 9884d691 was caused by leftover assertions after the new E2E test block. The stray lines were removed and the latest CI build/lint passed.
+
+Known limitations / remaining work:
+1. The XLSX reader currently reads the first worksheet only. Multi-sheet workbooks are not imported.
+2. The E2E test verifies generated XLSX ZIP structure and self-read of the exported template. Real Microsoft Excel/LibreOffice round-trip and a compressed third-party workbook still need explicit coverage/UAT.
+3. Client-side preflight checks file structure and basic values but does not query existing database references or duplicate records.
+4. Import still creates records sequentially through existing endpoints. Failures can leave earlier rows committed; atomic batch import is not implemented.
+5. Add server-side preflight/batch validation and transactional import, plus coverage for all 11 tables, permissions, reference integrity, existing database duplicates, invalid rows, empty exports, and pagination.
+6. Complete the currently running browser workflow and perform business UAT before marking this feature DONE.
