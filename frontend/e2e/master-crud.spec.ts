@@ -50,7 +50,7 @@ test.describe('Sentanu Jaya ERP customer master E2E', () => {
     await expect(page.getByText('Master Data & Referensi')).toBeVisible();
 
     const templateDownload = page.waitForEvent('download');
-    await page.getByRole('button', { name: /Template Excel Customer/i }).click();
+    await page.getByRole('button', { name: /Template Excel|Excel Template/i }).click();
     const download = await templateDownload;
     expect(download.suggestedFilename()).toBe('sentanu-jaya-customers-template.xlsx');
     const path = await download.path();
