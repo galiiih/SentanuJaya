@@ -117,3 +117,38 @@ Next actions:
 2. Add server-side preflight/batch validation and transactional import or explicitly retain and communicate partial-import semantics.
 3. Add automated coverage for all 11 resources, including required fields, relations, duplicate constraints, invalid data, permissions, empty exports, and pagination.
 4. Run frontend build/lint, backend tests, and browser UAT; record actual results before marking this feature DONE.
+
+
+## Progress update — Master Data validation and payment concurrency regression (2026-11-28)
+
+Status: IN_PROGRESS — schema-aligned CSV import and client-side preflight are implemented; native XLSX, server-side atomic import, and complete Master Data UAT remain open.
+
+Master Data changes:
+- Corrected import/export field mappings against all 11 Laravel master-data store() controllers.
+- Added CSV preflight for header correctness, malformed quoting, required values, booleans, numeric/integer ranges, UUIDs, dates, email, in-file duplicates, warehouse branch+code uniqueness, and Price List date order.
+- Invalid rows now block the import confirmation action.
+- Added Playwright E2E coverage for invalid Customer CSV preflight in frontend/e2e/master-crud.spec.ts.
+- The importer still creates records sequentially through existing APIs. Server-side validation can still reject individual rows after earlier rows were created; it is not atomic.
+
+Payment concurrency regression found by CI:
+- PostgreSQL test exposed a race: two concurrent requests with the same idempotency key could both pass the initial lookup; the second request then failed the duplicate reference check after waiting for the customer lock.
+- PaymentService now rechecks the idempotency key after acquiring the customer row lock and before duplicate-reference validation. Matching retries return the original payment; mismatched payloads still return an idempotency validation error.
+
+Latest commits:
+- 07ea707679d2e6e4ed762871db6631bbd0a045e4 — Master Data schema mapping and CSV validation.
+- 044a70a7d08cb292a7218395098cb04fbcc0a32d — warehouse scoped duplicate check.
+- 10951047e65148673e7ed6ffaf4225eb165d2100 — Master Data preflight E2E test.
+- 04327f6acc159dba4f8869e74b4ca5214e197fcf — CSV fixture line-ending correction.
+- 6985eed807d050eb3799cf5f81bb6326fba0b126 — Payment idempotency concurrency fix.
+
+Verification for commit 6985eed807d050eb3799cf5f81bb6326fba0b126:
+- Sentanu Jaya CI: PASS (frontend TypeScript/production build, lint, backend PHPUnit).
+- PHP & PostgreSQL Tests: PASS — 181 tests, 1,250 assertions. The previously failing PostgresPaymentConcurrencyTest now passes.
+- Browser E2E: print-document tests PASS; login-intro and full browser suite were still running when this progress note was prepared. The new Master Data preflight E2E test has not yet been confirmed by a completed full-suite run.
+
+Remaining work:
+1. Add a maintained XLSX reader/writer and update package.json plus package-lock.json. Current frontend has no XLSX dependency; backend Composer has no PhpSpreadsheet. Keep CSV support and do not fake an XLSX file extension.
+2. Add server-side preflight/batch validation and transactional import, or explicitly preserve and communicate partial-import behavior.
+3. Add coverage across all 11 Master Data resources, including permissions, reference integrity, database duplicates, invalid rows, empty exports, and pagination.
+4. Complete browser E2E/UAT for Master Data Import/Export and record final CI results.
+5. Mark this feature DONE only after native Excel, tests, and business UAT are verified.
