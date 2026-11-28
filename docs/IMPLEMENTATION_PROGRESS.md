@@ -88,3 +88,32 @@ Important limitations; do not mark this feature production-ready yet:
 - The earlier workbook `SentanuJaya_MasterData_Import_Template.xlsx` is a separate preparation artifact and is not directly accepted by this CSV-only implementation. Keep its column mapping aligned with the backend API before native Excel support is added.
 
 Implementation follow-up: CSV import state is cleared when switching Master Data tabs, preventing a pending file from being applied to the wrong resource. Latest UI change commit: `0294b490c8af0dd20763d4519d09ad896fbe3308`. The branch has no CI status attached to these direct commits yet; frontend build and browser tests remain unverified.
+
+
+## Progress update — Master Data schema alignment and CSV preflight (2026-11-28)
+
+Status: IN_PROGRESS — the CSV workflow has stronger schema alignment and client-side preflight, but native XLSX and server-side atomic import are still outstanding.
+
+- Reviewed the actual Laravel store() validation rules for Company, Branch, Customer, Customer Contact, Customer Item, Price List, Price List Line, UOM, Material, Warehouse, and Supplier.
+- Corrected per-table import/export columns to match accepted API fields. This fixes mismatches such as Customer company_name (not legal_name), Contact position (not title), and includes previously omitted business fields such as Customer billing/shipping addresses, item UOM/value, Price List expiry, Price List Line pricing details, and Material stock/UOM settings.
+- Excluded company_id from Price List, Material, and Supplier import templates because their current API controllers assign the single-tenant company automatically.
+- Added preflight checks for exact/duplicate/unknown headers, malformed CSV quoting, required fields, booleans, numeric/integer ranges, UUID syntax, dates, email, duplicate codes within the file, warehouse branch+code duplicates, and Price List expiry before effective date.
+- Import confirmation is disabled when preflight detects errors. Server validation remains authoritative; API failures can still cause partial success because records are currently created one-by-one.
+- Warehouse duplicate detection follows the backend scoped uniqueness rule (branch_id + code), not global code uniqueness.
+
+Commits:
+- 07ea707679d2e6e4ed762871db6631bbd0a045e4 — align table fields and add CSV row validation.
+- 044a70a7d08cb292a7218395098cb04fbcc0a32d — respect warehouse scoped code uniqueness.
+
+Not yet verified:
+- Frontend TypeScript/build and lint.
+- Automated tests and browser UAT.
+- Existing database duplicate/reference checks during preflight.
+- Native .xlsx import/export. No XLSX library currently exists in frontend/package-lock.json, and backend Composer dependencies do not include PhpSpreadsheet. Do not disguise CSV/XML as XLSX; add a maintained XLSX implementation with its lockfile and tests before advertising native Excel support.
+- Atomic/batch import with server-side validation remains outstanding.
+
+Next actions:
+1. Add a maintained XLSX reader/writer and generate actual .xlsx template/export files; keep CSV compatibility if useful.
+2. Add server-side preflight/batch validation and transactional import or explicitly retain and communicate partial-import semantics.
+3. Add automated coverage for all 11 resources, including required fields, relations, duplicate constraints, invalid data, permissions, empty exports, and pagination.
+4. Run frontend build/lint, backend tests, and browser UAT; record actual results before marking this feature DONE.
