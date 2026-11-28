@@ -32,7 +32,7 @@ test.describe('Sentanu Jaya ERP customer master E2E', () => {
     const csv = [
       headers.join(','),
       ',,Test Customer,,,,,9,,,0,0,invalid-email,TRUE',
-    ].join('\\r\\n');
+    ].join('\r\n');
 
     await page.locator('input[type="file"]').setInputFiles({
       name: 'invalid-customers.csv',
