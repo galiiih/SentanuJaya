@@ -107,6 +107,27 @@ class PaymentService
                     ->lockForUpdate()
                     ->findOrFail($data['customer_id']);
 
+                // The initial idempotency lookup cannot lock a row that does not
+                // exist yet. Requests for the same customer are serialized by the
+                // customer row lock, so re-check after acquiring it and before
+                // duplicate-reference validation. This makes concurrent retries
+                // return the original payment instead of a false duplicate error.
+                if ($idempotencyKey) {
+                    $existingAfterCustomerLock = Payment::query()
+                        ->where('idempotency_key', $idempotencyKey)
+                        ->first();
+
+                    if ($existingAfterCustomerLock) {
+                        if ($existingAfterCustomerLock->request_hash === $requestHash) {
+                            return $existingAfterCustomerLock->fresh(['customer', 'allocations.invoice']);
+                        }
+
+                        throw ValidationException::withMessages([
+                            'idempotency_key' => ['The idempotency key is already used with a different request payload.'],
+                        ]);
+                    }
+                }
+
                 $amount = round((float) $data['amount'], 2);
                 if ($amount <= 0) {
                     throw ValidationException::withMessages(['amount' => ['Payment amount must be greater than zero.']]);
