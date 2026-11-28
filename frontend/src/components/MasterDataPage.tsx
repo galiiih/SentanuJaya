@@ -334,23 +334,42 @@ export function MasterDataPage() {
   };
   const handleBulkImport = async () => {
     if (!isAdminOrOwner || bulkRows.length === 0 || bulkValidationErrors.length > 0) return;
-    setBulkBusy(true); let created = 0; const errors: string[] = [];
+    setBulkBusy(true);
     try {
-      for (let i = 0; i < bulkRows.length; i++) {
-        const row = bulkRows[i]; const payload: Record<string, unknown> = {};
+      const rows = bulkRows.map(row => {
+        const payload: Record<string, unknown> = {};
         for (const field of bulkFields[tab]) {
-          const value = (row[field] ?? '').trim(); if (!value) continue;
-          if (bulkBooleanFields.includes(field)) payload[field] = ['1','true','yes','ya','aktif'].includes(value.toLowerCase());
+          const value = (row[field] ?? '').trim();
+          if (!value) continue;
+          if (bulkBooleanFields.includes(field)) payload[field] = ['1', 'true', 'yes', 'ya', 'aktif'].includes(value.toLowerCase());
           else if (bulkIntegerFields.includes(field)) payload[field] = Number(value);
           else if (bulkNumberFields.includes(field)) payload[field] = Number(value.replace(/,/g, ''));
           else payload[field] = value;
         }
-        try { await masterApi[tab].create(payload); created++; } catch (err: any) { errors.push(tr('Baris ', 'Row ') + (i + 2) + ': ' + apiError(err)); }
-      }
-      setNotice(tr('Import selesai: ', 'Import completed: ') + created + tr(' berhasil, ', ' succeeded, ') + errors.length + tr(' gagal.', ' failed.'));
-      setError(errors.slice(0, 10).join('\n')); setBulkRows([]); setBulkFile(null); setBulkValidationErrors([]); if (bulkInputRef.current) bulkInputRef.current.value = '';
-      await loadData(); if (tab === 'companies' || tab === 'branches') await loadReferences();
-    } finally { setBulkBusy(false); }
+        return payload;
+      });
+
+      const response = await axios.post(`/api/v1/master-data/import/${tab}`, { rows });
+      const created = response.data?.data?.created_count ?? rows.length;
+      setNotice(tr('Import berhasil: ', 'Import succeeded: ') + created + tr(' baris tersimpan secara atomik.', ' rows saved atomically.'));
+      setError('');
+      setBulkRows([]);
+      setBulkFile(null);
+      setBulkValidationErrors([]);
+      if (bulkInputRef.current) bulkInputRef.current.value = '';
+      await loadData();
+      if (tab === 'companies' || tab === 'branches') await loadReferences();
+    } catch (err: any) {
+      const responseErrors = err?.response?.data?.errors;
+      const row = responseErrors?.row;
+      const details = responseErrors?.details;
+      const detailText = details && typeof details === 'object'
+        ? Object.entries(details).map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(', ') : String(messages)}`).join('; ')
+        : '';
+      setError([apiError(err), row ? tr('Baris data ', 'Data row ') + row + (detailText ? ` — ${detailText}` : '') : detailText].filter(Boolean).join('\\n'));
+    } finally {
+      setBulkBusy(false);
+    }
   };
 
   const [confirmState, setConfirmState] = useState<{
