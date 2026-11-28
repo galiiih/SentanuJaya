@@ -212,8 +212,14 @@ export function MasterDataPage() {
   const handleBulkExport = async () => {
     try {
       const fields = bulkFields[tab];
-      const response = await axios.get('/api/v1/' + ({ companies:'companies', branches:'branches', customers:'customers', customer_contacts:'customer-contacts', customer_items:'customer-items', price_lists:'price-lists', price_list_lines:'price-list-lines', uoms:'uoms', materials:'materials', warehouses:'warehouses', suppliers:'suppliers' } as Record<MasterKey,string>)[tab], { params: { per_page: 10000 } });
-      const payload = response.data?.data; const rows = Array.isArray(payload) ? payload : Array.isArray(payload?.data) ? payload.data : Array.isArray(response.data) ? response.data : [];
+      const endpoint = '/api/v1/' + ({ companies:'companies', branches:'branches', customers:'customers', customer_contacts:'customer-contacts', customer_items:'customer-items', price_lists:'price-lists', price_list_lines:'price-list-lines', uoms:'uoms', materials:'materials', warehouses:'warehouses', suppliers:'suppliers' } as Record<MasterKey,string>)[tab];
+      const rows: any[] = []; let page = 1; let lastPage = 1;
+      do {
+        const response = await axios.get(endpoint, { params: { per_page: 200, page } });
+        const payload = response.data?.data; const pageRows = Array.isArray(payload) ? payload : Array.isArray(payload?.data) ? payload.data : Array.isArray(response.data) ? response.data : [];
+        rows.push(...pageRows);
+        lastPage = Number(payload?.last_page ?? payload?.meta?.last_page ?? 1); page++;
+      } while (page <= lastPage);
       saveCsv('sentanu-jaya-' + tab + '-export.csv', [fields, ...rows.map((item: any) => fields.map(field => item[field] ?? ''))]);
       setNotice(tr('Export ' + getMasterLabel(tab, en) + ' selesai.', getMasterLabel(tab, en) + ' export completed.'));
     } catch (err: any) { setError(apiError(err)); }
