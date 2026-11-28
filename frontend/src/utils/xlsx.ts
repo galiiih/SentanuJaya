@@ -83,7 +83,7 @@ const columnName = (index: number): string => {
 };
 
 export const createXlsx = (sheetName: string, rows: unknown[][]): Uint8Array => {
-  const safeSheetName = sheetName.replace(/[\\/*?:\[\]]/g, ' ').slice(0, 31) || 'Data';
+  const safeSheetName = sheetName.replace(/[\\/*?:\x5B\x5D]/g, ' ').slice(0, 31) || 'Data';
   const sheetRows = rows.map((row, rowIndex) => {
     const cells = row.map((value, columnIndex) => {
       if (value === null || value === undefined || value === '') return '';
