@@ -238,9 +238,9 @@ export function MasterDataPage() {
     const errors: string[] = [];
     const seenCodes = new Map<string, number>();
     const required = bulkRequiredFields[tab];
-    const uniqueCode = bulkFields[tab].includes('code');
+    const uniqueCode = tab !== 'warehouses' && bulkFields[tab].includes('code');
     const allowedBoolean = ['1','0','true','false','yes','no','ya','tidak','aktif','nonaktif'];
-    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
     rows.forEach((row, index) => {
       const rowNumber = index + 2;
