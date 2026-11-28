@@ -18,4 +18,29 @@ test.describe('Sentanu Jaya ERP customer master E2E', () => {
     await expect(page.getByRole('button', { name: /Tambah Customer/i })).toBeVisible();
     await expect(page.getByText('Daftar Customer')).toBeVisible();
   });
+
+  test('master data CSV import blocks invalid rows during preflight', async ({ page }) => {
+    await login(page);
+    await page.goto('/master');
+    await expect(page.getByText('Master Data & Referensi')).toBeVisible();
+
+    const headers = [
+      'company_id','code','name','company_name','billing_address','shipping_address',
+      'npwp','tax_condition','default_tax_rule_id','payment_terms_days','credit_limit',
+      'phone','email','is_active',
+    ];
+    const csv = [
+      headers.join(','),
+      ',,Test Customer,,,,,9,,,0,0,invalid-email,TRUE',
+    ].join('\\r\\n');
+
+    await page.locator('input[type="file"]').setInputFiles({
+      name: 'invalid-customers.csv',
+      mimeType: 'text/csv',
+      buffer: Buffer.from(csv, 'utf-8'),
+    });
+
+    await expect(page.getByText(/code wajib diisi|code is required/i)).toBeVisible();
+    await expect(page.getByRole('button', { name: /Konfirmasi Import|Confirm Import/i })).toBeDisabled();
+  });
 });
