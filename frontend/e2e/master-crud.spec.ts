@@ -112,4 +112,44 @@ test.describe('Sentanu Jaya ERP customer master E2E', () => {
     expect(submittedRows[0]).toMatchObject({ code: 'E2E-BATCH-CUSTOMER', name: 'Customer Batch Import' });
     await expect(page.getByText(/Import berhasil: 1 baris tersimpan secara atomik|Import succeeded: 1 rows saved atomically/i)).toBeVisible();
   });
+
+  test('master data keeps import preview and shows failing row after atomic batch rejection', async ({ page }) => {
+    await login(page);
+    await page.goto('/master');
+    await expect(page.getByText('Master Data & Referensi')).toBeVisible();
+
+    const headers = [
+      'company_id','code','name','company_name','billing_address','shipping_address',
+      'npwp','tax_condition','default_tax_rule_id','payment_terms_days','credit_limit',
+      'phone','email','is_active',
+    ];
+    const values = Array(headers.length).fill('');
+    values[1] = 'E2E-BATCH-ROLLBACK';
+    values[2] = 'Customer Rollback';
+    const csv = [headers.join(','), values.join(',')].join('\\r\\n');
+
+    await page.locator('input[type="file"]').setInputFiles({
+      name: 'customer-batch-rejected.csv',
+      mimeType: 'text/csv',
+      buffer: Buffer.from(csv, 'utf-8'),
+    });
+
+    await page.route('**/api/v1/master-data/import/customers', async route => {
+      await route.fulfill({
+        status: 422,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: false,
+          message: 'Import dibatalkan pada baris 3. Tidak ada data yang disimpan.',
+          errors: { row: 3, details: { name: ['The name field is required.'] } },
+        }),
+      });
+    });
+
+    await page.getByRole('button', { name: /Konfirmasi Import|Confirm Import/i }).click();
+    await expect(page.getByText(/Import dibatalkan pada baris 3/i)).toBeVisible();
+    await expect(page.getByText(/Baris data 3/i)).toBeVisible();
+    await expect(page.getByText('customer-batch-rejected.csv')).toBeVisible();
+    await expect(page.getByRole('button', { name: /Konfirmasi Import|Confirm Import/i })).toBeEnabled();
+  });
 });
