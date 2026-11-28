@@ -366,7 +366,7 @@ export function MasterDataPage() {
       const detailText = details && typeof details === 'object'
         ? Object.entries(details).map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(', ') : String(messages)}`).join('; ')
         : '';
-      setError([apiError(err), row ? tr('Baris data ', 'Data row ') + row + (detailText ? ` — ${detailText}` : '') : detailText].filter(Boolean).join('\\n'));
+      setError([apiError(err), row ? tr('Baris data ', 'Data row ') + row + (detailText ? ` — ${detailText}` : '') : detailText].filter(Boolean).join('\n'));
     } finally {
       setBulkBusy(false);
     }
