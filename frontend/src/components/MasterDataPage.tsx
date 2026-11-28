@@ -1,6 +1,6 @@
 import { getLocalDateInputValue } from '../utils/date';
 import { useState, useEffect, useRef } from 'react';
-import { Plus, Edit, Trash2, Users, Layers, Package, Tag, Building2, BookOpen, Wrench, FileSpreadsheet } from 'lucide-react';
+import { Plus, Edit, Trash2, Users, Layers, Package, Tag, Building2, BookOpen, Wrench, FileSpreadsheet, Upload, Download } from 'lucide-react';
 import { apiError, type Customer, type CustomerItem } from '../services/api';
 import { useAuth } from '../auth';
 import { useLanguage } from '../i18n';
@@ -168,6 +168,89 @@ export function MasterDataPage() {
   const [editingItem, setEditingItem] = useState<any | null>(null);
   const [formData, setFormData] = useState<any>({});
   const [saving, setSaving] = useState(false);
+  const [bulkFile, setBulkFile] = useState<File | null>(null);
+  const [bulkRows, setBulkRows] = useState<Record<string, string>[]>([]);
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const bulkInputRef = useRef<HTMLInputElement>(null);
+
+  const bulkFields: Record<MasterKey, string[]> = {
+    companies: ['code','name','legal_name','npwp','is_pkp','pkp_date','address','phone','email'],
+    branches: ['company_id','code','name','address','is_active'],
+    customers: ['company_id','code','name','legal_name','npwp','tax_condition','address','phone','email'],
+    customer_contacts: ['customer_id','name','title','phone','email'],
+    customer_items: ['customer_id','code','name','vehicle_model','part_type'],
+    price_lists: ['code','name','customer_id','effective_date','is_active'],
+    price_list_lines: ['price_list_id','customer_item_id','unit_price'],
+    uoms: ['code','name','category','decimal_places'],
+    materials: ['code','name','category','unit','minimum_stock'],
+    warehouses: ['branch_id','code','name','is_active'],
+    suppliers: ['code','name','address','phone','email'],
+  };
+
+  const csvEscape = (value: unknown) => {
+    const text = value == null || typeof value === 'object' ? '' : String(value);
+    return /[\",\\r\\n]/.test(text) ? '"' + text.replace(/"/g, '""') + '"' : text;
+  };
+  const makeCsv = (rows: unknown[][]) => '\\uFEFF' + rows.map(row => row.map(csvEscape).join(',')).join('\\r\\n');
+  const saveCsv = (filename: string, rows: unknown[][]) => {
+    const url = URL.createObjectURL(new Blob([makeCsv(rows)], { type: 'text/csv;charset=utf-8;' }));
+    const link = document.createElement('a'); link.href = url; link.download = filename; link.click(); URL.revokeObjectURL(url);
+  };
+  const parseCsvText = (text: string): string[][] => {
+    const output: string[][] = []; let row: string[] = []; let cell = ''; let quoted = false;
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (quoted) { if (ch === '"' && text[i + 1] === '"') { cell += '"'; i++; } else if (ch === '"') quoted = false; else cell += ch; }
+      else if (ch === '"' && cell.length === 0) quoted = true;
+      else if (ch === ',') { row.push(cell); cell = ''; }
+      else if (ch === '\\n' || ch === '\\r') { if (ch === '\\r' && text[i + 1] === '\\n') i++; row.push(cell); output.push(row); row = []; cell = ''; }
+      else cell += ch;
+    }
+    if (cell.length || row.length) { row.push(cell); output.push(row); }
+    return output.filter(r => r.some(v => v.trim() !== ''));
+  };
+  const handleBulkExport = async () => {
+    try {
+      const fields = bulkFields[tab];
+      const response = await axios.get('/api/v1/' + ({ companies:'companies', branches:'branches', customers:'customers', customer_contacts:'customer-contacts', customer_items:'customer-items', price_lists:'price-lists', price_list_lines:'price-list-lines', uoms:'uoms', materials:'materials', warehouses:'warehouses', suppliers:'suppliers' } as Record<MasterKey,string>)[tab], { params: { per_page: 10000 } });
+      const payload = response.data?.data; const rows = Array.isArray(payload) ? payload : Array.isArray(payload?.data) ? payload.data : Array.isArray(response.data) ? response.data : [];
+      saveCsv('sentanu-jaya-' + tab + '-export.csv', [fields, ...rows.map((item: any) => fields.map(field => item[field] ?? ''))]);
+      setNotice(tr('Export ' + getMasterLabel(tab, en) + ' selesai.', getMasterLabel(tab, en) + ' export completed.'));
+    } catch (err: any) { setError(apiError(err)); }
+  };
+  const handleBulkTemplate = () => saveCsv('sentanu-jaya-' + tab + '-template.csv', [bulkFields[tab]]);
+  const handleBulkFile = async (file: File | null) => {
+    setBulkFile(file); setBulkRows([]); if (!file) return;
+    if (!file.name.toLowerCase().endsWith('.csv')) { setError(tr('Import saat ini menerima CSV UTF-8. Simpan file Excel sebagai CSV terlebih dahulu.', 'Import currently accepts UTF-8 CSV. Save the Excel file as CSV first.')); return; }
+    try {
+      const parsed = parseCsvText(await file.text());
+      if (parsed.length < 2) throw new Error(tr('File harus memiliki header dan minimal satu baris data.', 'File must contain a header and at least one data row.'));
+      const headers = parsed[0].map(h => h.trim().replace(/^\\uFEFF/, '')); const required = bulkFields[tab];
+      const missing = required.filter(field => !headers.includes(field));
+      if (missing.length) throw new Error(tr('Kolom template tidak ditemukan: ', 'Missing template columns: ') + missing.join(', '));
+      setBulkRows(parsed.slice(1).map(values => Object.fromEntries(headers.map((header, i) => [header, values[i] ?? '']))); setError('');
+    } catch (err: any) { setError(err?.message || tr('CSV tidak dapat dibaca.', 'Unable to read CSV.')); }
+  };
+  const handleBulkImport = async () => {
+    if (!isAdminOrOwner || bulkRows.length === 0) return;
+    setBulkBusy(true); let created = 0; const errors: string[] = [];
+    try {
+      for (let i = 0; i < bulkRows.length; i++) {
+        const row = bulkRows[i]; const payload: Record<string, unknown> = {};
+        for (const field of bulkFields[tab]) {
+          const value = (row[field] ?? '').trim(); if (!value) continue;
+          if (['is_active','is_pkp'].includes(field)) payload[field] = ['1','true','yes','ya','aktif'].includes(value.toLowerCase());
+          else if (['tax_condition','decimal_places'].includes(field)) payload[field] = Number(value);
+          else if (['unit_price','minimum_stock'].includes(field)) payload[field] = Number(value.replace(/,/g, ''));
+          else payload[field] = value;
+        }
+        try { await masterApi[tab].create(payload); created++; } catch (err: any) { errors.push(tr('Baris ', 'Row ') + (i + 2) + ': ' + apiError(err)); }
+      }
+      setNotice(tr('Import selesai: ', 'Import completed: ') + created + tr(' berhasil, ', ' succeeded, ') + errors.length + tr(' gagal.', ' failed.'));
+      setError(errors.slice(0, 10).join('\\n')); setBulkRows([]); setBulkFile(null); if (bulkInputRef.current) bulkInputRef.current.value = '';
+      await loadData(); if (tab === 'companies' || tab === 'branches') await loadReferences();
+    } finally { setBulkBusy(false); }
+  };
 
   const [confirmState, setConfirmState] = useState<{
     open: boolean;
@@ -447,6 +530,21 @@ export function MasterDataPage() {
         }
       />
 
+      {isAdminOrOwner && <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'flex-end', gap: '0.5rem', marginBottom: '0.75rem' }}>
+        <Button variant="ghost" onClick={() => bulkInputRef.current?.click()}><Upload size={16} /> {tr('Import', 'Import')} {getMasterLabel(tab, en)}</Button>
+        <Button variant="ghost" onClick={handleBulkExport}><Download size={16} /> {tr('Export', 'Export')} {getMasterLabel(tab, en)}</Button>
+        <Button variant="ghost" onClick={handleBulkTemplate}><FileSpreadsheet size={16} /> {tr('Template CSV', 'CSV Template')}</Button>
+        <input ref={bulkInputRef} type="file" accept=".csv,text/csv" hidden onChange={e => void handleBulkFile(e.target.files?.[0] ?? null)} />
+      </div>}
+      {bulkFile && bulkRows.length > 0 && <Card title={tr('Preview Import — ', 'Import Preview — ') + getMasterLabel(tab, en)}>
+        <p>{bulkFile.name} — {bulkRows.length} {tr('baris. Import akan menambahkan record baru; tidak mengubah data yang sudah ada.', 'rows. Import creates new records; it does not update existing data.')}</p>
+        <div style={{ overflowX: 'auto' }}><table style={{ width: '100%', borderCollapse: 'collapse' }}><thead><tr>{bulkFields[tab].map(field => <th key={field} style={{ textAlign: 'left', padding: '0.5rem' }}>{field}</th>)}</tr></thead>
+          <tbody>{bulkRows.slice(0, 5).map((row, i) => <tr key={i}>{bulkFields[tab].map(field => <td key={field} style={{ padding: '0.5rem', borderTop: '1px solid var(--color-border)' }}>{row[field] || '-'}</td>)}</tr>)}</tbody></table></div>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '1rem' }}>
+          <Button variant="ghost" onClick={() => { setBulkFile(null); setBulkRows([]); if (bulkInputRef.current) bulkInputRef.current.value = ''; }}>{tr('Batal', 'Cancel')}</Button>
+          <Button onClick={handleBulkImport} loading={bulkBusy}>{tr('Konfirmasi Import', 'Confirm Import')} ({bulkRows.length})</Button>
+        </div>
+      </Card>}
       {error && <Alert tone="danger">{error}</Alert>}
       {referencesError && <Alert tone="danger">{tr('Gagal memuat data referensi:', 'Failed to load reference data:')} {referencesError} <Button variant="ghost" onClick={loadReferences}>{tr('Coba lagi', 'Try again')}</Button></Alert>}
       {tab === 'branches' && !referencesLoading && companies.length === 0 && (
