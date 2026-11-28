@@ -43,4 +43,32 @@ test.describe('Sentanu Jaya ERP customer master E2E', () => {
     await expect(page.getByText(/code wajib diisi|code is required/i)).toBeVisible();
     await expect(page.getByRole('button', { name: /Konfirmasi Import|Confirm Import/i })).toBeDisabled();
   });
+
+  test('master data exports a valid XLSX template and reads XLSX imports', async ({ page }) => {
+    await login(page);
+    await page.goto('/master');
+    await expect(page.getByText('Master Data & Referensi')).toBeVisible();
+
+    const templateDownload = page.waitForEvent('download');
+    await page.getByRole('button', { name: /Template Excel Customer/i }).click();
+    const download = await templateDownload;
+    expect(download.suggestedFilename()).toBe('sentanu-jaya-customers-template.xlsx');
+    const path = await download.path();
+    expect(path).toBeTruthy();
+    const exported = await (await import('node:fs/promises')).readFile(path!);
+    expect(exported.readUInt32LE(0)).toBe(0x04034b50);
+    expect(exported.toString('utf8')).toContain('xl/workbook.xml');
+    expect(exported.toString('utf8')).toContain('company_name');
+
+    const xlsxFixture = 'FIXTURE';
+    await page.locator('input[type="file"]').setInputFiles({
+      name: 'invalid-customers.xlsx',
+      mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      buffer: Buffer.from(xlsxFixture, 'base64'),
+    });
+
+    await expect(page.getByText(/code wajib diisi|code is required/i)).toBeVisible();
+    await expect(page.getByRole('button', { name: /Konfirmasi Import|Confirm Import/i })).toBeDisabled();
+  });
+
 });
