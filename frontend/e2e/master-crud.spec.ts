@@ -64,8 +64,4 @@ test.describe('Sentanu Jaya ERP customer master E2E', () => {
     await expect(page.getByText(/File harus memiliki header dan minimal satu baris data|File must contain a header and at least one data row/i)).toBeVisible();
   });
 
-    await expect(page.getByText(/code wajib diisi|code is required/i)).toBeVisible();
-    await expect(page.getByRole('button', { name: /Konfirmasi Import|Confirm Import/i })).toBeDisabled();
-  });
-
 });
