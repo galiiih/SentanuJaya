@@ -1,11 +1,11 @@
 <?php
 
-namespace Tests\\Feature\\Api\\V1;
+namespace Tests\Feature\Api\V1;
 
-use App\\Models\\Company;
-use App\\Models\\User;
-use Illuminate\\Foundation\\Testing\\RefreshDatabase;
-use Tests\\TestCase;
+use App\Models\Company;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 class MasterDataImportApiTest extends TestCase
 {
