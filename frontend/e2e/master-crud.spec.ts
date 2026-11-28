@@ -60,12 +60,9 @@ test.describe('Sentanu Jaya ERP customer master E2E', () => {
     expect(exported.toString('utf8')).toContain('xl/workbook.xml');
     expect(exported.toString('utf8')).toContain('company_name');
 
-    const xlsxFixture = 'FIXTURE';
-    await page.locator('input[type="file"]').setInputFiles({
-      name: 'invalid-customers.xlsx',
-      mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      buffer: Buffer.from(xlsxFixture, 'base64'),
-    });
+    await page.locator('input[type="file"]').setInputFiles(path!);
+    await expect(page.getByText(/File harus memiliki header dan minimal satu baris data|File must contain a header and at least one data row/i)).toBeVisible();
+  });
 
     await expect(page.getByText(/code wajib diisi|code is required/i)).toBeVisible();
     await expect(page.getByRole('button', { name: /Konfirmasi Import|Confirm Import/i })).toBeDisabled();
