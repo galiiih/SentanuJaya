@@ -189,3 +189,44 @@ Known limitations / remaining work:
 4. Import still creates records sequentially through existing endpoints. Failures can leave earlier rows committed; atomic batch import is not implemented.
 5. Add server-side preflight/batch validation and transactional import, plus coverage for all 11 tables, permissions, reference integrity, existing database duplicates, invalid rows, empty exports, and pagination.
 6. Complete the currently running browser workflow and perform business UAT before marking this feature DONE.
+
+
+## Progress update — Atomic Master Data batch import (2026-11-28)
+
+Status: IN_PROGRESS — server-side transactional import and frontend batch integration are implemented; CI verification and full Master Data interoperability/UAT remain open.
+
+Implemented:
+- Added `POST /api/v1/master-data/import/{resource}` for the 11 supported import resources: companies, branches, customers, customer_contacts, customer_items, price_lists, price_list_lines, uoms, materials, warehouses, and suppliers.
+- The endpoint enforces `master.manage`, rejects unsupported resources, validates a non-empty batch of at most 500 rows, and runs the complete batch in one database transaction.
+- Each row is delegated to its existing resource controller `store()`, preserving existing Laravel validation, permission checks, default-company behavior, and model creation rules rather than maintaining a second copy of business validation.
+- A validation or database constraint failure identifies the spreadsheet row (header is row 1), returns a structured 422 response, and throws out of the transaction so all earlier rows are rolled back. Successful imports return the resource, created count, and IDs.
+- Updated Master Data frontend import to submit one batch request. Success clears the preview and reloads data; failure keeps the preview available and displays the failing row and validation detail.
+- Added backend feature tests for successful multi-row import, rollback when a later row is invalid, STAFF permission denial, unsupported resource, and the 500-row limit.
+
+Files changed:
+- `backend/app/Http/Controllers/Api/V1/MasterDataImportController.php`
+- `backend/routes/api.php`
+- `backend/tests/Feature/Api/V1/MasterDataImportApiTest.php`
+- `frontend/src/components/MasterDataPage.tsx`
+
+Relevant commits:
+- `f93e63a4ded8e5c4b63ef019a74a1ba5c901ea6e` — initial atomic import controller.
+- `d544522c8ca79ecbe721b8c3c0224bfdbed70286` — backend batch import tests.
+- `8efa91fc3013b02ed25693d2996e9130d666b20a` — register batch import route.
+- `0d3461739bd2b626e3416f6f7a34bb4701523744` — connect frontend to batch endpoint.
+- `e9fba2b860b7da2cd86ccffacf242567f8535c7f`, `8491bba0fce3ab6eeb37f509591f47221963956d`, `4fcffd13d47b11ddbeb98c862373c096f20da7c2`, `6955f040df43986ac30739abea8afb48b51cb769` — correct PHP namespace escaping, route syntax, and frontend error formatting.
+
+Verification:
+- GitHub Actions runs for HEAD `6955f040df43986ac30739abea8afb48b51cb769`:
+  - Sentanu Jaya CI: queued/pending at the time of this update.
+  - PHP & PostgreSQL Tests: in progress; PHPUnit result not yet available.
+  - Browser E2E: in progress; full browser result not yet available.
+- The earlier browser workflow run `46112614853` was cancelled before the full browser suite completed. Print tests and login intro passed before cancellation, but this does not verify the new import workflow.
+- Do not mark this feature DONE until the new backend tests and all relevant CI checks pass.
+
+Remaining work:
+1. Confirm CI for the atomic batch endpoint, including PostgreSQL rollback and permission tests; fix any failures before continuing.
+2. Add or extend E2E coverage for successful multi-row import and rollback/error feedback in the UI.
+3. Verify XLSX interoperability with a real Excel/LibreOffice-produced workbook, including compressed third-party XLSX input.
+4. Expand backend and UI coverage for all 11 resources, especially foreign-key references, database-level duplicates, warehouse branch-scoped uniqueness, empty exports, and pagination.
+5. Perform Master Data UAT and record the outcome before marking Import/Export DONE.
