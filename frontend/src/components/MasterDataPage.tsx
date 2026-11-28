@@ -191,7 +191,7 @@ export function MasterDataPage() {
     const text = value == null || typeof value === 'object' ? '' : String(value);
     return /[\",\\r\\n]/.test(text) ? '"' + text.replace(/"/g, '""') + '"' : text;
   };
-  const makeCsv = (rows: unknown[][]) => '\\uFEFF' + rows.map(row => row.map(csvEscape).join(',')).join('\\r\\n');
+  const makeCsv = (rows: unknown[][]) => '\uFEFF' + rows.map(row => row.map(csvEscape).join(',')).join('\r\n');
   const saveCsv = (filename: string, rows: unknown[][]) => {
     const url = URL.createObjectURL(new Blob([makeCsv(rows)], { type: 'text/csv;charset=utf-8;' }));
     const link = document.createElement('a'); link.href = url; link.download = filename; link.click(); URL.revokeObjectURL(url);
@@ -203,7 +203,7 @@ export function MasterDataPage() {
       if (quoted) { if (ch === '"' && text[i + 1] === '"') { cell += '"'; i++; } else if (ch === '"') quoted = false; else cell += ch; }
       else if (ch === '"' && cell.length === 0) quoted = true;
       else if (ch === ',') { row.push(cell); cell = ''; }
-      else if (ch === '\\n' || ch === '\\r') { if (ch === '\\r' && text[i + 1] === '\\n') i++; row.push(cell); output.push(row); row = []; cell = ''; }
+      else if (ch === '\n' || ch === '\r') { if (ch === '\r' && text[i + 1] === '\n') i++; row.push(cell); output.push(row); row = []; cell = ''; }
       else cell += ch;
     }
     if (cell.length || row.length) { row.push(cell); output.push(row); }
@@ -225,10 +225,10 @@ export function MasterDataPage() {
     try {
       const parsed = parseCsvText(await file.text());
       if (parsed.length < 2) throw new Error(tr('File harus memiliki header dan minimal satu baris data.', 'File must contain a header and at least one data row.'));
-      const headers = parsed[0].map(h => h.trim().replace(/^\\uFEFF/, '')); const required = bulkFields[tab];
+      const headers = parsed[0].map(h => h.trim().replace(/^\uFEFF/, '')); const required = bulkFields[tab];
       const missing = required.filter(field => !headers.includes(field));
       if (missing.length) throw new Error(tr('Kolom template tidak ditemukan: ', 'Missing template columns: ') + missing.join(', '));
-      setBulkRows(parsed.slice(1).map(values => Object.fromEntries(headers.map((header, i) => [header, values[i] ?? '']))); setError('');
+      const mappedRows = parsed.slice(1).map(values => Object.fromEntries(headers.map((header, i) => [header, values[i] ?? '']))); setBulkRows(mappedRows); setError('');
     } catch (err: any) { setError(err?.message || tr('CSV tidak dapat dibaca.', 'Unable to read CSV.')); }
   };
   const handleBulkImport = async () => {
@@ -247,7 +247,7 @@ export function MasterDataPage() {
         try { await masterApi[tab].create(payload); created++; } catch (err: any) { errors.push(tr('Baris ', 'Row ') + (i + 2) + ': ' + apiError(err)); }
       }
       setNotice(tr('Import selesai: ', 'Import completed: ') + created + tr(' berhasil, ', ' succeeded, ') + errors.length + tr(' gagal.', ' failed.'));
-      setError(errors.slice(0, 10).join('\\n')); setBulkRows([]); setBulkFile(null); if (bulkInputRef.current) bulkInputRef.current.value = '';
+      setError(errors.slice(0, 10).join('\n')); setBulkRows([]); setBulkFile(null); if (bulkInputRef.current) bulkInputRef.current.value = '';
       await loadData(); if (tab === 'companies' || tab === 'branches') await loadReferences();
     } finally { setBulkBusy(false); }
   };
