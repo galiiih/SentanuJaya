@@ -67,3 +67,22 @@ The permission regression test commit `3283a3a` was pushed after those checks. I
 - [ ] Complete role permission checks and UAT before enabling bulk import/export for business users.
 
 Template file prepared in the conversation: `SentanuJaya_MasterData_Import_Template.xlsx`. It is a preparation template only; it does not directly import data into the ERP. Column mapping must be confirmed against the live schema before implementing the importer.
+
+## Progress update — Master Data Import / Export (2026-11-28)
+
+Initial per-table CSV controls have been added to `frontend/src/components/MasterDataPage.tsx` on the existing branch:
+
+- Import, Export, and CSV Template actions follow the selected Master Data table (Company, Branch, Customer, Customer Contact, Customer Item, Price List, Price List Line, UOM, Material, Warehouse, Supplier).
+- Import checks that the expected table-specific headers are present and previews up to five rows before confirmation.
+- Import uses each existing table's create API, reports successful and failed rows, and refreshes the table after processing. It does not overwrite existing records.
+- Export requests data page-by-page and exports the configured business fields, including relation keys needed to re-import linked rows.
+- Import/Export controls are shown to ADMIN/OWNER only, consistent with existing master-management permissions.
+
+Important limitations; do not mark this feature production-ready yet:
+
+- Current import/export format is **CSV UTF-8**, not native XLSX. CSV can be opened/saved in Excel; native XLSX parsing/writing is still required if the user expects direct .xlsx upload/download.
+- Import currently commits row-by-row through existing create endpoints, not as one atomic transaction. The UI reports partial success/failure; it must not claim all-or-nothing behavior.
+- The preview is not a full backend validation phase; validation occurs as each create request is submitted. A true preflight validation endpoint with row-level errors is still desirable.
+- Export follows API pagination, but current page has no filter-aware export option. Add this if table search/filter controls are introduced.
+- Frontend build/typecheck, UI tests, API tests, and actual browser UAT have not been run for these commits. Verify these before enabling the feature for business users.
+- The earlier workbook `SentanuJaya_MasterData_Import_Template.xlsx` is a separate preparation artifact and is not directly accepted by this CSV-only implementation. Keep its column mapping aligned with the backend API before native Excel support is added.
